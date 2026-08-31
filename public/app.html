@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tendre.sk</title>
+<script src="./config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+  colors: { ink:'#0f1a2b', slate2:'#5a6472', line:'#e4e8ee', accent:'#1a56c4', accentDark:'#123f94' }
+}}}
+</script>
+</head>
+<body class="font-sans text-ink bg-[#f5f6f8] min-h-screen">
+
+<!-- ══ NAČÍTAVANIE ═══════════════════════════════════════════ -->
+<div id="nacitavam" class="min-h-screen flex items-center justify-center">
+  <div class="text-[14px] text-slate2">Načítavam...</div>
+</div>
+
+<!-- ══ ONBOARDING: firma ešte nie je založená ════════════════ -->
+<div id="onboarding" class="hidden min-h-screen flex items-center justify-center p-5">
+  <div class="w-full max-w-[460px]">
+    <div class="text-center mb-8">
+      <div class="font-bold text-[20px] tracking-tight">Tendre<span class="text-accent">.sk</span></div>
+    </div>
+    <div class="bg-white border border-line rounded-lg p-7">
+      <h1 class="text-[19px] font-semibold">Ešte jedna vec</h1>
+      <p class="mt-2 text-[14px] leading-relaxed text-slate2">
+        Zadajte firmu, pod ktorou budete portál používať. Trial na 30 dní
+        sa spustí hneď, kartu nepotrebujeme.
+      </p>
+
+      <form id="form-org" class="mt-6 space-y-4">
+        <div>
+          <label for="nazov" class="block text-[13px] font-semibold mb-1.5">Názov firmy</label>
+          <input id="nazov" required
+                 class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                        focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+        </div>
+        <div>
+          <label for="ico" class="block text-[13px] font-semibold mb-1.5">IČO</label>
+          <input id="ico" required inputmode="numeric" placeholder="12345678"
+                 class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                        focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+          <p class="mt-1.5 text-[12px] text-slate2">
+            Portál poskytujeme len podnikateľským subjektom.
+          </p>
+        </div>
+        <button type="submit" id="btn-org"
+                class="w-full bg-accent text-white font-semibold py-3 rounded-md
+                       hover:bg-accentDark transition disabled:opacity-50">
+          Spustiť 30-dňový trial
+        </button>
+        <p id="chyba-org" class="text-[13px] text-red-700 hidden"></p>
+      </form>
+    </div>
+    <p class="text-center mt-5">
+      <button id="odhlasit-2" class="text-[13px] text-slate2 hover:text-ink">Odhlásiť sa</button>
+    </p>
+  </div>
+</div>
+
+<!-- ══ APLIKÁCIA ═════════════════════════════════════════════ -->
+<div id="app" class="hidden">
+
+  <header class="bg-white border-b border-line sticky top-0 z-30">
+    <div class="max-w-[1200px] mx-auto px-5 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-6">
+        <span class="font-bold text-[17px] tracking-tight">Tendre<span class="text-accent">.sk</span></span>
+        <span id="nazov-firmy" class="text-[14px] text-slate2 hidden sm:block"></span>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="odznak-trial" class="text-[13px] font-medium px-3 py-1 rounded-full"></span>
+        <button id="odhlasit" class="text-[13px] text-slate2 hover:text-ink">Odhlásiť</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-[1200px] mx-auto px-5 py-8">
+
+    <!-- prázdny stav: pipeline ešte nedodala dáta -->
+    <div id="prazdny" class="hidden bg-white border border-line rounded-lg p-10 text-center">
+      <div class="w-12 h-12 rounded-full bg-slate2/10 text-slate2 text-[20px]
+                  flex items-center justify-center mx-auto mb-5">&#8987;</div>
+      <h2 class="text-[18px] font-semibold">Databáza sa ešte napĺňa</h2>
+      <p class="mt-3 text-[14px] leading-relaxed text-slate2 max-w-md mx-auto">
+        Sťahujeme históriu zmlúv z Centrálneho registra. Prvé príležitosti sa
+        tu objavia hneď, ako bude prvý beh hotový.
+      </p>
+      <p class="mt-4 text-[13px] text-slate2">
+        Zmlúv v databáze: <strong id="pocet-zmluv">0</strong>
+      </p>
+    </div>
+
+    <!-- tabuľka príležitostí -->
+    <div id="obsah" class="hidden">
+      <div class="flex items-baseline justify-between mb-5">
+        <h1 class="text-[22px] font-semibold tracking-tight">Príležitosti</h1>
+        <span id="pocet" class="text-[14px] text-slate2"></span>
+      </div>
+      <div class="bg-white border border-line rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead class="bg-[#fafbfc] border-b border-line">
+              <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+                <th class="px-4 py-3 w-16">Skóre</th>
+                <th class="px-4 py-3">Predmet</th>
+                <th class="px-4 py-3">Obstarávateľ</th>
+                <th class="px-4 py-3 text-right whitespace-nowrap">Hodnota</th>
+                <th class="px-4 py-3 whitespace-nowrap">Zmluva končí</th>
+              </tr>
+            </thead>
+            <tbody id="riadky"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG;
+
+const el = (id) => document.getElementById(id);
+const ukaz  = (id) => el(id).classList.remove('hidden');
+const skry  = (id) => el(id).classList.add('hidden');
+
+if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
+  el('nacitavam').textContent = 'Aplikácia nie je nastavená: v config.js chýba anon kľúč.';
+  throw new Error('config');
+}
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── prihlásenie ────────────────────────────────────────────
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) location.replace('./index.html');
+
+for (const id of ['odhlasit', 'odhlasit-2']) {
+  el(id).addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    location.replace('./index.html');
+  });
+}
+
+// ── má už používateľ firmu? ────────────────────────────────
+const { data: clenstva, error: chybaClenstva } = await supabase
+  .from('memberships').select('org_id').limit(1);
+
+if (chybaClenstva) {
+  el('nacitavam').textContent = 'Chyba databázy: ' + chybaClenstva.message;
+  throw chybaClenstva;
+}
+
+if (!clenstva || clenstva.length === 0) {
+  skry('nacitavam');
+  ukaz('onboarding');
+
+  el('form-org').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = el('btn-org'), chyba = el('chyba-org');
+    chyba.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Zakladám...';
+
+    const { error } = await supabase.rpc('zaloz_organizaciu', {
+      p_nazov: el('nazov').value.trim(),
+      p_ico:   el('ico').value.trim()
+    });
+
+    if (error) {
+      chyba.textContent = 'Nepodarilo sa: ' + error.message;
+      chyba.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Spustiť 30-dňový trial';
+      return;
+    }
+    location.reload();
+  });
+
+} else {
+  await zobrazAplikaciu();
+}
+
+// ── hlavná obrazovka ───────────────────────────────────────
+async function zobrazAplikaciu() {
+  const [{ data: org }, { data: sub }] = await Promise.all([
+    supabase.from('organizations').select('nazov').limit(1).maybeSingle(),
+    supabase.from('subscriptions').select('stav, trial_konci').limit(1).maybeSingle()
+  ]);
+
+  el('nazov-firmy').textContent = org?.nazov ?? '';
+
+  // odznak so stavom predplatného
+  const odznak = el('odznak-trial');
+  if (sub?.stav === 'trial') {
+    const dni = Math.max(0, Math.ceil((new Date(sub.trial_konci) - new Date()) / 86400000));
+    odznak.textContent = `Trial: ${dni} ${dni === 1 ? 'deň' : dni < 5 ? 'dni' : 'dní'}`;
+    odznak.className = 'text-[13px] font-medium px-3 py-1 rounded-full ' +
+      (dni <= 7 ? 'bg-amber-100 text-amber-800' : 'bg-accent/10 text-accent');
+  } else if (sub?.stav === 'aktivne') {
+    odznak.textContent = 'Predplatné aktívne';
+    odznak.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-green-100 text-green-800';
+  } else {
+    odznak.textContent = 'Prístup ukončený';
+    odznak.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-red-100 text-red-800';
+  }
+
+  skry('nacitavam');
+  ukaz('app');
+
+  // príležitosti
+  const { data: prilezitosti, error } = await supabase
+    .from('opportunities')
+    .select('contract_id, skore, riziko, subject, authority_name, price_total, effective_to')
+    .order('skore', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    el('prazdny').querySelector('h2').textContent = 'Dáta sa nepodarilo načítať';
+    el('prazdny').querySelector('p').textContent = error.message;
+    ukaz('prazdny');
+    return;
+  }
+
+  if (!prilezitosti || prilezitosti.length === 0) {
+    const { count } = await supabase.from('contracts')
+      .select('*', { count: 'exact', head: true });
+    el('pocet-zmluv').textContent = (count ?? 0).toLocaleString('sk-SK');
+    ukaz('prazdny');
+    return;
+  }
+
+  el('pocet').textContent = `${prilezitosti.length} záznamov`;
+  el('riadky').innerHTML = prilezitosti.map(riadok).join('');
+  ukaz('obsah');
+}
+
+const STYL_RIZIKA = {
+  VYSOKE:  ['bg-red-50 text-red-800',       'silná koncentrácia dodávateľa'],
+  STREDNE: ['bg-amber-50 text-amber-800',   'mierna koncentrácia'],
+  NIZKE:   ['bg-green-50 text-green-800',   'otvorená súťaž'],
+  NEZNAME: ['bg-slate-100 text-slate-600',  'málo dát na hodnotenie'],
+};
+
+function bezpecne(t) {
+  return String(t ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+
+function riadok(r) {
+  const [styl, popis] = STYL_RIZIKA[r.riziko] ?? STYL_RIZIKA.NEZNAME;
+  const suma = r.price_total
+    ? new Intl.NumberFormat('sk-SK', { style:'currency', currency:'EUR', maximumFractionDigits:0 })
+        .format(r.price_total)
+    : '—';
+  return `
+    <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
+      <td class="px-4 py-4 align-top">
+        <span class="text-[18px] font-bold">${r.skore ?? '—'}</span>
+      </td>
+      <td class="px-4 py-4 align-top max-w-[420px]">
+        <div class="text-[14px] font-medium leading-snug">${bezpecne(r.subject)}</div>
+        <span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded ${styl}">
+          ${popis}
+        </span>
+      </td>
+      <td class="px-4 py-4 align-top text-[14px] text-slate2">${bezpecne(r.authority_name)}</td>
+      <td class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${suma}</td>
+      <td class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
+        ${r.effective_to ?? '—'}
+      </td>
+    </tr>`;
+}
+</script>
+</body>
+</html>
