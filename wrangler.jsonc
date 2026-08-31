@@ -1,0 +1,16 @@
+{
+  // Konfiguracia nasadenia na Cloudflare.
+  // Hovori Cloudflaru, ze ide o staticku stranku bez kompilacie:
+  // obsah priecinka "public" sa len servíruje tak, ako je.
+  //
+  // Ziadny "main" tu zamerne nie je — nemame ziadny serverovy kod.
+  // Az budeme robit Stripe webhooky, pribudne sem riadok navyse.
+
+  "name": "tendre-portal",
+  "compatibility_date": "2026-08-01",
+
+  "assets": {
+    "directory": "./public",
+    "not_found_handling": "404-page"
+  }
+}
