@@ -7,13 +7,23 @@ on:
   workflow_dispatch:
     inputs:
       bootstrap:
-        description: "Prvotne naplnenie databazy (dlhy beh)"
+        description: "Prvotne naplnenie databazy (spusta sa dokola, kym nedobehne)"
         type: boolean
         default: false
       budget:
-        description: "Casovy rozpocet behu v minutach"
+        description: "Casovy rozpocet jedneho behu v minutach"
         type: string
-        default: "45"
+        default: "300"
+      chain:
+        description: "Poradie behu v retazi. Nechaj 0, dopluje sa samo."
+        type: string
+        default: "0"
+
+# actions: write je potrebne, aby si beh mohol zavolat pokracovanie sam.
+# workflow_dispatch je jedina vynimka z ochrany proti nekonecnej slucke.
+permissions:
+  contents: read
+  actions: write
 
 concurrency:
   group: pipeline
@@ -36,6 +46,7 @@ jobs:
       - run: pip install -r pipeline/requirements.txt
 
       - name: Spustit pipeline
+        id: pipeline
         working-directory: pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -43,7 +54,36 @@ jobs:
           TIME_BUDGET_MIN: ${{ inputs.budget || '45' }}
         run: |
           if [ "${{ inputs.bootstrap }}" = "true" ]; then
-            python main.py --bootstrap --budget 300
+            python main.py --bootstrap --budget "${{ inputs.budget || '300' }}"
           else
             python main.py
           fi
+
+      # ── Zretazenie ────────────────────────────────────────────────────────
+      # Ak sa bootstrap nedokoncil, beh si zavola pokracovanie sam.
+      # Strop 10 behov je poistka: keby sa nieco pokazilo a `hotovo` by uz
+      # nikdy neprislo, nezozerie ti to vsetky minuty Actions.
+      - name: Pokracovat, ak bootstrap nedobehol
+        if: >
+          inputs.bootstrap == true &&
+          steps.pipeline.outputs.hotovo == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CHAIN: ${{ inputs.chain || '0' }}
+        run: |
+          DALSI=$((CHAIN + 1))
+          if [ "$DALSI" -ge 10 ]; then
+            echo "::warning::Dosiahol som strop 10 behov v retazi a bootstrap "\
+                 "stale nie je hotovy. Zastavujem, aby som nemínal minúty. "\
+                 "Skontroluj vypis vyssie."
+            exit 0
+          fi
+          echo "Bootstrap nedobehol. Spustam beh c. $DALSI z 10."
+          gh workflow run pipeline.yml --ref main \
+            -f bootstrap=true \
+            -f budget="${{ inputs.budget || '300' }}" \
+            -f chain="$DALSI"
+
+      - name: Hotovo
+        if: steps.pipeline.outputs.hotovo == 'true'
+        run: echo "::notice::Bootstrap dokonceny. Dalej uz stacia ranne behy."

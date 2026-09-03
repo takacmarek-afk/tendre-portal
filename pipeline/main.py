@@ -3,6 +3,7 @@
 Spusta sa z GitHub Actions kazdy pracovny den.
 Prvy beh potrebuje prepinac --bootstrap, ktory ma dlhsi casovy rozpocet.
 """
+import os
 import sys
 import logging
 import argparse
@@ -101,6 +102,15 @@ def main() -> int:
 
     print(f"::notice::stiahnute={fetched} zaradene={kept} zmluv_v_db={celkom} "
           f"prilezitosti={vlozene} dokoncene={hotovo}")
+
+    # Signal pre workflow, ci ma zavolat pokracovanie.
+    gh_out = os.environ.get("GITHUB_OUTPUT")
+    if gh_out:
+        with open(gh_out, "a", encoding="utf-8") as f:
+            f.write(f"hotovo={'true' if hotovo else 'false'}\n")
+            f.write(f"zmluv={celkom}\n")
+            f.write(f"prilezitosti={vlozene}\n")
+
     return 0
 
 

@@ -5,7 +5,11 @@ import os
 CRZ_SYNC_URL = "https://datahub.ekosystem.slovensko.digital/api/data/crz/contracts/sync"
 USER_AGENT = "tendre-portal/1.0 (open data client)"
 
-BOOTSTRAP_SINCE = os.getenv("BOOTSTRAP_SINCE", "2022-01-01T00:00:00Z")
+# Odkial zacat pri prvom behu. 2023 namiesto 2022 skratí stahovanie zhruba
+# o stvrtinu a usetri minuty GitHub Actions. Tri a pol roka historie na
+# detekciu koncentracie dodavatela bohato staci — pri zmluvach na jeden az
+# dva roky su to dva az styri cykly. Ak by si chcel viac, zmen na 2022.
+BOOTSTRAP_SINCE = os.getenv("BOOTSTRAP_SINCE", "2023-01-01T00:00:00Z")
 TIME_BUDGET_MIN = int(os.getenv("TIME_BUDGET_MIN", "45"))
 
 # --- Okno predikcie --------------------------------------------------------
