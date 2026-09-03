@@ -146,11 +146,14 @@ def sync(since: str, on_batch, time_budget_s: int):
             log.info("strana %s | stiahnute %s | zaradene %s | %s",
                      page, fetched, kept, checkpoint)
 
+        # CRZ dovoli 60 poziadaviek za minutu. Samotne volanie trva ~0,3 s,
+        # takze 0,9 s pauza nas drzi na ~50/min — tesne pod limitom s rezervou.
+        # Narazit na 429 stoji minutu cakania, to sa neoplati riskovat viac.
         zvysok = r.headers.get("X-RateLimit-Remaining")
-        if zvysok is not None and zvysok.isdigit() and int(zvysok) <= 2:
-            time.sleep(20)
+        if zvysok is not None and zvysok.isdigit() and int(zvysok) <= 3:
+            time.sleep(15)
         else:
-            time.sleep(1.05)
+            time.sleep(0.9)
 
         url = _next_url(r.headers.get("Link", ""))
 

@@ -36,15 +36,34 @@ def main() -> int:
     budget = args.budget or (300 if args.bootstrap else TIME_BUDGET_MIN)
     log.info("Sync od %s (rozpocet %s min)", since, budget)
 
-    stav = {"ulozene": 0}
+    # Zapisujeme davkovo, nie po kazdej stranke.
+    # Kazdy zapis do Supabase je HTTP volanie a trva takmer dve sekundy —
+    # pri 100 zaznamoch na stranku by nas rezia stala viac casu nez samotne
+    # stahovanie. Zbierame do vyrovnavacej pamate a posielame po 500.
+    #
+    # Poradie je dolezite: najprv zapiseme zaznamy, az potom checkpoint.
+    # Keby to beh nestihol medzitym, zopakuje par stranok — a to nevadi,
+    # zapis je idempotentny. Opacne poradie by dieru v datach spravilo.
+    stav = {"ulozene": 0, "stran": 0, "buffer": [], "cp": since}
+    FLUSH_ZAZNAMOV = 500
+    FLUSH_STRAN = 100
+
+    def zapis(sb_):
+        if stav["buffer"]:
+            stav["ulozene"] += store.upsert_contracts(sb_, stav["buffer"])
+            stav["buffer"] = []
+        store.set_meta(sb_, "checkpoint", stav["cp"])
 
     def on_batch(riadky, checkpoint):
-        if riadky:
-            stav["ulozene"] += store.upsert_contracts(sb, riadky)
-        store.set_meta(sb, "checkpoint", checkpoint)
+        stav["buffer"].extend(riadky)
+        stav["cp"] = checkpoint
+        stav["stran"] += 1
+        if len(stav["buffer"]) >= FLUSH_ZAZNAMOV or stav["stran"] % FLUSH_STRAN == 0:
+            zapis(sb)
 
     fetched, kept, checkpoint, hotovo = crz.sync(since, on_batch, budget * 60)
-    store.set_meta(sb, "checkpoint", checkpoint)
+    stav["cp"] = checkpoint
+    zapis(sb)   # doposli, co zostalo vo vyrovnavacej pamati
     store.set_meta(sb, "bootstrap_hotovy", "1" if hotovo else "0")
 
     log.info("Stiahnute %s | zaradene %s | ulozene %s | dokoncene: %s",
