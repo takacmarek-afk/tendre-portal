@@ -1,7 +1,8 @@
 """Pipeline: CRZ -> klasifikacia -> Supabase -> prepocet prilezitosti.
 
 Spusta sa z GitHub Actions kazdy pracovny den.
-Prvy beh potrebuje prepinac --bootstrap, ktory ma dlhsi casovy rozpocet.
+Prvy beh potrebuje prepinac --bootstrap; ked sa nestihne, workflow si
+zavola pokracovanie sam, kym nedobehne.
 """
 import os
 import sys
@@ -23,6 +24,18 @@ logging.basicConfig(
 log = logging.getLogger("main")
 
 
+def zapis_vystup(**hodnoty):
+    """Odovzda hodnoty workflowu cez GITHUB_OUTPUT. Mimo Actions nerobi nic."""
+    cesta = os.environ.get("GITHUB_OUTPUT")
+    if not cesta:
+        return
+    with open(cesta, "a", encoding="utf-8") as f:
+        for k, v in hodnoty.items():
+            if isinstance(v, bool):
+                v = "true" if v else "false"
+            f.write(f"{k}={v}\n")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--bootstrap", action="store_true",
@@ -37,14 +50,13 @@ def main() -> int:
     budget = args.budget or (300 if args.bootstrap else TIME_BUDGET_MIN)
     log.info("Sync od %s (rozpocet %s min)", since, budget)
 
-    # Zapisujeme davkovo, nie po kazdej stranke.
-    # Kazdy zapis do Supabase je HTTP volanie a trva takmer dve sekundy —
-    # pri 100 zaznamoch na stranku by nas rezia stala viac casu nez samotne
-    # stahovanie. Zbierame do vyrovnavacej pamate a posielame po 500.
+    # Zapisujeme davkovo, nie po kazdej stranke. Kazdy zapis do Supabase je
+    # HTTP volanie a trva takmer dve sekundy — pri 100 zaznamoch na stranku
+    # by nas rezia stala viac casu nez samotne stahovanie.
     #
-    # Poradie je dolezite: najprv zapiseme zaznamy, az potom checkpoint.
-    # Keby to beh nestihol medzitym, zopakuje par stranok — a to nevadi,
-    # zapis je idempotentny. Opacne poradie by dieru v datach spravilo.
+    # Poradie je dolezite: najprv zaznamy, az potom checkpoint. Keby to beh
+    # nestihol, zopakuje par stranok, co nevadi (zapis je idempotentny).
+    # Opacne poradie by spravilo dieru v datach.
     stav = {"ulozene": 0, "stran": 0, "buffer": [], "cp": since}
     FLUSH_ZAZNAMOV = 500
     FLUSH_STRAN = 100
@@ -64,27 +76,45 @@ def main() -> int:
 
     fetched, kept, checkpoint, hotovo = crz.sync(since, on_batch, budget * 60)
     stav["cp"] = checkpoint
-    zapis(sb)   # doposli, co zostalo vo vyrovnavacej pamati
+    zapis(sb)   # doposli zvysok vyrovnavacej pamate
+
     store.set_meta(sb, "bootstrap_hotovy", "1" if hotovo else "0")
 
     log.info("Stiahnute %s | zaradene %s | ulozene %s | dokoncene: %s",
              fetched, kept, stav["ulozene"], hotovo)
 
+    # Signal pre workflow zapisujeme HNED, kym vieme, ako sync dopadol.
+    # Keby spadol prepocet nizsie, retazenie bootstrapu by sa inak preruslo —
+    # a to je horsie nez chybajuca tabulka prilezitosti, ktora sa aj tak
+    # prepocitava pri kazdom behu odznova.
+    zapis_vystup(hotovo=hotovo)
+
     if not hotovo:
-        log.warning("Beh sa nedokoncil v rozpocte. Spusti bootstrap znova, "
-                    "nadviaze na checkpointe.")
+        log.warning("Beh sa nedokoncil v rozpocte, pokracovanie sa spusti samo.")
 
     # ── 2. PREPOCET PRILEZITOSTI ───────────────────────────────────────────
-    vsetky = store.nacitaj_contracts(sb)
-    tabulka = score.prilezitosti(vsetky)
-    vlozene = store.nahrad_opportunities(sb, tabulka)
+    # Cely blok je poisteny. Stahovanie je drahe (hodiny), prepocet lacny
+    # (sekundy). Nema zmysel zahodit odrobenu pracu preto, ze zlyhal krok,
+    # ktory sa o hodinu zopakuje.
+    tabulka, vlozene = None, 0
+    try:
+        vsetky = store.nacitaj_contracts(sb)
+        tabulka = score.prilezitosti(vsetky)
+        vlozene = store.nahrad_opportunities(sb, tabulka)
+    except Exception as e:
+        log.exception("Prepocet prilezitosti zlyhal")
+        print(f"::error::Prepocet prilezitosti zlyhal: {type(e).__name__}: {e}")
 
-    celkom = store.pocet_contracts(sb)
+    try:
+        celkom = store.pocet_contracts(sb)
+    except Exception:
+        celkom = 0
+
     log.info("Zmluv v databaze: %s | prilezitosti v okne %s-%s dni: %s",
              celkom, DNI_MIN, DNI_MAX, vlozene)
 
     # ── 3. SAMOKONTROLA KALIBRACIE ─────────────────────────────────────────
-    if not tabulka.empty:
+    if tabulka is not None and not tabulka.empty:
         podiel_vysoke = (tabulka["riziko"] == "VYSOKE").mean()
         if podiel_vysoke > 0.6:
             log.warning("KALIBRACIA: %.0f %% zaznamov ma VYSOKE riziko. To je "
@@ -95,22 +125,16 @@ def main() -> int:
                  int(tabulka["skore"].min()),
                  int(tabulka["skore"].median()),
                  int(tabulka["skore"].max()))
-        for k in SEKTORY:
-            log.info("  %s: %s prilezitosti", k, int((tabulka["sector"] == k).sum()))
-    else:
-        log.warning("Ziadne prilezitosti. Ak je databaza prazdna, spusti --bootstrap.")
+        log.info("Prilezitosti podla sektora:")
+        for k, v in tabulka["sector"].value_counts().items():
+            log.info("   %-22s %s", k, v)
+    elif hotovo:
+        log.warning("Ziadne prilezitosti v okne. Skus rozsirit DNI_MIN/DNI_MAX "
+                    "alebo znizit MIN_HODNOTA_EUR v config.py.")
 
+    zapis_vystup(zmluv=celkom, prilezitosti=vlozene)
     print(f"::notice::stiahnute={fetched} zaradene={kept} zmluv_v_db={celkom} "
           f"prilezitosti={vlozene} dokoncene={hotovo}")
-
-    # Signal pre workflow, ci ma zavolat pokracovanie.
-    gh_out = os.environ.get("GITHUB_OUTPUT")
-    if gh_out:
-        with open(gh_out, "a", encoding="utf-8") as f:
-            f.write(f"hotovo={'true' if hotovo else 'false'}\n")
-            f.write(f"zmluv={celkom}\n")
-            f.write(f"prilezitosti={vlozene}\n")
-
     return 0
 
 

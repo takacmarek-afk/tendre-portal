@@ -5,7 +5,7 @@ import os
 CRZ_SYNC_URL = "https://datahub.ekosystem.slovensko.digital/api/data/crz/contracts/sync"
 USER_AGENT = "tendre-portal/1.0 (open data client)"
 
-# Odkial zacat pri prvom behu. 2023 namiesto 2022 skratí stahovanie zhruba
+# Odkial zacat pri prvom behu. 2023 namiesto 2022 skrati stahovanie zhruba
 # o stvrtinu a usetri minuty GitHub Actions. Tri a pol roka historie na
 # detekciu koncentracie dodavatela bohato staci — pri zmluvach na jeden az
 # dva roky su to dva az styri cykly. Ak by si chcel viac, zmen na 2022.
@@ -31,7 +31,8 @@ NEGATIVNE = [
     "poistenie", "licencna zmluva", "o poskytnuti dotacie", "dotacna zmluva",
     "pracovna zmluva", "dohoda o vykonani prace", "dohoda o pracovnej cinnosti",
     "kolektivna zmluva", "mandatna zmluva", "zmluva o uvere", "darovacia zmluva",
-    "zmluva o spolupraci pri vyskume", "memorandum", "zmluva o dielo na vypracovanie studie",
+    "zmluva o spolupraci pri vyskume", "memorandum",
+    "zmluva o dielo na vypracovanie studie",
     "kupna zmluva o prevode nehnutelnosti", "zmluva o buducej zmluve",
 ]
 VAHA_NEGATIVNA = -5
@@ -71,7 +72,8 @@ SEKTORY = {
         "kluc": {
             3: ["rekonstrukcia strechy", "vymena strechy", "oprava strechy",
                 "stresna krytina", "hydroizolacia", "zateplenie",
-                "zateplenie fasady", "klampiarske prace", "izolacia proti vlhkosti"],
+                "zateplenie fasady", "klampiarske prace",
+                "izolacia proti vlhkosti"],
             2: ["strecha", "krytina", "fasada", "zateplovaci system"],
         },
     },
@@ -143,8 +145,9 @@ SEKTORY = {
         "popis": "IT sluzby a vypoctova technika",
         "kluc": {
             3: ["vypoctova technika", "dodavka pocitacov", "sprava siete",
-                "informacny system", "softverova podpora", "serverova infrastruktura",
-                "strukturovana kabelaz", "webove sidlo"],
+                "informacny system", "softverova podpora",
+                "serverova infrastruktura", "strukturovana kabelaz",
+                "webove sidlo"],
             2: ["notebooky", "servery", "licencie softver", "it podpora",
                 "datove centrum"],
         },
@@ -159,7 +162,7 @@ SEKTORY = {
         },
     },
     # VSEOBECNE STAVEBNE PRACE JE POSLEDNE ZAMERNE.
-    # Je to zberny sektor pre vsetko, co sa netrafilo do konkretneho remesla.
+    # Zberny sektor pre vsetko, co sa netrafilo do konkretneho remesla.
     "STAVEBNE_PRACE": {
         "cpv": "45000000-7",
         "popis": "Stavebne prace vseobecne",
@@ -168,10 +171,11 @@ SEKTORY = {
                 "zhotovenie stavby", "realizacia stavby", "vystavba",
                 "pristavba", "nadstavba", "obnova budovy", "sanacia",
                 "buracie prace", "asfaltovanie", "rekonstrukcia chodnika",
-                "oprava miestnej komunikacie", "revitalizacia", "modernizacia budovy"],
-            2: ["zmluva o dielo", "stavebny dozor", "chodnik", "miestna komunikacia",
-                "telocvicna", "detske ihrisko", "most", "parkovisko",
-                "rekonstrukcia", "stavebny material"],
+                "oprava miestnej komunikacie", "revitalizacia",
+                "modernizacia budovy"],
+            2: ["zmluva o dielo", "stavebny dozor", "chodnik",
+                "miestna komunikacia", "telocvicna", "detske ihrisko", "most",
+                "parkovisko", "rekonstrukcia", "stavebny material"],
             1: ["oprava", "modernizacia", "udrzba budovy"],
         },
     },

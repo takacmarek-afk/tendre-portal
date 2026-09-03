@@ -8,6 +8,7 @@ service_role kluc obchadza Row Level Security. Preto zije VYHRADNE
 v GitHub Secrets a nikdy sa nedostane do prehliadaca.
 """
 import os
+import math
 import logging
 
 import pandas as pd
@@ -86,20 +87,43 @@ def pocet_contracts(sb) -> int:
 
 # ── prilezitosti ───────────────────────────────────────────────────────────
 
+def _hodnota(v):
+    """Prevedie jednu hodnotu z pandas na nieco, co znesie JSON.
+
+    Pozor na pascu: `df.where(pd.notna(df), None)` vyzera, ze prazdne hodnoty
+    zmeni na None, ale v ciselnom stlpci ich pandas potichu prevedie spat na
+    NaN. A NaN ani nekonecno sa do JSON zapisat neda — REST zahlasi
+    "Out of range float values are not JSON compliant" a cely beh spadne.
+    Preto sa kazda hodnota kontroluje jednotlivo.
+    """
+    if v is None:
+        return None
+    try:
+        if pd.isna(v):          # zachyti NaN, NaT aj pd.NA
+            return None
+    except (TypeError, ValueError):
+        pass                    # zoznamy a slovniky pd.isna nezvlada, to nevadi
+
+    if isinstance(v, pd.Timestamp):
+        return v.strftime("%Y-%m-%d")
+    if hasattr(v, "item"):      # numpy int64/float64 -> obycajny Python typ
+        v = v.item()
+    if isinstance(v, float) and not math.isfinite(v):
+        return None
+    return v
+
+
 def nahrad_opportunities(sb, df: pd.DataFrame):
     """Prilezitosti su klzave okno, prepocitavaju sa cele. Preto zmazat a vlozit
     je spravnejsie nez upsert — inak by tam zostavali stare zaznamy mimo okna."""
     sb.table("opportunities").delete().neq("contract_id", -1).execute()
-    if df.empty:
+    if df is None or df.empty:
         return 0
 
-    zaznamy = df.where(pd.notna(df), None).to_dict("records")
-    for z in zaznamy:
-        for k, v in list(z.items()):
-            if hasattr(v, "item"):          # numpy typy REST nezje
-                z[k] = v.item()
-            elif isinstance(v, pd.Timestamp):
-                z[k] = v.strftime("%Y-%m-%d")
+    zaznamy = [
+        {k: _hodnota(v) for k, v in riadok.items()}
+        for riadok in df.to_dict("records")
+    ]
 
     for i in range(0, len(zaznamy), DAVKA):
         sb.table("opportunities").insert(zaznamy[i:i + DAVKA]).execute()

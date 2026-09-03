@@ -60,28 +60,29 @@ jobs:
           fi
 
       # ── Zretazenie ────────────────────────────────────────────────────────
-      # Ak sa bootstrap nedokoncil, beh si zavola pokracovanie sam.
-      # Strop 10 behov je poistka: keby sa nieco pokazilo a `hotovo` by uz
-      # nikdy neprislo, nezozerie ti to vsetky minuty Actions.
+      # always() je tu preto, aby retaz prezila aj pad skriptu po synchronizacii.
+      # Ak by skript spadol tak skoro, ze nestihol odovzdat `hotovo`, podmienka
+      # nesedi a retaz sa zastavi — a to je spravne, rozbity beh nema zmysel
+      # opakovat desatkrat za sebou.
       - name: Pokracovat, ak bootstrap nedobehol
         if: >
+          always() &&
           inputs.bootstrap == true &&
           steps.pipeline.outputs.hotovo == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
           CHAIN: ${{ inputs.chain || '0' }}
+          BUDGET: ${{ inputs.budget || '300' }}
         run: |
           DALSI=$((CHAIN + 1))
           if [ "$DALSI" -ge 10 ]; then
-            echo "::warning::Dosiahol som strop 10 behov v retazi a bootstrap "\
-                 "stale nie je hotovy. Zastavujem, aby som nemínal minúty. "\
-                 "Skontroluj vypis vyssie."
+            echo "::warning::Strop 10 behov v retazi dosiahnuty a bootstrap stale nie je hotovy. Zastavujem, aby som nemínal minúty Actions. Skontroluj vypis vyssie."
             exit 0
           fi
           echo "Bootstrap nedobehol. Spustam beh c. $DALSI z 10."
           gh workflow run pipeline.yml --ref main \
             -f bootstrap=true \
-            -f budget="${{ inputs.budget || '300' }}" \
+            -f budget="$BUDGET" \
             -f chain="$DALSI"
 
       - name: Hotovo
