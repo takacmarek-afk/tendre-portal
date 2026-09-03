@@ -119,4 +119,14 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
         "top_dodavatel", "podiel_top_dodavatela", "historicky_pocet",
         "pocet_dodavatelov", "riziko", "skore", "okres_kod",
     ]
-    return okno[stlpce].sort_values("skore", ascending=False).reset_index(drop=True)
+    vysledok = okno[stlpce].sort_values("skore", ascending=False).reset_index(drop=True)
+
+    # Postgres ma tieto stlpce ako celé cisla. Pandas ich po spojeni s historiou
+    # drzi ako desatinne (musia uniest prazdne hodnoty), takze by sme poslali
+    # "174.0" a databaza to odmietne. Int64 s velkym I je typ, ktory zvlada
+    # cele cisla AJ prazdne hodnoty naraz.
+    for stlpec in ("contract_id", "dni_do_konca", "historicky_pocet",
+                   "pocet_dodavatelov", "skore"):
+        vysledok[stlpec] = pd.to_numeric(vysledok[stlpec], errors="coerce").astype("Int64")
+
+    return vysledok
