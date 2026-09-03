@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Tendre.sk</title>
+<title>PredTendrom.sk</title>
 <script src="./config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,16 +18,15 @@ tailwind.config = { theme: { extend: {
 </head>
 <body class="font-sans text-ink bg-[#f5f6f8] min-h-screen">
 
-<!-- ══ NAČÍTAVANIE ═══════════════════════════════════════════ -->
 <div id="nacitavam" class="min-h-screen flex items-center justify-center">
   <div class="text-[14px] text-slate2">Načítavam...</div>
 </div>
 
-<!-- ══ ONBOARDING: firma ešte nie je založená ════════════════ -->
+<!-- ══ ONBOARDING ═══════════════════════════════════════════ -->
 <div id="onboarding" class="hidden min-h-screen flex items-center justify-center p-5">
   <div class="w-full max-w-[460px]">
     <div class="text-center mb-8">
-      <div class="font-bold text-[20px] tracking-tight">Tendre<span class="text-accent">.sk</span></div>
+      <div class="font-bold text-[20px] tracking-tight">PredTendrom<span class="text-accent">.sk</span></div>
     </div>
     <div class="bg-white border border-line rounded-lg p-7">
       <h1 class="text-[19px] font-semibold">Ešte jedna vec</h1>
@@ -72,7 +71,7 @@ tailwind.config = { theme: { extend: {
   <header class="bg-white border-b border-line sticky top-0 z-30">
     <div class="max-w-[1200px] mx-auto px-5 h-16 flex items-center justify-between">
       <div class="flex items-center gap-6">
-        <span class="font-bold text-[17px] tracking-tight">Tendre<span class="text-accent">.sk</span></span>
+        <span class="font-bold text-[17px] tracking-tight">PredTendrom<span class="text-accent">.sk</span></span>
         <span id="nazov-firmy" class="text-[14px] text-slate2 hidden sm:block"></span>
       </div>
       <div class="flex items-center gap-4">
@@ -84,7 +83,6 @@ tailwind.config = { theme: { extend: {
 
   <main class="max-w-[1200px] mx-auto px-5 py-8">
 
-    <!-- prázdny stav: pipeline ešte nedodala dáta -->
     <div id="prazdny" class="hidden bg-white border border-line rounded-lg p-10 text-center">
       <div class="w-12 h-12 rounded-full bg-slate2/10 text-slate2 text-[20px]
                   flex items-center justify-center mx-auto mb-5">&#8987;</div>
@@ -98,7 +96,6 @@ tailwind.config = { theme: { extend: {
       </p>
     </div>
 
-    <!-- tabuľka príležitostí -->
     <div id="obsah" class="hidden">
       <div class="flex items-baseline justify-between mb-5">
         <h1 class="text-[22px] font-semibold tracking-tight">Príležitosti</h1>
@@ -120,6 +117,11 @@ tailwind.config = { theme: { extend: {
           </table>
         </div>
       </div>
+      <p class="mt-4 text-[12px] leading-relaxed text-slate2">
+        Koncentrácia dodávateľa je štatistický údaj z verejného registra, nie
+        tvrdenie o nezákonnom postupe. Odhad vyhlásenia tendra je koniec zmluvy
+        mínus 75 dní.
+      </p>
     </div>
 
   </main>
@@ -130,9 +132,11 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG;
 
-const el = (id) => document.getElementById(id);
-const ukaz  = (id) => el(id).classList.remove('hidden');
-const skry  = (id) => el(id).classList.add('hidden');
+const el   = (id) => document.getElementById(id);
+const ukaz = (id) => el(id).classList.remove('hidden');
+const skry = (id) => el(id).classList.add('hidden');
+
+const PRIHLASENIE = './prihlasenie.html';
 
 if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
   el('nacitavam').textContent = 'Aplikácia nie je nastavená: v config.js chýba anon kľúč.';
@@ -141,18 +145,16 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ── prihlásenie ────────────────────────────────────────────
 const { data: { session } } = await supabase.auth.getSession();
-if (!session) location.replace('./index.html');
+if (!session) location.replace(PRIHLASENIE);
 
 for (const id of ['odhlasit', 'odhlasit-2']) {
   el(id).addEventListener('click', async () => {
     await supabase.auth.signOut();
-    location.replace('./index.html');
+    location.replace(PRIHLASENIE);
   });
 }
 
-// ── má už používateľ firmu? ────────────────────────────────
 const { data: clenstva, error: chybaClenstva } = await supabase
   .from('memberships').select('org_id').limit(1);
 
@@ -191,7 +193,6 @@ if (!clenstva || clenstva.length === 0) {
   await zobrazAplikaciu();
 }
 
-// ── hlavná obrazovka ───────────────────────────────────────
 async function zobrazAplikaciu() {
   const [{ data: org }, { data: sub }] = await Promise.all([
     supabase.from('organizations').select('nazov').limit(1).maybeSingle(),
@@ -200,7 +201,6 @@ async function zobrazAplikaciu() {
 
   el('nazov-firmy').textContent = org?.nazov ?? '';
 
-  // odznak so stavom predplatného
   const odznak = el('odznak-trial');
   if (sub?.stav === 'trial') {
     const dni = Math.max(0, Math.ceil((new Date(sub.trial_konci) - new Date()) / 86400000));
@@ -218,7 +218,6 @@ async function zobrazAplikaciu() {
   skry('nacitavam');
   ukaz('app');
 
-  // príležitosti
   const { data: prilezitosti, error } = await supabase
     .from('opportunities')
     .select('contract_id, skore, riziko, subject, authority_name, price_total, effective_to')
@@ -246,10 +245,10 @@ async function zobrazAplikaciu() {
 }
 
 const STYL_RIZIKA = {
-  VYSOKE:  ['bg-red-50 text-red-800',       'silná koncentrácia dodávateľa'],
-  STREDNE: ['bg-amber-50 text-amber-800',   'mierna koncentrácia'],
-  NIZKE:   ['bg-green-50 text-green-800',   'otvorená súťaž'],
-  NEZNAME: ['bg-slate-100 text-slate-600',  'málo dát na hodnotenie'],
+  VYSOKE:  ['bg-red-50 text-red-800',      'silná koncentrácia dodávateľa'],
+  STREDNE: ['bg-amber-50 text-amber-800',  'mierna koncentrácia'],
+  NIZKE:   ['bg-green-50 text-green-800',  'otvorená súťaž'],
+  NEZNAME: ['bg-slate-100 text-slate-600', 'málo dát na hodnotenie'],
 };
 
 function bezpecne(t) {

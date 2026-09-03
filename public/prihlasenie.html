@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prihlásenie — PredTendrom.sk</title>
+<script src="./config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+  colors: { ink:'#0f1a2b', slate2:'#5a6472', line:'#e4e8ee', accent:'#1a56c4', accentDark:'#123f94' }
+}}}
+</script>
+</head>
+<body class="font-sans text-ink bg-[#f5f6f8] min-h-screen flex items-center justify-center p-5">
+
+<div class="w-full max-w-[420px]">
+
+  <div class="text-center mb-8">
+    <a href="./index.html" class="font-bold text-[20px] tracking-tight">
+      PredTendrom<span class="text-accent">.sk</span>
+    </a>
+    <p class="text-[14px] text-slate2 mt-1">Vieme o zákazke skôr, než sa vyhlási</p>
+  </div>
+
+  <div class="bg-white border border-line rounded-lg p-7">
+
+    <div id="formular">
+      <h1 class="text-[19px] font-semibold">Prihlásenie a registrácia</h1>
+      <p class="mt-2 text-[14px] leading-relaxed text-slate2">
+        Zadajte e-mail a pošleme vám odkaz na prihlásenie. Žiadne heslo si
+        pamätať nemusíte. Ak u nás ešte účet nemáte, vytvorí sa automaticky
+        aj s 30-dňovou skúškou.
+      </p>
+
+      <form id="login" class="mt-6 space-y-4">
+        <div>
+          <label for="email" class="block text-[13px] font-semibold mb-1.5">Pracovný e-mail</label>
+          <input id="email" type="email" required autocomplete="email"
+                 class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                        focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+        </div>
+
+        <button type="submit" id="odoslat"
+                class="w-full bg-accent text-white font-semibold py-3 rounded-md
+                       hover:bg-accentDark transition disabled:opacity-50">
+          Poslať odkaz na prihlásenie
+        </button>
+
+        <p id="chyba" class="text-[13px] text-red-700 hidden"></p>
+      </form>
+    </div>
+
+    <div id="hotovo" class="hidden text-center py-6">
+      <div class="w-12 h-12 rounded-full bg-accent/10 text-accent text-[22px]
+                  flex items-center justify-center mx-auto mb-5">&#9993;</div>
+      <h2 class="text-[18px] font-semibold">Skontrolujte si schránku</h2>
+      <p class="mt-3 text-[14px] leading-relaxed text-slate2">
+        Poslali sme odkaz na <strong id="poslane-na"></strong>.
+        Kliknutím sa prihlásite. Ak nedorazí do minúty, pozrite sa do spamu.
+      </p>
+      <button id="znova" class="mt-6 text-[14px] text-accent font-semibold hover:underline">
+        Použiť iný e-mail
+      </button>
+    </div>
+
+  </div>
+
+  <p class="text-center text-[12px] text-slate2 mt-6 leading-relaxed">
+    Služba je určená podnikateľským subjektom.<br>
+    Prevádzkovateľ: LoveHome s.r.o., IČO 47586362
+  </p>
+
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG;
+
+const formular = document.getElementById('formular');
+const hotovo   = document.getElementById('hotovo');
+const chyba    = document.getElementById('chyba');
+const tlacidlo = document.getElementById('odoslat');
+
+function ukazChybu(text) {
+  chyba.textContent = text;
+  chyba.classList.remove('hidden');
+}
+
+if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
+  ukazChybu('Aplikácia nie je nastavená: v súbore config.js chýba anon kľúč.');
+  tlacidlo.disabled = true;
+} else {
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) location.replace('./app.html');
+
+  document.getElementById('login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    chyba.classList.add('hidden');
+    tlacidlo.disabled = true;
+    tlacidlo.textContent = 'Odosielam...';
+
+    const email = document.getElementById('email').value.trim();
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: new URL('./app.html', location.href).href }
+    });
+
+    if (error) {
+      ukazChybu('Nepodarilo sa odoslať: ' + error.message);
+      tlacidlo.disabled = false;
+      tlacidlo.textContent = 'Poslať odkaz na prihlásenie';
+      return;
+    }
+
+    document.getElementById('poslane-na').textContent = email;
+    formular.classList.add('hidden');
+    hotovo.classList.remove('hidden');
+  });
+
+  document.getElementById('znova').addEventListener('click', () => location.reload());
+}
+</script>
+</body>
+</html>

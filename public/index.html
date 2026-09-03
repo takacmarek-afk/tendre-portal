@@ -3,130 +3,346 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Prihlásenie — Tendre.sk</title>
-<script src="./config.js"></script>
+<title>PredTendrom.sk — vieme o zákazke skôr, než sa vyhlási</title>
+<meta name="description" content="Sledujeme končiace zmluvy úradov vo verejných registroch a upozorníme vás mesiace pred tým, než sa zákazka vyhlási. Formálnu časť ponuky pripravíme za vás.">
+<meta property="og:title" content="Vieme o zákazke skôr, než sa vyhlási">
+<meta property="og:description" content="Predikcia verejných zákaziek z končiacich zmlúv. Bezplatný zoznam pre váš okres.">
+<meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
-tailwind.config = { theme: { extend: {
-  fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
-  colors: { ink:'#0f1a2b', slate2:'#5a6472', line:'#e4e8ee', accent:'#1a56c4', accentDark:'#123f94' }
-}}}
+tailwind.config = {
+  theme: { extend: {
+    fontFamily: { sans: ['Inter','system-ui','-apple-system','Segoe UI','sans-serif'] },
+    colors: { ink:'#0f1a2b', slate2:'#5a6472', line:'#e4e8ee', accent:'#1a56c4', accentDark:'#123f94' }
+  }}
+}
 </script>
+<style>
+  html { scroll-behavior: smooth; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-left: 1.25rem; padding-right: 1.25rem; }
+</style>
 </head>
-<body class="font-sans text-ink bg-[#f5f6f8] min-h-screen flex items-center justify-center p-5">
+<body class="font-sans text-ink bg-white antialiased">
 
-<div class="w-full max-w-[420px]">
-
-  <div class="text-center mb-8">
-    <div class="font-bold text-[20px] tracking-tight">Tendre<span class="text-accent">.sk</span></div>
-    <p class="text-[14px] text-slate2 mt-1">Predikcia verejných zákaziek</p>
+<!-- ══════════════ NAV ══════════════ -->
+<header class="border-b border-line sticky top-0 bg-white/95 backdrop-blur z-40">
+  <div class="wrap flex items-center justify-between h-16">
+    <a href="#" class="font-bold text-[17px] tracking-tight">PredTendrom<span class="text-accent">.sk</span></a>
+    <nav class="hidden md:flex items-center gap-8 text-[14px] text-slate2">
+      <a href="#ako" class="hover:text-ink transition">Ako to funguje</a>
+      <a href="#vyhoda" class="hover:text-ink transition">Čo získate</a>
+      <a href="#hranice" class="hover:text-ink transition">Čo nerobíme</a>
+    </nav>
+    <div class="flex items-center gap-4">
+      <a href="./prihlasenie.html" class="text-[14px] text-slate2 hover:text-ink transition">Prihlásiť sa</a>
+      <a href="./prihlasenie.html" class="text-[14px] font-semibold bg-ink text-white px-4 py-2 rounded-md hover:bg-accent transition">
+        Vyskúšať zadarmo
+      </a>
+    </div>
   </div>
+</header>
 
-  <div class="bg-white border border-line rounded-lg p-7">
-
-    <!-- ── FORMULÁR ─────────────────────────────────────────── -->
-    <div id="formular">
-      <h1 class="text-[19px] font-semibold">Prihlásenie</h1>
-      <p class="mt-2 text-[14px] leading-relaxed text-slate2">
-        Zadajte e-mail a pošleme vám odkaz na prihlásenie.
-        Žiadne heslo si pamätať nemusíte.
-      </p>
-
-      <form id="login" class="mt-6 space-y-4">
-        <div>
-          <label for="email" class="block text-[13px] font-semibold mb-1.5">Pracovný e-mail</label>
-          <input id="email" type="email" required autocomplete="email"
-                 class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
-                        focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
-        </div>
-
-        <button type="submit" id="odoslat"
-                class="w-full bg-accent text-white font-semibold py-3 rounded-md
-                       hover:bg-accentDark transition disabled:opacity-50">
-          Poslať odkaz na prihlásenie
-        </button>
-
-        <p id="chyba" class="text-[13px] text-red-700 hidden"></p>
-      </form>
+<!-- ══════════════ 1. HERO ══════════════ -->
+<section class="wrap pt-20 pb-16 md:pt-28 md:pb-24">
+  <div class="max-w-3xl">
+    <div class="inline-flex items-center gap-2 text-[13px] font-medium text-accent bg-accent/8 border border-accent/20 rounded-full px-3 py-1 mb-7">
+      <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
+      Dáta z Centrálneho registra zmlúv a vestníka ÚVO
     </div>
 
-    <!-- ── PO ODOSLANÍ ──────────────────────────────────────── -->
-    <div id="hotovo" class="hidden text-center py-6">
-      <div class="w-12 h-12 rounded-full bg-accent/10 text-accent text-[22px]
-                  flex items-center justify-center mx-auto mb-5">&#9993;</div>
-      <h2 class="text-[18px] font-semibold">Skontrolujte si schránku</h2>
-      <p class="mt-3 text-[14px] leading-relaxed text-slate2">
-        Poslali sme odkaz na <strong id="poslane-na"></strong>.
-        Kliknutím sa prihlásite. Ak nedorazí do minúty, pozrite sa do spamu.
-      </p>
-      <button id="znova" class="mt-6 text-[14px] text-accent font-semibold hover:underline">
-        Použiť iný e-mail
-      </button>
+    <h1 class="text-[34px] leading-[1.15] md:text-[54px] md:leading-[1.08] font-bold tracking-tight">
+      O tendri sa dozviete 14 dní pred termínom.<br class="hidden md:block">
+      <span class="text-slate2">Ten, kto ho vyhrá, to vedel pol roka.</span>
+    </h1>
+
+    <p class="mt-7 text-[17px] md:text-[19px] leading-relaxed text-slate2 max-w-2xl">
+      Nie ste horší. Len sa to dozvedáte neskoro. Kým vy v piatok večer lovíte
+      chýbajúce čestné vyhlásenie, konkurencia mala ponuku rozpracovanú od jari.
+    </p>
+
+    <p class="mt-5 text-[17px] md:text-[19px] leading-relaxed text-ink max-w-2xl">
+      Sledujeme, ktorým úradom končia zmluvy vo vašom odbore, a upozorníme vás
+      <strong class="font-semibold">tri až šesť mesiacov pred tým</strong>, než sa
+      zákazka vôbec vyhlási. Formálnu časť ponuky potom pripravíme za vás.
+    </p>
+
+    <div class="mt-10 flex flex-col sm:flex-row gap-3">
+      <a href="#ukazka" class="inline-flex justify-center items-center bg-accent text-white font-semibold px-6 py-3.5 rounded-md hover:bg-accentDark transition">
+        Začať 30 dní zadarmo
+      </a>
+      <a href="#ako" class="inline-flex justify-center items-center border border-line font-semibold px-6 py-3.5 rounded-md hover:border-ink transition">
+        Ako to funguje
+      </a>
     </div>
 
+    <p class="mt-4 text-[13px] text-slate2">
+      Ukážka je zadarmo a bez záväzku. Uvidíte reálne zmluvy, ktoré vo vašom okrese
+      končia v najbližšom pol roku.
+    </p>
   </div>
+</section>
 
-  <p class="text-center text-[12px] text-slate2 mt-6 leading-relaxed">
-    Prihlásením súhlasíte s obchodnými podmienkami.<br>
-    Prevádzkovateľ: LoveHome s.r.o., IČO 47586362
+<!-- ══════════════ PÁS S ČÍSLAMI ══════════════ -->
+<section class="border-y border-line bg-[#fafbfc]">
+  <div class="wrap py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
+    <div>
+      <div class="text-[28px] font-bold tracking-tight">3 až 6</div>
+      <div class="text-[13px] text-slate2 mt-1 leading-snug">mesiacov náskoku pred vyhlásením zákazky</div>
+    </div>
+    <div>
+      <div class="text-[28px] font-bold tracking-tight">2011</div>
+      <div class="text-[13px] text-slate2 mt-1 leading-snug">od tohto roku analyzujeme históriu zmlúv</div>
+    </div>
+    <div>
+      <div class="text-[28px] font-bold tracking-tight">denne</div>
+      <div class="text-[13px] text-slate2 mt-1 leading-snug">kontrolujeme nové zápisy v registroch</div>
+    </div>
+    <div>
+      <div class="text-[28px] font-bold tracking-tight">30 dní</div>
+      <div class="text-[13px] text-slate2 mt-1 leading-snug">zadarmo a bez platobnej karty</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 2. AKO TO FUNGUJE ══════════════ -->
+<section id="ako" class="wrap py-20 md:py-28">
+  <h2 class="text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
+    Tri kroky. Dva z nich robíme my.
+  </h2>
+  <p class="mt-4 text-[17px] text-slate2 max-w-2xl">
+    Nepotrebujete nikoho zamestnať ani sa učiť zákon o verejnom obstarávaní.
   </p>
 
-</div>
+  <div class="mt-14 grid md:grid-cols-3 gap-6">
 
-<script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    <div class="border border-line rounded-lg p-7 hover:border-ink/25 transition">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="w-8 h-8 rounded-md bg-ink text-white text-[14px] font-bold flex items-center justify-center">1</span>
+        <span class="text-[12px] font-semibold uppercase tracking-wider text-slate2">Robíme my</span>
+      </div>
+      <h3 class="text-[19px] font-semibold leading-snug">Sledujeme dáta za vás</h3>
+      <p class="mt-3 text-[15px] leading-relaxed text-slate2">
+        Každý deň prechádzame Centrálny register zmlúv a vestník ÚVO. Hľadáme zmluvy,
+        ktoré končia vo vašom odbore a vo vašom kraji. Keď nájdeme príležitosť,
+        dozviete sa o nej e-mailom.
+      </p>
+    </div>
 
-const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG;
+    <div class="border border-line rounded-lg p-7 hover:border-ink/25 transition">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="w-8 h-8 rounded-md bg-ink text-white text-[14px] font-bold flex items-center justify-center">2</span>
+        <span class="text-[12px] font-semibold uppercase tracking-wider text-slate2">Robíme my</span>
+      </div>
+      <h3 class="text-[19px] font-semibold leading-snug">Pripravíme formálnu časť ponuky</h3>
+      <p class="mt-3 text-[15px] leading-relaxed text-slate2">
+        Krycí list, čestné vyhlásenia, doklady o oprávnení podnikať, referenčné listy,
+        kontrolný zoznam príloh podľa súťažných podkladov. Presne tú byrokraciu,
+        na ktorej firmy najčastejšie padajú na formálnej chybe.
+      </p>
+      <p class="mt-3 text-[14px] leading-relaxed text-ink border-l-2 border-line pl-3">
+        Cenu a technické riešenie dopĺňate vy. To je jediná časť, ktorú za vás
+        nikto urobiť nemôže, a ani by nemal.
+      </p>
+    </div>
 
-const formular = document.getElementById('formular');
-const hotovo   = document.getElementById('hotovo');
-const chyba    = document.getElementById('chyba');
-const tlacidlo = document.getElementById('odoslat');
+    <div class="border-2 border-ink rounded-lg p-7">
+      <div class="flex items-center gap-3 mb-5">
+        <span class="w-8 h-8 rounded-md bg-accent text-white text-[14px] font-bold flex items-center justify-center">3</span>
+        <span class="text-[12px] font-semibold uppercase tracking-wider text-accent">Robíte vy</span>
+      </div>
+      <h3 class="text-[19px] font-semibold leading-snug">Skontrolujete a podáte</h3>
+      <p class="mt-3 text-[15px] leading-relaxed text-slate2">
+        Dostanete kompletný balík pripravený na odoslanie a kontrolný zoznam.
+        Ponuku podávate zo svojho účtu vy, pretože to zo zákona ani inak nejde
+        a zodpovednosť musí zostať na vás.
+      </p>
+      <p class="mt-3 text-[14px] leading-relaxed text-slate2">
+        Ak potrebujete, prejdeme odoslanie spolu po telefóne.
+      </p>
+    </div>
 
-function ukazChybu(text) {
-  chyba.textContent = text;
-  chyba.classList.remove('hidden');
-}
+  </div>
+</section>
 
-if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
-  ukazChybu('Aplikácia nie je nastavená: v súbore config.js chýba anon kľúč.');
-  tlacidlo.disabled = true;
-} else {
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+<!-- ══════════════ 3. HLAVNÁ VÝHODA ══════════════ -->
+<section id="vyhoda" class="bg-ink text-white">
+  <div class="wrap py-20 md:py-28">
+    <h2 class="text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
+      Dve veci, ktoré vám bežný monitoring tendrov nepovie
+    </h2>
 
-  // Ak je používateľ už prihlásený, nemá tu čo hľadať.
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) location.replace('./app.html');
+    <div class="mt-14 grid md:grid-cols-2 gap-6">
 
-  document.getElementById('login').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    chyba.classList.add('hidden');
-    tlacidlo.disabled = true;
-    tlacidlo.textContent = 'Odosielam...';
+      <div class="bg-white/5 border border-white/10 rounded-lg p-8">
+        <div class="text-[12px] font-semibold uppercase tracking-wider text-white/50 mb-4">
+          Výhoda 1
+        </div>
+        <h3 class="text-[22px] font-semibold leading-snug">Zákazku vidíme skôr, než existuje</h3>
+        <p class="mt-4 text-[15px] leading-relaxed text-white/70">
+          Bežná služba vám pošle tender v deň, keď ho úrad vyhlási. Vtedy máte na
+          prípravu tri týždne a nemáte ako dobehnúť niekoho, kto o tom vedel dávno.
+        </p>
+        <p class="mt-4 text-[15px] leading-relaxed text-white/70">
+          My ideme opačne. Každá zákazka je dnes niečia zmluva a každá zmluva má
+          dátum konca. Keď vidíme, že mestu končí zmluva na údržbu v marci,
+          vieme už v septembri, že tender príde. Vy tiež.
+        </p>
+      </div>
 
-    const email = document.getElementById('email').value.trim();
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: new URL('./app.html', location.href).href }
-    });
+      <div class="bg-white/5 border border-white/10 rounded-lg p-8">
+        <div class="text-[12px] font-semibold uppercase tracking-wider text-white/50 mb-4">
+          Výhoda 2
+        </div>
+        <h3 class="text-[22px] font-semibold leading-snug">Povieme vám, kedy to nemá zmysel</h3>
+        <p class="mt-4 text-[15px] leading-relaxed text-white/70">
+          Pri každom úrade spočítame, koľko rôznych firiem uňho za roky vyhralo.
+          Keď jeden dodávateľ drží sedem zákaziek z ôsmich, dostanete upozornenie
+          skôr, než do prípravy investujete dva týždne.
+        </p>
+        <p class="mt-4 text-[15px] leading-relaxed text-white/70">
+          Nie je to obvinenie z ničoho. Je to údaj z verejného registra a rozhodnutie
+          necháme na vás. Ale váš čas je najdrahšia vec, ktorú do tendra vkladáte,
+          a mali by ste vedieť, kam ho dávate.
+        </p>
+      </div>
 
-    if (error) {
-      ukazChybu('Nepodarilo sa odoslať: ' + error.message);
-      tlacidlo.disabled = false;
-      tlacidlo.textContent = 'Poslať odkaz na prihlásenie';
-      return;
-    }
+    </div>
 
-    document.getElementById('poslane-na').textContent = email;
-    formular.classList.add('hidden');
-    hotovo.classList.remove('hidden');
-  });
+    <p class="mt-10 text-[14px] text-white/45 max-w-3xl leading-relaxed">
+      Oba údaje vychádzajú z otvorených dát štátu. Koncentrácia dodávateľa je
+      štatistický signál z histórie zmlúv, nie tvrdenie o nezákonnom postupe
+      kohokoľvek.
+    </p>
+  </div>
+</section>
 
-  document.getElementById('znova').addEventListener('click', () => location.reload());
-}
+<!-- ══════════════ ČO NEROBÍME ══════════════ -->
+<section id="hranice" class="wrap py-20 md:py-24">
+  <h2 class="text-[28px] md:text-[36px] font-bold tracking-tight max-w-2xl leading-tight">
+    Čo za vás neurobíme
+  </h2>
+  <p class="mt-4 text-[17px] text-slate2 max-w-2xl">
+    Radšej to poviem hneď, než aby ste to zistili po podpise.
+  </p>
+
+  <div class="mt-10 grid md:grid-cols-3 gap-5">
+    <div class="border-l-2 border-line pl-5 py-1">
+      <h3 class="text-[16px] font-semibold">Nepodávame ponuku za vás</h3>
+      <p class="mt-2 text-[15px] leading-relaxed text-slate2">
+        Systémy verejného obstarávania vyžadujú prihlásenie cez eID alebo kvalifikovaný
+        elektronický podpis. Podáva štatutár. Nikdy nebudeme pýtať vaše prístupy.
+      </p>
+    </div>
+    <div class="border-l-2 border-line pl-5 py-1">
+      <h3 class="text-[16px] font-semibold">Negarantujeme, že vyhráte</h3>
+      <p class="mt-2 text-[15px] leading-relaxed text-slate2">
+        Kto vám sľúbi výhru v súťaži, buď klame, alebo vie niečo, čo vedieť nemá.
+        Zvyšujeme počet príležitostí, do ktorých sa stihnete prihlásiť.
+      </p>
+    </div>
+    <div class="border-l-2 border-line pl-5 py-1">
+      <h3 class="text-[16px] font-semibold">Nemáme neverejné informácie</h3>
+      <p class="mt-2 text-[15px] leading-relaxed text-slate2">
+        Pracujeme výhradne s otvorenými dátami, ktoré štát zverejňuje. Rozdiel nie je
+        v prístupe k dátam, ale v tom, že ich niekto spracuje pre vás.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ 4. CTA — REGISTRÁCIA ══════════════ -->
+<section id="ukazka" class="border-t border-line bg-[#fafbfc]">
+  <div class="wrap py-20 md:py-28">
+    <div class="max-w-2xl mx-auto text-center">
+      <h2 class="text-[28px] md:text-[40px] font-bold tracking-tight leading-tight">
+        Pozrite sa, čo vám uniká vo vašom okrese
+      </h2>
+      <p class="mt-5 text-[17px] leading-relaxed text-slate2">
+        Zaregistrujte sa a hneď uvidíte reálne zmluvy, ktoré vo vašom kraji
+        končia v najbližšom roku, aj s hodnotou a doterajším dodávateľom.
+        Tridsať dní zadarmo, platobnú kartu nepotrebujeme.
+      </p>
+
+      <a href="./prihlasenie.html"
+         class="inline-flex justify-center items-center mt-9 bg-accent text-white
+                font-semibold text-[16px] px-8 py-4 rounded-md hover:bg-accentDark transition">
+        Začať 30 dní zadarmo
+      </a>
+
+      <ul class="mt-10 grid sm:grid-cols-3 gap-5 text-left">
+        <li class="flex gap-3 text-[15px] text-slate2">
+          <span class="text-accent font-bold mt-px">&#10003;</span>
+          Bez karty a bez záväzku
+        </li>
+        <li class="flex gap-3 text-[15px] text-slate2">
+          <span class="text-accent font-bold mt-px">&#10003;</span>
+          Konkrétne zmluvy s číslami
+        </li>
+        <li class="flex gap-3 text-[15px] text-slate2">
+          <span class="text-accent font-bold mt-px">&#10003;</span>
+          Zrušíte kedykoľvek jedným klikom
+        </li>
+      </ul>
+
+      <p class="mt-10 pt-8 border-t border-line text-[14px] text-slate2 leading-relaxed">
+        Radšej sa spýtate priamo?
+        <a href="mailto:info@predtendrom.sk" class="text-accent font-semibold hover:underline">info@predtendrom.sk</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ FOOTER + GDPR ══════════════ -->
+<footer id="gdpr" class="border-t border-line">
+  <div class="wrap py-14">
+    <div class="grid md:grid-cols-3 gap-10">
+      <div>
+        <div class="font-bold text-[16px]">PredTendrom<span class="text-accent">.sk</span></div>
+        <p class="mt-3 text-[13px] leading-relaxed text-slate2">
+          LoveHome s.r.o.<br>
+          Černyševského 40, 851 01 Bratislava<br>
+          IČO: 47586362<br>
+          info@predtendrom.sk
+        </p>
+      </div>
+
+      <div class="md:col-span-2">
+        <h3 class="text-[14px] font-semibold">Ochrana osobných údajov</h3>
+        <p class="mt-3 text-[13px] leading-relaxed text-slate2">
+          Prevádzkovateľom je LoveHome s.r.o., IČO 47586362. Údaje z formulára
+          (meno, firma, e-mail, telefón, okres, odbor) spracúvame výlučne na to,
+          aby sme vám pripravili a doručili vyžiadanú ukážku a nadviazali na ňu.
+          Právnym základom je váš súhlas podľa čl. 6 ods. 1 písm. a) GDPR.
+          Údaje uchovávame najviac 24 mesiacov od posledného kontaktu, potom ich
+          mažeme. Neposkytujeme ich tretím stranám na marketingové účely.
+        </p>
+        <p class="mt-3 text-[13px] leading-relaxed text-slate2">
+          Máte právo na prístup k údajom, ich opravu, výmaz, obmedzenie spracúvania,
+          prenosnosť a právo kedykoľvek odvolať súhlas. Stačí napísať na
+          info@predtendrom.sk. Sťažnosť môžete podať na Úrade na ochranu osobných údajov SR.
+        </p>
+        <p class="mt-3 text-[13px] leading-relaxed text-slate2">
+          Formulár spracúva sprostredkovateľ Supabase (EÚ, Frankfurt),
+          ktorý údaje odovzdá do našej e-mailovej schránky. Táto stránka nepoužíva
+          analytické ani reklamné súbory cookie.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-12 pt-6 border-t border-line flex flex-col sm:flex-row justify-between gap-3 text-[12px] text-slate2">
+      <span>&copy; <span id="rok"></span> LoveHome s.r.o.. Zdroj dát: Centrálny register zmlúv, vestník ÚVO.</span>
+      <span>Nie sme štátny orgán ani s ním prepojení.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+document.getElementById('rok').textContent = new Date().getFullYear();
+
 </script>
+
 </body>
 </html>

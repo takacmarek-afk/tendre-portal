@@ -76,7 +76,7 @@ jobs:
         run: |
           DALSI=$((CHAIN + 1))
           if [ "$DALSI" -ge 10 ]; then
-            echo "::warning::Strop 10 behov v retazi dosiahnuty a bootstrap stale nie je hotovy. Zastavujem, aby som nemínal minúty Actions. Skontroluj vypis vyssie."
+            echo "::warning::Strop 10 behov v retazi dosiahnuty a bootstrap stale nie je hotovy. Zastavujem, aby som nemínal minúty Actions."
             exit 0
           fi
           echo "Bootstrap nedobehol. Spustam beh c. $DALSI z 10."
