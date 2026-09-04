@@ -113,10 +113,10 @@ def _hodnota(v):
     return v
 
 
-def nahrad_opportunities(sb, df: pd.DataFrame):
-    """Prilezitosti su klzave okno, prepocitavaju sa cele. Preto zmazat a vlozit
-    je spravnejsie nez upsert — inak by tam zostavali stare zaznamy mimo okna."""
-    sb.table("opportunities").delete().neq("contract_id", -1).execute()
+def _nahrad_tabulku(sb, tabulka: str, df: pd.DataFrame):
+    """Zmaze obsah a vlozi novy. Pouziva sa pre odvodene tabulky, ktore su
+    klzavym oknom — upsert by v nich nechaval stare zaznamy mimo okna."""
+    sb.table(tabulka).delete().neq("contract_id", -1).execute()
     if df is None or df.empty:
         return 0
 
@@ -126,5 +126,13 @@ def nahrad_opportunities(sb, df: pd.DataFrame):
     ]
 
     for i in range(0, len(zaznamy), DAVKA):
-        sb.table("opportunities").insert(zaznamy[i:i + DAVKA]).execute()
+        sb.table(tabulka).insert(zaznamy[i:i + DAVKA]).execute()
     return len(zaznamy)
+
+
+def nahrad_opportunities(sb, df: pd.DataFrame):
+    return _nahrad_tabulku(sb, "opportunities", df)
+
+
+def nahrad_subsidies(sb, df: pd.DataFrame):
+    return _nahrad_tabulku(sb, "subsidies", df)

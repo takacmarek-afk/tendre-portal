@@ -12,6 +12,7 @@ import argparse
 import crz
 import score
 import store
+import subsidies
 from config import (
     BOOTSTRAP_SINCE, TIME_BUDGET_MIN, DNI_MIN, DNI_MAX, SEKTORY,
 )
@@ -96,14 +97,20 @@ def main() -> int:
     # Cely blok je poisteny. Stahovanie je drahe (hodiny), prepocet lacny
     # (sekundy). Nema zmysel zahodit odrobenu pracu preto, ze zlyhal krok,
     # ktory sa o hodinu zopakuje.
-    tabulka, vlozene = None, 0
+    tabulka, vlozene, dotacii = None, 0, 0
     try:
         vsetky = store.nacitaj_contracts(sb)
         tabulka = score.prilezitosti(vsetky)
         vlozene = store.nahrad_opportunities(sb, tabulka)
+
+        # Dotacie su samostatna vrstva: nie zakazka, ale predzvest tendra.
+        dot = subsidies.z_contracts(vsetky)
+        dotacii = store.nahrad_subsidies(sb, dot)
+        if dotacii:
+            log.info("Dotacie s ocakavanym tendrom: %s", dotacii)
     except Exception as e:
-        log.exception("Prepocet prilezitosti zlyhal")
-        print(f"::error::Prepocet prilezitosti zlyhal: {type(e).__name__}: {e}")
+        log.exception("Prepocet zlyhal")
+        print(f"::error::Prepocet zlyhal: {type(e).__name__}: {e}")
 
     try:
         celkom = store.pocet_contracts(sb)
@@ -132,9 +139,9 @@ def main() -> int:
         log.warning("Ziadne prilezitosti v okne. Skus rozsirit DNI_MIN/DNI_MAX "
                     "alebo znizit MIN_HODNOTA_EUR v config.py.")
 
-    zapis_vystup(zmluv=celkom, prilezitosti=vlozene)
+    zapis_vystup(zmluv=celkom, prilezitosti=vlozene, dotacie=dotacii)
     print(f"::notice::stiahnute={fetched} zaradene={kept} zmluv_v_db={celkom} "
-          f"prilezitosti={vlozene} dokoncene={hotovo}")
+          f"prilezitosti={vlozene} dotacie={dotacii} dokoncene={hotovo}")
     return 0
 
 

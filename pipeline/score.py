@@ -8,6 +8,7 @@ from datetime import date, timedelta
 
 import pandas as pd
 
+from classify import SEKTOR_DOTACIE
 from config import DNI_MIN, DNI_MAX, MIN_HODNOTA_EUR, SEKTORY
 
 
@@ -83,7 +84,12 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     if df.empty:
         return pd.DataFrame()
 
-    df = df.copy()
+    # Dotacie sem nepatria. Nie je to zakazka, na ktoru sa da sutazit, ale
+    # signal, ze tender pride. Maju vlastnu tabulku a vlastnu logiku.
+    df = df[df["sector"] != SEKTOR_DOTACIE].copy()
+    if df.empty:
+        return pd.DataFrame()
+
     df["effective_to"] = pd.to_datetime(df["effective_to"], errors="coerce")
     df["price_total"] = pd.to_numeric(df["price_total"], errors="coerce")
 

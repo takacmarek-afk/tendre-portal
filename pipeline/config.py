@@ -1,154 +1,195 @@
-"""Konfiguracia. Klucove slova a prahy sa ladia tu, nikde inde."""
+"""Konfiguracia. Klucove slova a prahy sa ladia tu, nikde inde.
+
+DOLEZITE PRAVIDLO PRE KLUCOVE SLOVA
+-----------------------------------
+Slovencina sa sklonuje. V zmluvach je "rekonstrukcia strechY", nie "strechA",
+a "vymena krytinY", nie "krytinA". Preto sa tu NEPISU cele slova v prvom pade,
+ale SLOVNE ZAKLADY: "strech" zachyti strecha, strechy, streche aj strechu.
+
+Toto bola realna chyba, ktora nam znizovala uspesnost klasifikatora na zlomok
+skutocnosti. Ked pridavas nove slovo, vzdy si polozi otazku: v akom pade to
+bude v zmluve napisane?
+
+Vynimka: pri kratkych alebo nejednoznacnych zakladoch radsej vypis varianty.
+Napriklad "oprav" by zachytilo aj "opravnenie podnikat", preto je tam
+"oprava", "opravy", "opravu" zvlast.
+"""
 import os
 
 # --- Zdroj dat -------------------------------------------------------------
 CRZ_SYNC_URL = "https://datahub.ekosystem.slovensko.digital/api/data/crz/contracts/sync"
 USER_AGENT = "tendre-portal/1.0 (open data client)"
 
-# Odkial zacat pri prvom behu. 2023 namiesto 2022 skrati stahovanie zhruba
-# o stvrtinu a usetri minuty GitHub Actions. Tri a pol roka historie na
-# detekciu koncentracie dodavatela bohato staci — pri zmluvach na jeden az
-# dva roky su to dva az styri cykly. Ak by si chcel viac, zmen na 2022.
 BOOTSTRAP_SINCE = os.getenv("BOOTSTRAP_SINCE", "2023-01-01T00:00:00Z")
 TIME_BUDGET_MIN = int(os.getenv("TIME_BUDGET_MIN", "45"))
 
 # --- Okno predikcie --------------------------------------------------------
-# Bolo 90-180 dni, co je uzke okienko a klient v svojom okrese videl jednu
-# polozku. 30-365 ukaze skoro stvornasobok; triedenie podla skore aj tak
-# vytlaci to najlepsie hore a filtrovanie si spravi pouzivatel sam.
 DNI_MIN = int(os.getenv("DNI_MIN", "30"))
 DNI_MAX = int(os.getenv("DNI_MAX", "365"))
 MIN_HODNOTA_EUR = float(os.getenv("MIN_HODNOTA_EUR", "5000"))
 
 PRAH_SKORE = int(os.getenv("PRAH_SKORE", "3"))
 
+# --- Dotacie ---------------------------------------------------------------
+# Odhad okna, kedy po podpise dotacie pride tender.
+DOTACIA_OKNO_OD_DNI = 180
+DOTACIA_OKNO_DO_DNI = 540
+MIN_DOTACIA_EUR = float(os.getenv("MIN_DOTACIA_EUR", "20000"))
+
 # --- Vylucujuce slova (platia pre vsetky sektory) --------------------------
-# Najcastejsi zdroj falosnych zhod. Najomna zmluva na budovu obsahuje slovo
-# "budova", poistna zmluva "strecha", dotacna "rekonstrukcia". Bez tohto
-# zoznamu by nam do stavebnych prac padala polovica registra.
 NEGATIVNE = [
-    "najomna zmluva", "zmluva o najme", "podnajomna", "poistna zmluva",
-    "poistenie", "licencna zmluva", "o poskytnuti dotacie", "dotacna zmluva",
+    "najomna zmluva", "zmluva o najme", "podnajomn", "poistna zmluva",
+    "poisten", "licencna zmluva",
     "pracovna zmluva", "dohoda o vykonani prace", "dohoda o pracovnej cinnosti",
     "kolektivna zmluva", "mandatna zmluva", "zmluva o uvere", "darovacia zmluva",
     "zmluva o spolupraci pri vyskume", "memorandum",
-    "zmluva o dielo na vypracovanie studie",
-    "kupna zmluva o prevode nehnutelnosti", "zmluva o buducej zmluve",
+    "kupna zmluva o prevode nehnutel", "zmluva o buducej zmluve",
 ]
 VAHA_NEGATIVNA = -5
 
+# --- Objekty samospravy ----------------------------------------------------
+# Same o sebe nestacia (vaha 2), ale v spojeni s akymkolvek pracovnym slovom
+# uz prekrocia prah. "Obnova materskej skoly" = obnov(1) + materskej skol(2).
+OBJEKTY_SAMOSPRAVY = [
+    "materskej skol", "materska skol", "materskej skoly",
+    "zakladnej skol", "zakladna skol",
+    "strednej skol", "stredna skol", "gymnazi",
+    "obecneho uradu", "obecny urad", "mestskeho uradu", "mestsky urad",
+    "kulturneho domu", "kulturny dom", "domu kultury",
+    "hasicsk", "dom smutku", "domu smutku",
+    "telocvicn", "sportovej hal", "sportova hal", "sportoveho arealu",
+    "domov socialnych", "zariadenia pre seniorov", "zariadenie pre seniorov",
+    "zdravotneho stredisk", "zdravotne stredisk",
+]
+
 # --- Sektory ---------------------------------------------------------------
 # Poradie ma vyznam. Pri rovnakom skore vyhrava prvy v poradi, preto su
-# specificke remesla PRED vseobecnymi stavebnymi pracami. Klucove slovo patri
-# vzdy len do jedneho sektora — inak by sa skore scitavalo dvakrat.
+# dotacie prve a konkretne remesla pred vseobecnymi stavebnymi pracami.
 SEKTORY = {
+    # DOTACIE SU PRVE ZAMERNE.
+    # "Zmluva o poskytnuti NFP na rekonstrukciu ZS" obsahuje "rekonstrukci"
+    # a bez tohto poradia by spadla medzi stavebne prace.
+    # Nie je to prilezitost na sutazenie — je to predzvest tendra.
+    "DOTACIE_NFP": {
+        "cpv": None,
+        "popis": "Dotacie a nenavratne prispevky (predzvest tendra)",
+        "kluc": {
+            5: ["nenavratneho financneho prispevku", "nenavratny financny prispevok",
+                "o poskytnuti dotaci", "dotacna zmluva", "zmluva o dotaci",
+                "o poskytnuti prostriedkov mechanizmu",
+                "plan obnovy a odolnosti",
+                "o poskytnuti podpory z environmentalneho"],
+            3: ["nenavratn", "operacny program", "operacneho programu",
+                "envirofond", "environmentalneho fondu",
+                "o poskytnuti financnych prostriedkov",
+                "eurofond", "integrovany regionalny operacny program"],
+        },
+    },
     "ELEKTROINSTALACIE": {
         "cpv": "45310000-3",
         "popis": "Elektroinstalacie a osvetlenie",
         "kluc": {
-            3: ["elektroinstalacia", "elektroinstalacne prace", "elektromontazne",
-                "rekonstrukcia elektroinstalacie", "verejne osvetlenie",
-                "bleskozvod", "rozvadzac", "trafostanica", "fotovoltick",
-                "elektricka pripojka"],
-            2: ["osvetlenie", "elektrina rozvody", "silnoprud", "slaboprud",
-                "revizia elektro"],
+            3: ["elektroinstalaci", "elektromontazn", "verejneho osvetleni",
+                "verejne osvetleni", "bleskozvod", "rozvadzac", "trafostanic",
+                "fotovoltick", "elektrick pripojk"],
+            2: ["osvetleni", "silnoprud", "slaboprud", "revizia elektro",
+                "elektroenergetick"],
         },
     },
     "KURENIE_VODA_PLYN": {
         "cpv": "45330000-9",
         "popis": "Kurenie, voda, plyn, vzduchotechnika",
         "kluc": {
-            3: ["vodoinstalacia", "plynoinstalacia", "rekonstrukcia kotolne",
-                "vymena kotla", "tepelne cerpadlo", "vykurovacia sustava",
-                "rozvody vody", "kanalizacna pripojka", "vodovodna pripojka",
-                "vzduchotechnika", "klimatizacia"],
-            2: ["kotolna", "vykurovanie", "radiatory", "vodovod", "kanalizacia",
-                "cistiaren odpadovych vod", "sanitarne zariadenia"],
+            3: ["vodoinstalaci", "plynoinstalaci", "kotoln", "vymena kotl",
+                "tepelne cerpadl", "tepelneho cerpadl", "vykurovacej sustav",
+                "rozvody vody", "kanalizacn pripojk", "vodovodn pripojk",
+                "vzduchotechnik", "klimatizaci"],
+            2: ["vykurovani", "vykurovania", "radiator", "vodovod",
+                "kanalizaci", "cistiaren odpadovych vod", "sanitarn"],
         },
     },
     "STRECHY_IZOLACIE": {
         "cpv": "45260000-7",
         "popis": "Strechy, zateplenie, izolacie",
         "kluc": {
-            3: ["rekonstrukcia strechy", "vymena strechy", "oprava strechy",
-                "stresna krytina", "hydroizolacia", "zateplenie",
-                "zateplenie fasady", "klampiarske prace",
-                "izolacia proti vlhkosti"],
-            2: ["strecha", "krytina", "fasada", "zateplovaci system"],
+            3: ["strech", "striech", "stresn", "hydroizolaci", "zateplen",
+                "klampiarsk", "izolacia proti vlhkosti"],
+            2: ["krytin", "fasad", "zateplovaci system", "zateplovacieho systemu"],
         },
     },
     "OKNA_DVERE_POVRCHY": {
         "cpv": "45420000-7",
         "popis": "Okna, dvere, podlahy, povrchove upravy",
         "kluc": {
-            3: ["vymena okien", "vymena dveri", "vymena podlah",
-                "stolarske prace", "maliarske prace", "obklady a dlazby",
-                "sadrokarton"],
-            2: ["okna a dvere", "podlaha", "omietky", "malovanie", "dlazba",
-                "obklad", "truhlarske"],
+            3: ["vymena okien", "vymen okien", "vymena dveri", "vymena podlah",
+                "stolarsk", "truhlarsk", "maliarsk", "sadrokarton"],
+            2: ["okien", "dveri", "podlah", "omietk", "malovani", "dlazb",
+                "obklad"],
         },
     },
     "ZELEN_ZIMNA_UDRZBA": {
         "cpv": "77310000-6",
         "popis": "Udrzba zelene a zimna udrzba",
         "kluc": {
-            3: ["udrzba zelene", "kosenie travnatych", "kosenie travy",
-                "zimna udrzba", "odpratavanie snehu", "posyp komunikacii",
+            3: ["udrzba zelen", "udrzbu zelen", "udrzby zelen",
+                "kosen", "zimna udrzb", "zimnej udrzb", "zimnu udrzb",
+                "odpratavani snehu", "odpratavanie snehu", "posyp",
                 "vyrub drevin", "orez stromov", "starostlivost o zelen"],
-            2: ["zelen", "travnate plochy", "sadove upravy", "parkova uprava"],
+            2: ["zelen", "travnat", "sadove uprav", "parkov uprav",
+                "verejnej zelen", "verejna zelen"],
         },
     },
     "UPRATOVANIE": {
         "cpv": "90900000-6",
         "popis": "Upratovacie a cistiace sluzby",
         "kluc": {
-            3: ["upratovacie sluzby", "upratovanie", "cistiace sluzby",
-                "komplexne upratovanie", "dezinfekcia", "deratizacia",
-                "dezinsekcia", "upratovacie prace", "umyvanie okien"],
-            2: ["cistenie priestorov", "hygienicky servis", "pranie a zehlenie",
-                "sanitarne sluzby"],
+            3: ["upratovac", "upratovani", "upratovanie", "upratovania",
+                "cistiac", "dezinfekci", "deratizaci", "dezinsekci",
+                "umyvani okien", "umyvanie okien"],
+            2: ["cisten", "hygienick servis", "pranie a zehleni", "sanitarn sluzb"],
         },
     },
     "DOPRAVA_MECHANIZACIA": {
         "cpv": "60000000-8",
         "popis": "Doprava, zemne prace, mechanizacia",
         "kluc": {
-            3: ["nakladna doprava", "zemne prace", "vykopove prace",
-                "prenajom mechanizacie", "odvoz a zneskodnenie odpadu",
-                "prenajom kontajnerov", "autobusova doprava", "zvoz odpadu"],
-            2: ["preprava", "odvoz odpadu", "bagrovanie", "prenajom stroja",
-                "nakladka", "skladka"],
+            3: ["nakladn doprav", "zemn prac", "vykopov prac",
+                "prenajom mechanizaci", "prenajmu mechanizaci",
+                "odvoz a zneskodneni", "prenajom kontajnerov",
+                "autobusov doprav", "zvoz odpadu", "zvoz komunalneho"],
+            2: ["preprav", "odvoz odpadu", "bagrovani", "nakladka", "skladk"],
         },
     },
     "STRAVOVANIE": {
         "cpv": "55500000-5",
         "popis": "Stravovanie a dodavka potravin",
         "kluc": {
-            3: ["stravovacie sluzby", "zabezpecenie stravovania",
-                "dodavka potravin", "skolske stravovanie", "catering",
-                "prevadzka jedalne"],
-            2: ["strava", "obedy", "potraviny", "jedalen", "kuchyna vybavenie"],
+            3: ["stravovaci sluzb", "stravovacich sluzieb", "zabezpeceni stravovani",
+                "dodavk potravin", "dodavka potravin", "skolsk stravovani",
+                "catering", "prevadzk jedaln"],
+            2: ["stravovani", "obedov", "potravin", "jedalen", "jedalne"],
         },
     },
     "OSTRAHA": {
         "cpv": "79710000-4",
         "popis": "Ostraha, bezpecnost, kamerove systemy",
         "kluc": {
-            3: ["strazna sluzba", "ochrana majetku", "bezpecnostna sluzba",
-                "kamerovy system", "elektronicka poziarna signalizacia",
-                "zabezpecovaci system", "pult centralnej ochrany"],
-            2: ["ostraha", "monitoring objektu", "vratnica"],
+            3: ["strazn sluzb", "ochran majetku", "bezpecnostn sluzb",
+                "kamerov system", "kamerovy system", "kameroveho systemu",
+                "elektronick poziarn signalizaci", "zabezpecovaci system",
+                "pult centralnej ochrany"],
+            2: ["ostrah", "monitoring objektu", "vratnic"],
         },
     },
     "IT_TECHNIKA": {
         "cpv": "72000000-5",
         "popis": "IT sluzby a vypoctova technika",
         "kluc": {
-            3: ["vypoctova technika", "dodavka pocitacov", "sprava siete",
-                "informacny system", "softverova podpora",
-                "serverova infrastruktura", "strukturovana kabelaz",
-                "webove sidlo"],
-            2: ["notebooky", "servery", "licencie softver", "it podpora",
+            3: ["vypoctov technik", "vypoctovej techniky", "dodavk pocitac",
+                "sprava siet", "spravu siet", "informacn system",
+                "softverov podpor", "serverov infrastruktur",
+                "strukturovan kabelaz", "webove sidlo", "webovej stranky"],
+            2: ["notebook", "server", "licenci softver", "it podpor",
                 "datove centrum"],
         },
     },
@@ -156,9 +197,9 @@ SEKTORY = {
         "cpv": "79800000-2",
         "popis": "Tlaciarenske a kancelarske sluzby",
         "kluc": {
-            3: ["tlaciarenske sluzby", "tlac publikacii", "polygraficke sluzby",
-                "dodavka kancelarskych potrieb", "tonery a naplne"],
-            2: ["tlac", "kancelarske potreby", "kopirovacie sluzby"],
+            3: ["tlaciarensk", "tlac publikaci", "polygrafick",
+                "dodavk kancelarsk", "tonerov", "tonery a naplne"],
+            2: ["kancelarsk potrieb", "kancelarske potreby", "kopirovaci sluzb"],
         },
     },
     # VSEOBECNE STAVEBNE PRACE JE POSLEDNE ZAMERNE.
@@ -167,16 +208,19 @@ SEKTORY = {
         "cpv": "45000000-7",
         "popis": "Stavebne prace vseobecne",
         "kluc": {
-            3: ["stavebne prace", "stavebne upravy", "rekonstrukcia objektu",
-                "zhotovenie stavby", "realizacia stavby", "vystavba",
-                "pristavba", "nadstavba", "obnova budovy", "sanacia",
-                "buracie prace", "asfaltovanie", "rekonstrukcia chodnika",
-                "oprava miestnej komunikacie", "revitalizacia",
-                "modernizacia budovy"],
-            2: ["zmluva o dielo", "stavebny dozor", "chodnik",
-                "miestna komunikacia", "telocvicna", "detske ihrisko", "most",
-                "parkovisko", "rekonstrukcia", "stavebny material"],
-            1: ["oprava", "modernizacia", "udrzba budovy"],
+            3: ["stavebn prac", "stavebn uprav", "zhotoveni stavby",
+                "realizaci stavby", "vystavb", "pristavb", "nadstavb",
+                "burac", "asfaltovani", "rekonstrukci chodnik",
+                "oprav miestnej komunikaci", "revitalizaci", "sanaci"],
+            2: ["zmluva o dielo", "stavebn dozor", "chodnik", "miestn komunikaci",
+                "detsk ihrisk", "mostn", "premosteni", "parkovisk",
+                "rekonstrukci", "modernizaci", "stavebn material",
+                "spevnen ploch", "cintorin"],
+            1: ["oprava", "opravy", "opravu", "obnov", "udrzb budov"],
         },
     },
 }
+
+# Objekty samospravy sa pridavaju do vseobecnych stavebnych prac s vahou 2.
+# Same o sebe neprekrocia prah, ale v spojeni s "obnova" alebo "oprava" ano.
+SEKTORY["STAVEBNE_PRACE"]["kluc"][2].extend(OBJEKTY_SAMOSPRAVY)
