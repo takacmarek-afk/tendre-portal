@@ -18,6 +18,10 @@ on:
         description: "Poradie behu v retazi. Nechaj 0, dopluje sa samo."
         type: string
         default: "0"
+      iba_prepocet:
+        description: "Nestahovat nic, len prepocitat prilezitosti, dotacie a analytiku"
+        type: boolean
+        default: false
 
 # actions: write je potrebne, aby si beh mohol zavolat pokracovanie sam.
 # workflow_dispatch je jedina vynimka z ochrany proti nekonecnej slucke.
@@ -53,7 +57,9 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TIME_BUDGET_MIN: ${{ inputs.budget || '45' }}
         run: |
-          if [ "${{ inputs.bootstrap }}" = "true" ]; then
+          if [ "${{ inputs.iba_prepocet }}" = "true" ]; then
+            python main.py --iba-prepocet
+          elif [ "${{ inputs.bootstrap }}" = "true" ]; then
             python main.py --bootstrap --budget "${{ inputs.budget || '300' }}"
           else
             python main.py

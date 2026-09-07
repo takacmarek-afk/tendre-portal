@@ -68,7 +68,8 @@ def nacitaj_contracts(sb) -> pd.DataFrame:
     uz raz spravili prazdnu tabulku dotacii s vysledkom "dotacie=0" bez jedinej
     chybovej hlasky. Ked pridas do prepoctu novy stlpec, pridaj ho aj sem.
     """
-    stlpce = ("id, authority_name, authority_cin, supplier_name, supplier_cin, "
+    stlpce = ("id, authority_name, authority_cin, authority_address, "
+              "supplier_name, supplier_cin, "
               "subject, subject_description, signed_on, effective_from, "
               "effective_to, price, price_total, "
               "status_id, sector, class_score, department, contract_identifier, "
@@ -120,10 +121,19 @@ def _hodnota(v):
     return v
 
 
-def _nahrad_tabulku(sb, tabulka: str, df: pd.DataFrame):
+def _nahrad_tabulku(sb, tabulka: str, df: pd.DataFrame, kluc: str = "contract_id"):
     """Zmaze obsah a vlozi novy. Pouziva sa pre odvodene tabulky, ktore su
-    klzavym oknom — upsert by v nich nechaval stare zaznamy mimo okna."""
-    sb.table(tabulka).delete().neq("contract_id", -1).execute()
+    klzavym oknom — upsert by v nich nechaval stare zaznamy mimo okna.
+
+    PostgREST nepovoli DELETE bez podmienky, preto tu je `neq`. Podmienka
+    musi sedet na stlpec, ktory tabulka naozaj MA — `dodavatelia` a
+    `ceny_sektor` nemaju contract_id, ich klucom je ICO resp. nazov sektora.
+    """
+    if kluc == "contract_id":
+        sb.table(tabulka).delete().neq(kluc, -1).execute()
+    else:
+        sb.table(tabulka).delete().neq(kluc, "__nikdy__").execute()
+
     if df is None or df.empty:
         return 0
 
@@ -143,3 +153,36 @@ def nahrad_opportunities(sb, df: pd.DataFrame):
 
 def nahrad_subsidies(sb, df: pd.DataFrame):
     return _nahrad_tabulku(sb, "subsidies", df)
+
+
+# Stlpce, ktore tabulka `dodavatelia` naozaj ma. Analytika pocita aj
+# `zmluv_v_historii` a podobne pomocne veci — tie by REST odmietol.
+STLPCE_DODAVATELIA = (
+    "supplier_cin", "dodavatel", "hlavny_sektor", "zmluv", "objem_eur",
+    "priemerna_zmluva_eur", "uradov", "sektorov", "zmluv_s_navysenim",
+    "podiel_zmluv_s_navysenim", "priemerne_navysenie_pct",
+    "prva_zmluva", "posledna_zmluva",
+)
+
+
+def nahrad_dodavatelia(sb, df: pd.DataFrame, limit: int = 5000):
+    """Profily dodavatelov. Limit je tam kvoli 500 MB na Supabase free —
+    dodavatelov s troma a viac zmluvami su desiatky tisic a chvost s malym
+    objemom nikoho nezaujima. df prichadza usporadany podla objemu."""
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "dodavatelia", df, kluc="supplier_cin")
+    d = df.head(limit).copy()
+    d = d[[c for c in STLPCE_DODAVATELIA if c in d.columns]]
+    for stlpec in ("zmluv", "uradov", "sektorov", "zmluv_s_navysenim"):
+        if stlpec in d.columns:
+            d[stlpec] = pd.to_numeric(d[stlpec], errors="coerce").astype("Int64")
+    return _nahrad_tabulku(sb, "dodavatelia", d, kluc="supplier_cin")
+
+
+def nahrad_ceny_sektor(sb, df: pd.DataFrame):
+    """Medianne mesacne ceny per sektor."""
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "ceny_sektor", df, kluc="sector")
+    d = df[["sector", "median_mesacna", "vzoriek"]].copy()
+    d["vzoriek"] = pd.to_numeric(d["vzoriek"], errors="coerce").astype("Int64")
+    return _nahrad_tabulku(sb, "ceny_sektor", d, kluc="sector")

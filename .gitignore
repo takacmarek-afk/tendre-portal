@@ -1,0 +1,9 @@
+# Kompilovany Python. Generuje sa sam pri kazdom spusteni,
+# do repozitara nepatri.
+__pycache__/
+*.pyc
+
+# Docasne subory Windows a editorov
+Thumbs.db
+desktop.ini
+.vscode/

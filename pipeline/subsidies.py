@@ -13,6 +13,7 @@ from datetime import date, timedelta
 
 import pandas as pd
 
+import regiony
 from classify import klasifikuj_ucel, SEKTOR_DOTACIE
 from config import DOTACIA_OKNO_OD_DNI, DOTACIA_OKNO_DO_DNI, MIN_DOTACIA_EUR
 
@@ -92,6 +93,11 @@ def z_contracts(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     d["sektor_odhad"] = d.apply(
         lambda r: klasifikuj_ucel(r["subject"], r["subject_description"]), axis=1)
 
+    # POZOR: nie regiony.doplnit(). Adresa v dotacnej zmluve patri
+    # ministerstvu v Bratislave, nie obci, ktora dotaciu dostala. Kraj sa
+    # tu preto odvodzuje z NAZVU prijimatela.
+    d = regiony.doplnit_z_nazvu(d, "prijimatel")
+
     d["odkaz"] = "https://www.crz.gov.sk/zmluva/" + d["id"].astype(str) + "/"
     d["contract_id"] = d["id"]
 
@@ -100,7 +106,7 @@ def z_contracts(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
 
     stlpce = ["contract_id", "prijimatel", "prijimatel_ico", "poskytovatel",
               "ucel", "suma", "podpisane", "ucinne_od", "sektor_odhad",
-              "okno_od", "okno_do", "odkaz"]
+              "okno_od", "okno_do", "odkaz", "mesto", "kraj"]
     out = d[stlpce].sort_values("suma", ascending=False).reset_index(drop=True)
     out["contract_id"] = pd.to_numeric(out["contract_id"], errors="coerce").astype("Int64")
     return out

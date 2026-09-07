@@ -10,6 +10,8 @@ from datetime import date, timedelta
 
 import pandas as pd
 
+import analytics
+import regiony
 from classify import SEKTOR_DOTACIE, bez_diakritiky
 from config import DNI_MIN, DNI_MAX, MIN_HODNOTA_EUR, SEKTORY
 
@@ -170,12 +172,32 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     okno["contract_id"] = okno["id"]
     okno["okres_kod"] = None
 
+    # ── Analyticka vrstva ────────────────────────────────────────────────
+    # Region z adresy, mesacna cena proti medianu sektora, navysenie
+    # dodatkami a typicka dlzka zmluvy u toho isteho uradu.
+    okno = regiony.doplnit(okno)
+    okno = analytics.mesacna_cena(okno)
+    okno = analytics.navysenie(okno)
+
+    vsetky_s_cenou = analytics.mesacna_cena(df)
+    medianyDf = analytics.medianyMesacnej(vsetky_s_cenou)
+    okno = analytics.porovnaj_so_sektorom(okno, medianyDf)
+
+    cykly = analytics.cykly(vsetky_s_cenou)
+    if not cykly.empty:
+        okno = okno.merge(cykly[["authority_cin", "sector", "typicka_dlzka_dni"]],
+                          on=["authority_cin", "sector"], how="left")
+    else:
+        okno["typicka_dlzka_dni"] = None
+
     stlpce = [
         "contract_id", "sector", "cpv", "authority_name", "authority_cin",
         "department", "subject", "subject_description", "effective_to",
         "dni_do_konca", "odhad_vyhlasenia", "price_total", "supplier_name",
         "top_dodavatel", "podiel_top_dodavatela", "historicky_pocet",
         "pocet_dodavatelov", "riziko", "skore", "okres_kod",
+        "mesto", "kraj", "mesacna_cena", "median_mesacna", "odchylka_pct",
+        "vzoriek", "navysenie_pct", "typicka_dlzka_dni",
     ]
     okno["subject"] = okno["subject"].apply(vycisti_predmet)
     okno["subject_description"] = okno["subject_description"].apply(vycisti_predmet)
@@ -201,7 +223,7 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     # "174.0" a databaza to odmietne. Int64 s velkym I je typ, ktory zvlada
     # cele cisla AJ prazdne hodnoty naraz.
     for stlpec in ("contract_id", "dni_do_konca", "historicky_pocet",
-                   "pocet_dodavatelov", "skore"):
+                   "pocet_dodavatelov", "skore", "vzoriek", "typicka_dlzka_dni"):
         vysledok[stlpec] = pd.to_numeric(vysledok[stlpec], errors="coerce").astype("Int64")
 
     return vysledok
