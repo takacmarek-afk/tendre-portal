@@ -22,7 +22,24 @@ tailwind.config = { theme: { extend: {
   <div class="text-[14px] text-slate2">Načítavam...</div>
 </div>
 
-<!-- ══ ONBOARDING ═══════════════════════════════════════════ -->
+<!-- ══ CHYBA ═════════════════════════════════════════════════ -->
+<div id="chyba-app" class="hidden min-h-screen flex items-center justify-center p-5">
+  <div class="w-full max-w-[520px] bg-white border border-line rounded-lg p-8">
+    <h1 class="text-[18px] font-semibold">Aplikáciu sa nepodarilo načítať</h1>
+    <p class="mt-3 text-[14px] leading-relaxed text-slate2">
+      Nastala neočakávaná chyba. Skúste stránku obnoviť. Ak potrvá,
+      pošlite nám prosím text nižšie.
+    </p>
+    <pre id="chyba-text" class="mt-4 text-[12px] bg-[#fafbfc] border border-line
+         rounded p-3 overflow-x-auto whitespace-pre-wrap"></pre>
+    <button onclick="location.reload()"
+            class="mt-5 bg-accent text-white font-semibold px-5 py-2.5 rounded-md">
+      Obnoviť
+    </button>
+  </div>
+</div>
+
+<!-- ══ ONBOARDING ════════════════════════════════════════════ -->
 <div id="onboarding" class="hidden min-h-screen flex items-center justify-center p-5">
   <div class="w-full max-w-[460px]">
     <div class="text-center mb-8">
@@ -31,7 +48,7 @@ tailwind.config = { theme: { extend: {
     <div class="bg-white border border-line rounded-lg p-7">
       <h1 class="text-[19px] font-semibold">Ešte jedna vec</h1>
       <p class="mt-2 text-[14px] leading-relaxed text-slate2">
-        Zadajte firmu, pod ktorou budete portál používať. Trial na 30 dní
+        Zadajte firmu, pod ktorou budete portál používať. Skúška na 3 dni
         sa spustí hneď, kartu nepotrebujeme.
       </p>
 
@@ -54,7 +71,7 @@ tailwind.config = { theme: { extend: {
         <button type="submit" id="btn-org"
                 class="w-full bg-accent text-white font-semibold py-3 rounded-md
                        hover:bg-accentDark transition disabled:opacity-50">
-          Spustiť 30-dňový trial
+          Spustiť 3-dňovú skúšku
         </button>
         <p id="chyba-org" class="text-[13px] text-red-700 hidden"></p>
       </form>
@@ -86,8 +103,8 @@ tailwind.config = { theme: { extend: {
     <div id="prazdny" class="hidden bg-white border border-line rounded-lg p-10 text-center">
       <div class="w-12 h-12 rounded-full bg-slate2/10 text-slate2 text-[20px]
                   flex items-center justify-center mx-auto mb-5">&#8987;</div>
-      <h2 class="text-[18px] font-semibold">Databáza sa ešte napĺňa</h2>
-      <p class="mt-3 text-[14px] leading-relaxed text-slate2 max-w-md mx-auto">
+      <h2 id="prazdny-h" class="text-[18px] font-semibold">Databáza sa ešte napĺňa</h2>
+      <p id="prazdny-p" class="mt-3 text-[14px] leading-relaxed text-slate2 max-w-md mx-auto">
         Sťahujeme históriu zmlúv z Centrálneho registra. Prvé príležitosti sa
         tu objavia hneď, ako bude prvý beh hotový.
       </p>
@@ -130,7 +147,20 @@ tailwind.config = { theme: { extend: {
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
-const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG;
+// ─────────────────────────────────────────────────────────────────────────
+//  PORADIE V TOMTO SUBORE JE ZAMERNE
+//
+//  Vsetky konstanty a funkcie musia byt deklarovane PRED `await start()`
+//  na konci. `const` sa v JavaScripte nehoistuje a top-level await zastavi
+//  vykonavanie zvysku modulu — takze keby konstanta bola az za tym volanim,
+//  funkcia, ktora ju pouziva, spadne na "Cannot access before initialization".
+//
+//  Prave toto bola chyba, ktora sa prejavila az vtedy, ked v tabulke boli
+//  prve realne data: pri prazdnej tabulke sa kreslenie riadkov nikdy
+//  nespustilo, takze sa chyba schovavala.
+// ─────────────────────────────────────────────────────────────────────────
+
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG ?? {};
 
 const el   = (id) => document.getElementById(id);
 const ukaz = (id) => el(id).classList.remove('hidden');
@@ -138,32 +168,104 @@ const skry = (id) => el(id).classList.add('hidden');
 
 const PRIHLASENIE = './prihlasenie.html';
 
-if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
-  el('nacitavam').textContent = 'Aplikácia nie je nastavená: v config.js chýba anon kľúč.';
-  throw new Error('config');
+const STYL_RIZIKA = {
+  VYSOKE:  ['bg-red-50 text-red-800',      'silná koncentrácia dodávateľa'],
+  STREDNE: ['bg-amber-50 text-amber-800',  'mierna koncentrácia'],
+  NIZKE:   ['bg-green-50 text-green-800',  'otvorená súťaž'],
+  NEZNAME: ['bg-slate-100 text-slate-600', 'málo dát na hodnotenie'],
+};
+
+const SPRAVY = {
+  ICO_NEPLATNE: 'IČO musí mať osem číslic. Skontrolujte ho, prosím.',
+  UZ_V_FIRME:   'Tento účet už patrí do firmy. Obnovte stránku.',
+  NEPRIHLASENY: 'Prihlásenie vypršalo. Prihláste sa znova.',
+};
+
+function bezpecne(t) {
+  return String(t ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function suma(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n === 0) return '—';
+  return new Intl.NumberFormat('sk-SK', {
+    style: 'currency', currency: 'EUR', maximumFractionDigits: 0
+  }).format(n);
+}
 
-const { data: { session } } = await supabase.auth.getSession();
-if (!session) location.replace(PRIHLASENIE);
+function riadok(r) {
+  const [styl, popis] = STYL_RIZIKA[r.riziko] ?? STYL_RIZIKA.NEZNAME;
+  return `
+    <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
+      <td class="px-4 py-4 align-top">
+        <span class="text-[18px] font-bold">${r.skore ?? '—'}</span>
+      </td>
+      <td class="px-4 py-4 align-top max-w-[420px]">
+        <div class="text-[14px] font-medium leading-snug">${bezpecne(r.subject)}</div>
+        <span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded ${styl}">
+          ${popis}
+        </span>
+      </td>
+      <td class="px-4 py-4 align-top text-[14px] text-slate2">${bezpecne(r.authority_name)}</td>
+      <td class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${suma(r.price_total)}</td>
+      <td class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
+        ${bezpecne(r.effective_to) || '—'}
+      </td>
+    </tr>`;
+}
 
-for (const id of ['odhlasit', 'odhlasit-2']) {
-  el(id).addEventListener('click', async () => {
+function odznakPredplatneho(sub) {
+  const o = el('odznak-trial');
+  if (sub?.stav === 'trial') {
+    const dni = Math.max(0, Math.ceil((new Date(sub.trial_konci) - new Date()) / 86400000));
+    o.textContent = `Skúška: ${dni} ${dni === 1 ? 'deň' : dni < 5 ? 'dni' : 'dní'}`;
+    o.className = 'text-[13px] font-medium px-3 py-1 rounded-full ' +
+      (dni <= 1 ? 'bg-amber-100 text-amber-800' : 'bg-accent/10 text-accent');
+  } else if (sub?.stav === 'aktivne') {
+    o.textContent = 'Predplatné aktívne';
+    o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-green-100 text-green-800';
+  } else {
+    o.textContent = 'Prístup ukončený';
+    o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-red-100 text-red-800';
+  }
+}
+
+function obrazovkaTrialVycerpany(supabase) {
+  el('onboarding').innerHTML = `
+    <div class="w-full max-w-[460px]">
+      <div class="text-center mb-8">
+        <div class="font-bold text-[20px] tracking-tight">PredTendrom<span class="text-accent">.sk</span></div>
+      </div>
+      <div class="bg-white border border-line rounded-lg p-7 text-center">
+        <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 text-[22px]
+                    flex items-center justify-center mx-auto mb-5">&#9203;</div>
+        <h1 class="text-[19px] font-semibold">Vaša firma skúšku už využila</h1>
+        <p class="mt-3 text-[14px] leading-relaxed text-slate2">
+          Bezplatná trojdňová skúška je jedna na firmu. Podľa IČO, ktoré ste
+          zadali, ju vaša firma už vyčerpala.
+        </p>
+        <p class="mt-4 text-[14px] leading-relaxed text-slate2">
+          Ak u nás firma predplatné má, požiadajte kolegu, ktorý ho zakladal,
+          aby vás pridal. Ak si chcete predplatné zriadiť, napíšte nám.
+        </p>
+        <a href="mailto:info@predtendrom.sk?subject=Predplatne%20PredTendrom"
+           class="inline-block mt-6 bg-accent text-white font-semibold
+                  px-6 py-3 rounded-md hover:bg-accentDark transition">
+          Napísať nám
+        </a>
+      </div>
+      <p class="text-center mt-5">
+        <button id="odhlasit-3" class="text-[13px] text-slate2 hover:text-ink">Odhlásiť sa</button>
+      </p>
+    </div>`;
+  el('odhlasit-3').addEventListener('click', async () => {
     await supabase.auth.signOut();
     location.replace(PRIHLASENIE);
   });
 }
 
-const { data: clenstva, error: chybaClenstva } = await supabase
-  .from('memberships').select('org_id').limit(1);
-
-if (chybaClenstva) {
-  el('nacitavam').textContent = 'Chyba databázy: ' + chybaClenstva.message;
-  throw chybaClenstva;
-}
-
-if (!clenstva || clenstva.length === 0) {
+function onboarding(supabase) {
   skry('nacitavam');
   ukaz('onboarding');
 
@@ -174,46 +276,35 @@ if (!clenstva || clenstva.length === 0) {
     btn.disabled = true;
     btn.textContent = 'Zakladám...';
 
-    const { error } = await supabase.rpc('zaloz_organizaciu', {
+    function zlyhalo(text) {
+      chyba.textContent = text;
+      chyba.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Spustiť 3-dňovú skúšku';
+    }
+
+    const { data, error } = await supabase.rpc('zaloz_organizaciu', {
       p_nazov: el('nazov').value.trim(),
       p_ico:   el('ico').value.trim()
     });
 
-    if (error) {
-      chyba.textContent = 'Nepodarilo sa: ' + error.message;
-      chyba.classList.remove('hidden');
-      btn.disabled = false;
-      btn.textContent = 'Spustiť 30-dňový trial';
-      return;
-    }
-    location.reload();
-  });
+    if (error) return zlyhalo('Nepodarilo sa: ' + error.message);
+    if (!data)  return zlyhalo('Neočakávaná odpoveď servera.');
+    if (data.ok) return location.reload();
 
-} else {
-  await zobrazAplikaciu();
+    if (data.kod === 'TRIAL_VYCERPANY') return obrazovkaTrialVycerpany(supabase);
+    zlyhalo(SPRAVY[data.kod] ?? ('Nepodarilo sa: ' + data.kod));
+  });
 }
 
-async function zobrazAplikaciu() {
+async function dashboard(supabase) {
   const [{ data: org }, { data: sub }] = await Promise.all([
     supabase.from('organizations').select('nazov').limit(1).maybeSingle(),
     supabase.from('subscriptions').select('stav, trial_konci').limit(1).maybeSingle()
   ]);
 
   el('nazov-firmy').textContent = org?.nazov ?? '';
-
-  const odznak = el('odznak-trial');
-  if (sub?.stav === 'trial') {
-    const dni = Math.max(0, Math.ceil((new Date(sub.trial_konci) - new Date()) / 86400000));
-    odznak.textContent = `Trial: ${dni} ${dni === 1 ? 'deň' : dni < 5 ? 'dni' : 'dní'}`;
-    odznak.className = 'text-[13px] font-medium px-3 py-1 rounded-full ' +
-      (dni <= 7 ? 'bg-amber-100 text-amber-800' : 'bg-accent/10 text-accent');
-  } else if (sub?.stav === 'aktivne') {
-    odznak.textContent = 'Predplatné aktívne';
-    odznak.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-green-100 text-green-800';
-  } else {
-    odznak.textContent = 'Prístup ukončený';
-    odznak.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-red-100 text-red-800';
-  }
+  odznakPredplatneho(sub);
 
   skry('nacitavam');
   ukaz('app');
@@ -225,8 +316,8 @@ async function zobrazAplikaciu() {
     .limit(50);
 
   if (error) {
-    el('prazdny').querySelector('h2').textContent = 'Dáta sa nepodarilo načítať';
-    el('prazdny').querySelector('p').textContent = error.message;
+    el('prazdny-h').textContent = 'Dáta sa nepodarilo načítať';
+    el('prazdny-p').textContent = error.message;
     ukaz('prazdny');
     return;
   }
@@ -244,41 +335,41 @@ async function zobrazAplikaciu() {
   ukaz('obsah');
 }
 
-const STYL_RIZIKA = {
-  VYSOKE:  ['bg-red-50 text-red-800',      'silná koncentrácia dodávateľa'],
-  STREDNE: ['bg-amber-50 text-amber-800',  'mierna koncentrácia'],
-  NIZKE:   ['bg-green-50 text-green-800',  'otvorená súťaž'],
-  NEZNAME: ['bg-slate-100 text-slate-600', 'málo dát na hodnotenie'],
-};
+async function start() {
+  if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
+    throw new Error('Súbor config.js chýba alebo v ňom nie je anon kľúč zo Supabase.');
+  }
 
-function bezpecne(t) {
-  return String(t ?? '').replace(/[&<>"']/g, c =>
-    ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return location.replace(PRIHLASENIE);
+
+  for (const id of ['odhlasit', 'odhlasit-2']) {
+    el(id).addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      location.replace(PRIHLASENIE);
+    });
+  }
+
+  const { data: clenstva, error } = await supabase
+    .from('memberships').select('org_id').limit(1);
+  if (error) throw error;
+
+  if (!clenstva || clenstva.length === 0) onboarding(supabase);
+  else await dashboard(supabase);
 }
 
-function riadok(r) {
-  const [styl, popis] = STYL_RIZIKA[r.riziko] ?? STYL_RIZIKA.NEZNAME;
-  const suma = r.price_total
-    ? new Intl.NumberFormat('sk-SK', { style:'currency', currency:'EUR', maximumFractionDigits:0 })
-        .format(r.price_total)
-    : '—';
-  return `
-    <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
-      <td class="px-4 py-4 align-top">
-        <span class="text-[18px] font-bold">${r.skore ?? '—'}</span>
-      </td>
-      <td class="px-4 py-4 align-top max-w-[420px]">
-        <div class="text-[14px] font-medium leading-snug">${bezpecne(r.subject)}</div>
-        <span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded ${styl}">
-          ${popis}
-        </span>
-      </td>
-      <td class="px-4 py-4 align-top text-[14px] text-slate2">${bezpecne(r.authority_name)}</td>
-      <td class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${suma}</td>
-      <td class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
-        ${r.effective_to ?? '—'}
-      </td>
-    </tr>`;
+// Ziadna chyba nesmie skoncit prazdnou obrazovkou. Pouzivatel musi vzdy
+// vidiet, co sa stalo, a my musime dostat text chyby bez toho, aby musel
+// otvarat vyvojarske nastroje.
+try {
+  await start();
+} catch (e) {
+  console.error(e);
+  skry('nacitavam');
+  el('chyba-text').textContent = (e?.message ?? String(e)) + '\n\n' + (e?.stack ?? '');
+  ukaz('chyba-app');
 }
 </script>
 </body>
