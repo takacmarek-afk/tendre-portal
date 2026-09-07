@@ -5,11 +5,12 @@ aj kalibracia prahov rovnaka.
 """
 import math
 import re
+import logging
 from datetime import date, timedelta
 
 import pandas as pd
 
-from classify import SEKTOR_DOTACIE
+from classify import SEKTOR_DOTACIE, bez_diakritiky
 from config import DNI_MIN, DNI_MAX, MIN_HODNOTA_EUR, SEKTORY
 
 
@@ -98,6 +99,25 @@ def vycisti_predmet(text) -> str:
     return re.sub(r"\s+", " ", t).strip(" .:;-")
 
 
+# Dodatok nie je prilezitost. Nikto ho nevyhlasuje — je to zmena uz podpisanej
+# zmluvy, casto navysenie ceny. V tabulke contracts ho ponechavame (je to cenny
+# signal o tom, ktory dodavatel si systematicky priplacuje), ale medzi zakazky,
+# na ktore sa da sutazit, nepatri.
+#
+# Stlpec kind_id v CRZ na toto pouzit nemozno — dokumentacia sama uvadza, ze
+# dodatky su v zdroji oznacovane nespravne. Ide sa preto podla textu.
+_DODATOK = re.compile(
+    r"(^|\W)(dodat(?:ok|ku|kom|ky|kov)|zmena\s+zmluvy|zmene\s+zmluvy|"
+    r"uprava\s+rozpoctu|upravu\s+rozpoctu|upravy\s+rozpoctu)(\W|$)")
+
+
+def je_dodatok(subject, popis) -> bool:
+    """Pozor na diakritiku: "Úprava rozpočtu" nesedi na vzor "uprava rozpoctu",
+    kym text neznormalizujeme. Rovnaka chyba nas uz raz stala tri stvrtiny
+    zhod v klasifikatore, preto sa tu pouziva ta ista normalizacia."""
+    return bool(_DODATOK.search(bez_diakritiky(f"{subject or ''} {popis or ''}")))
+
+
 def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     """Vstup: vsetky ulozene zmluvy. Vystup: riadky pre tabulku opportunities."""
     dnes = dnes or date.today()
@@ -124,6 +144,18 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
         & (df["price_total"].fillna(0) >= MIN_HODNOTA_EUR)
     ].copy()
 
+    if okno.empty:
+        return pd.DataFrame()
+
+    # Dodatky von. Robi sa to az tu, nie pri stahovani — v tabulke contracts
+    # ich chceme mat, len medzi prilezitostami nie.
+    pred_dodatkami = len(okno)
+    okno = okno[~okno.apply(
+        lambda r: je_dodatok(r["subject"], r["subject_description"]), axis=1)].copy()
+    if pred_dodatkami != len(okno):
+        logging.getLogger("score").info(
+            "Dodatky vylucene z prilezitosti: %s z %s",
+            pred_dodatkami - len(okno), pred_dodatkami)
     if okno.empty:
         return pd.DataFrame()
 
@@ -160,7 +192,6 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
         subset=["_kluc_uradu", "price_total", "effective_to"], keep="first")
     vysledok = vysledok.drop(columns=["_kluc_uradu"]).reset_index(drop=True)
     if pred != len(vysledok):
-        import logging
         logging.getLogger("score").info(
             "Duplikaty tej istej zakazky: %s z %s zaznamov odstranenych",
             pred - len(vysledok), pred)
