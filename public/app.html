@@ -113,6 +113,47 @@ tailwind.config = { theme: { extend: {
       </p>
     </div>
 
+    <!-- Prepinac vrstiev. Dve rozne veci: zmluva, ktora sa konci, verzus
+         obec, ktora uz ma peniaze a tender ju este len caka. -->
+    <div id="zalozky" class="hidden flex items-center gap-1 mb-6 border-b border-line">
+      <button data-zalozka="obsah"
+              class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px">
+        Končiace zmluvy <span id="pocet-z" class="font-normal text-slate2"></span>
+      </button>
+      <button data-zalozka="dotacie"
+              class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px">
+        Dotácie <span id="pocet-d" class="font-normal text-slate2"></span>
+      </button>
+    </div>
+
+    <!-- ── DOTÁCIE ──────────────────────────────────────────── -->
+    <div id="dotacie" class="hidden">
+      <p class="text-[14px] leading-relaxed text-slate2 mb-5 max-w-3xl">
+        Obce a školy, ktoré už dostali peniaze. Na to, na čo ich dostali,
+        musia vyhlásiť verejné obstarávanie — zvyčajne pol roka až rok a pol
+        po podpise zmluvy o príspevku. Tu ich vidíte skôr, než sa tender objaví.
+      </p>
+      <div class="bg-white border border-line rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left">
+            <thead class="bg-[#fafbfc] border-b border-line">
+              <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+                <th class="px-4 py-3">Prijímateľ</th>
+                <th class="px-4 py-3">Na čo</th>
+                <th class="px-4 py-3 text-right whitespace-nowrap">Suma</th>
+                <th class="px-4 py-3 whitespace-nowrap">Tender očakávame</th>
+              </tr>
+            </thead>
+            <tbody id="riadky-d"></tbody>
+          </table>
+        </div>
+      </div>
+      <p class="mt-4 text-[12px] leading-relaxed text-slate2">
+        Okno je odhad, nie istota. Projekt sa môže odložiť, zrušiť, alebo
+        si ho obec zrealizuje vlastnými kapacitami.
+      </p>
+    </div>
+
     <div id="obsah" class="hidden">
       <div class="flex items-baseline justify-between mb-5">
         <h1 class="text-[22px] font-semibold tracking-tight">Príležitosti</h1>
@@ -218,6 +259,61 @@ function riadok(r) {
     </tr>`;
 }
 
+const POPIS_SEKTORA = {
+  STAVEBNE_PRACE: 'stavebné práce', STRECHY_IZOLACIE: 'strechy, zateplenie',
+  OKNA_DVERE_POVRCHY: 'okná, dvere, povrchy', ELEKTROINSTALACIE: 'elektroinštalácie',
+  KURENIE_VODA_PLYN: 'kúrenie, voda, plyn', ZELEN_ZIMNA_UDRZBA: 'zeleň, zimná údržba',
+  UPRATOVANIE: 'upratovanie', DOPRAVA_MECHANIZACIA: 'doprava, mechanizácia',
+  STRAVOVANIE: 'stravovanie', OSTRAHA: 'ostraha', IT_TECHNIKA: 'IT technika',
+  TLAC_KANCELARIA: 'tlač, kancelária',
+  PASPORTIZACIA_SPRAVA_BUDOV: 'pasportizácia, správa budov',
+};
+
+function riadokDotacie(r) {
+  const sektor = POPIS_SEKTORA[r.sektor_odhad];
+  return `
+    <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
+      <td class="px-4 py-4 align-top">
+        <div class="text-[14px] font-medium leading-snug">${bezpecne(r.prijimatel)}</div>
+        <div class="text-[12px] text-slate2 mt-1">${bezpecne(r.poskytovatel)}</div>
+      </td>
+      <td class="px-4 py-4 align-top max-w-[400px]">
+        <div class="text-[14px] leading-snug" title="${bezpecne(r.ucel)}"
+             style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+          ${bezpecne(r.ucel)}
+        </div>
+        ${sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5
+                     rounded bg-accent/10 text-accent">${sektor}</span>` : ''}
+      </td>
+      <td class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${suma(r.suma)}</td>
+      <td class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
+        ${bezpecne(r.okno_od)}<br>
+        <span class="text-[12px]">až ${bezpecne(r.okno_do)}</span>
+      </td>
+    </tr>`;
+}
+
+// Prepinanie zalozok. Zamerne bez frameworku — su to dve tabulky, nie aplikacia.
+function nastavZalozky(prednastavena) {
+  const AKTIVNA = 'border-accent text-ink';
+  const NEAKTIVNA = 'border-transparent text-slate2 hover:text-ink';
+
+  function prepni(ktora) {
+    for (const b of document.querySelectorAll('.zal')) {
+      const je = b.dataset.zalozka === ktora;
+      b.className = 'zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px ' +
+                    (je ? AKTIVNA : NEAKTIVNA);
+      el(b.dataset.zalozka).classList.toggle('hidden', !je);
+    }
+  }
+
+  for (const b of document.querySelectorAll('.zal')) {
+    b.addEventListener('click', () => prepni(b.dataset.zalozka));
+  }
+  ukaz('zalozky');
+  prepni(prednastavena);
+}
+
 function odznakPredplatneho(sub) {
   const o = el('odznak-trial');
   if (sub?.stav === 'trial') {
@@ -312,20 +408,29 @@ async function dashboard(supabase) {
   skry('nacitavam');
   ukaz('app');
 
-  const { data: prilezitosti, error } = await supabase
-    .from('opportunities')
-    .select('contract_id, skore, riziko, subject, authority_name, price_total, effective_to')
-    .order('skore', { ascending: false })
-    .limit(50);
+  // Obe vrstvy naraz, jedno kolo namiesto dvoch
+  const [zmluvy, dotacie] = await Promise.all([
+    supabase.from('opportunities')
+      .select('contract_id, skore, riziko, subject, authority_name, price_total, effective_to',
+              { count: 'exact' })
+      .order('skore', { ascending: false }).limit(100),
+    supabase.from('subsidies')
+      .select('contract_id, prijimatel, poskytovatel, ucel, suma, sektor_odhad, okno_od, okno_do',
+              { count: 'exact' })
+      .order('suma', { ascending: false }).limit(100),
+  ]);
 
-  if (error) {
+  if (zmluvy.error) {
     el('prazdny-h').textContent = 'Dáta sa nepodarilo načítať';
-    el('prazdny-p').textContent = error.message;
+    el('prazdny-p').textContent = zmluvy.error.message;
     ukaz('prazdny');
     return;
   }
 
-  if (!prilezitosti || prilezitosti.length === 0) {
+  const mameZmluvy = (zmluvy.data ?? []).length > 0;
+  const mameDotacie = !dotacie.error && (dotacie.data ?? []).length > 0;
+
+  if (!mameZmluvy && !mameDotacie) {
     const { count } = await supabase.from('contracts')
       .select('*', { count: 'exact', head: true });
     el('pocet-zmluv').textContent = (count ?? 0).toLocaleString('sk-SK');
@@ -333,9 +438,18 @@ async function dashboard(supabase) {
     return;
   }
 
-  el('pocet').textContent = `${prilezitosti.length} záznamov`;
-  el('riadky').innerHTML = prilezitosti.map(riadok).join('');
-  ukaz('obsah');
+  if (mameZmluvy) {
+    el('pocet').textContent = `${zmluvy.count ?? zmluvy.data.length} záznamov`;
+    el('pocet-z').textContent = `(${zmluvy.count ?? zmluvy.data.length})`;
+    el('riadky').innerHTML = zmluvy.data.map(riadok).join('');
+  }
+
+  if (mameDotacie) {
+    el('pocet-d').textContent = `(${dotacie.count ?? dotacie.data.length})`;
+    el('riadky-d').innerHTML = dotacie.data.map(riadokDotacie).join('');
+  }
+
+  nastavZalozky(mameZmluvy ? 'obsah' : 'dotacie');
 }
 
 async function start() {
