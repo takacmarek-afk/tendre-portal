@@ -31,7 +31,7 @@ tailwind.config = { theme: { extend: {
     <div class="bg-white border border-line rounded-lg p-7">
       <h1 class="text-[19px] font-semibold">Ešte jedna vec</h1>
       <p class="mt-2 text-[14px] leading-relaxed text-slate2">
-        Zadajte firmu, pod ktorou budete portál používať. Trial na 30 dní
+        Zadajte firmu, pod ktorou budete portál používať. Skúška na 3 dni
         sa spustí hneď, kartu nepotrebujeme.
       </p>
 
@@ -54,7 +54,7 @@ tailwind.config = { theme: { extend: {
         <button type="submit" id="btn-org"
                 class="w-full bg-accent text-white font-semibold py-3 rounded-md
                        hover:bg-accentDark transition disabled:opacity-50">
-          Spustiť 30-dňový trial
+          Spustiť 3-dňovú skúšku
         </button>
         <p id="chyba-org" class="text-[13px] text-red-700 hidden"></p>
       </form>
@@ -167,6 +167,15 @@ if (!clenstva || clenstva.length === 0) {
   skry('nacitavam');
   ukaz('onboarding');
 
+  // Funkcia v databaze vracia jsonb s kodom, nie len ID. Podla kodu vieme
+  // rozlisit, ci firmu zakladame, pripajame kolegu k existujucej, alebo
+  // odmietame preto, ze firma trial uz vycerpala.
+  const SPRAVY = {
+    ICO_NEPLATNE: 'IČO musí mať osem číslic. Skontrolujte ho, prosím.',
+    UZ_V_FIRME:   'Tento účet už patrí do firmy. Obnovte stránku.',
+    NEPRIHLASENY: 'Prihlásenie vypršalo. Prihláste sa znova.',
+  };
+
   el('form-org').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = el('btn-org'), chyba = el('chyba-org');
@@ -174,19 +183,61 @@ if (!clenstva || clenstva.length === 0) {
     btn.disabled = true;
     btn.textContent = 'Zakladám...';
 
-    const { error } = await supabase.rpc('zaloz_organizaciu', {
+    const { data, error } = await supabase.rpc('zaloz_organizaciu', {
       p_nazov: el('nazov').value.trim(),
       p_ico:   el('ico').value.trim()
     });
 
-    if (error) {
-      chyba.textContent = 'Nepodarilo sa: ' + error.message;
+    function zlyhalo(text) {
+      chyba.textContent = text;
       chyba.classList.remove('hidden');
       btn.disabled = false;
-      btn.textContent = 'Spustiť 30-dňový trial';
+      btn.textContent = 'Spustiť 3-dňovú skúšku';
+    }
+
+    if (error)            return zlyhalo('Nepodarilo sa: ' + error.message);
+    if (!data)            return zlyhalo('Neočakávaná odpoveď servera.');
+
+    if (data.ok) return location.reload();
+
+    if (data.kod === 'TRIAL_VYCERPANY') {
+      // Vlastna obrazovka, nie chybova hlaska. Toto nie je chyba
+      // pouzivatela a nema to vyzerat ako rozbita aplikacia.
+      el('onboarding').innerHTML = `
+        <div class="w-full max-w-[460px]">
+          <div class="text-center mb-8">
+            <div class="font-bold text-[20px] tracking-tight">PredTendrom<span class="text-accent">.sk</span></div>
+          </div>
+          <div class="bg-white border border-line rounded-lg p-7 text-center">
+            <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 text-[22px]
+                        flex items-center justify-center mx-auto mb-5">&#9203;</div>
+            <h1 class="text-[19px] font-semibold">Vaša firma skúšku už využila</h1>
+            <p class="mt-3 text-[14px] leading-relaxed text-slate2">
+              Bezplatná trojdňová skúška je jedna na firmu. Podľa IČO, ktoré ste
+              zadali, ju vaša firma už vyčerpala.
+            </p>
+            <p class="mt-4 text-[14px] leading-relaxed text-slate2">
+              Ak u nás firma predplatné má, požiadajte kolegu, ktorý ho zakladal,
+              aby vás pridal. Ak si chcete predplatné zriadiť, napíšte nám.
+            </p>
+            <a href="mailto:info@predtendrom.sk?subject=Predplatne%20PredTendrom"
+               class="inline-block mt-6 bg-accent text-white font-semibold
+                      px-6 py-3 rounded-md hover:bg-accentDark transition">
+              Napísať nám
+            </a>
+          </div>
+          <p class="text-center mt-5">
+            <button id="odhlasit-3" class="text-[13px] text-slate2 hover:text-ink">Odhlásiť sa</button>
+          </p>
+        </div>`;
+      el('odhlasit-3').addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        location.replace(PRIHLASENIE);
+      });
       return;
     }
-    location.reload();
+
+    zlyhalo(SPRAVY[data.kod] ?? ('Nepodarilo sa: ' + data.kod));
   });
 
 } else {
@@ -204,7 +255,7 @@ async function zobrazAplikaciu() {
   const odznak = el('odznak-trial');
   if (sub?.stav === 'trial') {
     const dni = Math.max(0, Math.ceil((new Date(sub.trial_konci) - new Date()) / 86400000));
-    odznak.textContent = `Trial: ${dni} ${dni === 1 ? 'deň' : dni < 5 ? 'dni' : 'dní'}`;
+    odznak.textContent = `Skúška: ${dni} ${dni === 1 ? 'deň' : dni < 5 ? 'dni' : 'dní'}`;
     odznak.className = 'text-[13px] font-medium px-3 py-1 rounded-full ' +
       (dni <= 7 ? 'bg-amber-100 text-amber-800' : 'bg-accent/10 text-accent');
   } else if (sub?.stav === 'aktivne') {

@@ -1,0 +1,45 @@
+name: Sonda vykazy vymer
+
+# Jednorazova sonda, nie pravidelny beh. Odpoveda na otazku, ci ma cenova
+# inteligencia zmysel: kolko stavebnych zmluv v CRZ ma pouzitelny oceneny
+# vykaz vymer. Spusta sa rucne.
+
+on:
+  workflow_dispatch:
+    inputs:
+      pocet:
+        description: "Kolko zmluv preskumat (250 staci na rozhodnutie)"
+        type: string
+        default: "250"
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -r pipeline/requirements.txt pdfplumber openpyxl
+
+      - name: Spustit sondu
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python probe_vykazy.py --pocet "${{ inputs.pocet || '250' }}"
+
+      - name: Ulozit vysledky
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: probe-results
+          path: pipeline/probe_results.csv
+          if-no-files-found: warn

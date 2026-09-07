@@ -78,11 +78,36 @@ SEKTORY = {
                 "o poskytnuti dotaci", "dotacna zmluva", "zmluva o dotaci",
                 "o poskytnuti prostriedkov mechanizmu",
                 "plan obnovy a odolnosti",
-                "o poskytnuti podpory z environmentalneho"],
+                "o poskytnuti podpory z environmentalneho",
+                # Skratka NFP sa v zmluvach pouziva bezne. Zamerne ako
+                # viacslovne spojenie — samotne "nfp" by ako podretazec
+                # mohlo trafit nieco ine.
+                "poskytnuti nfp", "zmluva o nfp", "ziadost o nfp"],
             3: ["nenavratn", "operacny program", "operacneho programu",
                 "envirofond", "environmentalneho fondu",
                 "o poskytnuti financnych prostriedkov",
                 "eurofond", "integrovany regionalny operacny program"],
+        },
+    },
+    # PASPORTIZACIA A SPRAVA BUDOV
+    # Pred vseobecnymi stavebnymi pracami: "pasportizacia budov" obsahuje
+    # "budov" a bez tohto poradia by spadla medzi stavebne prace.
+    # Tento sektor je zamerne uzko vymedzeny na sluzby okolo dokumentacie
+    # a spravy budov, nie na stavanie.
+    "PASPORTIZACIA_SPRAVA_BUDOV": {
+        "cpv": "71315000-9",
+        "popis": "Pasportizacia, sprava budov, energeticke audity",
+        "kluc": {
+            3: ["pasportizaci", "pasport budov", "pasport stavieb",
+                "energeticky audit", "energeticke audity", "energeticka certifikaci",
+                "energeticky certifikat", "termovizn", "termodiagnostik",
+                "digitalizaci dokumentacie", "zameranie stavby", "zamerania stavieb",
+                "3d skenovani", "bim model", "technicka pasportizaci",
+                "sprava a udrzba nehnutel", "facility management",
+                "technicka sprava budov", "technicka sprava objektov"],
+            2: ["pasport", "obhliadka budov", "diagnostika budov",
+                "energeticky manazment", "revizie technickych zariadeni",
+                "evidencia majetku", "sprava nehnutel", "prevadzka budov"],
         },
     },
     "ELEKTROINSTALACIE": {
