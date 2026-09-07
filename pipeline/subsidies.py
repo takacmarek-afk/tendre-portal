@@ -8,12 +8,15 @@ Pozor na semantiku CRZ: pri dotacnej zmluve je poskytovatel (ministerstvo,
 agentura) v poli objednavatela a PRIJIMATEL, teda obec, je v poli dodavatela.
 Je to naopak nez pri beznej zmluve.
 """
+import logging
 from datetime import date, timedelta
 
 import pandas as pd
 
 from classify import klasifikuj_ucel, SEKTOR_DOTACIE
 from config import DOTACIA_OKNO_OD_DNI, DOTACIA_OKNO_DO_DNI, MIN_DOTACIA_EUR
+
+log = logging.getLogger("subsidies")
 
 
 def _je_samosprava(nazov: str) -> bool:
@@ -30,19 +33,34 @@ def _je_samosprava(nazov: str) -> bool:
     return any(k in n for k in kluc)
 
 
+POTREBNE_STLPCE = ("sector", "price_total", "signed_on", "effective_from",
+                   "supplier_name", "supplier_cin", "authority_name",
+                   "subject", "subject_description", "id")
+
+
 def z_contracts(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     """Vstup: vsetky ulozene zmluvy. Vystup: riadky pre tabulku subsidies."""
     dnes = dnes or date.today()
-    if df.empty or "sector" not in df.columns:
+    if df.empty:
         return pd.DataFrame()
 
+    # Chybajuci stlpec sa tu nesmie tvarit ako prazdna hodnota. Prave to nam
+    # spravilo "dotacie=0" bez jedinej chybovej hlasky — filter na datum vyhodil
+    # vsetko, pretoze `signed_on` sa vobec nestahoval z databazy.
+    chyba = [c for c in POTREBNE_STLPCE if c not in df.columns]
+    if chyba:
+        raise KeyError(
+            f"Dotacie: v datach chybaju stlpce {chyba}. "
+            f"Doplnte ich do store.nacitaj_contracts.")
+
     d = df[df["sector"] == SEKTOR_DOTACIE].copy()
+    log.info("Dotacnych zmluv v databaze: %s", len(d))
     if d.empty:
         return pd.DataFrame()
 
     d["suma"] = pd.to_numeric(d["price_total"], errors="coerce")
-    d["podpisane"] = pd.to_datetime(d.get("signed_on"), errors="coerce")
-    d["ucinne_od"] = pd.to_datetime(d.get("effective_from"), errors="coerce")
+    d["podpisane"] = pd.to_datetime(d["signed_on"], errors="coerce")
+    d["ucinne_od"] = pd.to_datetime(d["effective_from"], errors="coerce")
 
     # Zaklad pre odhad okna: ucinnost, a ked chyba, tak podpis.
     zaklad = d["ucinne_od"].fillna(d["podpisane"])

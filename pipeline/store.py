@@ -61,9 +61,16 @@ def upsert_contracts(sb, rows):
 
 def nacitaj_contracts(sb) -> pd.DataFrame:
     """Stiahne vsetky ulozene zmluvy. Su to len zaznamy zaradene do sektorov,
-    takze ich su jednotky tisic, nie miliony."""
+    takze ich su desiatky tisic, nie miliony.
+
+    POZOR NA ZOZNAM STLPCOV: co tu nie je, to sa v prepocte tvari ako prazdne
+    a filtre to potichu vyhodia. Chybajuce `signed_on` a `effective_from` nam
+    uz raz spravili prazdnu tabulku dotacii s vysledkom "dotacie=0" bez jedinej
+    chybovej hlasky. Ked pridas do prepoctu novy stlpec, pridaj ho aj sem.
+    """
     stlpce = ("id, authority_name, authority_cin, supplier_name, supplier_cin, "
-              "subject, subject_description, effective_to, price_total, "
+              "subject, subject_description, signed_on, effective_from, "
+              "effective_to, price, price_total, "
               "status_id, sector, class_score, department, contract_identifier, "
               "procurement_url")
     vsetko, od = [], 0
