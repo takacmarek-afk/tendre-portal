@@ -32,7 +32,13 @@ on conflict (ico) do nothing;
 -- 3. Zakladanie firmy s kontrolou IČO -------------------------------------
 -- Vracia jsonb, nie uuid, aby frontend vedel rozlisit dovod odmietnutia
 -- a zobrazit spravnu spravu.
-create or replace function public.zaloz_organizaciu(p_nazov text, p_ico text)
+--
+-- POZOR: `create or replace` nedokaze zmenit navratovy typ funkcie. Povodna
+-- verzia vracala uuid, tato vracia jsonb — bez tohto DROP by Postgres
+-- odmietol zmenu chybou 42P13.
+drop function if exists public.zaloz_organizaciu(text, text);
+
+create function public.zaloz_organizaciu(p_nazov text, p_ico text)
 returns jsonb
 language plpgsql
 security definer
