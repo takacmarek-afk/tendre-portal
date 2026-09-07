@@ -201,8 +201,11 @@ function riadok(r) {
       <td class="px-4 py-4 align-top">
         <span class="text-[18px] font-bold">${r.skore ?? '—'}</span>
       </td>
-      <td class="px-4 py-4 align-top max-w-[420px]">
-        <div class="text-[14px] font-medium leading-snug">${bezpecne(r.subject)}</div>
+      <td class="px-4 py-4 align-top max-w-[440px]">
+        <div class="text-[14px] font-medium leading-snug" title="${bezpecne(r.subject)}"
+             style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+          ${bezpecne(r.subject)}
+        </div>
         <span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded ${styl}">
           ${popis}
         </span>

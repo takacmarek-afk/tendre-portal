@@ -4,6 +4,7 @@ Oproti povodnej verzii pracuje s DataFrame namiesto SQLite, inak je logika
 aj kalibracia prahov rovnaka.
 """
 import math
+import re
 from datetime import date, timedelta
 
 import pandas as pd
@@ -78,6 +79,25 @@ def _skore(r):
     return max(0, min(100, round(s)))
 
 
+# CRZ zverejnuje jednu zmluvu aj po castiach — kazda cast je samostatny
+# zaznam s vlastnym ID a v predmete ma prilepene "Zverejnene strany zmluvy
+# 1-7", "8-13" a tak dalej. Bez odstranenia by klient videl tu istu zakazku
+# pat krat a portal by posobil rozbito.
+_STRANY = re.compile(
+    r"\s*zverejnen[éeá]\s+stran[ayái]\s+zmluvy.*$", re.I | re.S)
+_BOILERPLATE = re.compile(
+    r"^\s*zmluva o dielo\s*:\s*predmetom\s+zmluvy\s+(?:s[úu]|je)\s*", re.I)
+
+
+def vycisti_predmet(text) -> str:
+    """Odstrani z predmetu pravnu vatu a oznacenie zverejnenych stran."""
+    if not text:
+        return ""
+    t = _STRANY.sub("", str(text))
+    t = _BOILERPLATE.sub("", t)
+    return re.sub(r"\s+", " ", t).strip(" .:;-")
+
+
 def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     """Vstup: vsetky ulozene zmluvy. Vystup: riadky pre tabulku opportunities."""
     dnes = dnes or date.today()
@@ -125,7 +145,25 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
         "top_dodavatel", "podiel_top_dodavatela", "historicky_pocet",
         "pocet_dodavatelov", "riziko", "skore", "okres_kod",
     ]
+    okno["subject"] = okno["subject"].apply(vycisti_predmet)
+    okno["subject_description"] = okno["subject_description"].apply(vycisti_predmet)
+
     vysledok = okno[stlpce].sort_values("skore", ascending=False).reset_index(drop=True)
+
+    # Odstranenie duplikatov tej istej zakazky. Kluc je obstaravatel + presna
+    # suma + datum konca — dve rozne zakazky sa v tychto troch naraz nezhodnu.
+    # Sortenie je uz podla skore, takze keep="first" ponecha najlepsi zaznam.
+    vysledok["_kluc_uradu"] = (vysledok["authority_cin"]
+                               .fillna(vysledok["authority_name"]))
+    pred = len(vysledok)
+    vysledok = vysledok.drop_duplicates(
+        subset=["_kluc_uradu", "price_total", "effective_to"], keep="first")
+    vysledok = vysledok.drop(columns=["_kluc_uradu"]).reset_index(drop=True)
+    if pred != len(vysledok):
+        import logging
+        logging.getLogger("score").info(
+            "Duplikaty tej istej zakazky: %s z %s zaznamov odstranenych",
+            pred - len(vysledok), pred)
 
     # Postgres ma tieto stlpce ako celé cisla. Pandas ich po spojeni s historiou
     # drzi ako desatinne (musia uniest prazdne hodnoty), takze by sme poslali
