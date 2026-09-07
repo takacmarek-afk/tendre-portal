@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PredTendrom.sk — vieme o zákazke skôr, než sa vyhlási</title>
-<meta name="description" content="Sledujeme končiace zmluvy úradov vo verejných registroch a upozorníme vás mesiace pred tým, než sa zákazka vyhlási. Formálnu časť ponuky pripravíme za vás.">
+<meta name="description" content="Sledujeme končiace zmluvy úradov a dotácie, ktoré obce už dostali. Vidíte tender mesiace pred tým, než sa vyhlási. Dáta z Centrálneho registra zmlúv.">
 <meta property="og:title" content="Vieme o zákazke skôr, než sa vyhlási">
-<meta property="og:description" content="Predikcia verejných zákaziek z končiacich zmlúv. Bezplatný zoznam pre váš okres.">
+<meta property="og:description" content="Končiace zmluvy úradov a dotácie obcí. Tender vidíte mesiace pred vyhlásením.">
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,8 +32,8 @@ tailwind.config = {
   <div class="wrap flex items-center justify-between h-16">
     <a href="#" class="font-bold text-[17px] tracking-tight">PredTendrom<span class="text-accent">.sk</span></a>
     <nav class="hidden md:flex items-center gap-8 text-[14px] text-slate2">
-      <a href="#ako" class="hover:text-ink transition">Ako to funguje</a>
-      <a href="#vyhoda" class="hover:text-ink transition">Čo získate</a>
+      <a href="#vrstvy" class="hover:text-ink transition">Čo sledujeme</a>
+      <a href="#komu" class="hover:text-ink transition">Pre koho</a>
       <a href="#hranice" class="hover:text-ink transition">Čo nerobíme</a>
     </nav>
     <div class="flex items-center gap-4">
@@ -45,12 +45,12 @@ tailwind.config = {
   </div>
 </header>
 
-<!-- ══════════════ 1. HERO ══════════════ -->
-<section class="wrap pt-20 pb-16 md:pt-28 md:pb-24">
+<!-- ══════════════ HERO ══════════════ -->
+<section class="wrap pt-20 pb-16 md:pt-28 md:pb-20">
   <div class="max-w-3xl">
     <div class="inline-flex items-center gap-2 text-[13px] font-medium text-accent bg-accent/8 border border-accent/20 rounded-full px-3 py-1 mb-7">
       <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
-      Dáta z Centrálneho registra zmlúv a vestníka ÚVO
+      Dáta z Centrálneho registra zmlúv
     </div>
 
     <h1 class="text-[34px] leading-[1.15] md:text-[54px] md:leading-[1.08] font-bold tracking-tight">
@@ -64,41 +64,41 @@ tailwind.config = {
     </p>
 
     <p class="mt-5 text-[17px] md:text-[19px] leading-relaxed text-ink max-w-2xl">
-      Sledujeme, ktorým úradom končia zmluvy vo vašom odbore, a upozorníme vás
-      <strong class="font-semibold">tri až šesť mesiacov pred tým</strong>, než sa
-      zákazka vôbec vyhlási. Formálnu časť ponuky potom pripravíme za vás.
+      Verejná zákazka nevzniká v deň, keď ju úrad vyhlási. Vzniká vtedy, keď
+      niekomu končí zmluva, alebo keď obec dostane peniaze. Oboje je zapísané
+      vo verejnom registri — <strong class="font-semibold">mesiace pred tendrom</strong>.
+      My to čítame denne a pošleme vám to.
     </p>
 
     <div class="mt-10 flex flex-col sm:flex-row gap-3">
-      <a href="#ukazka" class="inline-flex justify-center items-center bg-accent text-white font-semibold px-6 py-3.5 rounded-md hover:bg-accentDark transition">
+      <a href="./prihlasenie.html" class="inline-flex justify-center items-center bg-accent text-white font-semibold px-6 py-3.5 rounded-md hover:bg-accentDark transition">
         Začať 3 dni zadarmo
       </a>
-      <a href="#ako" class="inline-flex justify-center items-center border border-line font-semibold px-6 py-3.5 rounded-md hover:border-ink transition">
-        Ako to funguje
+      <a href="#vrstvy" class="inline-flex justify-center items-center border border-line font-semibold px-6 py-3.5 rounded-md hover:border-ink transition">
+        Čo presne uvidím
       </a>
     </div>
 
     <p class="mt-4 text-[13px] text-slate2">
-      Ukážka je zadarmo a bez záväzku. Uvidíte reálne zmluvy, ktoré vo vašom okrese
-      končia v najbližšom pol roku.
+      Bez platobnej karty. Po registrácii uvidíte celú databázu okamžite.
     </p>
   </div>
 </section>
 
-<!-- ══════════════ PÁS S ČÍSLAMI ══════════════ -->
+<!-- ══════════════ ČÍSLA ══════════════ -->
 <section class="border-y border-line bg-[#fafbfc]">
   <div class="wrap py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
     <div>
-      <div class="text-[28px] font-bold tracking-tight">3 až 6</div>
-      <div class="text-[13px] text-slate2 mt-1 leading-snug">mesiacov náskoku pred vyhlásením zákazky</div>
+      <div class="text-[28px] font-bold tracking-tight">227 731</div>
+      <div class="text-[13px] text-slate2 mt-1 leading-snug">zmlúv úradov v databáze</div>
     </div>
     <div>
-      <div class="text-[28px] font-bold tracking-tight">2011</div>
-      <div class="text-[13px] text-slate2 mt-1 leading-snug">od tohto roku analyzujeme históriu zmlúv</div>
+      <div class="text-[28px] font-bold tracking-tight">4 200</div>
+      <div class="text-[13px] text-slate2 mt-1 leading-snug">sledovaných príležitostí práve teraz</div>
     </div>
     <div>
       <div class="text-[28px] font-bold tracking-tight">denne</div>
-      <div class="text-[13px] text-slate2 mt-1 leading-snug">kontrolujeme nové zápisy v registroch</div>
+      <div class="text-[13px] text-slate2 mt-1 leading-snug">kontrolujeme nové zápisy v registri</div>
     </div>
     <div>
       <div class="text-[28px] font-bold tracking-tight">3 dni</div>
@@ -107,114 +107,110 @@ tailwind.config = {
   </div>
 </section>
 
-<!-- ══════════════ 2. AKO TO FUNGUJE ══════════════ -->
-<section id="ako" class="wrap py-20 md:py-28">
+<!-- ══════════════ DVE VRSTVY ══════════════ -->
+<section id="vrstvy" class="wrap py-20 md:py-28">
   <h2 class="text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
-    Tri kroky. Dva z nich robíme my.
+    Dva signály, ktoré prichádzajú pred tendrom
   </h2>
   <p class="mt-4 text-[17px] text-slate2 max-w-2xl">
-    Nepotrebujete nikoho zamestnať ani sa učiť zákon o verejnom obstarávaní.
+    Ani jeden z nich nie je tender. Preto o nich konkurencia nevie.
   </p>
 
-  <div class="mt-14 grid md:grid-cols-3 gap-6">
+  <div class="mt-14 grid md:grid-cols-2 gap-6">
 
-    <div class="border border-line rounded-lg p-7 hover:border-ink/25 transition">
-      <div class="flex items-center gap-3 mb-5">
-        <span class="w-8 h-8 rounded-md bg-ink text-white text-[14px] font-bold flex items-center justify-center">1</span>
-        <span class="text-[12px] font-semibold uppercase tracking-wider text-slate2">Robíme my</span>
+    <div class="border border-line rounded-lg p-8">
+      <div class="text-[12px] font-semibold uppercase tracking-wider text-slate2 mb-4">
+        Vrstva 1
       </div>
-      <h3 class="text-[19px] font-semibold leading-snug">Sledujeme dáta za vás</h3>
-      <p class="mt-3 text-[15px] leading-relaxed text-slate2">
-        Každý deň prechádzame Centrálny register zmlúv a vestník ÚVO. Hľadáme zmluvy,
-        ktoré končia vo vašom odbore a vo vašom kraji. Keď nájdeme príležitosť,
-        dozviete sa o nej e-mailom.
+      <h3 class="text-[21px] font-semibold leading-snug">Zmluva, ktorá sa končí</h3>
+      <p class="mt-4 text-[15px] leading-relaxed text-slate2">
+        Každá služba, ktorú úrad nakupuje, je dnes niečia zmluva. A každá
+        zmluva má dátum konca. Keď mestu končí zmluva na upratovanie v marci,
+        v decembri už musí pripravovať súťaž.
       </p>
+      <p class="mt-4 text-[15px] leading-relaxed text-slate2">
+        Vidíte to hneď, ako sa zmluva zapíše do registra — teda pri jej podpise,
+        nie pri jej konci.
+      </p>
+      <div class="mt-6 pt-5 border-t border-line">
+        <div class="text-[13px] text-slate2">Predstih</div>
+        <div class="text-[17px] font-semibold mt-0.5">1 až 12 mesiacov</div>
+      </div>
     </div>
 
-    <div class="border border-line rounded-lg p-7 hover:border-ink/25 transition">
-      <div class="flex items-center gap-3 mb-5">
-        <span class="w-8 h-8 rounded-md bg-ink text-white text-[14px] font-bold flex items-center justify-center">2</span>
-        <span class="text-[12px] font-semibold uppercase tracking-wider text-slate2">Robíme my</span>
+    <div class="border-2 border-ink rounded-lg p-8">
+      <div class="text-[12px] font-semibold uppercase tracking-wider text-accent mb-4">
+        Vrstva 2
       </div>
-      <h3 class="text-[19px] font-semibold leading-snug">Pripravíme formálnu časť ponuky</h3>
-      <p class="mt-3 text-[15px] leading-relaxed text-slate2">
-        Krycí list, čestné vyhlásenia, doklady o oprávnení podnikať, referenčné listy,
-        kontrolný zoznam príloh podľa súťažných podkladov. Presne tú byrokraciu,
-        na ktorej firmy najčastejšie padajú na formálnej chybe.
+      <h3 class="text-[21px] font-semibold leading-snug">Obec, ktorá dostala peniaze</h3>
+      <p class="mt-4 text-[15px] leading-relaxed text-slate2">
+        Keď obec podpíše zmluvu o dotácii na rekonštrukciu školy, na tú
+        rekonštrukciu <strong class="text-ink font-semibold">musí</strong>
+        vyhlásiť verejné obstarávanie. Nemá inú možnosť a má na to termín.
       </p>
-      <p class="mt-3 text-[14px] leading-relaxed text-ink border-l-2 border-line pl-3">
-        Cenu a technické riešenie dopĺňate vy. To je jediná časť, ktorú za vás
-        nikto urobiť nemôže, a ani by nemal.
+      <p class="mt-4 text-[15px] leading-relaxed text-slate2">
+        Tieto zmluvy sú verejné od prvého dňa. Tender z nich vzniká
+        až o pol roka a viac.
       </p>
-    </div>
-
-    <div class="border-2 border-ink rounded-lg p-7">
-      <div class="flex items-center gap-3 mb-5">
-        <span class="w-8 h-8 rounded-md bg-accent text-white text-[14px] font-bold flex items-center justify-center">3</span>
-        <span class="text-[12px] font-semibold uppercase tracking-wider text-accent">Robíte vy</span>
+      <div class="mt-6 pt-5 border-t border-line">
+        <div class="text-[13px] text-slate2">Predstih</div>
+        <div class="text-[17px] font-semibold mt-0.5">6 až 18 mesiacov</div>
       </div>
-      <h3 class="text-[19px] font-semibold leading-snug">Skontrolujete a podáte</h3>
-      <p class="mt-3 text-[15px] leading-relaxed text-slate2">
-        Dostanete kompletný balík pripravený na odoslanie a kontrolný zoznam.
-        Ponuku podávate zo svojho účtu vy, pretože to zo zákona ani inak nejde
-        a zodpovednosť musí zostať na vás.
-      </p>
-      <p class="mt-3 text-[14px] leading-relaxed text-slate2">
-        Ak potrebujete, prejdeme odoslanie spolu po telefóne.
-      </p>
     </div>
 
   </div>
+
+  <p class="mt-8 text-[14px] text-slate2 max-w-3xl leading-relaxed">
+    Pri každej položke uvidíte hodnotu, obstarávateľa, doterajšieho dodávateľa
+    a odhad, kedy tender príde. Aj to, koľko rôznych firiem u toho úradu
+    v minulosti vyhralo.
+  </p>
 </section>
 
-<!-- ══════════════ 3. HLAVNÁ VÝHODA ══════════════ -->
-<section id="vyhoda" class="bg-ink text-white">
+<!-- ══════════════ PRE KOHO ══════════════ -->
+<section id="komu" class="bg-ink text-white">
   <div class="wrap py-20 md:py-28">
     <h2 class="text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
-      Dve veci, ktoré vám bežný monitoring tendrov nepovie
+      Najlepšie to funguje na opakovaných službách
     </h2>
+    <p class="mt-5 text-[16px] leading-relaxed text-white/70 max-w-2xl">
+      Povieme to na rovinu, aby ste nestrácali čas. Predikcia stojí na tom,
+      že zmluva raz skončí a úrad musí obstarávať znova. Pri službách sa to
+      deje cyklicky. Pri jednorazovej stavbe nie.
+    </p>
 
-    <div class="mt-14 grid md:grid-cols-2 gap-6">
-
-      <div class="bg-white/5 border border-white/10 rounded-lg p-8">
-        <div class="text-[12px] font-semibold uppercase tracking-wider text-white/50 mb-4">
-          Výhoda 1
-        </div>
-        <h3 class="text-[22px] font-semibold leading-snug">Zákazku vidíme skôr, než existuje</h3>
-        <p class="mt-4 text-[15px] leading-relaxed text-white/70">
-          Bežná služba vám pošle tender v deň, keď ho úrad vyhlási. Vtedy máte na
-          prípravu tri týždne a nemáte ako dobehnúť niekoho, kto o tom vedel dávno.
-        </p>
-        <p class="mt-4 text-[15px] leading-relaxed text-white/70">
-          My ideme opačne. Každá zákazka je dnes niečia zmluva a každá zmluva má
-          dátum konca. Keď vidíme, že mestu končí zmluva na údržbu v marci,
-          vieme už v septembri, že tender príde. Vy tiež.
-        </p>
+    <div class="mt-12 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="bg-white/8 border border-white/15 rounded-lg p-5">
+        <div class="text-[15px] font-semibold">Stravovanie</div>
+        <div class="text-[13px] text-white/60 mt-1">školské a nemocničné jedálne, dodávka potravín</div>
       </div>
-
-      <div class="bg-white/5 border border-white/10 rounded-lg p-8">
-        <div class="text-[12px] font-semibold uppercase tracking-wider text-white/50 mb-4">
-          Výhoda 2
-        </div>
-        <h3 class="text-[22px] font-semibold leading-snug">Povieme vám, kedy to nemá zmysel</h3>
-        <p class="mt-4 text-[15px] leading-relaxed text-white/70">
-          Pri každom úrade spočítame, koľko rôznych firiem uňho za roky vyhralo.
-          Keď jeden dodávateľ drží sedem zákaziek z ôsmich, dostanete upozornenie
-          skôr, než do prípravy investujete dva týždne.
-        </p>
-        <p class="mt-4 text-[15px] leading-relaxed text-white/70">
-          Nie je to obvinenie z ničoho. Je to údaj z verejného registra a rozhodnutie
-          necháme na vás. Ale váš čas je najdrahšia vec, ktorú do tendra vkladáte,
-          a mali by ste vedieť, kam ho dávate.
-        </p>
+      <div class="bg-white/8 border border-white/15 rounded-lg p-5">
+        <div class="text-[15px] font-semibold">Upratovanie a čistenie</div>
+        <div class="text-[13px] text-white/60 mt-1">budovy úradov, škôl, zdravotníckych zariadení</div>
       </div>
-
+      <div class="bg-white/8 border border-white/15 rounded-lg p-5">
+        <div class="text-[15px] font-semibold">Ostraha a bezpečnosť</div>
+        <div class="text-[13px] text-white/60 mt-1">strážna služba, kamerové a poplachové systémy</div>
+      </div>
+      <div class="bg-white/8 border border-white/15 rounded-lg p-5">
+        <div class="text-[15px] font-semibold">Údržba zelene a zimná údržba</div>
+        <div class="text-[13px] text-white/60 mt-1">kosenie, výruby, posyp, odhŕňanie snehu</div>
+      </div>
+      <div class="bg-white/8 border border-white/15 rounded-lg p-5">
+        <div class="text-[15px] font-semibold">IT, tlač a kancelária</div>
+        <div class="text-[13px] text-white/60 mt-1">technika, správa sietí, tlačiarenské služby</div>
+      </div>
+      <div class="bg-white/8 border border-white/15 rounded-lg p-5">
+        <div class="text-[15px] font-semibold">Stavebné remeslá</div>
+        <div class="text-[13px] text-white/60 mt-1">strechy, zateplenie, elektro, kúrenie a voda</div>
+      </div>
     </div>
 
-    <p class="mt-10 text-[14px] text-white/45 max-w-3xl leading-relaxed">
-      Oba údaje vychádzajú z otvorených dát štátu. Koncentrácia dodávateľa je
-      štatistický signál z histórie zmlúv, nie tvrdenie o nezákonnom postupe
-      kohokoľvek.
+    <p class="mt-8 text-[14px] text-white/50 max-w-3xl leading-relaxed">
+      Pri stavebných prácach je predstih z končiacich zmlúv slabší, pretože
+      stavba sa nezopakuje. Preto je pre stavebné firmy zaujímavejšia vrstva
+      dotácií — obec, ktorá dostala peniaze na rekonštrukciu, bude stavbu
+      obstarávať.
     </p>
   </div>
 </section>
@@ -225,45 +221,68 @@ tailwind.config = {
     Čo za vás neurobíme
   </h2>
   <p class="mt-4 text-[17px] text-slate2 max-w-2xl">
-    Radšej to poviem hneď, než aby ste to zistili po podpise.
+    Radšej to poviem hneď, než aby ste to zistili po zaplatení.
   </p>
 
-  <div class="mt-10 grid md:grid-cols-3 gap-5">
+  <div class="mt-10 grid md:grid-cols-2 gap-x-10 gap-y-7">
+    <div class="border-l-2 border-line pl-5 py-1">
+      <h3 class="text-[16px] font-semibold">Nepíšeme za vás ponuku</h3>
+      <p class="mt-2 text-[15px] leading-relaxed text-slate2">
+        Dnes vám dávame informáciu a čas. Prípravu podkladov pripravujeme
+        ako ďalšiu službu, ale zatiaľ ju neposkytujeme a nebudeme sa tváriť,
+        že áno.
+      </p>
+    </div>
     <div class="border-l-2 border-line pl-5 py-1">
       <h3 class="text-[16px] font-semibold">Nepodávame ponuku za vás</h3>
       <p class="mt-2 text-[15px] leading-relaxed text-slate2">
-        Systémy verejného obstarávania vyžadujú prihlásenie cez eID alebo kvalifikovaný
-        elektronický podpis. Podáva štatutár. Nikdy nebudeme pýtať vaše prístupy.
+        Systémy verejného obstarávania vyžadujú eID alebo kvalifikovaný
+        elektronický podpis. Podáva štatutár. Vaše prístupy nikdy nebudeme pýtať.
       </p>
     </div>
     <div class="border-l-2 border-line pl-5 py-1">
       <h3 class="text-[16px] font-semibold">Negarantujeme, že vyhráte</h3>
       <p class="mt-2 text-[15px] leading-relaxed text-slate2">
-        Kto vám sľúbi výhru v súťaži, buď klame, alebo vie niečo, čo vedieť nemá.
-        Zvyšujeme počet príležitostí, do ktorých sa stihnete prihlásiť.
+        Kto vám sľúbi výhru v súťaži, buď klame, alebo vie niečo, čo vedieť
+        nemá. Zvyšujeme počet príležitostí, na ktoré sa stihnete pripraviť.
       </p>
     </div>
     <div class="border-l-2 border-line pl-5 py-1">
       <h3 class="text-[16px] font-semibold">Nemáme neverejné informácie</h3>
       <p class="mt-2 text-[15px] leading-relaxed text-slate2">
-        Pracujeme výhradne s otvorenými dátami, ktoré štát zverejňuje. Rozdiel nie je
-        v prístupe k dátam, ale v tom, že ich niekto spracuje pre vás.
+        Pracujeme výhradne s otvorenými dátami štátu. Rozdiel nie je v prístupe
+        k dátam, ale v tom, že ich niekto prečíta a spracuje pre vás.
+      </p>
+    </div>
+    <div class="border-l-2 border-line pl-5 py-1">
+      <h3 class="text-[16px] font-semibold">Nepokrývame všetky obce</h3>
+      <p class="mt-2 text-[15px] leading-relaxed text-slate2">
+        Centrálny register obsahuje štátne orgány a verejnoprávne inštitúcie.
+        Menšie obce zverejňujú zmluvy na vlastných weboch a tie zatiaľ
+        nečítame. Pracujeme na tom.
+      </p>
+    </div>
+    <div class="border-l-2 border-line pl-5 py-1">
+      <h3 class="text-[16px] font-semibold">Odhad nie je istota</h3>
+      <p class="mt-2 text-[15px] leading-relaxed text-slate2">
+        Okno, kedy tender očakávame, je výpočet z dátumov v zmluvách. Projekt
+        sa môže odložiť, zrušiť, alebo si ho úrad zrealizuje sám.
       </p>
     </div>
   </div>
 </section>
 
-<!-- ══════════════ 4. CTA — REGISTRÁCIA ══════════════ -->
+<!-- ══════════════ CTA ══════════════ -->
 <section id="ukazka" class="border-t border-line bg-[#fafbfc]">
   <div class="wrap py-20 md:py-28">
     <div class="max-w-2xl mx-auto text-center">
       <h2 class="text-[28px] md:text-[40px] font-bold tracking-tight leading-tight">
-        Pozrite sa, čo vám uniká vo vašom okrese
+        Pozrite sa, čo vám uniká
       </h2>
       <p class="mt-5 text-[17px] leading-relaxed text-slate2">
-        Zaregistrujte sa a hneď uvidíte reálne zmluvy, ktoré vo vašom kraji
-        končia v najbližšom roku, aj s hodnotou a doterajším dodávateľom.
-        Tri dni zadarmo, platobnú kartu nepotrebujeme.
+        Zaregistrujte sa a hneď uvidíte celú databázu — končiace zmluvy aj
+        dotácie, ktoré obce už dostali. Tri dni zadarmo, platobnú kartu
+        nepotrebujeme.
       </p>
 
       <a href="./prihlasenie.html"
@@ -283,7 +302,7 @@ tailwind.config = {
         </li>
         <li class="flex gap-3 text-[15px] text-slate2">
           <span class="text-accent font-bold mt-px">&#10003;</span>
-          Zrušíte kedykoľvek jedným klikom
+          Skúška je jedna na firmu
         </li>
       </ul>
 
@@ -295,7 +314,7 @@ tailwind.config = {
   </div>
 </section>
 
-<!-- ══════════════ FOOTER + GDPR ══════════════ -->
+<!-- ══════════════ FOOTER ══════════════ -->
 <footer id="gdpr" class="border-t border-line">
   <div class="wrap py-14">
     <div class="grid md:grid-cols-3 gap-10">
@@ -312,28 +331,28 @@ tailwind.config = {
       <div class="md:col-span-2">
         <h3 class="text-[14px] font-semibold">Ochrana osobných údajov</h3>
         <p class="mt-3 text-[13px] leading-relaxed text-slate2">
-          Prevádzkovateľom je LoveHome s.r.o., IČO 47586362. Údaje z formulára
-          (meno, firma, e-mail, telefón, okres, odbor) spracúvame výlučne na to,
-          aby sme vám pripravili a doručili vyžiadanú ukážku a nadviazali na ňu.
-          Právnym základom je váš súhlas podľa čl. 6 ods. 1 písm. a) GDPR.
-          Údaje uchovávame najviac 24 mesiacov od posledného kontaktu, potom ich
-          mažeme. Neposkytujeme ich tretím stranám na marketingové účely.
+          Prevádzkovateľom je LoveHome s.r.o., IČO 47586362. Pri registrácii
+          spracúvame vašu e-mailovú adresu, názov firmy a IČO, a to výlučne
+          na poskytovanie služby a komunikáciu s vami. Právnym základom je
+          plnenie zmluvy podľa čl. 6 ods. 1 písm. b) GDPR. Údaje uchovávame
+          po dobu trvania účtu a 24 mesiacov po jeho zrušení. Neposkytujeme
+          ich tretím stranám na marketingové účely.
         </p>
         <p class="mt-3 text-[13px] leading-relaxed text-slate2">
-          Máte právo na prístup k údajom, ich opravu, výmaz, obmedzenie spracúvania,
-          prenosnosť a právo kedykoľvek odvolať súhlas. Stačí napísať na
-          info@predtendrom.sk. Sťažnosť môžete podať na Úrade na ochranu osobných údajov SR.
+          Máte právo na prístup k údajom, ich opravu, výmaz, obmedzenie
+          spracúvania a prenosnosť. Stačí napísať na info@predtendrom.sk.
+          Sťažnosť môžete podať na Úrade na ochranu osobných údajov SR.
         </p>
         <p class="mt-3 text-[13px] leading-relaxed text-slate2">
-          Formulár spracúva sprostredkovateľ Supabase (EÚ, Frankfurt),
-          ktorý údaje odovzdá do našej e-mailovej schránky. Táto stránka nepoužíva
+          Prihlasovanie a databázu zabezpečuje Supabase s dátovým centrom
+          vo Frankfurte, e-maily odosiela Resend. Táto stránka nepoužíva
           analytické ani reklamné súbory cookie.
         </p>
       </div>
     </div>
 
     <div class="mt-12 pt-6 border-t border-line flex flex-col sm:flex-row justify-between gap-3 text-[12px] text-slate2">
-      <span>&copy; <span id="rok"></span> LoveHome s.r.o.. Zdroj dát: Centrálny register zmlúv, vestník ÚVO.</span>
+      <span>&copy; <span id="rok"></span> LoveHome s.r.o. Zdroj dát: Centrálny register zmlúv.</span>
       <span>Nie sme štátny orgán ani s ním prepojení.</span>
     </div>
   </div>
@@ -341,7 +360,6 @@ tailwind.config = {
 
 <script>
 document.getElementById('rok').textContent = new Date().getFullYear();
-
 </script>
 
 </body>
