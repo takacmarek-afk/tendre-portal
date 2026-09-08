@@ -65,6 +65,31 @@ def _riziko(r):
     return "STREDNE"
 
 
+def _cislo(v, ak_chyba: float = 0.0) -> float:
+    """Bezpecny prevod hodnoty z DataFrame na cislo.
+
+    POZOR NA PASCU: `NaN or 0` v Pythone vrati NaN, nie nulu — NaN sa
+    vyhodnocuje ako PRAVDIVY. Potom `log10(NaN)` je NaN a cele skore zmizne.
+    Namerane to bolo na 43 z 1 240 prilezitosti: uradom bez predchadzajucich
+    nakupov ostal po spojeni s historiou prazdny `historicky_pocet`.
+
+    Stara verzia to prezila nahodou, lebo `min(30, NaN)` vracia 30. Preto sa
+    tato chyba prejavila az po prepise na logaritmy bez stropu.
+    """
+    if v is None:
+        return ak_chyba
+    try:
+        if pd.isna(v):
+            return ak_chyba
+    except (TypeError, ValueError):
+        return ak_chyba
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return ak_chyba
+    return f if math.isfinite(f) else ak_chyba
+
+
 def _signal_hrubý(r) -> float:
     """Neobmedzene hrube skore. Same o sebe sa nezobrazuje — sluzi len ako
     podklad na percentilove poradie v ramci sektora.
@@ -77,14 +102,14 @@ def _signal_hrubý(r) -> float:
     nakupuje dvestokrat, dostal presne rovnako bodov ako urad s piatimi.
     Skore bolo v praxi trojhodnotovy prepinac.
     """
-    hodnota = float(r.get("price_total") or 0)
+    hodnota = _cislo(r.get("price_total"))
     # Cena 0 nie je mala zakazka, ale ramcova zmluva. Dostava strednu
     # hodnotu pasma, nie nulu.
     s = 8 * math.log10(hodnota / 1000 + 1) if hodnota > 0 else 4.0
 
-    s += 12 * math.log10((r.get("historicky_pocet") or 0) + 1)
-    s += 10 * math.log10((r.get("pocet_dodavatelov") or 0) + 1)
-    s += 1.5 * (r.get("class_score") or 0)
+    s += 12 * math.log10(max(0.0, _cislo(r.get("historicky_pocet"))) + 1)
+    s += 10 * math.log10(max(0.0, _cislo(r.get("pocet_dodavatelov"))) + 1)
+    s += 1.5 * _cislo(r.get("class_score"))
 
     riziko = r.get("riziko")
     if riziko == "VYSOKE":
@@ -112,6 +137,13 @@ def _percentil_v_sektore(df: pd.DataFrame, min_v_sektore: int = 12) -> pd.Series
     hrube = df.apply(_signal_hrubý, axis=1)
     vysledok = pd.Series(index=df.index, dtype="float64")
 
+    # Poistka: zaznam bez sektora by v groupby vypadol a zostal prazdny.
+    # Prazdne skore v UI vypada ako chyba a v razeni skonci na konci.
+    if df["sector"].isna().any():
+        logging.getLogger("score").warning(
+            "Zaznamov bez sektora: %s — dostanu stred pasma.",
+            int(df["sector"].isna().sum()))
+
     for sektor, idx in df.groupby("sector").groups.items():
         h = hrube.loc[idx]
         if len(h) >= min_v_sektore:
@@ -120,6 +152,13 @@ def _percentil_v_sektore(df: pd.DataFrame, min_v_sektore: int = 12) -> pd.Series
             rozsah = h.max() - h.min()
             vysledok.loc[idx] = (50.0 if rozsah == 0
                                  else (h - h.min()) / rozsah * 98 + 1)
+    chybajuce = int(vysledok.isna().sum())
+    if chybajuce:
+        logging.getLogger("score").warning(
+            "Sila signalu sa nespocitala pri %s zaznamoch, dostanu 50. "
+            "Skontroluj _signal_hrubý — pravdepodobne prazdna hodnota "
+            "vo vstupe.", chybajuce)
+        vysledok = vysledok.fillna(50.0)
     return vysledok.round().clip(1, 99)
 
 
