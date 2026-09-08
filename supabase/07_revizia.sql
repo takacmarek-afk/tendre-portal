@@ -146,3 +146,20 @@ select tablename as tabulka_bez_rls
 
 
 select 'Revizia hotova. Ak vyssie nie je ziadny riadok "tabulka_bez_rls", RLS je vsade zapnuta.' as vysledok;
+
+
+-- =============================================================================
+--  DOPLNOK: SPOLAHLIVOST BENCHMARKU
+--  Namerane rozptyly medzikvartiloveho rozpetia v sektoroch:
+--    ZELEN_ZIMNA_UDRZBA 161x, ELEKTROINSTALACIE 111x, OSTRAHA 84x,
+--    STAVEBNE_PRACE 21x, UPRATOVANIE 7x, STRAVOVANIE 6x, TLAC 4x
+--  Tam, kde stredna polovica zmluv siaha cez dva rady velkosti, median
+--  nie je pouzitelna porovnavacia kotva. Priznak to hovori nahlas.
+-- =============================================================================
+
+alter table public.ceny_prilezitosti add column if not exists rozptyl    numeric;
+alter table public.ceny_prilezitosti add column if not exists spolahlivy boolean;
+alter table public.ceny_sektor       add column if not exists rozptyl    numeric;
+alter table public.ceny_sektor       add column if not exists spolahlivy boolean;
+
+select 'Doplnok hotovy: rozptyl a spolahlivy pridane.' as vysledok2;

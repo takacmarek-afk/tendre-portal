@@ -129,9 +129,12 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
                 log.info("Cenovy benchmark podla sektora:")
                 for _, r in ceny.sort_values("median_cena", ascending=False).iterrows():
                     jednotka = "EUR/mes" if r["zaklad"] == "mesiac" else "EUR/zmluva"
-                    log.info("   %-24s %12.2f %-11s n=%-5s IQR %.0f-%.0f",
+                    znacka = "kotva" if r["spolahlivy"] else "LEN PASMO"
+                    log.info("   %-24s %12.2f %-11s n=%-5s IQR %.0f-%.0f  "
+                             "rozptyl %.1fx  %s",
                              r["sector"], r["median_cena"], jednotka,
-                             int(r["vzoriek"]), r["q1"], r["q3"])
+                             int(r["vzoriek"]), r["q1"], r["q3"],
+                             r["rozptyl"], znacka)
     except Exception as e:
         log.exception("Analytika zlyhala")
         print(f"::warning::Analytika zlyhala: {type(e).__name__}: {e}")

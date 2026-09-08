@@ -245,7 +245,8 @@ def nahrad_ceny_sektor(sb, df: pd.DataFrame, dnes: str):
     """Medianne mesacne ceny per sektor."""
     if df is None or df.empty:
         return _nahrad_tabulku(sb, "ceny_sektor", df, kluc="sector")
-    d = df[["sector", "median_cena", "vzoriek", "q1", "q3", "zaklad"]].copy()
+    d = df[["sector", "median_cena", "vzoriek", "q1", "q3", "zaklad",
+            "rozptyl", "spolahlivy"]].copy()
     d["vzoriek"] = pd.to_numeric(d["vzoriek"], errors="coerce").astype("Int64")
     d["last_seen_at"] = dnes
     return _nahrad_tabulku(sb, "ceny_sektor", d, kluc="sector")

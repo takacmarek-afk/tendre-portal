@@ -470,28 +470,38 @@ function pozdrz(fn, ms = 350) {
 function porovnanieCeny(b) {
   if (!b) return '';
   const cena = num(b.porovnavacia_cena);
-  const med = num(b.median_cena);
-  const vz = num(b.vzoriek);
+  const med  = num(b.median_cena);
+  const vz   = num(b.vzoriek);
+  const q1   = num(b.q1), q3 = num(b.q3);
   if (Number.isNaN(cena) || Number.isNaN(med) || Number.isNaN(vz) || vz < 8) return '';
 
   const jednotka = b.zaklad === 'zmluva' ? 'za zmluvu' : 'mes.';
-  const o = num(b.odchylka_pct);
-  const casti = [`${suma(cena)} ${jednotka}`];
+  const pasmo = (!Number.isNaN(q1) && !Number.isNaN(q3))
+    ? `stredná polovica zmlúv ${suma(q1)}\u2013${suma(q3)}` : '';
 
-  if (!Number.isNaN(o)) {
-    casti.push(Math.abs(o) < 10
+  // Percento oproti medianu tvrdime LEN tam, kde je rozptyl znesitelny.
+  // V sektoroch ako zelen alebo elektroinstalacie siaha stredna polovica
+  // zmluv cez dva rady velkosti (57 az 9 192 EUR/mes) — "o 15 % nad
+  // medianom" tam znie presne a pritom neznamena nic. Zakaznik, ktory
+  // podla toho naceni ponuku, prehra a bude to nasa vina.
+  const o = num(b.odchylka_pct);
+  const maKotvu = b.spolahlivy === true && !Number.isNaN(o);
+
+  const riadky = [`${suma(cena)} ${jednotka}`];
+  if (maKotvu) {
+    riadky.push(Math.abs(o) < 10
       ? 'na úrovni mediánu sektora'
       : `${o > 0 ? '+' : ''}${o} % oproti mediánu`);
   }
 
-  const q1 = num(b.q1), q3 = num(b.q3);
-  const pasmo = (!Number.isNaN(q1) && !Number.isNaN(q3))
-    ? ` Stredná polovica zmlúv v sektore: ${suma(q1)} až ${suma(q3)}.`
-    : '';
+  const doplnok = maKotvu
+    ? `<span class="opacity-60">(n=${vz})</span>`
+    : `<span class="opacity-60">(porovnanie v tomto sektore nerobíme,
+         ceny sú príliš rozptýlené)</span>`;
 
   return `<div class="text-[12px] text-slate2 mt-1.5"
-               title="Medián sektora ${suma(med)} z ${vz} zmlúv.${pasmo}">
-            ${bezpecne(casti.join(' · '))} <span class="opacity-60">(n=${vz})</span>
+               title="${bezpecne(pasmo)} z ${vz} zmlúv.">
+            ${bezpecne(riadky.join(' · '))} ${doplnok}
           </div>`;
 }
 
@@ -809,7 +819,8 @@ async function dashboard(supabase) {
     if (jePro && posledne.zmluvy.length) {
       const ids = posledne.zmluvy.map(x => x.contract_id).filter(x => x != null);
       const bq = await supabase.from('ceny_prilezitosti')
-        .select('contract_id, porovnavacia_cena, zaklad, median_cena, odchylka_pct, vzoriek, q1, q3')
+        .select('contract_id, porovnavacia_cena, zaklad, median_cena, odchylka_pct, ' +
+                'vzoriek, q1, q3, rozptyl, spolahlivy')
         .in('contract_id', ids);
       if (!bq.error) benchmark = new Map((bq.data ?? []).map(x => [x.contract_id, x]));
     }

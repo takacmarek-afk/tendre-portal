@@ -36,6 +36,34 @@ MIN_DNI_TRVANIA = 60
 # a jedno zle porovnanie zabije doveru v cely produkt.
 MIN_VZORIEK = 8
 
+# ── PRAH ROZPTYLU ────────────────────────────────────────────────────────
+#
+# Nameraně na 227 731 zmluvach: v niektorych sektoroch je medzikvartilove
+# rozpetie absurdne siroke.
+#
+#   ZELEN_ZIMNA_UDRZBA   IQR    57 -  9 192 EUR/mes   = 161x
+#   ELEKTROINSTALACIE    IQR    55 -  6 119 EUR/mes   = 111x
+#   OSTRAHA              IQR    99 -  8 302 EUR/mes   =  84x
+#   STAVEBNE_PRACE       IQR 8 453 -178 721 EUR/zml   =  21x
+#   UPRATOVANIE          IQR   449 -  3 137 EUR/mes   =   7x
+#   STRAVOVANIE          IQR   960 -  6 141 EUR/mes   =   6x
+#   TLAC_KANCELARIA      IQR   616 -  2 684 EUR/mes   =   4x
+#
+# Ked stredna polovica zmluv siaha od 57 do 9 192 EUR, median nehovori nic.
+# Zakaznik, ktory podla neho naceni ponuku, prehra — a bude to nasa vina.
+# Dovod je, ze sektor nie je homogenna kategoria: "upratovanie" je kancelaria
+# aj nemocnica, "zelen" je jedno kosenie aj celorocna sprava parkov.
+#
+# Preto sa median zobrazuje ako porovnavacia kotva LEN tam, kde je rozptyl
+# znesitelny. Inde zostane pasmo viditelne, ale bez tvrdenia "o X % oproti
+# medianu". Radsej menej tvrdeni nez jedno nespravne.
+MAX_ROZPTYL = 8.0
+
+# Extremy sa pred vypoctom odstrihnu. Zmluva na osem rokov za 6 000 EUR
+# vychadza na 62 EUR mesacne — je to platny zaznam, ale s beznou zakazkou
+# porovnatelny nie je a median aj kvartily posuva.
+ODSTRIH = 0.05
+
 # Minimalny pocet zmluv, aby sme dodavatela vobec profilovali.
 MIN_ZMLUV_DODAVATELA = 3
 
@@ -72,34 +100,63 @@ def cenovy_zaklad(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def medianySektora(df: pd.DataFrame) -> pd.DataFrame:
-    """Median porovnavacej ceny per sektor, s poctom vzoriek a kvartilmi.
+    """Median porovnavacej ceny per sektor, s poctom vzoriek, kvartilmi
+    a priznakom, ci je vobec pouzitelny ako porovnavacia kotva.
 
     Kvartily su tam zamerne. Jediny median bez rozptylu vyzera ako presna
-    hodnota, ktorou sa da nacenit ponuka — a to nie je. Zakaznik ma vidiet,
-    ako siroke je pasmo, v ktorom sa realne zmluvy pohybuju.
+    hodnota, ktorou sa da nacenit ponuka — a to nie je.
     """
-    prazdna = pd.DataFrame(columns=["sector", "median_cena", "vzoriek",
-                                    "q1", "q3", "zaklad"])
+    stlpce = ["sector", "median_cena", "vzoriek", "q1", "q3",
+              "rozptyl", "spolahlivy", "zaklad"]
     if df.empty or "porovnavacia_cena" not in df.columns:
-        return prazdna
+        return pd.DataFrame(columns=stlpce)
     d = df[df["porovnavacia_cena"].notna()]
     if d.empty:
-        return prazdna
+        return pd.DataFrame(columns=stlpce)
 
-    g = (d.groupby("sector")["porovnavacia_cena"]
-           .agg(median_cena="median", vzoriek="count",
-                q1=lambda s: s.quantile(0.25), q3=lambda s: s.quantile(0.75))
-           .reset_index())
-    for c in ("median_cena", "q1", "q3"):
-        g[c] = g[c].round(2)
+    def statistiky(s: pd.Series) -> pd.Series:
+        # Odstrih extremov pred vypoctom. Nie kvoli kozmetike: dlhe ramcove
+        # zmluvy za male sumy davaju desiatky EUR mesacne a posuvaju aj
+        # median, aj kvartily.
+        if len(s) >= 20:
+            s = s[s.between(s.quantile(ODSTRIH), s.quantile(1 - ODSTRIH))]
+        if s.empty:
+            return pd.Series({"median_cena": None, "vzoriek": 0,
+                              "q1": None, "q3": None})
+        return pd.Series({
+            "median_cena": round(float(s.median()), 2),
+            "vzoriek": int(len(s)),
+            "q1": round(float(s.quantile(0.25)), 2),
+            "q3": round(float(s.quantile(0.75)), 2),
+        })
+
+    g = d.groupby("sector")["porovnavacia_cena"].apply(statistiky).unstack().reset_index()
+    g = g[g["vzoriek"] >= MIN_VZORIEK].copy()
+    if g.empty:
+        return pd.DataFrame(columns=stlpce)
+
+    g["rozptyl"] = (g["q3"] / g["q1"]).round(1)
+    g["spolahlivy"] = g["rozptyl"].notna() & (g["rozptyl"] <= MAX_ROZPTYL)
     g["zaklad"] = g["sector"].apply(zaklad_sektora)
-    return g[g["vzoriek"] >= MIN_VZORIEK].reset_index(drop=True)
+    g["vzoriek"] = g["vzoriek"].astype("Int64")
+
+    nespolahlive = g.loc[~g["spolahlivy"], "sector"].tolist()
+    if nespolahlive:
+        log.info("Benchmark bez porovnavacej kotvy (rozptyl nad %sx): %s",
+                 MAX_ROZPTYL, ", ".join(nespolahlive))
+    return g[stlpce].reset_index(drop=True)
 
 
 def porovnaj_so_sektorom(df: pd.DataFrame, medianyDf: pd.DataFrame) -> pd.DataFrame:
-    """Prida median sektora a odchylku v percentach."""
+    """Prida median sektora, kvartily a odchylku v percentach.
+
+    Odchylka sa pocita LEN v sektoroch, kde je rozptyl znesitelny. Tam, kde
+    stredna polovica zmluv siaha cez dva rady velkosti, je "o 15 % nad
+    medianom" cislo, ktore znie presne a pritom nic neznamena.
+    """
     if medianyDf.empty:
-        for c in ("median_cena", "vzoriek", "q1", "q3", "odchylka_pct"):
+        for c in ("median_cena", "vzoriek", "q1", "q3", "rozptyl",
+                  "spolahlivy", "odchylka_pct"):
             df[c] = None
         return df
 
@@ -107,8 +164,9 @@ def porovnaj_so_sektorom(df: pd.DataFrame, medianyDf: pd.DataFrame) -> pd.DataFr
     d["odchylka_pct"] = (
         (d["porovnavacia_cena"] / d["median_cena"] - 1) * 100
     ).round(0)
-    d.loc[d["median_cena"].isna() | d["porovnavacia_cena"].isna(),
-          "odchylka_pct"] = None
+    d.loc[d["median_cena"].isna()
+          | d["porovnavacia_cena"].isna()
+          | (d["spolahlivy"] != True), "odchylka_pct"] = None
     return d
 
 

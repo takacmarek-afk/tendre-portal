@@ -250,7 +250,7 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
         # do `opportunities` sa NESMU dostat — RLS je riadkova, nie stlpcova,
         # takze Start by si ich vytiahol cez ?select=*.
         "porovnavacia_cena", "zaklad", "median_cena", "odchylka_pct",
-        "vzoriek", "q1", "q3",
+        "vzoriek", "q1", "q3", "rozptyl", "spolahlivy",
     ]
     okno["subject"] = okno["subject"].apply(vycisti_predmet)
     okno["subject_description"] = okno["subject_description"].apply(vycisti_predmet)
@@ -287,7 +287,7 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
 # sa nesmu dostat: RLS v Postgrese je riadkova, nie stlpcova, takze zakaznik
 # na plane Start by si ich vytiahol jednoduchym ?select=*.
 PRO_STLPCE = ("contract_id", "porovnavacia_cena", "zaklad", "median_cena",
-              "odchylka_pct", "vzoriek", "q1", "q3")
+              "odchylka_pct", "vzoriek", "q1", "q3", "rozptyl", "spolahlivy")
 
 
 def rozdel_na_start_a_pro(df: pd.DataFrame):
