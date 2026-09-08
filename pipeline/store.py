@@ -151,9 +151,21 @@ def _nahrad_tabulku(sb, tabulka: str, df: pd.DataFrame, kluc: str = "contract_id
 
     # Zmazanie toho, co v novom behu nie je. `last_seen_at` je dnesok pri
     # kazdom prave zapisanom riadku, takze staci zmazat starsie.
+    #
+    # POZOR NA SQL: `NULL < cokolvek` nie je NEPRAVDA, ale NEZNAMA hodnota,
+    # takze podmienka `last_seen_at < dnes` riadky s prazdnym `last_seen_at`
+    # NEZMAZE. Su to zaznamy, ktore v tabulke boli este pred zavedenim
+    # historizacie — a bez tejto podmienky by tam zostali navzdy so starymi
+    # hodnotami. Namerane: jeden taky riadok mal prazdne skore aj po oprave
+    # vypoctu, pretoze sa vobec neprepisoval.
     if "last_seen_at" in df.columns:
         dnes = str(df["last_seen_at"].iloc[0])
-        sb.table(tabulka).delete().lt("last_seen_at", dnes).execute()
+        odpad = (sb.table(tabulka).delete()
+                   .or_(f"last_seen_at.is.null,last_seen_at.lt.{dnes}")
+                   .execute())
+        if odpad.data:
+            log.info("%s: odstranenych %s zaznamov mimo aktualneho behu",
+                     tabulka, len(odpad.data))
 
     return len(zaznamy)
 
