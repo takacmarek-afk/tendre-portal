@@ -178,7 +178,10 @@ tailwind.config = { theme: { extend: {
           <table class="w-full text-left">
             <thead class="bg-[#fafbfc] border-b border-line">
               <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
-                <th class="px-4 py-3 w-16">Skóre</th>
+                <th class="px-4 py-3 w-20"
+                    title="Poradie v rámci sektora: 85 znamená horná sedmina zákaziek vo vašom odbore. Nie je to pravdepodobnosť výhry.">
+                  Sila<br>signálu
+                </th>
                 <th class="px-4 py-3">Predmet</th>
                 <th class="px-4 py-3">Obstarávateľ</th>
                 <th class="px-4 py-3 text-right whitespace-nowrap">Hodnota</th>
@@ -200,6 +203,14 @@ tailwind.config = { theme: { extend: {
         tender pravdepodobne už vyhlásený &mdash; overte si to vo Vestníku ÚVO.
         Cenové porovnanie neberie do úvahy rozsah: upratovanie kancelárie
         a nemocnice sú v dátach obe &bdquo;upratovanie&ldquo;.
+      </p>
+      <p class="mt-3 text-[12px] leading-relaxed text-slate2 max-w-3xl">
+        <strong class="text-ink">Sila signálu</strong> je poradie v rámci
+        sektora, nie pravdepodobnosť výhry. Hodnota 85 znamená, že zákazka
+        patrí do hornej sedminy vo svojom odbore podľa toho, ako často ten
+        úrad danú kategóriu obstaráva, koľko rôznych firiem u neho vyhralo
+        a aká je hodnota zmluvy. Či ju vyhráte, z verejného registra
+        spočítať nevieme.
       </p>
     </div>
 
@@ -547,6 +558,9 @@ function riadok(r, benchmark) {
     <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
       <td class="px-4 py-4 align-top">
         <span class="text-[18px] font-bold">${r.skore ?? '—'}</span>
+        <div class="text-[10px] text-slate2 leading-tight mt-0.5">
+          ${sektor ? 'v sektore' : ''}
+        </div>
       </td>
       <td class="px-4 py-4 align-top max-w-[420px]">
         <div class="text-[14px] font-medium leading-snug" title="${bezpecne(r.subject)}"

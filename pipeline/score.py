@@ -65,41 +65,62 @@ def _riziko(r):
     return "STREDNE"
 
 
-def _skore(r):
-    """0-100 SILA SIGNALU. Nie je to pravdepodobnost, ze zakaznik zakazku
-    vyhra — je to sila predtendrovej stopy, ktoru v datach vidime.
+def _signal_hrubý(r) -> float:
+    """Neobmedzene hrube skore. Same o sebe sa nezobrazuje — sluzi len ako
+    podklad na percentilove poradie v ramci sektora.
 
-    DVE OPRAVY OPROTI PRVEJ VERZII, obe najdene az na skutocnych datach:
-
-    1. CENA 0 NEZNAMENA MALU ZAKAZKU. 47 % zmluv (21 138 zo 44 566) ma
-       `price` nula — su to ramcove zmluvy a zmluvy s jednotkovymi cenami.
-       Povodny vzorec im dal 0 bodov zo 40, cim systematicky poslal na dno
-       rankingu prave ten najhodnotnejsi opakovany biznis. Teraz dostavaju
-       strednu hodnotu a v UI su oznacene ako "cena neuvedena".
-
-    2. HODNOTA NESMIE DOMINOVAT. Povodne mala 40 zo 100 bodov, takze
-       ranking v praxi zoradoval "velke zmluvy". Velka zmluva je pritom
-       presne ta, kde mala firma nevyhra — skore mohlo byt antikorelovane
-       so sancou nasho zakaznika. Teraz ma hodnota 25 bodov a vahu prebrala
-       opakovanost a sutazivost, teda to, ci sa zakazka bude naozaj
-       obstaravat znova a ci ma zmysel sa o nu uchadzat.
+    VSETKY SLOZKY SU LOGARITMICKE A BEZ STROPU. Predchadzajuca verzia mala
+    tvrde stropy `min(30, pocet*6)` a `min(25, dodavatelov*6)`, ktore sa
+    naplnili uz pri piatich zmluvach. Namerany dosledok: 521 z 1 171
+    prilezitosti (44 %) skoncilo v jedinom pasme 70-80, a ich priemerna
+    historia bola 200,8 zmluv a 109,5 dodavatelov. Urad, ktory tu kategoriu
+    nakupuje dvestokrat, dostal presne rovnako bodov ako urad s piatimi.
+    Skore bolo v praxi trojhodnotovy prepinac.
     """
     hodnota = float(r.get("price_total") or 0)
-    if hodnota > 0:
-        s = min(25.0, 8 * math.log10(hodnota / 1000 + 1))
-    else:
-        s = 12.0   # cena neuvedena: stred pasma, nie dno
+    # Cena 0 nie je mala zakazka, ale ramcova zmluva. Dostava strednu
+    # hodnotu pasma, nie nulu.
+    s = 8 * math.log10(hodnota / 1000 + 1) if hodnota > 0 else 4.0
 
-    s += min(30, (r.get("historicky_pocet") or 0) * 6)
-    s += min(25, (r.get("pocet_dodavatelov") or 0) * 6)
-    s += min(20, (r.get("class_score") or 0) * 1.5)
+    s += 12 * math.log10((r.get("historicky_pocet") or 0) + 1)
+    s += 10 * math.log10((r.get("pocet_dodavatelov") or 0) + 1)
+    s += 1.5 * (r.get("class_score") or 0)
 
     riziko = r.get("riziko")
     if riziko == "VYSOKE":
-        s -= 25
+        s -= 8
     elif riziko == "STREDNE":
-        s -= 10
-    return max(0, min(100, round(s)))
+        s -= 3
+    return s
+
+
+def _percentil_v_sektore(df: pd.DataFrame, min_v_sektore: int = 12) -> pd.Series:
+    """SILA SIGNALU 1-99 ako percentilove poradie v ramci sektora.
+
+    Preco percentil a nie absolutne cislo: zakaznik nerobi vo vsetkych
+    sektoroch naraz. Jeho otazka nie je "ako silny je tento signal na
+    Slovensku", ale "ktoru zo zakaziek v mojom odbore mam pozriet prvu".
+    Na to je poradie v ramci sektora presne spravna odpoved a navyse je
+    rovnomerne rozdelene — 85 vzdy znamena "horna sedmina v tvojom
+    sektore", nie abstraktne cislo, ktore sa da nasytit.
+
+    Nie je to pravdepodobnost vyhry. Tu z tychto dat spocitat nevieme.
+
+    V malych sektoroch (pod 12 zaznamov) je percentil prilis hruby, tam
+    sa hrube skore len preskaluje do rovnakeho rozsahu.
+    """
+    hrube = df.apply(_signal_hrubý, axis=1)
+    vysledok = pd.Series(index=df.index, dtype="float64")
+
+    for sektor, idx in df.groupby("sector").groups.items():
+        h = hrube.loc[idx]
+        if len(h) >= min_v_sektore:
+            vysledok.loc[idx] = h.rank(pct=True) * 98 + 1
+        else:
+            rozsah = h.max() - h.min()
+            vysledok.loc[idx] = (50.0 if rozsah == 0
+                                 else (h - h.min()) / rozsah * 98 + 1)
+    return vysledok.round().clip(1, 99)
 
 
 # CRZ zverejnuje jednu zmluvu aj po castiach — kazda cast je samostatny
@@ -198,7 +219,7 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
 
     okno = okno.merge(_historia(df), on=["authority_cin", "sector"], how="left")
     okno["riziko"] = okno.apply(_riziko, axis=1)
-    okno["skore"] = okno.apply(_skore, axis=1)
+    okno["skore"] = _percentil_v_sektore(okno)
 
     okno["dni_do_konca"] = (okno["effective_to"] - pd.Timestamp(dnes)).dt.days
     okno["odhad_vyhlasenia"] = (okno["effective_to"] - pd.Timedelta(days=75)).dt.strftime("%Y-%m-%d")
