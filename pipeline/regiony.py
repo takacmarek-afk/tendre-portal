@@ -192,6 +192,17 @@ def doplnit(df):
     df["mesto"] = [r[0] for r in rozobrane]
     df["psc"] = [r[1] for r in rozobrane]
     df["kraj"] = [r[2] for r in rozobrane]
+
+    # Zalozna cesta: co adresa nedala, skusime z nazvu uradu.
+    # "Zakladna skola, Hlavna 5, Presov" kraj vyda, aj ked sa adresa
+    # rozobrat nedala. Bez tohto zostavala stvrtina zaznamov bez kraja
+    # a filter na kraj ich zakaznikovi ticho schoval.
+    chyba = df["kraj"].isna()
+    if chyba.any() and "authority_name" in df.columns:
+        nahradne = df.loc[chyba, "authority_name"].apply(z_nazvu)
+        df.loc[chyba, "mesto"] = [n[0] or m for n, m
+                                  in zip(nahradne, df.loc[chyba, "mesto"])]
+        df.loc[chyba, "kraj"] = [n[1] for n in nahradne]
     return df
 
 

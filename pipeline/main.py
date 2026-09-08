@@ -8,6 +8,7 @@ import os
 import sys
 import logging
 import argparse
+from datetime import date
 
 import crz
 import score
@@ -39,6 +40,35 @@ def zapis_vystup(**hodnoty):
             f.write(f"{k}={v}\n")
 
 
+# Ked nova vrstva strati viac nez toto oproti tomu, co uz v databaze je,
+# beh spadne a nezapise nic. Tichy pokles je nebezpecnejsi nez pad: pad
+# uvidime v Actions, tichy pokles az vtedy, ked sa zakaznik oplati.
+MAX_POKLES = 0.25
+
+
+class KontrolaZlyhala(Exception):
+    pass
+
+
+def skontroluj_pokles(sb, tabulka: str, novy) -> None:
+    """Tvrda brana pred zapisom odvodenej vrstvy."""
+    try:
+        r = sb.table(tabulka).select("*", count="exact", head=True).execute()
+        stary = r.count or 0
+    except Exception:
+        return                       # tabulka este nemusi existovat
+    if stary == 0:
+        return
+    novych = 0 if novy is None or novy.empty else len(novy)
+    if novych < stary * (1 - MAX_POKLES):
+        raise KontrolaZlyhala(
+            f"{tabulka}: novy vypocet ma {novych} riadkov, v databaze je {stary}. "
+            f"To je pokles o {(1 - novych / stary) * 100:.0f} %, povolenych je "
+            f"{MAX_POKLES * 100:.0f} %. Nic sa nezapisalo. Skontroluj zdroj dat "
+            f"a filtre v config.py.")
+    log.info("%s: kontrola poctu OK (%s -> %s)", tabulka, stary, novych)
+
+
 def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     """Prepocita odvodene tabulky z uz ulozenych zmluv.
 
@@ -50,16 +80,26 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     (sekundy). Nema zmysel zahodit odrobenu pracu preto, ze zlyhal krok,
     ktory sa o hodinu zopakuje.
     """
-    tabulka, vlozene, dotacii, dodav, cien = None, 0, 0, 0, 0
+    dnes = date.today().isoformat()
+    tabulka, vlozene, dotacii, dodav, cien, cenPril = None, 0, 0, 0, 0, 0
     vsetky = None
     try:
         vsetky = store.nacitaj_contracts(sb)
         tabulka = score.prilezitosti(vsetky)
-        vlozene = store.nahrad_opportunities(sb, tabulka)
+
+        # Brana pred zapisom. Ak nova vrstva stratila viac nez stvrtinu
+        # riadkov, nieco je zle a zapisat to je horsie nez nezapisat nic.
+        skontroluj_pokles(sb, "opportunities", tabulka)
+
+        # Pro stlpce idu do vlastnej tabulky, nie do `opportunities`.
+        startDf, proDf = score.rozdel_na_start_a_pro(tabulka)
+        vlozene = store.nahrad_opportunities(sb, startDf, dnes)
+        cenPril = store.nahrad_ceny_prilezitosti(sb, proDf, dnes)
 
         # Dotacie su samostatna vrstva: nie zakazka, ale predzvest tendra.
         dot = subsidies.z_contracts(vsetky)
-        dotacii = store.nahrad_subsidies(sb, dot)
+        skontroluj_pokles(sb, "subsidies", dot)
+        dotacii = store.nahrad_subsidies(sb, dot, dnes)
         if dotacii:
             log.info("Dotacie s ocakavanym tendrom: %s", dotacii)
     except Exception as e:
@@ -75,27 +115,23 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
             # prijimatel, teda obec. Bez tohto filtra by v zozname firiem,
             # ktore najviac pracuju pre stat, boli na prvych miestach mesta.
             bezne = vsetky[vsetky["sector"] != SEKTOR_DOTACIE].copy()
+            s_cenou = analytics.cenovy_zaklad(bezne)
 
-            s_cenou = analytics.mesacna_cena(bezne)
-            s_navysenim = analytics.navysenie(s_cenou)
+            profily = analytics.dodavatelia(s_cenou)
+            dodav = store.nahrad_dodavatelia(sb, profily, dnes)
 
-            profily = analytics.dodavatelia(s_navysenim)
-            dodav = store.nahrad_dodavatelia(sb, profily)
-
-            ceny = analytics.medianyMesacnej(s_cenou)
-            cien = store.nahrad_ceny_sektor(sb, ceny)
+            ceny = analytics.medianySektora(s_cenou)
+            cien = store.nahrad_ceny_sektor(sb, ceny, dnes)
 
             log.info("Analytika: profilov dodavatelov %s, sektorov s medianom %s",
                      dodav, cien)
-            if not profily.empty:
-                s_nav = int(profily["priemerne_navysenie_pct"].notna().sum())
-                log.info("Dodavatelov s aspon jednym navysenim: %s z %s",
-                         s_nav, len(profily))
             if not ceny.empty:
-                log.info("Medianna mesacna cena podla sektora:")
-                for _, r in ceny.sort_values("median_mesacna", ascending=False).iterrows():
-                    log.info("   %-24s %10.2f EUR/mes  (%s vzoriek)",
-                             r["sector"], r["median_mesacna"], int(r["vzoriek"]))
+                log.info("Cenovy benchmark podla sektora:")
+                for _, r in ceny.sort_values("median_cena", ascending=False).iterrows():
+                    jednotka = "EUR/mes" if r["zaklad"] == "mesiac" else "EUR/zmluva"
+                    log.info("   %-24s %12.2f %-11s n=%-5s IQR %.0f-%.0f",
+                             r["sector"], r["median_cena"], jednotka,
+                             int(r["vzoriek"]), r["q1"], r["q3"])
     except Exception as e:
         log.exception("Analytika zlyhala")
         print(f"::warning::Analytika zlyhala: {type(e).__name__}: {e}")
@@ -116,7 +152,7 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
                         "prilis vela — prahy v score._riziko su volne.",
                         podiel_vysoke * 100)
         log.info("Rozlozenie rizika: %s", tabulka["riziko"].value_counts().to_dict())
-        log.info("Skore: min %s, median %s, max %s",
+        log.info("Sila signalu: min %s, median %s, max %s",
                  int(tabulka["skore"].min()),
                  int(tabulka["skore"].median()),
                  int(tabulka["skore"].max()))
@@ -139,10 +175,10 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
                     "alebo znizit MIN_HODNOTA_EUR v config.py.")
 
     zapis_vystup(zmluv=celkom, prilezitosti=vlozene, dotacie=dotacii,
-                 dodavatelia=dodav)
+                 dodavatelia=dodav, benchmark=cenPril)
     print(f"::notice::stiahnute={fetched} zaradene={kept} zmluv_v_db={celkom} "
           f"prilezitosti={vlozene} dotacie={dotacii} dodavatelia={dodav} "
-          f"dokoncene={hotovo}")
+          f"benchmark={cenPril} dokoncene={hotovo}")
     return 0
 
 

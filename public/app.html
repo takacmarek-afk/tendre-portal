@@ -194,11 +194,12 @@ tailwind.config = { theme: { extend: {
         </div>
       </div>
       <p class="mt-4 text-[12px] leading-relaxed text-slate2 max-w-3xl">
-        Koncentrácia dodávateľa je štatistický údaj z verejného registra, nie
-        tvrdenie o nezákonnom postupe. Odhad vyhlásenia tendra je koniec zmluvy
-        mínus 75 dní, prípadne upravený podľa toho, ako dlhé zmluvy ten istý
-        úrad zvykne podpisovať. Cenové porovnanie neberie do úvahy rozsah —
-        upratovanie kancelárie a nemocnice sú v dátach obe „upratovanie“.
+        Odhad vyhlásenia tendra je koniec zmluvy mínus 75 dní, prípadne
+        upravený podľa toho, ako dlhé zmluvy ten istý úrad zvykne podpisovať.
+        Je to odhad, nie istota. Pri zmluvách, ktoré končia do 90 dní, je
+        tender pravdepodobne už vyhlásený &mdash; overte si to vo Vestníku ÚVO.
+        Cenové porovnanie neberie do úvahy rozsah: upratovanie kancelárie
+        a nemocnice sú v dátach obe &bdquo;upratovanie&ldquo;.
       </p>
     </div>
 
@@ -270,9 +271,9 @@ tailwind.config = { theme: { extend: {
                     flex items-center justify-center mb-5">&#128274;</div>
         <h2 class="text-[19px] font-semibold">Profily dodávateľov sú vo verzii Pro</h2>
         <p class="mt-3 text-[14px] leading-relaxed text-slate2">
-          Kto pre štát pracuje najviac, v akom objeme, u koľkých úradov a ako
-          často si po podpise pripláca dodatkami. Plus mediánna mesačná cena
-          v sektore, aby ste vedeli, do akej cenovej hladiny idete.
+          Kto pre štát pracuje najviac, v akom objeme, u koľkých úradov,
+          v akej priemernej veľkosti zmluvy a či je ešte aktívny. Plus cenový
+          benchmark sektora s rozptylom, aby ste vedeli, do akej hladiny idete.
         </p>
         <p class="mt-3 text-[14px] leading-relaxed text-slate2">
           Končiace zmluvy, dotácie a všetky filtre máte v základnej verzii bez
@@ -311,7 +312,8 @@ tailwind.config = { theme: { extend: {
                 <option value="objem_eur">objemu zmlúv</option>
                 <option value="zmluv">počtu zmlúv</option>
                 <option value="uradov">počtu úradov</option>
-                <option value="priemerne_navysenie_pct">priemerného navýšenia</option>
+                <option value="priemerna_zmluva_eur">veľkosti zmluvy</option>
+                <option value="posledna_zmluva">poslednej zmluvy</option>
               </select>
             </div>
           </div>
@@ -332,7 +334,8 @@ tailwind.config = { theme: { extend: {
                   <th class="px-4 py-3 text-right whitespace-nowrap">Objem</th>
                   <th class="px-4 py-3 text-right whitespace-nowrap">Zmlúv</th>
                   <th class="px-4 py-3 text-right whitespace-nowrap">Úradov</th>
-                  <th class="px-4 py-3 whitespace-nowrap">Navýšenie dodatkami</th>
+                  <th class="px-4 py-3 text-right whitespace-nowrap">Priemerná zmluva</th>
+                  <th class="px-4 py-3 whitespace-nowrap">Aktivita</th>
                 </tr>
               </thead>
               <tbody id="riadky-f"></tbody>
@@ -343,13 +346,14 @@ tailwind.config = { theme: { extend: {
           </div>
         </div>
 
-        <div class="mt-5 bg-amber-50 border border-amber-200 rounded-lg p-4 max-w-3xl">
-          <p class="text-[13px] leading-relaxed text-amber-900">
-            <strong>Ako čítať navýšenie.</strong> Je to rozdiel medzi zmluvnou
-            a celkovou sumou, teda dodatky podpísané po zmluve. Vysoké
-            navýšenie nie je dôkaz ničoho nekalého — pri stavbách vznikajú
-            zmeny projektu, nájdené skryté konštrukcie a inflácia pri
-            viacročných dielach. Berte to ako podklad na otázku, nie ako záver.
+        <div class="mt-5 bg-[#fafbfc] border border-line rounded-lg p-4 max-w-3xl">
+          <p class="text-[13px] leading-relaxed text-slate2">
+            <strong class="text-ink">Ako to čítať.</strong> Sú to súčty zmlúv
+            z Centrálneho registra za obdobie, ktoré máme stiahnuté &mdash; nie
+            obrat firmy a nie hodnotenie. Profilujeme len právnické osoby,
+            živnostníkov zámerne nespracúvame. Stĺpec Aktivita hovorí, kedy
+            firma naposledy podpísala zmluvu so štátom; to je pri rozhodovaní,
+            proti komu idete, užitočnejšie než samotný objem.
           </p>
         </div>
       </div>
@@ -383,13 +387,6 @@ const skry = (id) => el(id).classList.add('hidden');
 const PRIHLASENIE = './prihlasenie.html';
 const LIMIT = 200;
 
-const STYL_RIZIKA = {
-  VYSOKE:  ['bg-red-50 text-red-800',      'silná koncentrácia dodávateľa'],
-  STREDNE: ['bg-amber-50 text-amber-800',  'mierna koncentrácia'],
-  NIZKE:   ['bg-green-50 text-green-800',  'otvorená súťaž'],
-  NEZNAME: ['bg-slate-100 text-slate-600', 'málo dát na hodnotenie'],
-};
-
 const SPRAVY = {
   ICO_NEPLATNE: 'IČO musí mať osem číslic. Skontrolujte ho, prosím.',
   UZ_V_FIRME:   'Tento účet už patrí do firmy. Obnovte stránku.',
@@ -422,7 +419,7 @@ function bezpecne(t) {
 // POZOR, PASCA: Number(null) je 0, nie NaN. A Number('') je tiez 0.
 // Bez tejto funkcie sa prazdna hodnota z databazy tvari ako nula — zmluva
 // bez cenoveho porovnania sa kreslila ako "na urovni medianu (0 vzoriek)"
-// a firma, ktora nikdy nepodpisala dodatok, ako "+0 % navysenie".
+// a firma bez udaja ako "+0 %".
 // Kazde cislo z databazy musi prejst tudy.
 function num(v) {
   if (v === null || v === undefined || v === '') return NaN;
@@ -432,7 +429,7 @@ function num(v) {
 
 function suma(v) {
   const n = num(v);
-  if (Number.isNaN(n) || n === 0) return '—';
+  if (Number.isNaN(n) || n === 0) return 'neuvedená';
   return new Intl.NumberFormat('sk-SK', {
     style: 'currency', currency: 'EUR', maximumFractionDigits: 0
   }).format(n);
@@ -461,28 +458,81 @@ function pozdrz(fn, ms = 350) {
   return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
 }
 
-// ── CENOVE POROVNANIE ───────────────────────────────────────────────────
-// Zamerne sa nezobrazuje ako verdikt "drahe" alebo "lacne", ale ako poloha
-// v rozdeleni spolu s poctom vzoriek. Bez vzoriek je to cislo bez vahy.
-function porovnanieCeny(r) {
-  const mes = num(r.mesacna_cena);
-  if (Number.isNaN(mes) || mes === 0) return '';
+// ── CENOVE POROVNANIE (PRO) ─────────────────────────────────────────────
+// Data prichadzaju zo samostatnej tabulky `ceny_prilezitosti`, nie zo
+// stlpcov `opportunities`. Dovod: RLS v Postgrese je riadkova, nie stlpcova,
+// takze zakaznik na plane Start by si benchmark z `opportunities` vytiahol
+// obycajnym ?select=*. Takto na tabulku vobec nedosiahne.
+//
+// Zobrazuje sa ako poloha v rozdeleni s poctom vzoriek a kvartilmi, nikdy
+// ako verdikt "toto je drahe". Jediny median bez rozptylu vyzera ako presna
+// hodnota, ktorou sa da nacenit ponuka — a to nie je.
+function porovnanieCeny(b) {
+  if (!b) return '';
+  const cena = num(b.porovnavacia_cena);
+  const med = num(b.median_cena);
+  const vz = num(b.vzoriek);
+  if (Number.isNaN(cena) || Number.isNaN(med) || Number.isNaN(vz) || vz < 8) return '';
 
-  const casti = [`${suma(mes)}/mes.`];
-  const o = num(r.odchylka_pct), vz = num(r.vzoriek);
-  if (!Number.isNaN(o) && !Number.isNaN(vz) && vz > 0) {
-    const znak = o > 0 ? '+' : '';
-    const smer = Math.abs(o) < 10 ? 'na úrovni mediánu sektora'
-               : `${znak}${o} % oproti mediánu sektora`;
-    casti.push(`${smer} (${vz} vzoriek)`);
+  const jednotka = b.zaklad === 'zmluva' ? 'za zmluvu' : 'mes.';
+  const o = num(b.odchylka_pct);
+  const casti = [`${suma(cena)} ${jednotka}`];
+
+  if (!Number.isNaN(o)) {
+    casti.push(Math.abs(o) < 10
+      ? 'na úrovni mediánu sektora'
+      : `${o > 0 ? '+' : ''}${o} % oproti mediánu`);
   }
-  return `<div class="text-[12px] text-slate2 mt-1.5">${bezpecne(casti.join(' · '))}</div>`;
+
+  const q1 = num(b.q1), q3 = num(b.q3);
+  const pasmo = (!Number.isNaN(q1) && !Number.isNaN(q3))
+    ? ` Stredná polovica zmlúv v sektore: ${suma(q1)} až ${suma(q3)}.`
+    : '';
+
+  return `<div class="text-[12px] text-slate2 mt-1.5"
+               title="Medián sektora ${suma(med)} z ${vz} zmlúv.${pasmo}">
+            ${bezpecne(casti.join(' · '))} <span class="opacity-60">(n=${vz})</span>
+          </div>`;
 }
 
-function riadok(r) {
-  const [styl, popis] = STYL_RIZIKA[r.riziko] ?? STYL_RIZIKA.NEZNAME;
+// ── KTO TO MA TERAZ ─────────────────────────────────────────────────────
+// Nahrada za detektor koncentracie, ktory oznacil 8 zaznamov z 864 — teda
+// asi percento. Toto ma stopercentne pokrytie, nulovu pravnu expoziciu
+// (ziadne tvrdenie o nikom, len sucty z verejneho registra) a zakaznik to
+// vie pouzit hned: vie, proti komu ide a ako dlho tam ten dodavatel je.
+function ktoToMa(r) {
+  if (!r.supplier_name) return '';
+  const casti = [];
+  if (r.dodavatel_od) casti.push(`od ${r.dodavatel_od}`);
+  const n = num(r.dodavatel_zmluv_celkom);
+  if (!Number.isNaN(n) && n > 1) casti.push(`${n} zmlúv so štátom`);
+  const h = num(r.historicky_pocet);
+  if (!Number.isNaN(h) && h > 1) casti.push(`${h}. zmluva u tohto úradu`);
+
+  return `<div class="text-[12px] mt-1">
+            <span class="text-slate2">teraz:</span>
+            <span class="font-medium">${bezpecne(r.supplier_name)}</span>
+            ${casti.length ? `<span class="text-slate2"> · ${bezpecne(casti.join(' · '))}</span>` : ''}
+          </div>`;
+}
+
+function riadok(r, benchmark) {
   const sektor = POPIS_SEKTORA[r.sector];
-  const kdeCasti = [r.mesto, r.kraj].filter(Boolean);
+  const kde = [r.mesto, r.kraj].filter(Boolean).join(', ');
+  const b = benchmark?.get(r.contract_id);
+
+  // Zmluva, ktora konci do 90 dni, uz ziadny predstih nedava — tender je
+  // pravdepodobne davno vyhlaseny. Nezahadzujeme ju, ale hovorime to.
+  const dni = num(r.dni_do_konca);
+  const neskoro = !Number.isNaN(dni) && dni < 90;
+
+  // Cena 0 v CRZ neznamena malu zakazku, ale neuvedenu cenu — ramcovu
+  // dohodu alebo zmluvu s jednotkovymi cenami. Tyka sa to 47 % zmluv.
+  const cenaBunka = r.cena_neuvedena
+    ? `<span class="text-slate2">neuvedená</span>
+       <div class="text-[11px] text-slate2 mt-1">rámcová zmluva</div>`
+    : suma(r.price_total);
+
   return `
     <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
       <td class="px-4 py-4 align-top">
@@ -493,21 +543,24 @@ function riadok(r) {
              style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
           ${bezpecne(r.subject)}
         </div>
-        <div class="flex flex-wrap items-center gap-1.5 mt-2">
-          <span class="text-[11px] font-semibold px-2 py-0.5 rounded ${styl}">${popis}</span>
-          ${sektor ? `<span class="text-[11px] font-semibold px-2 py-0.5 rounded
-                       bg-accent/10 text-accent">${sektor}</span>` : ''}
-        </div>
-        ${porovnanieCeny(r)}
+        ${sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5
+                     rounded bg-accent/10 text-accent">${sektor}</span>` : ''}
+        ${ktoToMa(r)}
+        ${porovnanieCeny(b)}
       </td>
       <td class="px-4 py-4 align-top text-[14px] text-slate2">
         ${bezpecne(r.authority_name)}
-        ${kdeCasti.length ? `<div class="text-[12px] mt-1">${bezpecne(kdeCasti.join(', '))}</div>` : ''}
+        ${kde ? `<div class="text-[12px] mt-1">${bezpecne(kde)}</div>` : ''}
       </td>
-      <td class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${suma(r.price_total)}</td>
+      <td class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${cenaBunka}</td>
       <td class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
         ${bezpecne(r.effective_to) || '—'}
-        ${r.odhad_vyhlasenia ? `<div class="text-[12px] mt-1">tender ~ ${bezpecne(r.odhad_vyhlasenia)}</div>` : ''}
+        ${neskoro
+          ? `<div class="text-[11px] font-semibold text-amber-800 bg-amber-50
+                        rounded px-1.5 py-0.5 mt-1 inline-block">tender už asi beží</div>`
+          : (r.odhad_vyhlasenia
+              ? `<div class="text-[12px] mt-1">tender ~ ${bezpecne(r.odhad_vyhlasenia)}</div>`
+              : '')}
       </td>
     </tr>`;
 }
@@ -540,19 +593,22 @@ function riadokDotacie(r) {
 
 function riadokDodavatela(r) {
   const sektor = POPIS_SEKTORA[r.hlavny_sektor] ?? r.hlavny_sektor;
-  const nav = num(r.priemerne_navysenie_pct);
-  const podiel = num(r.podiel_zmluv_s_navysenim);
-  let navText = '<span class="text-slate2">bez dodatkov</span>';
-  if (!Number.isNaN(nav)) {
-    navText = `<span class="font-medium">+${nav} %</span> v priemere`;
-    if (!Number.isNaN(podiel)) {
-      navText += `<div class="text-[12px] text-slate2 mt-1">` +
-                 `pri ${Math.round(podiel * 100)} % zmlúv</div>`;
-    }
-  }
+  const od = (r.prva_zmluva ?? '').slice(0, 4);
+  const do_ = (r.posledna_zmluva ?? '').slice(0, 4);
+
+  // Konkurent, ktory naposledy vyhral pred rokmi, uz nie je hrozba.
+  const rokTeraz = new Date().getFullYear();
+  const cerstvy = do_ && (rokTeraz - Number(do_)) <= 1;
+  const aktivita = od
+    ? `<span class="font-medium">${bezpecne(od)}&ndash;${bezpecne(do_)}</span>
+       <div class="text-[12px] mt-1 ${cerstvy ? 'text-green-700' : 'text-slate2'}">
+         ${cerstvy ? 'aktívny' : 'bez novej zmluvy'}
+       </div>`
+    : '<span class="text-slate2">—</span>';
+
   return `
     <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
-      <td class="px-4 py-4 align-top max-w-[360px]">
+      <td class="px-4 py-4 align-top max-w-[340px]">
         <div class="text-[14px] font-medium leading-snug">${bezpecne(r.dodavatel)}</div>
         <div class="text-[12px] text-slate2 mt-1">
           IČO ${bezpecne(r.supplier_cin)}${sektor ? ' · ' + bezpecne(sektor) : ''}
@@ -561,7 +617,8 @@ function riadokDodavatela(r) {
       <td class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${suma(r.objem_eur)}</td>
       <td class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${cislo(r.zmluv)}</td>
       <td class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${cislo(r.uradov)}</td>
-      <td class="px-4 py-4 align-top text-[14px] whitespace-nowrap">${navText}</td>
+      <td class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${suma(r.priemerna_zmluva_eur)}</td>
+      <td class="px-4 py-4 align-top text-[14px] whitespace-nowrap">${aktivita}</td>
     </tr>`;
 }
 
@@ -719,9 +776,10 @@ async function dashboard(supabase) {
   // Posledne stiahnute data drzime, aby ich export nemusel tahat znova.
   const posledne = { zmluvy: [], dotacie: [], dodavatelia: [] };
 
-  const STLPCE_Z = 'contract_id, skore, riziko, subject, sector, authority_name, ' +
-                   'price_total, effective_to, odhad_vyhlasenia, mesto, kraj, ' +
-                   'mesacna_cena, median_mesacna, odchylka_pct, vzoriek';
+  const STLPCE_Z = 'contract_id, skore, subject, sector, authority_name, ' +
+                   'price_total, cena_neuvedena, effective_to, odhad_vyhlasenia, ' +
+                   'dni_do_konca, mesto, kraj, supplier_name, dodavatel_od, ' +
+                   'dodavatel_zmluv_celkom, historicky_pocet';
 
   async function nacitajZmluvy() {
     let q = supabase.from('opportunities').select(STLPCE_Z, { count: 'exact' });
@@ -744,7 +802,20 @@ async function dashboard(supabase) {
       return;
     }
     posledne.zmluvy = data ?? [];
-    el('riadky').innerHTML = posledne.zmluvy.map(riadok).join('');
+
+    // Benchmark je v samostatnej Pro tabulke. Start ju precitat NEMOZE —
+    // RLS vrati prazdno, nie chybu, takze sa jednoducho nezobrazi.
+    let benchmark = null;
+    if (jePro && posledne.zmluvy.length) {
+      const ids = posledne.zmluvy.map(x => x.contract_id).filter(x => x != null);
+      const bq = await supabase.from('ceny_prilezitosti')
+        .select('contract_id, porovnavacia_cena, zaklad, median_cena, odchylka_pct, vzoriek, q1, q3')
+        .in('contract_id', ids);
+      if (!bq.error) benchmark = new Map((bq.data ?? []).map(x => [x.contract_id, x]));
+    }
+    posledne.benchmark = benchmark;
+
+    el('riadky').innerHTML = posledne.zmluvy.map(x => riadok(x, benchmark)).join('');
     el('prazdny-filter').classList.toggle('hidden', posledne.zmluvy.length > 0);
 
     const c = count ?? posledne.zmluvy.length;
@@ -784,7 +855,8 @@ async function dashboard(supabase) {
   async function nacitajDodavatelov() {
     let q = supabase.from('dodavatelia')
       .select('supplier_cin, dodavatel, hlavny_sektor, zmluv, objem_eur, uradov, ' +
-              'podiel_zmluv_s_navysenim, priemerne_navysenie_pct', { count: 'exact' });
+              'sektorov, priemerna_zmluva_eur, prva_zmluva, posledna_zmluva',
+              { count: 'exact' });
 
     const sektor = el('s-sektor').value;
     const text = ocisti(el('s-text').value);

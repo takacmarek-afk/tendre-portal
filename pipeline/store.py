@@ -121,68 +121,131 @@ def _hodnota(v):
     return v
 
 
+def _zaznamy(df: pd.DataFrame):
+    return [{k: _hodnota(v) for k, v in riadok.items()}
+            for riadok in df.to_dict("records")]
+
+
 def _nahrad_tabulku(sb, tabulka: str, df: pd.DataFrame, kluc: str = "contract_id"):
-    """Zmaze obsah a vlozi novy. Pouziva sa pre odvodene tabulky, ktore su
-    klzavym oknom — upsert by v nich nechaval stare zaznamy mimo okna.
+    """Nahradi obsah tabulky NOVYM OBSAHOM, ale bez okamihu, kedy je prazdna.
 
-    PostgREST nepovoli DELETE bez podmienky, preto tu je `neq`. Podmienka
-    musi sedet na stlpec, ktory tabulka naozaj MA — `dodavatelia` a
-    `ceny_sektor` nemaju contract_id, ich klucom je ICO resp. nazov sektora.
+    POVODNE TU BOLO DELETE + INSERT. To je cez REST API nie transakcia —
+    medzi obidvoma volaniami existuje okno, v ktorom je tabulka prazdna.
+    Nevsimli sme si to, lebo portal nema pouzivatelov. Pri dennom behu
+    o 05:10 UTC by to zakaznik videl ako rozbitu aplikaciu.
+
+    Teraz sa najprv UPSERTUJE cely novy obsah a az potom sa mazu zaznamy,
+    ktore v novom behu nie su. Tabulka tak nikdy nie je prazdna a navyse
+    prezije `first_seen_at`, ktory potrebujeme na historizaciu.
     """
-    if kluc == "contract_id":
-        sb.table(tabulka).delete().neq(kluc, -1).execute()
-    else:
-        sb.table(tabulka).delete().neq(kluc, "__nikdy__").execute()
-
     if df is None or df.empty:
+        # Prazdny vysledok NEMAZE existujuci obsah. Prazdno je skoro vzdy
+        # chyba behu, nie skutocnost, a zakaznikovi nema zmiznut vsetko.
+        log.warning("%s: novy vypocet je prazdny, existujuci obsah nechavam.",
+                    tabulka)
         return 0
 
-    zaznamy = [
-        {k: _hodnota(v) for k, v in riadok.items()}
-        for riadok in df.to_dict("records")
-    ]
-
+    zaznamy = _zaznamy(df)
     for i in range(0, len(zaznamy), DAVKA):
-        sb.table(tabulka).insert(zaznamy[i:i + DAVKA]).execute()
+        sb.table(tabulka).upsert(zaznamy[i:i + DAVKA], on_conflict=kluc).execute()
+
+    # Zmazanie toho, co v novom behu nie je. `last_seen_at` je dnesok pri
+    # kazdom prave zapisanom riadku, takze staci zmazat starsie.
+    if "last_seen_at" in df.columns:
+        dnes = str(df["last_seen_at"].iloc[0])
+        sb.table(tabulka).delete().lt("last_seen_at", dnes).execute()
+
     return len(zaznamy)
 
 
-def nahrad_opportunities(sb, df: pd.DataFrame):
+def _historizuj(sb, tabulka: str, df: pd.DataFrame, kluc: str, dnes: str):
+    """Doplni first_seen_at a last_seen_at.
+
+    `first_seen_at` je datum, kedy sme zaznam videli PRVY RAZ. Bez neho sa
+    neda poslat upozornenie "nove od vcera", spravit spatny test predikcie
+    ani zmerat vlastnu presnost — a to je jediny marketingovy argument,
+    ktory sa neda rozporovat. Preto sa cita zo starej tabulky a zachovava.
+    """
+    df = df.copy()
+    df["last_seen_at"] = dnes
+
+    stare = {}
+    od = 0
+    while True:
+        r = (sb.table(tabulka).select(f"{kluc}, first_seen_at")
+               .order(kluc).range(od, od + STRANA - 1).execute())
+        if not r.data:
+            break
+        for riadok in r.data:
+            if riadok.get("first_seen_at"):
+                stare[riadok[kluc]] = riadok["first_seen_at"]
+        if len(r.data) < STRANA:
+            break
+        od += STRANA
+
+    df["first_seen_at"] = df[kluc].map(lambda k: stare.get(k, dnes))
+    novych = int((df["first_seen_at"] == dnes).sum()) - (0 if stare else len(df))
+    if stare:
+        log.info("%s: novych zaznamov oproti minulemu behu: %s",
+                 tabulka, max(0, novych))
+    return df
+
+
+def nahrad_opportunities(sb, df: pd.DataFrame, dnes: str):
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "opportunities", df)
+    df = _historizuj(sb, "opportunities", df, "contract_id", dnes)
     return _nahrad_tabulku(sb, "opportunities", df)
 
 
-def nahrad_subsidies(sb, df: pd.DataFrame):
+def nahrad_subsidies(sb, df: pd.DataFrame, dnes: str):
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "subsidies", df)
+    df = _historizuj(sb, "subsidies", df, "contract_id", dnes)
     return _nahrad_tabulku(sb, "subsidies", df)
+
+
+def nahrad_ceny_prilezitosti(sb, df: pd.DataFrame, dnes: str):
+    """PRO tabulka s cenovym benchmarkom. Zamerne je oddelena od
+    `opportunities`: RLS v Postgrese je riadkova, nie stlpcova, takze
+    zakaznik na plane Start by si benchmark z `opportunities` vytiahol
+    obycajnym ?select=*. Takto na tabulku vobec nedosiahne."""
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "ceny_prilezitosti", df)
+    d = df.copy()
+    d["last_seen_at"] = dnes
+    return _nahrad_tabulku(sb, "ceny_prilezitosti", d)
 
 
 # Stlpce, ktore tabulka `dodavatelia` naozaj ma. Analytika pocita aj
 # `zmluv_v_historii` a podobne pomocne veci — tie by REST odmietol.
 STLPCE_DODAVATELIA = (
     "supplier_cin", "dodavatel", "hlavny_sektor", "zmluv", "objem_eur",
-    "priemerna_zmluva_eur", "uradov", "sektorov", "zmluv_s_navysenim",
-    "podiel_zmluv_s_navysenim", "priemerne_navysenie_pct",
+    "priemerna_zmluva_eur", "uradov", "sektorov",
     "prva_zmluva", "posledna_zmluva",
 )
 
 
-def nahrad_dodavatelia(sb, df: pd.DataFrame, limit: int = 5000):
+def nahrad_dodavatelia(sb, df: pd.DataFrame, dnes: str, limit: int = 5000):
     """Profily dodavatelov. Limit je tam kvoli 500 MB na Supabase free —
     dodavatelov s troma a viac zmluvami su desiatky tisic a chvost s malym
     objemom nikoho nezaujima. df prichadza usporadany podla objemu."""
     if df is None or df.empty:
         return _nahrad_tabulku(sb, "dodavatelia", df, kluc="supplier_cin")
     d = df.head(limit).copy()
-    d = d[[c for c in STLPCE_DODAVATELIA if c in d.columns]]
-    for stlpec in ("zmluv", "uradov", "sektorov", "zmluv_s_navysenim"):
+    d["last_seen_at"] = dnes
+    d = d[[c for c in STLPCE_DODAVATELIA if c in d.columns] + ["last_seen_at"]]
+    for stlpec in ("zmluv", "uradov", "sektorov"):
         if stlpec in d.columns:
             d[stlpec] = pd.to_numeric(d[stlpec], errors="coerce").astype("Int64")
     return _nahrad_tabulku(sb, "dodavatelia", d, kluc="supplier_cin")
 
 
-def nahrad_ceny_sektor(sb, df: pd.DataFrame):
+def nahrad_ceny_sektor(sb, df: pd.DataFrame, dnes: str):
     """Medianne mesacne ceny per sektor."""
     if df is None or df.empty:
         return _nahrad_tabulku(sb, "ceny_sektor", df, kluc="sector")
-    d = df[["sector", "median_mesacna", "vzoriek"]].copy()
+    d = df[["sector", "median_cena", "vzoriek", "q1", "q3", "zaklad"]].copy()
     d["vzoriek"] = pd.to_numeric(d["vzoriek"], errors="coerce").astype("Int64")
+    d["last_seen_at"] = dnes
     return _nahrad_tabulku(sb, "ceny_sektor", d, kluc="sector")

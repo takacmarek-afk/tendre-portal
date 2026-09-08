@@ -249,3 +249,32 @@ SEKTORY = {
 # Objekty samospravy sa pridavaju do vseobecnych stavebnych prac s vahou 2.
 # Same o sebe neprekrocia prah, ale v spojeni s "obnova" alebo "oprava" ano.
 SEKTORY["STAVEBNE_PRACE"]["kluc"][2].extend(OBJEKTY_SAMOSPRAVY)
+
+# ── JEDNORAZOVE SEKTORY ──────────────────────────────────────────────────
+# Stavba nie je opakovana sluzba. Prepocet ceny na mesiac tam nema zmysel:
+# rekonstrukcia za 300 000 EUR za pol roka vyjde na 50 000 EUR "mesacne",
+# co je cislo, ktore neznamena nic. Pri tychto sektoroch sa benchmark pocita
+# z CELKOVEJ ceny zmluvy a v UI ma inu jednotku.
+SEKTORY_JEDNORAZOVE = {
+    "STAVEBNE_PRACE",
+    "STRECHY_IZOLACIE",
+    "OKNA_DVERE_POVRCHY",
+}
+
+# ── PRAVNICKE OSOBY ──────────────────────────────────────────────────────
+# Do profilov dodavatelov patria len pravnicke osoby. Zivnostnik je fyzicka
+# osoba a jeho meno spolu s ICO a objemom zmluv je osobny udaj — profilovanie
+# menovanych fyzickych osob za platenou stenou by potrebovalo pravny zaklad,
+# informacnu povinnost podla cl. 14 GDPR a zrejme aj posudenie vplyvu.
+# Lacnejsie je fyzicke osoby vobec nespracuvat.
+#
+# Rozpoznavame ich podla pravnej formy v nazve. Ked ju nazov nema, zaznam
+# NEPUBLIKUJEME — pri pochybnosti sa chybuje v prospech nezverejnenia.
+PRAVNE_FORMY = [
+    "s.r.o", "s. r. o", "spol. s r.o", "a.s", "a. s", "akciova spolocnost",
+    "k.s", "k. s", "v.o.s", "v. o. s", "druzstvo", "obcianske zdruzenie",
+    "o.z", "n.o", "n. o", "nezisková", "nezisková organizacia",
+    "prispevkova organizacia", "rozpoctova organizacia", "statny podnik",
+    "s.p", "š.p", "zdruzenie", "nadacia", "ustav", "univerzita",
+    "vysoka skola", "gmbh", "ltd", "limited", "plc", "se", "as.",
+]

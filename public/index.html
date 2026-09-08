@@ -135,7 +135,11 @@ tailwind.config = {
       </p>
       <div class="mt-6 pt-5 border-t border-line">
         <div class="text-[13px] text-slate2">Predstih</div>
-        <div class="text-[17px] font-semibold mt-0.5">1 až 12 mesiacov</div>
+        <div class="text-[17px] font-semibold mt-0.5">3 až 12 mesiacov</div>
+        <div class="text-[12px] text-slate2 mt-1.5">
+          Zmluvy končiace skôr zobrazujeme tiež, ale označené &mdash; pri nich
+          už tender pravdepodobne beží.
+        </div>
       </div>
     </div>
 
@@ -189,18 +193,19 @@ tailwind.config = {
         </p>
       </div>
       <div class="bg-white border border-line rounded-lg p-6">
-        <h3 class="text-[17px] font-semibold leading-snug">Kto si pripláca dodatkami</h3>
+        <h3 class="text-[17px] font-semibold leading-snug">Kto je ešte aktívny</h3>
         <p class="mt-3 text-[14px] leading-relaxed text-slate2">
-          Rozdiel medzi zmluvnou a celkovou sumou pri každej zmluve. Pri
-          niektorých firmách je to pravidlo, pri iných výnimka. Nie je to
-          dôkaz ničoho nekalého, ale je to podklad na otázku.
+          Prvá a posledná zmluva každej firmy plus priemerná veľkosť zákazky.
+          Konkurent, ktorý naposledy vyhral pred tromi rokmi, už nie je hrozba
+          &mdash; a firma s desaťkrát väčšími zmluvami hrá inú ligu než vy.
         </p>
       </div>
       <div class="bg-white border border-line rounded-lg p-6">
         <h3 class="text-[17px] font-semibold leading-snug">Aká je bežná cena</h3>
         <p class="mt-3 text-[14px] leading-relaxed text-slate2">
-          Mediánna mesačná cena v sektore, spočítaná z dĺžky a sumy zmlúv.
-          Vždy s počtom vzoriek, aby ste vedeli, akú váhu to číslo má.
+          Pri opakovaných službách mediánna mesačná sadzba, pri stavbách
+          medián celkovej ceny zmluvy. Vždy s počtom vzoriek a rozpätím,
+          v ktorom leží stredná polovica zmlúv.
         </p>
       </div>
     </div>
@@ -247,9 +252,9 @@ tailwind.config = {
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
           Profily dodávateľov: objem, počet úradov, sektory</li>
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
-          Navýšenie dodatkami po podpise, po firmách</li>
+          Priemerná veľkosť zmluvy a kedy firma naposledy vyhrala</li>
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
-          Cenový benchmark: mediánna mesačná cena v sektore</li>
+          Cenový benchmark sektora s rozptylom a počtom vzoriek</li>
       </ul>
     </div>
   </div>

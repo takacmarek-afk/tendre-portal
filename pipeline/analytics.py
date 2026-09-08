@@ -1,24 +1,34 @@
 """Analyticka vrstva — to, co z dat vieme vytiazit bez noveho zdroja.
 
-Styri veci, vsetky z dat, ktore uz mame ulozene:
+  1. CENOVY BENCHMARK   median ceny v sektore, so zakladom podla typu sektora
+  2. CYKLUS OBSTARAVANIA odstupy zmluv toho isteho uradu -> lepsi odhad tendra
+  3. PROFIL DODAVATELA   agregat per ICO -> kto najviac pracuje pre stat
 
-  1. MESACNA CENA        suma / dlzka zmluvy -> porovnatelna v ramci sektora
-  2. NAVYSENIE DODATKAMI price_total - price -> ktory dodavatel si priplaca
-  3. CYKLUS OBSTARAVANIA odstupy zmluv toho isteho uradu -> lepsi odhad tendra
-  4. PROFIL DODAVATELA   agregat per ICO -> kto najviac pracuje pre stat
+CO TU UZ NIE JE A PRECO
+-----------------------
+Bola tu funkcia `navysenie()`, ktora pocitala `price_total - price` ako
+navysenie dodatkami. Dokumentacia CRZ definuje `price_total` ako celkovu sumu
+vratane dodatkov. Meranie na 44 566 nedotacnych zmluvach ukazalo:
 
-Bod 2 je najcennejsi a najdlhsie nam unikal. Schema CRZ definuje
-`price` ako zmluvne dohodnutu sumu a `price_total` ako celkovu sumu
-VRATANE DODATKOV. Navysenie po podpise teda nemusime nikde dopocitavat
-ani parsovat — je to rozdiel dvoch stlpcov pri kazdej zmluve.
+    price_total = price          23 374 zmluv
+    price_total > price * 1.01       34 zmluv   (0,15 %)
+
+`price_total` je v praxi duplikat `price`. Dodatky su v CRZ samostatne
+zaznamy s vlastnym ID a rodicovska zmluva sa neprepisuje. Funkcia bola
+odstranena aj s celou nadvazujucou funkcionalitou v UI.
+
+Pouceniе: definiciu pola zo schemy vzdy odmerat na datach skor, nez sa na
+nej postavi funkcia produktu.
 """
 import logging
 
 import pandas as pd
 
+from config import SEKTORY_JEDNORAZOVE, PRAVNE_FORMY
+
 log = logging.getLogger("analytics")
 
-# Kratsie zmluvy nemaju zmysel prepocitavat na mesiac — jednorazova dodavka
+# Kratsie zmluvy nema zmysel prepocitavat na mesiac — jednorazova dodavka
 # za 50 000 EUR na dva tyzdne by vysla na 100 000 EUR mesacne.
 MIN_DNI_TRVANIA = 60
 
@@ -26,18 +36,23 @@ MIN_DNI_TRVANIA = 60
 # a jedno zle porovnanie zabije doveru v cely produkt.
 MIN_VZORIEK = 8
 
-# Navysenie pod jedno procento je zaokruhlovanie, nie dodatok.
-MIN_NAVYSENIE_PCT = 1.0
+# Minimalny pocet zmluv, aby sme dodavatela vobec profilovali.
+MIN_ZMLUV_DODAVATELA = 3
 
 
-# ── 1. MESACNA CENA ──────────────────────────────────────────────────────
+# ── 1. CENOVY BENCHMARK ──────────────────────────────────────────────────
 
-def mesacna_cena(df: pd.DataFrame) -> pd.DataFrame:
-    """Prida stlpce mesacna_cena, dni_trvania.
+def zaklad_sektora(sektor: str) -> str:
+    """"mesiac" pre opakovane sluzby, "zmluva" pre jednorazove prace."""
+    return "zmluva" if sektor in SEKTORY_JEDNORAZOVE else "mesiac"
 
-    Neporovnava rozsah — upratovanie kancelarie a nemocnice su obe
-    "upratovanie". Preto sa vysledok NIKDY nesmie zobrazit ako verdikt
-    "toto je drahe", len ako poloha v rozdeleni s poctom vzoriek.
+
+def cenovy_zaklad(df: pd.DataFrame) -> pd.DataFrame:
+    """Prida stlpce dni_trvania, mesacna_cena a porovnavaciu_cenu.
+
+    `porovnavacia_cena` je to, co sa naozaj porovnava s medianom: pri
+    opakovanych sluzbach mesacna sadzba, pri jednorazovych pracach celkova
+    cena zmluvy.
     """
     d = df.copy()
     od = pd.to_datetime(d.get("effective_from"), errors="coerce")
@@ -46,53 +61,58 @@ def mesacna_cena(df: pd.DataFrame) -> pd.DataFrame:
 
     dni = (do - od).dt.days
     d["dni_trvania"] = dni
+
     pouzitelne = dni.notna() & (dni >= MIN_DNI_TRVANIA) & suma.notna() & (suma > 0)
     d["mesacna_cena"] = (suma / (dni / 30.44)).where(pouzitelne).round(2)
+
+    d["zaklad"] = d["sector"].apply(zaklad_sektora)
+    d["porovnavacia_cena"] = d["mesacna_cena"].where(
+        d["zaklad"] == "mesiac", suma.where(suma > 0))
     return d
 
 
-def medianyMesacnej(df: pd.DataFrame) -> pd.DataFrame:
-    """Median mesacnej ceny per sektor. Vracia aj pocet vzoriek — bez neho
-    je median cislo bez vypovednej hodnoty."""
-    d = df[df["mesacna_cena"].notna()]
+def medianySektora(df: pd.DataFrame) -> pd.DataFrame:
+    """Median porovnavacej ceny per sektor, s poctom vzoriek a kvartilmi.
+
+    Kvartily su tam zamerne. Jediny median bez rozptylu vyzera ako presna
+    hodnota, ktorou sa da nacenit ponuka — a to nie je. Zakaznik ma vidiet,
+    ako siroke je pasmo, v ktorom sa realne zmluvy pohybuju.
+    """
+    prazdna = pd.DataFrame(columns=["sector", "median_cena", "vzoriek",
+                                    "q1", "q3", "zaklad"])
+    if df.empty or "porovnavacia_cena" not in df.columns:
+        return prazdna
+    d = df[df["porovnavacia_cena"].notna()]
     if d.empty:
-        return pd.DataFrame(columns=["sector", "median_mesacna", "vzoriek"])
-    g = (d.groupby("sector")["mesacna_cena"]
-           .agg(median_mesacna="median", vzoriek="count")
+        return prazdna
+
+    g = (d.groupby("sector")["porovnavacia_cena"]
+           .agg(median_cena="median", vzoriek="count",
+                q1=lambda s: s.quantile(0.25), q3=lambda s: s.quantile(0.75))
            .reset_index())
-    g["median_mesacna"] = g["median_mesacna"].round(2)
-    return g[g["vzoriek"] >= MIN_VZORIEK]
+    for c in ("median_cena", "q1", "q3"):
+        g[c] = g[c].round(2)
+    g["zaklad"] = g["sector"].apply(zaklad_sektora)
+    return g[g["vzoriek"] >= MIN_VZORIEK].reset_index(drop=True)
 
 
 def porovnaj_so_sektorom(df: pd.DataFrame, medianyDf: pd.DataFrame) -> pd.DataFrame:
     """Prida median sektora a odchylku v percentach."""
-    d = df.merge(medianyDf, on="sector", how="left")
+    if medianyDf.empty:
+        for c in ("median_cena", "vzoriek", "q1", "q3", "odchylka_pct"):
+            df[c] = None
+        return df
+
+    d = df.merge(medianyDf.drop(columns=["zaklad"]), on="sector", how="left")
     d["odchylka_pct"] = (
-        (d["mesacna_cena"] / d["median_mesacna"] - 1) * 100
+        (d["porovnavacia_cena"] / d["median_cena"] - 1) * 100
     ).round(0)
-    d.loc[d["median_mesacna"].isna() | d["mesacna_cena"].isna(), "odchylka_pct"] = None
+    d.loc[d["median_cena"].isna() | d["porovnavacia_cena"].isna(),
+          "odchylka_pct"] = None
     return d
 
 
-# ── 2. NAVYSENIE DODATKAMI ───────────────────────────────────────────────
-
-def navysenie(df: pd.DataFrame) -> pd.DataFrame:
-    """Prida navysenie_eur a navysenie_pct z rozdielu price a price_total."""
-    d = df.copy()
-    zmluvna = pd.to_numeric(d.get("price"), errors="coerce")
-    celkova = pd.to_numeric(d.get("price_total"), errors="coerce")
-
-    platne = zmluvna.notna() & celkova.notna() & (zmluvna > 0)
-    rozdiel = (celkova - zmluvna).where(platne)
-    pct = (rozdiel / zmluvna * 100).where(platne).round(1)
-
-    # Zaporne hodnoty su chyby v zdroji alebo znizenie ceny, nie navysenie
-    d["navysenie_eur"] = rozdiel.where(pct >= MIN_NAVYSENIE_PCT).round(2)
-    d["navysenie_pct"] = pct.where(pct >= MIN_NAVYSENIE_PCT)
-    return d
-
-
-# ── 3. CYKLUS OBSTARAVANIA ───────────────────────────────────────────────
+# ── 2. CYKLUS OBSTARAVANIA ───────────────────────────────────────────────
 
 def cykly(df: pd.DataFrame) -> pd.DataFrame:
     """Pre kazdu dvojicu (urad, sektor) zisti typicku dlzku zmluvy.
@@ -100,6 +120,9 @@ def cykly(df: pd.DataFrame) -> pd.DataFrame:
     Lepsi odhad, kedy pride tender, nez pausalne "koniec minus 75 dni":
     ak urad obstarava upratovanie kazdych 24 mesiacov, vieme to z historie
     jeho vlastnych zmluv.
+
+    NEZVALIDOVANE: neviem, ci urad s dvoma dvojrocnymi zmluvami podpise
+    tretiu tiez na dva roky. Prve meranie bude mozne az z historizacie.
     """
     d = df.copy()
     d["dni_trvania"] = pd.to_numeric(d.get("dni_trvania"), errors="coerce")
@@ -114,22 +137,48 @@ def cykly(df: pd.DataFrame) -> pd.DataFrame:
     return g[g["zmluv_v_historii"] >= 2]
 
 
-# ── 4. PROFIL DODAVATELA ─────────────────────────────────────────────────
+# ── 3. PROFIL DODAVATELA ─────────────────────────────────────────────────
 
-def dodavatelia(df: pd.DataFrame, min_zmluv: int = 3) -> pd.DataFrame:
-    """Kto najviac pracuje pre stat, za kolko, a kto si priplaca dodatkami.
+def je_pravnicka_osoba(nazov) -> bool:
+    """Ma nazov rozpoznatelnu pravnu formu?
 
-    POZOR NA FORMULACIU: vysoke navysenie nie je dokaz niceho nekaleho.
-    Legitimne dovody existuju — zmena projektu, najdene skryte konstrukcie,
-    inflacia pri viacrocnych stavbach. Zobrazuj to ako fakt s kontextom,
-    nikdy ako obvinenie.
+    Zivnostnik je fyzicka osoba. Jeho meno spolu s ICO, objemom zmluv
+    a zoznamom uradov je profilovanie osobnych udajov — a to za platenou
+    stenou potrebuje pravny zaklad, informacnu povinnost podla cl. 14 GDPR
+    a zrejme posudenie vplyvu. Nespracuvat ich je lacnejsie nez to riesit.
+
+    Pri pochybnosti vraciame False: radsej vypustit firmu, nez zverejnit
+    fyzicku osobu.
     """
+    if not nazov:
+        return False
+    n = str(nazov).lower().replace(",", " ")
+    return any(f in n for f in PRAVNE_FORMY)
+
+
+def dodavatelia(df: pd.DataFrame, min_zmluv: int = MIN_ZMLUV_DODAVATELA) -> pd.DataFrame:
+    """Kto najviac pracuje pre stat, za kolko, u kolkych uradov a odkedy dokedy.
+
+    Stlpec `posledna_zmluva` je pre zakaznika cennejsi, nez vyzera:
+    konkurent, ktory naposledy vyhral v roku 2022, uz nie je hrozba.
+    """
+    if df.empty or "supplier_cin" not in df.columns:
+        return pd.DataFrame()
+
     d = df[df["supplier_cin"].notna() & (df["supplier_cin"].astype(str) != "")].copy()
     if d.empty:
         return pd.DataFrame()
 
+    # GDPR: fyzicke osoby von, este pred agregaciou.
+    pred = d["supplier_cin"].nunique()
+    d = d[d["supplier_name"].apply(je_pravnicka_osoba)].copy()
+    if d.empty:
+        log.warning("Po vylucení fyzickych osob nezostal ziadny dodavatel.")
+        return pd.DataFrame()
+    log.info("Dodavatelia: %s z %s ICO ma rozpoznatelnu pravnu formu",
+             d["supplier_cin"].nunique(), pred)
+
     d["price_total"] = pd.to_numeric(d["price_total"], errors="coerce")
-    d["navysenie_pct"] = pd.to_numeric(d.get("navysenie_pct"), errors="coerce")
 
     g = d.groupby("supplier_cin").agg(
         dodavatel=("supplier_name", "first"),
@@ -137,8 +186,6 @@ def dodavatelia(df: pd.DataFrame, min_zmluv: int = 3) -> pd.DataFrame:
         objem_eur=("price_total", "sum"),
         uradov=("authority_cin", "nunique"),
         sektorov=("sector", "nunique"),
-        zmluv_s_navysenim=("navysenie_pct", "count"),
-        priemerne_navysenie_pct=("navysenie_pct", "mean"),
         prva_zmluva=("signed_on", "min"),
         posledna_zmluva=("signed_on", "max"),
     ).reset_index()
@@ -148,12 +195,8 @@ def dodavatelia(df: pd.DataFrame, min_zmluv: int = 3) -> pd.DataFrame:
         return pd.DataFrame()
 
     g["objem_eur"] = g["objem_eur"].round(2)
-    g["priemerne_navysenie_pct"] = g["priemerne_navysenie_pct"].round(1)
-    g["podiel_zmluv_s_navysenim"] = (
-        g["zmluv_s_navysenim"] / g["zmluv"]).round(2)
     g["priemerna_zmluva_eur"] = (g["objem_eur"] / g["zmluv"]).round(2)
 
-    # Hlavny sektor dodavatela
     hlavny = (d.groupby(["supplier_cin", "sector"]).size()
                 .reset_index(name="n")
                 .sort_values("n", ascending=False)

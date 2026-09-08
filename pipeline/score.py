@@ -66,13 +66,33 @@ def _riziko(r):
 
 
 def _skore(r):
-    """0-100. Hodnota ide logaritmicky — linearna skala by zotrela rozdiel
-    medzi 20 a 100 tisic, co je presne pasmo nasho zakaznika."""
+    """0-100 SILA SIGNALU. Nie je to pravdepodobnost, ze zakaznik zakazku
+    vyhra — je to sila predtendrovej stopy, ktoru v datach vidime.
+
+    DVE OPRAVY OPROTI PRVEJ VERZII, obe najdene az na skutocnych datach:
+
+    1. CENA 0 NEZNAMENA MALU ZAKAZKU. 47 % zmluv (21 138 zo 44 566) ma
+       `price` nula — su to ramcove zmluvy a zmluvy s jednotkovymi cenami.
+       Povodny vzorec im dal 0 bodov zo 40, cim systematicky poslal na dno
+       rankingu prave ten najhodnotnejsi opakovany biznis. Teraz dostavaju
+       strednu hodnotu a v UI su oznacene ako "cena neuvedena".
+
+    2. HODNOTA NESMIE DOMINOVAT. Povodne mala 40 zo 100 bodov, takze
+       ranking v praxi zoradoval "velke zmluvy". Velka zmluva je pritom
+       presne ta, kde mala firma nevyhra — skore mohlo byt antikorelovane
+       so sancou nasho zakaznika. Teraz ma hodnota 25 bodov a vahu prebrala
+       opakovanost a sutazivost, teda to, ci sa zakazka bude naozaj
+       obstaravat znova a ci ma zmysel sa o nu uchadzat.
+    """
     hodnota = float(r.get("price_total") or 0)
-    s = min(40.0, 12 * math.log10(hodnota / 1000 + 1)) if hodnota > 0 else 0.0
-    s += min(25, (r.get("historicky_pocet") or 0) * 5)
-    s += min(20, (r.get("pocet_dodavatelov") or 0) * 5)
-    s += min(15, r.get("class_score") or 0)
+    if hodnota > 0:
+        s = min(25.0, 8 * math.log10(hodnota / 1000 + 1))
+    else:
+        s = 12.0   # cena neuvedena: stred pasma, nie dno
+
+    s += min(30, (r.get("historicky_pocet") or 0) * 6)
+    s += min(25, (r.get("pocet_dodavatelov") or 0) * 6)
+    s += min(20, (r.get("class_score") or 0) * 1.5)
 
     riziko = r.get("riziko")
     if riziko == "VYSOKE":
@@ -138,16 +158,31 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     od = pd.Timestamp(dnes + timedelta(days=DNI_MIN))
     do = pd.Timestamp(dnes + timedelta(days=DNI_MAX))
 
+    # CENA 0 NEZNAMENA MALU ZAKAZKU, ale neuvedenu cenu — ramcova dohoda
+    # alebo zmluva s jednotkovymi cenami. Tyka sa to 47 % zmluv (21 138
+    # zo 44 566). Povodna podmienka `price_total >= MIN_HODNOTA_EUR` ich
+    # vyhadzovala uz tu, teda skor, nez sa vobec dostali ku skore — a boli
+    # medzi nimi prave tie najhodnotnejsie opakovane nakupy.
+    #
+    # Neznamu cenu preto prepustame a v UI ju oznacujeme, namiesto toho aby
+    # sme neznamu hodnotu tichu stotoznili s nulovou.
+    cena = df["price_total"].fillna(0)
     okno = df[
         df["effective_to"].notna()
         & (df["effective_to"] >= od)
         & (df["effective_to"] <= do)
         & (df["status_id"].isin([2, 3]))
-        & (df["price_total"].fillna(0) >= MIN_HODNOTA_EUR)
+        & ((cena >= MIN_HODNOTA_EUR) | (cena <= 0))
     ].copy()
 
     if okno.empty:
         return pd.DataFrame()
+
+    bez_ceny = int((okno["price_total"].fillna(0) <= 0).sum())
+    if bez_ceny:
+        logging.getLogger("score").info(
+            "Prilezitosti s neuvedenou cenou (ramcove zmluvy): %s z %s",
+            bez_ceny, len(okno))
 
     # Dodatky von. Robi sa to az tu, nie pri stahovani — v tabulke contracts
     # ich chceme mat, len medzi prilezitostami nie.
@@ -173,14 +208,11 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     okno["okres_kod"] = None
 
     # ── Analyticka vrstva ────────────────────────────────────────────────
-    # Region z adresy, mesacna cena proti medianu sektora, navysenie
-    # dodatkami a typicka dlzka zmluvy u toho isteho uradu.
     okno = regiony.doplnit(okno)
-    okno = analytics.mesacna_cena(okno)
-    okno = analytics.navysenie(okno)
+    okno = analytics.cenovy_zaklad(okno)
 
-    vsetky_s_cenou = analytics.mesacna_cena(df)
-    medianyDf = analytics.medianyMesacnej(vsetky_s_cenou)
+    vsetky_s_cenou = analytics.cenovy_zaklad(df)
+    medianyDf = analytics.medianySektora(vsetky_s_cenou)
     okno = analytics.porovnaj_so_sektorom(okno, medianyDf)
 
     cykly = analytics.cykly(vsetky_s_cenou)
@@ -190,14 +222,35 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     else:
         okno["typicka_dlzka_dni"] = None
 
+    # ── Karta "kto to ma teraz" ──────────────────────────────────────────
+    # Nahrada za detektor koncentracie, ktory oznacil 8 zaznamov z 864.
+    # Toto ma stopercentne pokrytie, nulovu pravnu expoziciu a zakaznik
+    # to vie pouzit hned: vie, proti komu ide, ako dlho tam ten dodavatel
+    # je a kolko zmluv so statom celkovo ma.
+    okno["dodavatel_od"] = pd.to_datetime(
+        okno["effective_from"], errors="coerce").dt.strftime("%Y-%m-%d")
+    zmluv_dodavatela = (df[df["supplier_cin"].notna()]
+                        .groupby("supplier_cin").size()
+                        .rename("dodavatel_zmluv_celkom").reset_index())
+    okno = okno.merge(zmluv_dodavatela, on="supplier_cin", how="left")
+
+    # Cena 0 nie je mala zakazka, ale ramcova zmluva alebo jednotkove ceny.
+    # UI to musi povedat, inak zakaznik vidi "—" a mysli si, ze nam chybaju data.
+    okno["cena_neuvedena"] = (okno["price_total"].fillna(0) <= 0)
+
     stlpce = [
         "contract_id", "sector", "cpv", "authority_name", "authority_cin",
         "department", "subject", "subject_description", "effective_to",
-        "dni_do_konca", "odhad_vyhlasenia", "price_total", "supplier_name",
+        "dni_do_konca", "odhad_vyhlasenia", "price_total", "cena_neuvedena",
+        "supplier_name", "dodavatel_od", "dodavatel_zmluv_celkom",
         "top_dodavatel", "podiel_top_dodavatela", "historicky_pocet",
         "pocet_dodavatelov", "riziko", "skore", "okres_kod",
-        "mesto", "kraj", "mesacna_cena", "median_mesacna", "odchylka_pct",
-        "vzoriek", "navysenie_pct", "typicka_dlzka_dni",
+        "mesto", "kraj", "typicka_dlzka_dni",
+        # Nasledujuce su PRO. store.py ich odlomi do vlastnej tabulky,
+        # do `opportunities` sa NESMU dostat — RLS je riadkova, nie stlpcova,
+        # takze Start by si ich vytiahol cez ?select=*.
+        "porovnavacia_cena", "zaklad", "median_cena", "odchylka_pct",
+        "vzoriek", "q1", "q3",
     ]
     okno["subject"] = okno["subject"].apply(vycisti_predmet)
     okno["subject_description"] = okno["subject_description"].apply(vycisti_predmet)
@@ -223,7 +276,28 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     # "174.0" a databaza to odmietne. Int64 s velkym I je typ, ktory zvlada
     # cele cisla AJ prazdne hodnoty naraz.
     for stlpec in ("contract_id", "dni_do_konca", "historicky_pocet",
-                   "pocet_dodavatelov", "skore", "vzoriek", "typicka_dlzka_dni"):
+                   "pocet_dodavatelov", "skore", "vzoriek", "typicka_dlzka_dni",
+                   "dodavatel_zmluv_celkom"):
         vysledok[stlpec] = pd.to_numeric(vysledok[stlpec], errors="coerce").astype("Int64")
 
     return vysledok
+
+
+# Stlpce, ktore patria do PRO tabulky `ceny_prilezitosti`. Do `opportunities`
+# sa nesmu dostat: RLS v Postgrese je riadkova, nie stlpcova, takze zakaznik
+# na plane Start by si ich vytiahol jednoduchym ?select=*.
+PRO_STLPCE = ("contract_id", "porovnavacia_cena", "zaklad", "median_cena",
+              "odchylka_pct", "vzoriek", "q1", "q3")
+
+
+def rozdel_na_start_a_pro(df: pd.DataFrame):
+    """Rozdeli vysledok na to, co vidi kazdy platic, a na Pro cast."""
+    if df is None or df.empty:
+        return df, pd.DataFrame()
+    pro = df[[c for c in PRO_STLPCE if c in df.columns]].copy()
+    # Riadky bez benchmarku nema zmysel ukladat.
+    if "median_cena" in pro.columns:
+        pro = pro[pro["median_cena"].notna()]
+    start = df.drop(columns=[c for c in PRO_STLPCE if c != "contract_id"],
+                    errors="ignore")
+    return start, pro.reset_index(drop=True)
