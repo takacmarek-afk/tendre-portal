@@ -187,13 +187,25 @@ tailwind.config = { theme: { extend: {
                           focus:outline-none focus:border-accent">
           </div>
           <div>
-            <label for="f-skore" class="block text-[12px] font-semibold text-slate2 mb-1">Minimálne skóre</label>
+            <label for="f-radenie" class="block text-[12px] font-semibold text-slate2 mb-1">Zoradiť</label>
+            <select id="f-radenie" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
+                                          focus:outline-none focus:border-accent">
+              <option value="tender">najbližší tender</option>
+              <option value="hodnota">najvyššia hodnota</option>
+              <option value="konci">zmluva končí najskôr</option>
+              <option value="signal">sila signálu</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
+          <div>
+            <label for="f-skore" class="block text-[12px] font-semibold text-slate2 mb-1">Minimálna sila signálu</label>
             <select id="f-skore" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
                                         focus:outline-none focus:border-accent">
               <option value="0">všetky</option>
-              <option value="40">40 a viac</option>
-              <option value="55">55 a viac</option>
-              <option value="70">70 a viac</option>
+              <option value="50">50 a viac (horná polovica sektora)</option>
+              <option value="75">75 a viac (horná štvrtina)</option>
+              <option value="90">90 a viac (horná desatina)</option>
             </select>
           </div>
         </div>
@@ -214,7 +226,7 @@ tailwind.config = { theme: { extend: {
             <thead class="bg-[#fafbfc] border-b border-line">
               <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
                 <th class="px-4 py-3 w-20"
-                    title="Poradie v rámci sektora: 85 znamená horná sedmina zákaziek vo vašom odbore. Nie je to pravdepodobnosť výhry.">
+                    title="Poradie v rámci sektora: 85 znamená horná sedmina zákaziek vo vašom odbore. Porovnávať sa dá len v tom istom sektore. Nie je to pravdepodobnosť výhry.">
                   Sila<br>signálu
                 </th>
                 <th class="px-4 py-3">Predmet</th>
@@ -521,8 +533,20 @@ function porovnanieCeny(b) {
   // zmluv cez dva rady velkosti (57 az 9 192 EUR/mes) — "o 15 % nad
   // medianom" tam znie presne a pritom neznamena nic. Zakaznik, ktory
   // podla toho naceni ponuku, prehra a bude to nasa vina.
+  // DRUHA POISTKA, popri prahu rozptylu v sektore.
+  //
+  // Prah rozptylu kontroluje, ci je sektor ako celok porovnatelny. Nekontroluje
+  // vsak, ci do toho rozsahu patri TATO zmluva. Namerane na portali: ramcova
+  // dohoda pre univerzitnu nemocnicu za 196 656 EUR/mes sa porovnavala
+  // s medianom vsetkych upratovacich zmluv a vysledok bol "+16 279 % oproti
+  // medianu". Aritmeticky spravne, informacne bezcenne a na pohlad rozbite.
+  //
+  // Percento preto tvrdime len vtedy, ked cena lezi v pasme, kde ma porovnanie
+  // zmysel: od tretiny dolneho kvartilu po trojnasobok horneho.
   const o = num(b.odchylka_pct);
-  const maKotvu = b.spolahlivy === true && !Number.isNaN(o);
+  const vRozsahu = !Number.isNaN(q1) && !Number.isNaN(q3)
+    && cena >= q1 / 3 && cena <= q3 * 3;
+  const maKotvu = b.spolahlivy === true && !Number.isNaN(o) && vRozsahu;
 
   const riadky = [`${suma(cena)} ${jednotka}`];
   if (maKotvu) {
@@ -533,8 +557,10 @@ function porovnanieCeny(b) {
 
   const doplnok = maKotvu
     ? `<span class="opacity-60">(n=${vz})</span>`
-    : `<span class="opacity-60">(porovnanie v tomto sektore nerobíme,
-         ceny sú príliš rozptýlené)</span>`;
+    : (b.spolahlivy === true
+        ? `<span class="opacity-60">(mimo bežného rozsahu sektora, neporovnávame)</span>`
+        : `<span class="opacity-60">(v tomto sektore neporovnávame,
+             ceny sú príliš rozptýlené)</span>`);
 
   return `<div class="text-[12px] text-slate2 mt-1.5"
                title="${bezpecne(pasmo)} z ${vz} zmlúv.">
@@ -553,8 +579,12 @@ function ktoToMa(r) {
   if (r.dodavatel_od) casti.push(`od ${r.dodavatel_od}`);
   const n = num(r.dodavatel_zmluv_celkom);
   if (!Number.isNaN(n) && n > 1) casti.push(`${n} zmlúv so štátom`);
+  // POZOR NA POPIS: `historicky_pocet` je pocet zmluv, ktore v tomto sektore
+  // obstaral URAD — nie kolkata je to zmluva tohto dodavatela. Povodny text
+  // "13. zmluva u tohto uradu" bol pri dodavatelovi s dvoma zmluvami so statom
+  // vnutorne protirecivy a jednoducho nepravdivy.
   const h = num(r.historicky_pocet);
-  if (!Number.isNaN(h) && h > 1) casti.push(`${h}. zmluva u tohto úradu`);
+  if (!Number.isNaN(h) && h > 1) casti.push(`úrad tu obstarával ${h}×`);
 
   return `<div class="text-[12px] mt-1">
             <span class="text-slate2">teraz:</span>
@@ -922,7 +952,27 @@ async function dashboard(supabase) {
       q = q.or(`subject.ilike.*${text}*,authority_name.ilike.*${text}*,mesto.ilike.*${text}*`);
     }
 
-    const { data, count, error } = await q.order('skore', { ascending: false }).limit(LIMIT);
+    // PREDVOLENE SA NERADI PODLA SILY SIGNALU, a to zamerne.
+    //
+    // Sila signalu je percentil V RAMCI SEKTORA. Globalne zoradenie podla nej
+    // teda vytiahne vrch kazdeho z dvanastich sektorov naraz — prva stranka
+    // potom obsahuje dvanast deviatok a vyzera rozbito. Cislo je spravne,
+    // zoradenie podla neho cez sektory nema zmysel.
+    //
+    // Uzitocnejsie predvolenie je "najblizsi tender": zakaznik chce vediet,
+    // na co sa ma pripravit najskor.
+    const RADENIE = {
+      tender:  ['odhad_vyhlasenia', true],
+      hodnota: ['price_total', false],
+      konci:   ['effective_to', true],
+      signal:  ['skore', false],
+    };
+    const [stlpec, vzostupne] = RADENIE[el('f-radenie').value] ?? RADENIE.tender;
+
+    const { data, count, error } = await q
+      .order(stlpec, { ascending: vzostupne, nullsFirst: false })
+      .order('skore', { ascending: false })
+      .limit(LIMIT);
     if (error) {
       el('pocet').textContent = 'Chyba: ' + error.message;
       return;
@@ -946,8 +996,13 @@ async function dashboard(supabase) {
     el('prazdny-filter').classList.toggle('hidden', posledne.zmluvy.length > 0);
 
     const c = count ?? posledne.zmluvy.length;
+    const POPIS_RADENIA = {
+      tender: 'podľa najbližšieho tendra', hodnota: 'podľa hodnoty',
+      konci: 'podľa konca zmluvy', signal: 'podľa sily signálu',
+    };
+    const podla = POPIS_RADENIA[el('f-radenie').value] ?? '';
     el('pocet').textContent = c > LIMIT
-      ? `${cislo(c)} záznamov, zobrazujeme prvých ${LIMIT} podľa skóre`
+      ? `${cislo(c)} záznamov, zobrazujeme prvých ${LIMIT} ${podla}`
       : `${cislo(c)} ${c === 1 ? 'záznam' : c < 5 ? 'záznamy' : 'záznamov'}`;
   }
 
@@ -1038,7 +1093,7 @@ async function dashboard(supabase) {
 
   // Filtre
   const prekresliZ = pozdrz(nacitajZmluvy);
-  for (const id of ['f-kraj', 'f-sektor', 'f-skore']) {
+  for (const id of ['f-kraj', 'f-sektor', 'f-skore', 'f-radenie']) {
     el(id).addEventListener('change', nacitajZmluvy);
   }
   el('f-text').addEventListener('input', prekresliZ);
@@ -1046,6 +1101,7 @@ async function dashboard(supabase) {
   function reset() {
     el('f-kraj').value = ''; el('f-sektor').value = '';
     el('f-skore').value = '0'; el('f-text').value = '';
+    el('f-radenie').value = 'tender';
     nacitajZmluvy();
   }
   el('f-reset').addEventListener('click', reset);

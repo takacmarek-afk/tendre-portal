@@ -193,6 +193,36 @@ _DODATOK = re.compile(
     r"uprava\s+rozpoctu|upravu\s+rozpoctu|upravy\s+rozpoctu)(\W|$)")
 
 
+# Transfer penazi nie je zakazka. Nikto na "poskytnutie financnych prostriedkov
+# na mzdy" nevyhlasuje obstaravanie — je to presun prostriedkov medzi
+# organizaciami verejnej spravy.
+#
+# PRECO TO NIE JE V config.NEGATIVNE: negativne slova zniziaju skore vo VSETKYCH
+# sektoroch vratane DOTACIE_NFP. Dotacna zmluva sa pritom casto vola presne
+# "Zmluva o poskytnuti dotacie" alebo "...financnych prostriedkov", takze by
+# sme si negativnym slovom rozbili celu dotacnu vrstvu. Test to odhalil hned.
+# Filtruje sa preto az tu, rovnako ako dodatky: v `contracts` zostavaju,
+# medzi prilezitosti nepatria.
+#
+# Namerane na portali: "Zmluva c. 19/2026-OSMS o poskytnuti financnych
+# prostriedkov na mzdy" bola zaradena ako STRAVOVANIE, pretoze v texte bola
+# skola. Zakaznik by na to zavolal uradu a vysel by trapne.
+_TRANSFER = re.compile(
+    r"(poskytnut[iíe]\s+financnych\s+prostriedkov"
+    r"|financnych\s+prostriedkov\s+na\s+mzd"
+    r"|na\s+mzdy\s+(?:a\s+odvody|zamestnancov)"
+    r"|(?:ne)?normativne\s+financne\s+prostriedky"
+    r"|prevod\s+financnych\s+prostriedkov"
+    r"|pridelen[iíe]\s+financnych\s+prostriedkov"
+    r"|refundac"
+    r"|clensk\w*\s+prispev)")
+
+
+def je_transfer(subject, popis) -> bool:
+    """Je to presun penazi namiesto zakazky?"""
+    return bool(_TRANSFER.search(bez_diakritiky(f"{subject or ''} {popis or ''}")))
+
+
 def je_dodatok(subject, popis) -> bool:
     """Pozor na diakritiku: "Úprava rozpočtu" nesedi na vzor "uprava rozpoctu",
     kym text neznormalizujeme. Rovnaka chyba nas uz raz stala tri stvrtiny
@@ -244,15 +274,23 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
             "Prilezitosti s neuvedenou cenou (ramcove zmluvy): %s z %s",
             bez_ceny, len(okno))
 
-    # Dodatky von. Robi sa to az tu, nie pri stahovani — v tabulke contracts
-    # ich chceme mat, len medzi prilezitostami nie.
+    # Dodatky a transfery von. Robi sa to az tu, nie pri stahovani —
+    # v tabulke contracts ich chceme mat, len medzi prilezitostami nie.
+    log_score = logging.getLogger("score")
+
     pred_dodatkami = len(okno)
     okno = okno[~okno.apply(
         lambda r: je_dodatok(r["subject"], r["subject_description"]), axis=1)].copy()
     if pred_dodatkami != len(okno):
-        logging.getLogger("score").info(
-            "Dodatky vylucene z prilezitosti: %s z %s",
-            pred_dodatkami - len(okno), pred_dodatkami)
+        log_score.info("Dodatky vylucene z prilezitosti: %s z %s",
+                       pred_dodatkami - len(okno), pred_dodatkami)
+
+    pred_transferami = len(okno)
+    okno = okno[~okno.apply(
+        lambda r: je_transfer(r["subject"], r["subject_description"]), axis=1)].copy()
+    if pred_transferami != len(okno):
+        log_score.info("Transfery penazi vylucene z prilezitosti: %s z %s",
+                       pred_transferami - len(okno), pred_transferami)
     if okno.empty:
         return pd.DataFrame()
 
