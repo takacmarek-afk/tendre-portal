@@ -34,7 +34,7 @@ tailwind.config = {
     <nav class="hidden md:flex items-center gap-8 text-[14px] text-slate2">
       <a href="#vrstvy" class="hover:text-ink transition">Čo sledujeme</a>
       <a href="#konkurencia" class="hover:text-ink transition">Konkurencia</a>
-      <a href="#verzie" class="hover:text-ink transition">Verzie</a>
+      <a href="#cena" class="hover:text-ink transition">Koľko to stojí</a>
       <a href="#hranice" class="hover:text-ink transition">Čo nerobíme</a>
     </nav>
     <div class="flex items-center gap-4">
@@ -51,7 +51,7 @@ tailwind.config = {
   <div class="max-w-3xl">
     <div class="inline-flex items-center gap-2 text-[13px] font-medium text-accent bg-accent/8 border border-accent/20 rounded-full px-3 py-1 mb-7">
       <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
-      Dáta z Centrálneho registra zmlúv
+      Teraz zadarmo &middot; dáta z Centrálneho registra zmlúv
     </div>
 
     <h1 class="text-[34px] leading-[1.15] md:text-[54px] md:leading-[1.08] font-bold tracking-tight">
@@ -73,7 +73,7 @@ tailwind.config = {
 
     <div class="mt-10 flex flex-col sm:flex-row gap-3">
       <a href="./prihlasenie.html" class="inline-flex justify-center items-center bg-accent text-white font-semibold px-6 py-3.5 rounded-md hover:bg-accentDark transition">
-        Začať 3 dni zadarmo
+        Vytvoriť prístup zadarmo
       </a>
       <a href="#vrstvy" class="inline-flex justify-center items-center border border-line font-semibold px-6 py-3.5 rounded-md hover:border-ink transition">
         Čo presne uvidím
@@ -81,7 +81,8 @@ tailwind.config = {
     </div>
 
     <p class="mt-4 text-[13px] text-slate2">
-      Bez platobnej karty. Po registrácii uvidíte celú databázu okamžite.
+      Bez platobnej karty a bez skúšobnej lehoty. Po registrácii uvidíte
+      celú databázu okamžite.
     </p>
   </div>
 </section>
@@ -102,8 +103,8 @@ tailwind.config = {
       <div class="text-[13px] text-slate2 mt-1 leading-snug">filtrujete si svoj región a sektor</div>
     </div>
     <div>
-      <div class="text-[28px] font-bold tracking-tight">3 dni</div>
-      <div class="text-[13px] text-slate2 mt-1 leading-snug">zadarmo, bez karty, s verziou Pro</div>
+      <div class="text-[28px] font-bold tracking-tight">0 &euro;</div>
+      <div class="text-[13px] text-slate2 mt-1 leading-snug">počas otvoreného obdobia, celý portál</div>
     </div>
   </div>
 </section>
@@ -212,56 +213,74 @@ tailwind.config = {
   </div>
 </section>
 
-<!-- ══════════════ VERZIE ══════════════ -->
-<section id="verzie" class="wrap py-20 md:py-28">
-  <h2 class="text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
-    Dve verzie, jeden rozdiel
-  </h2>
-  <p class="mt-4 text-[17px] text-slate2 max-w-2xl">
-    Príležitosti a filtre má každý. Za peniaze ide to, čo o konkurencii
-    sami nezistíte.
-  </p>
+<!-- ══════════════ KOĽKO TO STOJÍ ══════════════ -->
+<section id="cena" class="wrap py-20 md:py-28">
+  <div class="max-w-3xl">
+    <span class="inline-block text-[12px] font-semibold uppercase tracking-wider
+                 text-accent bg-accent/8 border border-accent/20 rounded-full px-3 py-1">
+      Otvorené obdobie
+    </span>
+    <h2 class="mt-6 text-[28px] md:text-[38px] font-bold tracking-tight leading-tight">
+      Teraz je to celé zadarmo. A ešte nevieme, čo to bude stáť.
+    </h2>
+    <p class="mt-5 text-[17px] leading-relaxed text-slate2">
+      Nemáme cenník, pretože sme si ho nevymysleli. Portál je nový a nemáme
+      jediného platiaceho zákazníka, podľa ktorého by sme vedeli, čo tá
+      informácia naozaj stojí. Kým to nezistíme, je prístup bezplatný
+      a bez obmedzenia.
+    </p>
+  </div>
 
   <div class="mt-12 grid md:grid-cols-2 gap-6 max-w-4xl">
-    <div class="border border-line rounded-lg p-8">
-      <div class="text-[12px] font-semibold uppercase tracking-wider text-slate2">Štart</div>
-      <h3 class="mt-3 text-[21px] font-semibold">Kde mám príležitosť</h3>
-      <ul class="mt-6 space-y-3 text-[15px] text-slate2">
+    <div class="border-2 border-ink rounded-lg p-8">
+      <h3 class="text-[19px] font-semibold">Čo máte zadarmo</h3>
+      <ul class="mt-5 space-y-3 text-[15px] text-slate2">
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
-          Končiace zmluvy s odhadom termínu tendra</li>
+          Končiace zmluvy s odhadom termínu obstarávania</li>
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
-          Dotácie s očakávaným obstarávaním</li>
+          Dotácie, z ktorých obstarávanie ešte len bude</li>
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
-          Filtre na kraj, mesto, sektor a skóre &mdash; bez obmedzenia</li>
+          Filtre na kraj, mesto, sektor a silu signálu</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
+          Kto zákazku má teraz a odkedy</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
+          Profily dodávateľov a cenový benchmark sektora</li>
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
           Export do CSV</li>
       </ul>
+      <p class="mt-6 text-[13px] leading-relaxed text-slate2">
+        Bez platobnej karty. Stačí e-mail a IČO.
+      </p>
     </div>
 
-    <div class="border-2 border-ink rounded-lg p-8">
-      <div class="flex items-center gap-2">
-        <span class="text-[12px] font-semibold uppercase tracking-wider text-accent">Pro</span>
-        <span class="text-[11px] font-semibold bg-ink text-white px-2 py-0.5 rounded">
-          v skúške zapnuté
-        </span>
-      </div>
-      <h3 class="mt-3 text-[21px] font-semibold">Proti komu idem a za koľko</h3>
-      <ul class="mt-6 space-y-3 text-[15px] text-slate2">
-        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
-          <span class="text-ink">Všetko zo Štartu</span></li>
-        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
-          Profily dodávateľov: objem, počet úradov, sektory</li>
-        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
-          Priemerná veľkosť zmluvy a kedy firma naposledy vyhrala</li>
-        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
-          Cenový benchmark sektora s rozptylom a počtom vzoriek</li>
-      </ul>
+    <div class="border border-line rounded-lg p-8 bg-[#fafbfc]">
+      <h3 class="text-[19px] font-semibold">Čo bude niekedy platené</h3>
+      <p class="mt-5 text-[15px] leading-relaxed text-slate2">
+        Týždenný e-mail. Len to, čo je nové od minule, filtrované na váš
+        sektor a kraj, s krátkym vysvetlením, čo z tej dotácie
+        pravdepodobne bude za zákazku.
+      </p>
+      <p class="mt-4 text-[15px] leading-relaxed text-slate2">
+        Dôvod je jednoduchý: v malej firme nie je „pozerať tendrový portál"
+        nikoho úlohou. Kým sa treba prihlásiť, nestane sa to.
+      </p>
+      <p class="mt-5 text-[15px] leading-relaxed text-ink font-medium">
+        Zatiaľ ho posielame tiež zadarmo. Keď budeme vedieť, koľko má
+        stáť, povieme to mesiac vopred a nikoho nezaskočíme.
+      </p>
+      <a href="./prihlasenie.html"
+         class="inline-block mt-6 bg-ink text-white font-semibold px-5 py-3
+                rounded-md hover:bg-accent transition text-[15px]">
+        Zapnúť si e-mail
+      </a>
     </div>
   </div>
 
-  <p class="mt-8 text-[14px] text-slate2 max-w-3xl leading-relaxed">
-    Trojdňová skúška beží na verzii Pro, aby ste videli aj to, čo je za
-    platbou. Kartu na jej spustenie nepotrebujeme.
+  <p class="mt-8 text-[14px] leading-relaxed text-slate2 max-w-3xl">
+    Ak vám portál niečo prinesie, radi si od vás vypočujeme, čo by za to
+    vaša firma zaplatila. Napíšte na
+    <a class="text-accent hover:underline" href="mailto:info@predtendrom.sk">info@predtendrom.sk</a>
+    &mdash; je to pre nás užitočnejšie než akýkoľvek náš odhad.
   </p>
 </section>
 
@@ -386,7 +405,7 @@ tailwind.config = {
       <a href="./prihlasenie.html"
          class="inline-flex justify-center items-center mt-9 bg-accent text-white
                 font-semibold text-[16px] px-8 py-4 rounded-md hover:bg-accentDark transition">
-        Začať 3 dni zadarmo
+        Vytvoriť prístup zadarmo
       </a>
 
       <ul class="mt-10 grid sm:grid-cols-3 gap-5 text-left">
@@ -400,7 +419,7 @@ tailwind.config = {
         </li>
         <li class="flex gap-3 text-[15px] text-slate2">
           <span class="text-accent font-bold mt-px">&#10003;</span>
-          Skúška je jedna na firmu
+          Prístup je jeden na firmu
         </li>
       </ul>
 
@@ -450,7 +469,7 @@ tailwind.config = {
     </div>
 
     <div class="mt-12 pt-6 border-t border-line flex flex-col sm:flex-row justify-between gap-3 text-[12px] text-slate2">
-      <span>&copy; <span id="rok"></span> LoveHome s.r.o. Zdroj dát: Centrálny register zmlúv.</span>
+      <span>&copy; <span id="rok"></span> LoveHome s.r.o. &middot; Zdroj údajov: Služby Slovensko.Digital a Centrálny register zmlúv &middot; <a href="./zdroje.html" class="underline hover:text-ink">Zdroje dát a podmienky</a></span>
       <span>Nie sme štátny orgán ani s ním prepojení.</span>
     </div>
   </div>

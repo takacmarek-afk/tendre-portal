@@ -48,8 +48,9 @@ tailwind.config = { theme: { extend: {
     <div class="bg-white border border-line rounded-lg p-7">
       <h1 class="text-[19px] font-semibold">Ešte jedna vec</h1>
       <p class="mt-2 text-[14px] leading-relaxed text-slate2">
-        Zadajte firmu, pod ktorou budete portál používať. Skúška na 3 dni
-        sa spustí hneď, kartu nepotrebujeme.
+        Zadajte firmu, pod ktorou budete portál používať. Prístup je počas
+        otvoreného obdobia bezplatný a bez skúšobnej lehoty, kartu
+        nepotrebujeme.
       </p>
 
       <form id="form-org" class="mt-6 space-y-4">
@@ -71,7 +72,7 @@ tailwind.config = { theme: { extend: {
         <button type="submit" id="btn-org"
                 class="w-full bg-accent text-white font-semibold py-3 rounded-md
                        hover:bg-accentDark transition disabled:opacity-50">
-          Spustiť 3-dňovú skúšku
+          Vytvoriť prístup
         </button>
         <p id="chyba-org" class="text-[13px] text-red-700 hidden"></p>
       </form>
@@ -94,6 +95,8 @@ tailwind.config = { theme: { extend: {
       <div class="flex items-center gap-4">
         <span id="odznak-plan" class="text-[12px] font-semibold px-2.5 py-1 rounded hidden sm:inline"></span>
         <span id="odznak-trial" class="text-[13px] font-medium px-3 py-1 rounded-full"></span>
+        <a href="./zdroje.html" class="text-[13px] text-slate2 hover:text-ink hidden sm:inline"
+           title="Zdroje dát, oznámenie o úpravách a podmienky použitia">Zdroje dát</a>
         <button id="odhlasit" class="text-[13px] text-slate2 hover:text-ink">Odhlásiť</button>
       </div>
     </div>
@@ -128,6 +131,38 @@ tailwind.config = { theme: { extend: {
               class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap">
         Dodávatelia <span id="pocet-f" class="font-normal text-slate2"></span>
       </button>
+    </div>
+
+    <!-- ── ODBER TÝŽDENNÉHO E-MAILU ─────────────────────────── -->
+    <!-- Jediny udaj, ktory teraz naozaj potrebujeme: kto chce, aby mu
+         prilezitosti chodili samy. Rozosielanie tu nie je, len zaujem. -->
+    <div id="odber-panel" class="hidden mb-6">
+      <div class="bg-ink text-white rounded-lg p-6">
+        <div class="flex flex-col lg:flex-row lg:items-center gap-5">
+          <div class="flex-1">
+            <h2 class="text-[17px] font-semibold">Nech vám to chodí samo</h2>
+            <p class="mt-2 text-[14px] leading-relaxed text-white/70">
+              Raz týždenne e-mail s tým, čo je nové vo vašom sektore a kraji.
+              Počas otvoreného obdobia zadarmo. Keď to začne niečo stáť,
+              povieme to mesiac vopred.
+            </p>
+          </div>
+          <div class="flex flex-col sm:flex-row gap-2 lg:shrink-0">
+            <select id="o-sektor"
+                    class="border border-white/20 bg-white/10 text-white rounded-md
+                           px-3 py-2 text-[14px] focus:outline-none focus:border-white/60"></select>
+            <select id="o-kraj"
+                    class="border border-white/20 bg-white/10 text-white rounded-md
+                           px-3 py-2 text-[14px] focus:outline-none focus:border-white/60"></select>
+            <button id="o-zapnut"
+                    class="bg-white text-ink font-semibold px-5 py-2 rounded-md
+                           hover:bg-white/90 transition text-[14px] whitespace-nowrap">
+              Zapnúť e-mail
+            </button>
+          </div>
+        </div>
+        <p id="o-hlaska" class="hidden mt-4 text-[13px] text-white/80"></p>
+      </div>
     </div>
 
     <!-- ── KONČIACE ZMLUVY ──────────────────────────────────── -->
@@ -277,24 +312,15 @@ tailwind.config = { theme: { extend: {
     <!-- ── DODÁVATELIA ──────────────────────────────────────── -->
     <div id="dodavatelia" class="hidden">
 
+      <!-- Zamknuty panel je pocas otvoreneho obdobia nepouzity. Zostava
+           v kode, aby sa dal jednym riadkom vratit, ked sa Pro zapne. -->
       <div id="dod-zamknute" class="hidden bg-white border border-line rounded-lg p-10 max-w-2xl">
-        <div class="w-11 h-11 rounded-full bg-accent/10 text-accent text-[18px]
-                    flex items-center justify-center mb-5">&#128274;</div>
-        <h2 class="text-[19px] font-semibold">Profily dodávateľov sú vo verzii Pro</h2>
+        <h2 class="text-[19px] font-semibold">Profily dodávateľov</h2>
         <p class="mt-3 text-[14px] leading-relaxed text-slate2">
-          Kto pre štát pracuje najviac, v akom objeme, u koľkých úradov,
-          v akej priemernej veľkosti zmluvy a či je ešte aktívny. Plus cenový
-          benchmark sektora s rozptylom, aby ste vedeli, do akej hladiny idete.
+          Táto časť je momentálne nedostupná. Napíšte nám na
+          <a class="text-accent hover:underline"
+             href="mailto:info@predtendrom.sk">info@predtendrom.sk</a>.
         </p>
-        <p class="mt-3 text-[14px] leading-relaxed text-slate2">
-          Končiace zmluvy, dotácie a všetky filtre máte v základnej verzii bez
-          obmedzenia. Pro pridáva to, čo o konkurencii sami nezistíte.
-        </p>
-        <a href="mailto:info@predtendrom.sk?subject=PredTendrom%20Pro"
-           class="inline-block mt-6 bg-accent text-white font-semibold
-                  px-6 py-3 rounded-md hover:bg-accentDark transition">
-          Chcem Pro
-        </a>
       </div>
 
       <div id="dod-obsah" class="hidden">
@@ -654,15 +680,30 @@ function exportCsv(nazov, riadky) {
     const s = v === null || v === undefined ? '' : String(v);
     return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
+
+  // Vyvezeny subor je dalsia rozmnozenina odvodeneho produktu, takze podla
+  // bodu 4.3 a 4.9 podmienok pouzivania datasetu musi nest oznacenie zdroja,
+  // oznamenie o upravach a datum. Preto tie tri riadky nad hlavickou.
+  const dnes = new Date().toISOString().slice(0, 10);
+  const hlavicka = [
+    `# PredTendrom.sk — export ${dnes}`,
+    '# Zdroj údajov: Služby Slovensko.Digital, s.r.o. a Centrálny register zmlúv',
+    '# Odvodený produkt. Sektor, mesto, kraj, sila signálu a cenové porovnanie',
+    '# sú naše výpočty, nie údaje zo zdroja. Pôvodné údaje zostávajú nezmenené.',
+    `# Podmienky: https://ekosystem.slovensko.digital/podmienky | Dátum spracovania: ${dnes}`,
+    '# Údaje majú len informatívny charakter a nie sú právne záväzné.',
+    '',
+  ].join('\r\n');
+
   // Bodkociarka a BOM: Excel v slovenskom prostredi inak rozsype diakritiku
   // aj stlpce do jedneho.
-  const csv = '﻿' + [hlavicky.join(';')]
+  const csv = '\ufeff' + hlavicka + [hlavicky.join(';')]
     .concat(riadky.map(r => hlavicky.map(h => bunka(r[h])).join(';')))
     .join('\r\n');
 
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = `${nazov}-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `${nazov}-${dnes}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -689,26 +730,21 @@ function nastavZalozky(prednastavena) {
 }
 
 function odznakPredplatneho(sub) {
+  // Otvorene obdobie: cely portal je zadarmo pre kazdeho prihlaseneho.
+  // O pristupe rozhoduje vylucne funkcia public.je_zadarmo() v databaze,
+  // toto je len jej zobrazenie. Nikdy to nerozhoduj tu.
   const o = el('odznak-trial');
-  if (sub?.stav === 'trial') {
-    const dni = Math.max(0, Math.ceil((new Date(sub.trial_konci) - new Date()) / 86400000));
-    o.textContent = `Skúška: ${dni} ${dni === 1 ? 'deň' : dni < 5 ? 'dni' : 'dní'}`;
-    o.className = 'text-[13px] font-medium px-3 py-1 rounded-full ' +
-      (dni <= 1 ? 'bg-amber-100 text-amber-800' : 'bg-accent/10 text-accent');
-  } else if (sub?.stav === 'aktivne') {
-    o.textContent = 'Predplatné aktívne';
-    o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-green-100 text-green-800';
-  } else {
-    o.textContent = 'Prístup ukončený';
-    o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-red-100 text-red-800';
-  }
+  o.textContent = 'Zadarmo';
+  o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-green-100 text-green-800';
 
   const p = el('odznak-plan');
-  const jePro = sub?.plan === 'pro' || sub?.plan === 'trial';
-  p.textContent = jePro ? 'PRO' : 'ŠTART';
+  p.textContent = 'OTVORENÉ OBDOBIE';
   p.className = 'text-[12px] font-semibold px-2.5 py-1 rounded hidden sm:inline ' +
-    (jePro ? 'bg-ink text-white' : 'bg-slate2/10 text-slate2');
-  return jePro;
+                'bg-ink text-white';
+
+  // Vsetko je odomknute. Ked sa `je_zadarmo()` prepne na false, RLS zacne
+  // Pro tabulky odmietat a staci sem vratit povodnu podmienku na plan.
+  return true;
 }
 
 function obrazovkaTrialVycerpany(supabase) {
@@ -720,14 +756,14 @@ function obrazovkaTrialVycerpany(supabase) {
       <div class="bg-white border border-line rounded-lg p-7 text-center">
         <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 text-[22px]
                     flex items-center justify-center mx-auto mb-5">&#9203;</div>
-        <h1 class="text-[19px] font-semibold">Vaša firma skúšku už využila</h1>
+        <h1 class="text-[19px] font-semibold">Táto firma už prístup má</h1>
         <p class="mt-3 text-[14px] leading-relaxed text-slate2">
-          Bezplatná trojdňová skúška je jedna na firmu. Podľa IČO, ktoré ste
-          zadali, ju vaša firma už vyčerpala.
+          Podľa IČO, ktoré ste zadali, je vaša firma u nás už zaregistrovaná.
+          Prístup je jeden na firmu.
         </p>
         <p class="mt-4 text-[14px] leading-relaxed text-slate2">
-          Ak u nás firma predplatné má, požiadajte kolegu, ktorý ho zakladal,
-          aby vás pridal. Ak si chcete predplatné zriadiť, napíšte nám.
+          Požiadajte kolegu, ktorý ho zakladal, aby vás pridal. Ak si nie ste
+          istí, kto to bol, napíšte nám a nájdeme to.
         </p>
         <a href="mailto:info@predtendrom.sk?subject=Predplatne%20PredTendrom"
            class="inline-block mt-6 bg-accent text-white font-semibold
@@ -760,7 +796,7 @@ function onboarding(supabase) {
       chyba.textContent = text;
       chyba.classList.remove('hidden');
       btn.disabled = false;
-      btn.textContent = 'Spustiť 3-dňovú skúšku';
+      btn.textContent = 'Vytvoriť prístup';
     }
 
     const { data, error } = await supabase.rpc('zaloz_organizaciu', {
@@ -776,6 +812,72 @@ function onboarding(supabase) {
     zlyhalo(SPRAVY[data.kod] ?? ('Nepodarilo sa: ' + data.kod));
   });
 }
+
+// ── ODBER TÝŽDENNÉHO E-MAILU ────────────────────────────────────────────
+// Zbiera sa len zaujem, nic sa neposiela. Kto si to zapne, je zaroven
+// zoznam ludi, ktorych ma zmysel zavolat a spytat sa na cenu.
+async function nastavOdber(supabase, sektory, email) {
+  naplnSelect('o-sektor', sektory, 'všetky sektory');
+  naplnSelect('o-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
+
+  const btn = el('o-zapnut');
+  const hlaska = el('o-hlaska');
+
+  function ukazHlasku(text) {
+    hlaska.textContent = text;
+    hlaska.classList.remove('hidden');
+  }
+
+  // Uz zapnuty odber sa nacita a panel sa prepne do stavu "mate zapnuty".
+  const { data: existujuci } = await supabase.from('odber')
+    .select('chce_email, sektor, kraj').limit(1).maybeSingle();
+
+  // Oba stavy nastavuje kod, nie znackovanie. Keby text tlacidla zavisel
+  // od HTML, po prvom prekresleni by sa rozisiel so skutocnym stavom.
+  function stavVypnute() {
+    btn.textContent = 'Zapnúť e-mail';
+  }
+
+  function stavZapnute(o) {
+    el('o-sektor').value = o?.sektor ?? '';
+    el('o-kraj').value = o?.kraj ?? '';
+    btn.textContent = 'Uložiť zmenu';
+    ukazHlasku('E-mail máte zapnutý. Filtre môžete kedykoľvek zmeniť.');
+  }
+
+  if (existujuci?.chce_email) stavZapnute(existujuci);
+  else stavVypnute();
+
+  btn.addEventListener('click', async () => {
+    btn.disabled = true;
+    const povodny = btn.textContent;
+    btn.textContent = 'Ukládám...';
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data: org } = await supabase.from('organizations').select('id').limit(1).maybeSingle();
+
+    const { error } = await supabase.from('odber').upsert({
+      user_id: user?.id,
+      org_id: org?.id ?? null,
+      chce_email: true,
+      sektor: el('o-sektor').value || null,
+      kraj: el('o-kraj').value || null,
+      email: email ?? user?.email ?? null,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+
+    btn.disabled = false;
+    if (error) {
+      btn.textContent = povodny;
+      ukazHlasku('Nepodarilo sa uložiť: ' + error.message);
+      return;
+    }
+    stavZapnute({ sektor: el('o-sektor').value, kraj: el('o-kraj').value });
+  });
+
+  ukaz('odber-panel');
+}
+
 
 // ── DASHBOARD ───────────────────────────────────────────────────────────
 async function dashboard(supabase) {
@@ -980,6 +1082,15 @@ async function dashboard(supabase) {
     mameZmluvy ? nacitajZmluvy() : Promise.resolve(),
     mameDotacie ? nacitajDotacie() : Promise.resolve(),
   ]);
+
+  // Panel odberu az na konci, aby prazdny alebo pokazeny odber nezhodil
+  // zobrazenie prilezitosti — tie su jadro produktu.
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    await nastavOdber(supabase, sektory, user?.email);
+  } catch (e) {
+    console.error('Odber sa nepodarilo nastavit:', e);
+  }
 
   nastavZalozky(mameZmluvy ? 'obsah' : 'dotacie');
 }
