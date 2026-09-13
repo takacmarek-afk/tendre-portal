@@ -262,3 +262,25 @@ def nahrad_ceny_sektor(sb, df: pd.DataFrame, dnes: str):
     d["vzoriek"] = pd.to_numeric(d["vzoriek"], errors="coerce").astype("Int64")
     d["last_seen_at"] = dnes
     return _nahrad_tabulku(sb, "ceny_sektor", d, kluc="sector")
+
+
+def zapis_verejne_pocty(sb, pocty: dict):
+    """Agregaty pre uvodnu stranku, ktoru cita aj neprihlaseny navstevnik.
+
+    Na index.html boli tieto cisla napisane natvrdo a uz sa rozisli so
+    skutocnostou. Uvodna stranka si ich teraz stiahne odtialto, takze
+    nemoze tvrdit nic, co v databaze nie je.
+
+    Nulu zamerne NEZAPISUJEM. Ked prepocet zlyha a vrati prazdno, je lepsie
+    nechat na stranke predchadzajuce platne cislo nez tam napisat "0 zmluv".
+    """
+    zaznamy = [{"kluc": k, "hodnota": int(v), "updated_at": "now()"}
+               for k, v in pocty.items()
+               if v is not None and int(v) > 0]
+    if not zaznamy:
+        log.warning("Verejne pocty: nic na zapis, nechavam stare hodnoty.")
+        return 0
+    sb.table("verejne_pocty").upsert(zaznamy, on_conflict="kluc").execute()
+    log.info("Verejne pocty: %s", ", ".join(
+        f"{z['kluc']}={z['hodnota']}" for z in zaznamy))
+    return len(zaznamy)

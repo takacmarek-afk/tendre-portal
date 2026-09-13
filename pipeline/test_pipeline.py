@@ -26,9 +26,21 @@ print(f"2) stlpce contracts  : {len(riadky[0])} | navyse oproti scheme: {navyse 
 assert not navyse, navyse
 
 df = pd.DataFrame(riadky)
-falosne = df[df.subject.str.contains("ajomn|oistn|ancelarskych", na=False)]
+
+# Vzor tu bol povodne "ajomn|oistn|ancelarskych" a test padal na 20 riadkoch
+# "Dodavka kancelarskych potrieb". Nebola to chyba klasifikatora, ale chyba
+# TESTU: kancelarske potreby su nas sektor TLAC_KANCELARIA, tie tam patria.
+# Vyradit treba najom KANCELARSKYCH PRIESTOROV, nie dodavku potrieb — a to
+# uz riesi slovo "najom". Vzor som preto zuzil na to, co vyradene byt musi,
+# a pridal opacnu kontrolu, ze spravna zhoda sa nestratila.
+falosne = df[df.subject.str.contains("ajomn|oistn", na=False)]
 print(f"3) falosne zhody     : {len(falosne)} (ocakavane 0)")
-assert len(falosne) == 0
+assert len(falosne) == 0, falosne.subject.head().tolist()
+
+potreby = df[df.subject.str.contains("ancelarskych potrieb", na=False)]
+print(f"3b) kancelarske potreby: {len(potreby)} zaradenych "
+      f"do {sorted(potreby.sector.unique()) if len(potreby) else '—'}")
+assert len(potreby) > 0, "dodavka kancelarskych potrieb sa nesmie vyradit"
 
 # ── 2. skorovanie ──
 t = score.prilezitosti(df)
@@ -37,12 +49,35 @@ assert not t.empty
 assert t.dni_do_konca.between(90, 180).all(), "okno predikcie nesedi"
 assert t.skore.is_monotonic_decreasing, "vystup musi byt zoradeny"
 
-OPP = {"contract_id","sector","cpv","authority_name","authority_cin","department","subject",
- "subject_description","effective_to","dni_do_konca","odhad_vyhlasenia","price_total",
- "supplier_name","top_dodavatel","podiel_top_dodavatela","historicky_pocet",
- "pocet_dodavatelov","riziko","skore","okres_kod"}
-print(f"5) stlpce opportunities: {len(t.columns)} | navyse: {set(t.columns)-OPP or 'ziadne'}")
-assert set(t.columns) == OPP
+# Zoznam stlpcov bol zastarany o cely rad zmien: chybali tu regiony
+# (mesto, kraj), karta incumbenta (dodavatel_od, dodavatel_zmluv_celkom),
+# priznak neuvedenej ceny a cely cenovy benchmark. Test teda padal aj vtedy,
+# ked bolo vsetko v poriadku — a to je horsie nez ziadny test, pretoze
+# to naucí clovka vysledok ignorovat.
+ZAKLAD = {"contract_id","sector","cpv","authority_name","authority_cin","department",
+ "subject","subject_description","effective_to","dni_do_konca","odhad_vyhlasenia",
+ "price_total","supplier_name","top_dodavatel","podiel_top_dodavatela",
+ "historicky_pocet","pocet_dodavatelov","riziko","skore","okres_kod",
+ "mesto","kraj","dodavatel_od","dodavatel_zmluv_celkom","cena_neuvedena",
+ "typicka_dlzka_dni"}
+# Pro stlpce, ktore score.rozdel_na_start_a_pro() odkroji do ceny_prilezitosti
+PRO = {"porovnavacia_cena","zaklad","median_cena","odchylka_pct","vzoriek",
+ "q1","q3","rozptyl","spolahlivy"}
+OPP = ZAKLAD | PRO
+chyba = OPP - set(t.columns)
+navyse = set(t.columns) - OPP
+print(f"5) stlpce opportunities: {len(t.columns)} | chybaju: {chyba or 'ziadne'} "
+      f"| navyse: {navyse or 'ziadne'}")
+assert not chyba, f"chybaju stlpce: {chyba}"
+assert not navyse, f"nove stlpce, doplnte ich do schemy aj do testu: {navyse}"
+
+# Rozdelenie na Start a Pro musi Pro stlpce z verejnej tabulky odobrat.
+# Prave tato diera raz uz bola: Pro data sa dali vytiahnut cez ?select=*.
+startDf, proDf = score.rozdel_na_start_a_pro(t)
+unik = PRO & set(startDf.columns) - {"contract_id"}
+print(f"5b) Start vrstva: {len(startDf.columns)} stlpcov | "
+      f"Pro stlpce v nej: {unik or 'ziadne'}")
+assert not unik, f"Pro stlpce presakuju do verejnej vrstvy: {unik}"
 
 # ── 3. serializacia pre REST (numpy typy JSON nezje) ──
 import json

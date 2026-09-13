@@ -13,6 +13,7 @@ from datetime import date
 import crz
 import score
 import store
+import regiony
 import subsidies
 import analytics
 from classify import SEKTOR_DOTACIE
@@ -85,6 +86,15 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     vsetky = None
     try:
         vsetky = store.nacitaj_contracts(sb)
+
+        # Mapu PSC -> kraj sa naucime z adries, ktorym kraj urcit vieme,
+        # a potom nou doplnime male obce, ktore v zozname okresnych miest
+        # nie su. Musi to byt PRED vypoctom prilezitosti aj dotacii,
+        # pretoze obe cesty ju pouzivaju ako posledny zalozny krok.
+        regiony.nauc_psc(vsetky.get("authority_address", []), log=log)
+        adresy_ico = subsidies.adresy_samosprav(vsetky)
+        log.info("Adries samosprav podla ICO: %s", len(adresy_ico))
+
         tabulka = score.prilezitosti(vsetky)
 
         # Brana pred zapisom. Ak nova vrstva stratila viac nez stvrtinu
@@ -97,7 +107,7 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
         cenPril = store.nahrad_ceny_prilezitosti(sb, proDf, dnes)
 
         # Dotacie su samostatna vrstva: nie zakazka, ale predzvest tendra.
-        dot = subsidies.z_contracts(vsetky)
+        dot = subsidies.z_contracts(vsetky, adresy_podla_ica=adresy_ico)
         skontroluj_pokles(sb, "subsidies", dot)
         dotacii = store.nahrad_subsidies(sb, dot, dnes)
         if dotacii:
@@ -146,6 +156,18 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
 
     log.info("Zmluv v databaze: %s | prilezitosti v okne %s-%s dni: %s",
              celkom, DNI_MIN, DNI_MAX, vlozene)
+
+    # Cisla pre uvodnu stranku. Vlastny try: ked toto zlyha, stranka ukaze
+    # predchadzajuce platne hodnoty a nic sa nerozbije — nema to zhodit beh.
+    try:
+        store.zapis_verejne_pocty(sb, {
+            "zmluv": celkom,
+            "prilezitosti": vlozene,
+            "dotacie": dotacii,
+            "dodavatelia": dodav,
+        })
+    except Exception as e:
+        log.warning("Verejne pocty sa nezapisali: %s: %s", type(e).__name__, e)
 
     # ── SAMOKONTROLA KALIBRACIE ────────────────────────────────────────────
     if tabulka is not None and not tabulka.empty:

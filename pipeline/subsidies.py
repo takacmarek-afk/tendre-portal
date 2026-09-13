@@ -39,7 +39,37 @@ POTREBNE_STLPCE = ("sector", "price_total", "signed_on", "effective_from",
                    "subject", "subject_description", "id")
 
 
-def z_contracts(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
+def adresy_samosprav(df: pd.DataFrame) -> dict:
+    """Mapa {ICO: adresa} zo vsetkych zmluv, kde je organizacia OBSTARAVATELOM.
+
+    Presne toto nam chybalo na urcenie kraja malych obci. Obec Zdana nie je
+    v zozname okresnych miest, takze z nazvu kraj neurcime — ale tá istá obec
+    ma v CRZ vlastne zmluvy, kde je obstaravatelom, a tam je jej adresa
+    "Jarmocna 118/4, 044 11 Zdana". Z PSC 044 uz kraj vieme.
+
+    Pri viacerych adresach na jedno ICO beriem tu najcastejsiu, nie prvu —
+    adresy sa v case menia a preklepy su bezne.
+    """
+    if df.empty or "authority_cin" not in df.columns:
+        return {}
+    d = df[df["authority_cin"].notna() & df["authority_address"].notna()]
+    if d.empty:
+        return {}
+    # POZOR: dict(zip(...)) nechava pri duplicitnom kluci POSLEDNU hodnotu,
+    # nie prvu. Bez drop_duplicates by zoradenie zostupne podla poctu
+    # vybralo tu NAJMENEJ castu adresu — presny opak toho, co chcem.
+    pom = pd.DataFrame({
+        "ico": d["authority_cin"].astype(str).str.strip(),
+        "adresa": d["authority_address"],
+    })
+    pocty = (pom.groupby(["ico", "adresa"]).size().reset_index(name="n")
+                .sort_values(["ico", "n"], ascending=[True, False])
+                .drop_duplicates("ico", keep="first"))
+    return dict(zip(pocty["ico"], pocty["adresa"]))
+
+
+def z_contracts(df: pd.DataFrame, dnes: date = None,
+                adresy_podla_ica: dict = None) -> pd.DataFrame:
     """Vstup: vsetky ulozene zmluvy. Vystup: riadky pre tabulku subsidies."""
     dnes = dnes or date.today()
     if df.empty:
@@ -95,8 +125,16 @@ def z_contracts(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
 
     # POZOR: nie regiony.doplnit(). Adresa v dotacnej zmluve patri
     # ministerstvu v Bratislave, nie obci, ktora dotaciu dostala. Kraj sa
-    # tu preto odvodzuje z NAZVU prijimatela.
-    d = regiony.doplnit_z_nazvu(d, "prijimatel")
+    # tu preto odvodzuje z NAZVU prijimatela, a ked nazov nesadne (male
+    # obce v zozname okresnych miest nie su), z VLASTNEJ adresy prijimatela
+    # dohladanej podla ICO.
+    d = regiony.doplnit_z_nazvu(d, "prijimatel",
+                                adresy_podla_ica=adresy_podla_ica,
+                                stlpec_ica="prijimatel_ico")
+    bez_kraja = int(d["kraj"].isna().sum())
+    if bez_kraja:
+        log.info("Dotacie bez kraja: %s z %s (%.1f %%).",
+                 bez_kraja, len(d), 100.0 * bez_kraja / len(d))
 
     d["odkaz"] = "https://www.crz.gov.sk/zmluva/" + d["id"].astype(str) + "/"
     d["contract_id"] = d["id"]

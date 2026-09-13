@@ -208,6 +208,20 @@ tailwind.config = { theme: { extend: {
               <option value="90">90 a viac (horná desatina)</option>
             </select>
           </div>
+          <!-- Predvolene ZAPNUTE. Bez tohto zaciatok zoznamu obsahoval len
+               zakazky, kde do konca zmluvy zostava menej nez 90 dni — teda
+               presne tie, kde uz je neskoro. Zoradenie podla najblizsieho
+               tendra ich vytiahne na prve miesta a prva obrazovka potom
+               tvrdi opak toho, co portal sluby. -->
+          <div class="flex items-end">
+            <label class="flex items-start gap-2 text-[13px] text-ink cursor-pointer">
+              <input id="f-jeCas" type="checkbox" checked
+                     class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
+              <span>Len tie, kde ešte je čas
+                <span class="block text-[11px] text-slate2">skryje zákazky, kde tender už asi beží</span>
+              </span>
+            </label>
+          </div>
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
           <span id="pocet" class="text-[13px] text-slate2"></span>
@@ -270,7 +284,7 @@ tailwind.config = { theme: { extend: {
       </p>
 
       <div class="bg-white border border-line rounded-lg p-4 mb-5">
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <label for="d-kraj" class="block text-[12px] font-semibold text-slate2 mb-1">Kraj</label>
             <select id="d-kraj" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
@@ -286,6 +300,20 @@ tailwind.config = { theme: { extend: {
             <input id="d-text" type="search" placeholder="obec, škola, účel"
                    class="w-full border border-line rounded-md px-3 py-2 text-[14px]
                           focus:outline-none focus:border-accent">
+          </div>
+          <!-- Predvolene NAJNOVSIA, nie najvyssia suma. Podla sumy boli na
+               prvej obrazovke 77-milionove elektricky v Kosiciach — zakazka,
+               ktoru mala firma z tohto portalu nikdy neuvidi ako svoju.
+               Najnovsia dotacia je navyse ta s najdlhsim predstihom a je to
+               jedine radenie, pri ktorom ma zmysel vratit sa o tyzden. -->
+          <div>
+            <label for="d-radenie" class="block text-[12px] font-semibold text-slate2 mb-1">Zoradiť</label>
+            <select id="d-radenie" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
+                                          focus:outline-none focus:border-accent">
+              <option value="nove">najnovšia dotácia</option>
+              <option value="okno">tender očakávame najskôr</option>
+              <option value="suma">najvyššia suma</option>
+            </select>
           </div>
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
@@ -435,6 +463,12 @@ const skry = (id) => el(id).classList.add('hidden');
 
 const PRIHLASENIE = './prihlasenie.html';
 const LIMIT = 200;
+
+// Ked do konca zmluvy zostava menej nez tolko dni, tender uz podla vsetkeho
+// bezi a predstih sme stratili. Pouziva to ODZNAK v riadku aj PREDVOLENY
+// FILTER — schvalne ta ista konstanta. Ked sa raz rozhodneme hranicu zmenit,
+// nesmie sa stat, ze filter riadok skryje a odznak by ho neoznacil.
+const DNI_TENDER_UZ_BEZI = 90;
 
 const SPRAVY = {
   ICO_NEPLATNE: 'IČO musí mať osem číslic. Skontrolujte ho, prosím.',
@@ -601,7 +635,7 @@ function riadok(r, benchmark) {
   // Zmluva, ktora konci do 90 dni, uz ziadny predstih nedava — tender je
   // pravdepodobne davno vyhlaseny. Nezahadzujeme ju, ale hovorime to.
   const dni = num(r.dni_do_konca);
-  const neskoro = !Number.isNaN(dni) && dni < 90;
+  const neskoro = !Number.isNaN(dni) && dni < DNI_TENDER_UZ_BEZI;
 
   // Cena 0 v CRZ neznamena malu zakazku, ale neuvedenu cenu — ramcovu
   // dohodu alebo zmluvu s jednotkovymi cenami. Tyka sa to 47 % zmluv.
@@ -645,15 +679,34 @@ function riadok(r, benchmark) {
     </tr>`;
 }
 
+// Kolko dni od dnes po dany datum. Zaporne = uz bolo. NaN = nemame datum.
+function dniOdDnes(datum) {
+  if (!datum) return NaN;
+  const d = new Date(datum + 'T00:00:00');
+  if (Number.isNaN(d.getTime())) return NaN;
+  const dnes = new Date();
+  dnes.setHours(0, 0, 0, 0);
+  return Math.round((d - dnes) / 86400000);
+}
+
+const DNI_NOVA_DOTACIA = 30;
+
 function riadokDotacie(r) {
   const sektor = POPIS_SEKTORA[r.sektor_odhad];
   const kde = [r.mesto, r.kraj].filter(Boolean).join(', ');
+  const odPodpisu = -dniOdDnes(r.podpisane);
+  const nova = !Number.isNaN(odPodpisu) && odPodpisu >= 0 && odPodpisu <= DNI_NOVA_DOTACIA;
   return `
     <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
       <td class="px-4 py-4 align-top">
-        <div class="text-[14px] font-medium leading-snug">${bezpecne(r.prijimatel)}</div>
+        <div class="text-[14px] font-medium leading-snug">
+          ${bezpecne(r.prijimatel)}
+          ${nova ? `<span class="align-middle ml-1 text-[10px] font-semibold px-1.5 py-0.5
+                         rounded bg-emerald-50 text-emerald-800">NOVÁ</span>` : ''}
+        </div>
         <div class="text-[12px] text-slate2 mt-1">${bezpecne(r.poskytovatel)}</div>
         ${kde ? `<div class="text-[12px] text-slate2 mt-1">${bezpecne(kde)}</div>` : ''}
+        ${r.podpisane ? `<div class="text-[11px] text-slate2 mt-1">podpísaná ${bezpecne(r.podpisane)}</div>` : ''}
       </td>
       <td class="px-4 py-4 align-top max-w-[380px]">
         <div class="text-[14px] leading-snug" title="${bezpecne(r.ucel)}"
@@ -665,10 +718,35 @@ function riadokDotacie(r) {
       </td>
       <td class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${suma(r.suma)}</td>
       <td class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
-        ${bezpecne(r.okno_od)}<br>
-        <span class="text-[12px]">až ${bezpecne(r.okno_do)}</span>
+        ${oknoDotacie(r)}
       </td>
     </tr>`;
+}
+
+// Povodne tu bolo len "okno_od az okno_do". Lenze pri 78 % dotacii uz okno_od
+// DAVNO PRESLO, takze to vyzeralo ako stare data — pritom okno je stale
+// otvorene a prave to je ta informacia, ktoru zakaznik potrebuje. Preto
+// rozlisujem tri stavy a vzdy poviem, kolko casu este zostava.
+function oknoDotacie(r) {
+  const doZaciatku = dniOdDnes(r.okno_od);
+  const doKonca = dniOdDnes(r.okno_do);
+
+  if (!Number.isNaN(doZaciatku) && doZaciatku > 0) {
+    return `<span class="text-[13px]">tender čakáme od</span><br>
+            <span class="font-medium">${bezpecne(r.okno_od)}</span>
+            <div class="text-[11px] mt-1">o ${doZaciatku} dní</div>`;
+  }
+  if (!Number.isNaN(doKonca) && doKonca >= 0) {
+    const sucho = doKonca <= 90;
+    return `<span class="text-[11px] font-semibold px-1.5 py-0.5 rounded
+                  ${sucho ? 'text-amber-800 bg-amber-50' : 'text-emerald-800 bg-emerald-50'}">
+              okno je otvorené
+            </span>
+            <div class="text-[12px] mt-1">do ${bezpecne(r.okno_do)}</div>
+            <div class="text-[11px]">zostáva ${doKonca} dní</div>`;
+  }
+  return `<span class="text-[13px]">${bezpecne(r.okno_od) || '—'}</span><br>
+          <span class="text-[12px]">až ${bezpecne(r.okno_do) || '—'}</span>`;
 }
 
 function riadokDodavatela(r) {
@@ -937,9 +1015,11 @@ async function dashboard(supabase) {
                    'dni_do_konca, mesto, kraj, supplier_name, dodavatel_od, ' +
                    'dodavatel_zmluv_celkom, historicky_pocet';
 
-  async function nacitajZmluvy() {
-    let q = supabase.from('opportunities').select(STLPCE_Z, { count: 'exact' });
-
+  // Filtre zo vstupov pridame na lubovolny dopyt. Je to samostatna funkcia
+  // preto, lebo ich teraz potrebujem dvakrat: raz na data a raz na spocitanie
+  // toho, co predvoleny filter skryva. Dve kopie tych istych podmienok by sa
+  // pri prvej uprave rozisli a pocet skrytych by zacal klamat.
+  function filtreZmluv(q) {
     const kraj = el('f-kraj').value;
     const sektor = el('f-sektor').value;
     const skore = Number(el('f-skore').value) || 0;
@@ -950,6 +1030,25 @@ async function dashboard(supabase) {
     if (skore) q = q.gte('skore', skore);
     if (text) {
       q = q.or(`subject.ilike.*${text}*,authority_name.ilike.*${text}*,mesto.ilike.*${text}*`);
+    }
+    return q;
+  }
+
+  async function nacitajZmluvy() {
+    let q = filtreZmluv(
+      supabase.from('opportunities').select(STLPCE_Z, { count: 'exact' }));
+
+    // Rovnaka hranica ako pri odznaku "tender uz asi bezi" nizsie v riadok().
+    // Drzim to v jednej konstante, aby sa filter a odznak nemohli rozist —
+    // skryt riadok a pritom mu neukazat odznak by bolo horsie nez oboje.
+    const jeCas = el('f-jeCas').checked;
+    let skrytych = 0;
+    if (jeCas) {
+      q = q.gte('dni_do_konca', DNI_TENDER_UZ_BEZI);
+      const skryte = await filtreZmluv(
+        supabase.from('opportunities').select('contract_id', { count: 'exact', head: true }))
+        .lt('dni_do_konca', DNI_TENDER_UZ_BEZI);
+      if (!skryte.error) skrytych = skryte.count ?? 0;
     }
 
     // PREDVOLENE SA NERADI PODLA SILY SIGNALU, a to zamerne.
@@ -1001,15 +1100,21 @@ async function dashboard(supabase) {
       konci: 'podľa konca zmluvy', signal: 'podľa sily signálu',
     };
     const podla = POPIS_RADENIA[el('f-radenie').value] ?? '';
-    el('pocet').textContent = c > LIMIT
+    const zaklad = c > LIMIT
       ? `${cislo(c)} záznamov, zobrazujeme prvých ${LIMIT} ${podla}`
       : `${cislo(c)} ${c === 1 ? 'záznam' : c < 5 ? 'záznamy' : 'záznamov'}`;
+    // Skryte riadky musia byt VIDIET ako cislo. Ticho odfiltrovana sestina
+    // databazy je presne ten druh "pomoci", ktory zakaznik objavi az vtedy,
+    // ked mu nieco chyba — a vtedy prestane verit celemu zvysku.
+    el('pocet').textContent = jeCas && skrytych > 0
+      ? `${zaklad} · ${cislo(skrytych)} skrytých, kde tender už asi beží`
+      : zaklad;
   }
 
   async function nacitajDotacie() {
     let q = supabase.from('subsidies')
       .select('contract_id, prijimatel, poskytovatel, ucel, suma, sektor_odhad, ' +
-              'okno_od, okno_do, mesto, kraj', { count: 'exact' });
+              'podpisane, okno_od, okno_do, mesto, kraj', { count: 'exact' });
 
     const kraj = el('d-kraj').value;
     const sektor = el('d-sektor').value;
@@ -1019,7 +1124,17 @@ async function dashboard(supabase) {
     if (sektor) q = q.eq('sektor_odhad', sektor);
     if (text) q = q.or(`prijimatel.ilike.*${text}*,ucel.ilike.*${text}*`);
 
-    const { data, count, error } = await q.order('suma', { ascending: false }).limit(LIMIT);
+    const RADENIE_D = {
+      nove: ['podpisane', false],
+      okno: ['okno_do', true],
+      suma: ['suma', false],
+    };
+    const [stlpecD, vzostupneD] = RADENIE_D[el('d-radenie').value] ?? RADENIE_D.nove;
+
+    const { data, count, error } = await q
+      .order(stlpecD, { ascending: vzostupneD, nullsFirst: false })
+      .order('suma', { ascending: false })
+      .limit(LIMIT);
     if (error) {
       el('pocet-dot').textContent = 'Chyba: ' + error.message;
       return;
@@ -1028,9 +1143,12 @@ async function dashboard(supabase) {
     el('riadky-d').innerHTML = posledne.dotacie.map(riadokDotacie).join('');
     el('prazdny-dot').classList.toggle('hidden', posledne.dotacie.length > 0);
 
+    const POPIS_D = {
+      nove: 'od najnovšej', okno: 'podľa očakávaného tendra', suma: 'podľa sumy',
+    };
     const c = count ?? posledne.dotacie.length;
     el('pocet-dot').textContent = c > LIMIT
-      ? `${cislo(c)} dotácií, zobrazujeme prvých ${LIMIT} podľa sumy`
+      ? `${cislo(c)} dotácií, zobrazujeme prvých ${LIMIT} ${POPIS_D[el('d-radenie').value] ?? ''}`
       : `${cislo(c)} ${c === 1 ? 'dotácia' : c < 5 ? 'dotácie' : 'dotácií'}`;
   }
 
@@ -1093,7 +1211,7 @@ async function dashboard(supabase) {
 
   // Filtre
   const prekresliZ = pozdrz(nacitajZmluvy);
-  for (const id of ['f-kraj', 'f-sektor', 'f-skore', 'f-radenie']) {
+  for (const id of ['f-kraj', 'f-sektor', 'f-skore', 'f-radenie', 'f-jeCas']) {
     el(id).addEventListener('change', nacitajZmluvy);
   }
   el('f-text').addEventListener('input', prekresliZ);
@@ -1102,13 +1220,16 @@ async function dashboard(supabase) {
     el('f-kraj').value = ''; el('f-sektor').value = '';
     el('f-skore').value = '0'; el('f-text').value = '';
     el('f-radenie').value = 'tender';
+    // Zrusenie filtrov vracia PREDVOLENY stav, nie prazdny. Predvolene je
+    // toto zapnute, takze sa to po resete musi zapnut spat.
+    el('f-jeCas').checked = true;
     nacitajZmluvy();
   }
   el('f-reset').addEventListener('click', reset);
   el('f-reset-2').addEventListener('click', reset);
 
   const prekresliD = pozdrz(nacitajDotacie);
-  for (const id of ['d-kraj', 'd-sektor']) {
+  for (const id of ['d-kraj', 'd-sektor', 'd-radenie']) {
     el(id).addEventListener('change', nacitajDotacie);
   }
   el('d-text').addEventListener('input', prekresliD);

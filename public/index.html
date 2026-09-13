@@ -90,12 +90,17 @@ tailwind.config = {
 <!-- ══════════════ ČÍSLA ══════════════ -->
 <section class="border-y border-line bg-[#fafbfc]">
   <div class="wrap py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
+    <!-- Tieto dve cisla boli napisane natvrdo a uz sa rozisli so
+         skutocnostou: "227 731" bolo zastarane a "4 200" nezodpovedalo
+         ziadnej tabulke. Tahaju sa preto z verejnej tabulky `verejne_pocty`,
+         ktoru pipeline prepise po kazdom behu. Kym sa nenacitaju, je tu
+         pomlcka — radsej nic nez vymyslene cislo. -->
     <div>
-      <div class="text-[28px] font-bold tracking-tight">227 731</div>
+      <div id="p-zmluv" class="text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
       <div class="text-[13px] text-slate2 mt-1 leading-snug">zmlúv úradov v databáze</div>
     </div>
     <div>
-      <div class="text-[28px] font-bold tracking-tight">4 200</div>
+      <div id="p-prilezitosti" class="text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
       <div class="text-[13px] text-slate2 mt-1 leading-snug">sledovaných príležitostí práve teraz</div>
     </div>
     <div>
@@ -475,8 +480,53 @@ tailwind.config = {
   </div>
 </footer>
 
+<script src="./config.js"></script>
 <script>
 document.getElementById('rok').textContent = new Date().getFullYear();
+
+// ── Zive cisla z databazy ────────────────────────────────────────────────
+// Tabulka `verejne_pocty` je jedina, ktoru smie citat aj neprihlaseny.
+// Su to len agregaty. Nepouzivam tu Supabase SDK — na dva riadky by to
+// bolo 40 kB javascriptu navyse na uvodnej stranke; staci obycajny fetch
+// na PostgREST.
+//
+// Ked to zlyhá, NEROBIM NIC: v HTML zostane pomlcka. To je zamer. Vymyslene
+// alebo zastarane cislo na prvej obrazovke je horsie nez ziadne, pretoze
+// cela pozicia tohto portalu stoji na tom, ze cisla sedia.
+(async function zobrazPocty() {
+  const cfg = window.CONFIG ?? {};
+  if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY
+      || String(cfg.SUPABASE_ANON_KEY).startsWith('SEM_VLOZ')) return;
+
+  try {
+    const r = await fetch(
+      cfg.SUPABASE_URL + '/rest/v1/verejne_pocty?select=kluc,hodnota',
+      { headers: { apikey: cfg.SUPABASE_ANON_KEY,
+                   Authorization: 'Bearer ' + cfg.SUPABASE_ANON_KEY } });
+    if (!r.ok) return;
+    const riadky = await r.json();
+    if (!Array.isArray(riadky)) return;
+
+    const p = Object.fromEntries(riadky.map(x => [x.kluc, Number(x.hodnota)]));
+    const medzery = n => n.toLocaleString('sk-SK').replace(/ /g, ' ');
+
+    const nastav = (id, hodnota) => {
+      if (!Number.isFinite(hodnota) || hodnota <= 0) return;
+      const uzol = document.getElementById(id);
+      if (!uzol) return;
+      uzol.textContent = medzery(hodnota);
+      uzol.classList.remove('text-slate2');
+    };
+
+    nastav('p-zmluv', p.zmluv);
+    // "Prilezitosti" na uvodnej stranke znamena OBE vrstvy — konciace
+    // zmluvy aj dotacie. Presne to su zaznamy, ktore zakaznik po prihlaseni
+    // uvidi, takze cislo musi sediet so suctom oboch zaloziek v aplikacii.
+    nastav('p-prilezitosti', (p.prilezitosti || 0) + (p.dotacie || 0));
+  } catch (e) {
+    // ticho — pomlcka zostava
+  }
+})();
 </script>
 
 </body>
