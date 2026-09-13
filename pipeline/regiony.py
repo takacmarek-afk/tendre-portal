@@ -24,15 +24,20 @@ v zozname nie su. Ziadny novy zdroj dat na to netreba.
   nauc_psc(adresy)                — postavi mapu, vola sa raz za beh
   doplnit_z_nazvu(df, stlpec, adresy_podla_ica=...)
 
-Odmerane 11. 9. 2026: 118 prefixov, 117 z nich vedie na jediny kraj
-(99,2 %). Jediny sporny prefix ma 7 vzoriek a prah ho zahodi.
-Bez tejto cesty nemalo kraj 71,3 % dotacii — teda 782 M EUR z 1 470 M
-bolo pre filtrovanie podla kraja neviditelnych.
+Odmerane 13. 9. 2026: bez tejto cesty nemalo kraj 71,3 % dotacii — teda
+782 M EUR z 1 470 M bolo pre filtrovanie podla kraja neviditelnych.
+S nou klesol podiel na 17,6 %.
 
 Zamerne NEHADAME. Nespravne priradeny kraj je horsi nez prazdna hodnota:
 firma z Presova si vyfiltruje Presovsky kraj, dostane kosicke zakazky
-a stratime doveru na prvy pohlad. Preto prefix prijmeme len vtedy, ked
-ma dost vzoriek a takmer vsetky ukazuju na ten isty kraj.
+a stratime doveru na prvy pohlad.
+
+Preto hlasuju MESTA a vyzaduje sa UPLNA zhoda. Prva verzia vazila hlasy
+poctom zmluv a pri prefixe 925 to zlyhalo: Sladkovicovo (Trnavsky) ma
+v CRZ ovela viac zmluv nez obce okolo Sale (Nitriansky), takze prefix
+vysiel ako Trnavsky a Obec Kralova nad Vahom skoncila v zlom kraji.
+Ked hlasuje kazde mesto raz a staci jeden nesuhlas na zahodenie prefixu,
+hranicne prefixy sa neprijmu vobec.
 """
 import re
 import unicodedata
@@ -191,17 +196,41 @@ def rozober_adresu(adresa):
 PSC_KRAJ = {}     # tri cislice -> kraj, presnejsie
 PSC2_KRAJ = {}    # dve cislice -> kraj, hrubsie, len ked je jednoznacne
 
-MIN_VZORIEK_PSC = 3      # pod tym je zhoda nahoda
-MIN_CISTOTA_PSC = 0.90   # aspon 90 % vzoriek musi ukazovat na jeden kraj
+# Hlasuju MESTA, nie zmluvy — vid vysvetlenie v _prijmi().
+MIN_CISTOTA_PSC = 1.0    # ZIADNY spor. Prefix na hranici kraja radsej zahodim.
+
+# Trojciferny prefix pokryva male uzemie, obvykle jeden okres. Jedno znama
+# mesto je tam dost silny dokaz.
+MIN_MIEST_PSC3 = 1
+
+# Dvojciferny prefix pokryva uzemie niekolkych okresov a hranice krajov
+# prekracuje bezne. Jedno mesto by tam mohlo stiahnut desiatky obci z uplne
+# ineho kraja, ktore samy hlasovat nevedia, lebo ich v zozname nemame.
+# Preto tu chcem vidiet aspon tri mesta, a vsetky musia sedet.
+MIN_MIEST_PSC2 = 3
 
 
-def _prijmi(hlasy, kam):
-    """Z hlasovania prijme len prefixy, ktore prah prejdu. Vrati (prijate, zahodene)."""
+def _prijmi(hlasy, kam, min_miest):
+    """Z hlasovania prijme len prefixy, ktore prah prejdu. Vrati (prijate, zahodene).
+
+    HLASUJU MESTA, NIE ZMLUVY. Toto je oprava skutocnej chyby, nie detail.
+
+    Prvy raz som pocital vzorky podla poctu zmluv. Prefix 925 tak vysiel ako
+    "Trnavsky kraj", pretoze Sladkovicovo (okres Galanta, Trnavsky) ma v CRZ
+    ovela viac zmluv nez obce okolo Sale (Nitriansky) s tym istym prefixom.
+    Vysledok: Obec Kralova nad Vahom, ktora patri do okresu Sala, skoncila
+    v Trnavskom kraji. Cistota VZORKY nie je cistota UZEMIA — staci jedno
+    ukecane mesto a prefix sa prikloni k jeho kraju.
+
+    Ked hlasuje kazde mesto raz, konflikt na hranici kraja sa ukaze aj vtedy,
+    ked je jedna strana v datach zastupena stokrat viac.
+    """
     zahodene = 0
     for prefix, po_krajoch in hlasy.items():
-        spolu = sum(po_krajoch.values())
-        kraj, pocet = max(po_krajoch.items(), key=lambda kv: kv[1])
-        if spolu >= MIN_VZORIEK_PSC and pocet / spolu >= MIN_CISTOTA_PSC:
+        # po_krajoch je {kraj: mnozina normalizovanych nazvov miest}
+        spolu = sum(len(m) for m in po_krajoch.values())
+        kraj, mesta = max(po_krajoch.items(), key=lambda kv: len(kv[1]))
+        if spolu >= min_miest and len(mesta) / spolu >= MIN_CISTOTA_PSC:
             kam[prefix] = kraj
         else:
             zahodene += 1
@@ -229,23 +258,24 @@ def nauc_psc(adresy, log=None):
     for adresa in adresy:
         if not adresa:
             continue
-        _mesto, psc, kraj = rozober_adresu(adresa)
-        if not (psc and kraj):
+        mesto, psc, kraj = rozober_adresu(adresa)
+        if not (psc and kraj and mesto):
             continue
         cifry = re.sub(r"\D", "", psc)
         if len(cifry) < 3:
             continue
+        kluc_mesta = _norm(mesto)
         for hlasy, prefix in ((h3, cifry[:3]), (h2, cifry[:2])):
             hlasy.setdefault(prefix, {})
-            hlasy[prefix][kraj] = hlasy[prefix].get(kraj, 0) + 1
+            hlasy[prefix].setdefault(kraj, set()).add(kluc_mesta)
 
-    p3, z3 = _prijmi(h3, PSC_KRAJ)
-    p2, z2 = _prijmi(h2, PSC2_KRAJ)
+    p3, z3 = _prijmi(h3, PSC_KRAJ, MIN_MIEST_PSC3)
+    p2, z2 = _prijmi(h2, PSC2_KRAJ, MIN_MIEST_PSC2)
 
     if log:
         log.info("PSC mapa: 3-ciferne %s prijatych / %s zahodenych, "
-                 "2-ciferne %s / %s (prah %s vzoriek, %.0f %% cistota).",
-                 p3, z3, p2, z2, MIN_VZORIEK_PSC, MIN_CISTOTA_PSC * 100)
+                 "2-ciferne %s / %s. Hlasuju mesta (nie zmluvy), "
+                 "vyzaduje sa uplna zhoda.", p3, z3, p2, z2)
     return p3
 
 

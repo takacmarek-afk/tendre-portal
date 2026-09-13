@@ -21,10 +21,13 @@ zmluvy = pd.DataFrame([
     # znama adresa -> sluzi na naucenie mapy
     {"authority_cin": "00691135", "authority_name": "Mesto Košice",
      "authority_address": "Trieda SNP 48/A, 040 11 Košice"},
-    {"authority_cin": "00691135", "authority_name": "Mesto Košice",
-     "authority_address": "Trieda SNP 48/A, 040 11 Košice"},
-    {"authority_cin": "00691135", "authority_name": "Mesto Košice",
-     "authority_address": "Trieda SNP 48/A, 040 11 Košice"},
+    # Este dve kosicke mesta s inym trojcifernym prefixom. Az tri RÔZNE
+    # mesta zhodne na kraji otvoria dvojcifernu uroven 04x — a prave tou
+    # sa potom chyti Zdana (044), ktorej vlastny prefix nepoznam.
+    {"authority_cin": "00324451", "authority_name": "Mesto Moldava nad Bodvou",
+     "authority_address": "Školská 2, 045 01 Moldava nad Bodvou"},
+    {"authority_cin": "00328308", "authority_name": "Mesto Rožňava",
+     "authority_address": "Šafárikova 29, 048 01 Rožňava"},
     {"authority_cin": "00321796", "authority_name": "Mesto Žilina",
      "authority_address": "Námestie obetí komunizmu 1, 011 31 Žilina"},
     {"authority_cin": "00321796", "authority_name": "Mesto Žilina",
@@ -71,8 +74,12 @@ assert regiony.PSC_KRAJ.get("040") == "Košický kraj", "Kosice 040"
 assert regiony.PSC_KRAJ.get("011") == "Žilinský kraj", "Zilina 011"
 assert regiony.PSC_KRAJ.get("058") == "Prešovský kraj", "Poprad 058"
 assert regiony.PSC_KRAJ.get("029") == "Žilinský kraj", "Namestovo 029"
-assert "917" not in regiony.PSC_KRAJ, "prefix s 1 vzorkou sa nesmie prijat"
-print("OK: prah na pocet vzoriek drzi, znama mesta sa naucili")
+# Jedno mesto na trojcifernom prefixe UZ STACI a je to zamer: taky prefix
+# pokryva obvykle jeden okres, takze jedna znama Trnava je dobry dokaz.
+# Prah na pocet zmluv tu uz nie je, lebo hlasuju mesta — a Trnava je jedna
+# bez ohladu na to, kolko ma zmluv.
+assert regiony.PSC_KRAJ.get("917") == "Trnavský kraj", "Trnava 917"
+print("OK: znama mesta sa naucili, jedno mesto na 3-cif. prefixe staci")
 
 hlavicka("2. Kraj z PSC pre obec, ktora v zozname miest nie je")
 # POZOR NA TENTO ROZDIEL — prve co som tu mal, bolo zle.
@@ -89,11 +96,31 @@ print("Trnava (917 01) neznamy:", regiony.z_psc("917 01"))
 
 assert regiony.z_psc("040 11") == "Košický kraj", "presny prefix mesta"
 assert regiony.z_psc("044 11") == "Košický kraj", \
-    "Zdanu ma zachranit dvojciferna uroven 04x"
+    "Zdanu ma zachranit dvojciferna uroven 04x (tri kosicke mesta)"
 assert regiony.z_psc("029 44") == "Žilinský kraj", \
-    "Rabcu ma zachranit dvojciferna uroven 02x"
-assert regiony.z_psc("917 01") is None, "prefix s jednou vzorkou zostane prazdny"
-print("OK: dvojciferna uroven dopina obce, jednorazovy prefix sa zahodil")
+    "Rabca ma rovnaky trojciferny prefix ako Namestovo"
+assert "02" not in regiony.PSC2_KRAJ, \
+    "dvojciferny prefix 02 ma len jedno mesto a prijat sa nesmie"
+print("OK: 3-cif. chyta presne, 2-cif. len ked su aspon tri zhodne mesta")
+
+hlavicka("2a. UKECANE MESTO NESMIE PREHLASOVAT SUSEDA")
+# Toto je regresny test na skutocnu chybu z 13. 9. 2026.
+# Prefix 925 zdielaju Sladkovicovo (okres Galanta, Trnavsky kraj) a obce
+# okolo Sale (Nitriansky kraj). Sladkovicovo ma v CRZ mnohonasobne viac
+# zmluv. Kym sa hlasy vazili poctom zmluv, prefix vysiel ako Trnavsky
+# a Obec Kralova nad Vahom skoncila v zlom kraji.
+# Ked hlasuje kazde mesto raz, spor je vidiet a prefix sa zahodi.
+ukecane = pd.Series(
+    ["Hlavná 1, 925 21 Sereď"] * 40 +          # Trnavsky, 40 zmluv
+    ["Hlavná 2, 925 91 Šaľa"] * 2              # Nitriansky, 2 zmluvy
+)
+regiony.nauc_psc(ukecane)
+print("3-ciferne po ukecanom vstupe:", sorted(regiony.PSC_KRAJ))
+print("kraj pre 925:", regiony.z_psc("925 91"))
+assert "925" not in regiony.PSC_KRAJ, (
+    "prefix 925 ma dve mesta v dvoch krajoch a musi sa zahodit, "
+    "aj ked jedno z nich ma dvadsatkrat viac zmluv")
+print("OK: pomer zmluv 40:2 prefix NEPREVAZIL, spor rozhodol")
 
 hlavicka("2b. Sporny dvojciferny prefix sa musi zahodit")
 # 05x je v skutocnosti aj Presovsky (Poprad 058) aj Kosicky (Spisska Nova
