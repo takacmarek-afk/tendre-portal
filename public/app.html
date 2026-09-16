@@ -379,6 +379,12 @@ tailwind.config = { theme: { extend: {
           <p class="text-[14px] text-slate2">Pre tieto filtre nemáme žiadny záznam.</p>
           <button id="f-reset-2" class="mt-3 text-[13px] font-semibold text-accent">Zrušiť filtre</button>
         </div>
+        <div id="viac-z-obal" class="hidden px-4 py-5 text-center border-t border-line">
+          <button id="viac-z" class="text-[14px] font-semibold text-accent hover:text-accentDark">
+            Zobraziť ďalších 200
+          </button>
+          <div id="viac-z-stav" class="text-[12px] text-slate2 mt-1"></div>
+        </div>
       </div>
       <p class="mt-4 text-[12px] leading-relaxed text-slate2 max-w-3xl">
         Odhad vyhlásenia tendra je koniec zmluvy mínus 75 dní, prípadne
@@ -533,6 +539,12 @@ tailwind.config = { theme: { extend: {
           <span id="pocet-zia" class="text-[13px] text-slate2"></span>
           <button id="export-zi" class="text-[13px] font-semibold text-accent">Export CSV</button>
         </div>
+        <div id="viac-d-obal" class="hidden px-4 py-5 text-center border-t border-line">
+          <button id="viac-d" class="text-[14px] font-semibold text-accent hover:text-accentDark">
+            Zobraziť ďalších 200
+          </button>
+          <div id="viac-d-stav" class="text-[12px] text-slate2 mt-1"></div>
+        </div>
       </div>
 
       <div class="bg-white border border-line rounded-lg overflow-hidden">
@@ -613,6 +625,12 @@ tailwind.config = { theme: { extend: {
               Export CSV
             </button>
           </div>
+        <div id="viac-zi-obal" class="hidden px-4 py-5 text-center border-t border-line">
+          <button id="viac-zi" class="text-[14px] font-semibold text-accent hover:text-accentDark">
+            Zobraziť ďalších 200
+          </button>
+          <div id="viac-zi-stav" class="text-[12px] text-slate2 mt-1"></div>
+        </div>
         </div>
 
         <div class="bg-white border border-line rounded-lg overflow-hidden">
@@ -633,6 +651,12 @@ tailwind.config = { theme: { extend: {
           </div>
           <div id="prazdny-dod" class="hidden p-10 text-center">
             <p class="text-[14px] text-slate2">Pre tieto filtre nemáme žiadnu firmu.</p>
+          </div>
+          <div id="viac-f-obal" class="hidden px-4 py-5 text-center border-t border-line">
+            <button id="viac-f" class="text-[14px] font-semibold text-accent hover:text-accentDark">
+              Zobraziť ďalších 200
+            </button>
+            <div id="viac-f-stav" class="text-[12px] text-slate2 mt-1"></div>
           </div>
         </div>
 
@@ -676,6 +700,34 @@ const skry = (id) => el(id).classList.add('hidden');
 
 const PRIHLASENIE = './prihlasenie.html';
 const LIMIT = 200;
+
+// ── Kolko riadkov je prave zobrazenych, po zalozkach ──────────────────────
+// Do 16. 9. 2026 bol LIMIT = 200 tvrdy strop BEZ strankovania, takze
+// 744 z 944 konciacich zmluv a 3 076 z 3 276 dotacii sa v UI nedalo
+// zobrazit vobec. Zakaznik o nich vedel len z poctu nad tabulkou.
+//
+// PRECO "ZOBRAZIT DALSICH 200" A NIE CISLOVANE STRANKY: strankovanie si
+// drzi stav (cislo stranky), ktory sa musi rusit pri kazdej zmene filtra,
+// zoradenia aj textu. Kazde miesto, kde sa to zabudne, ukaze zakaznikovi
+// prazdnu stranku pri neprazdnom vysledku. Rastuci limit taky stav nema —
+// najhorsie, co sa stane, je ze sa nacita o 200 riadkov viac.
+const zobrazene = { zmluvy: LIMIT, dotacie: LIMIT, ziadatelia: LIMIT, dodavatelia: LIMIT };
+
+/**
+ * Prepne tlacidlo "zobrazit dalsich" pod tabulkou.
+ * @param kluc  polozka v `zobrazene`
+ * @param obal  id obalu s tlacidlom
+ * @param stav  id riadku pod tlacidlom
+ * @param celkom  kolko riadkov filtru vyhovuje (z count)
+ * @param mam   kolko sa ich prave vykreslilo
+ */
+function nastavViac(kluc, obal, stav, celkom, mam) {
+  const zvysok = Math.max(0, (celkom ?? 0) - mam);
+  if (zvysok <= 0) { skry(obal); return; }
+  ukaz(obal);
+  el(stav).textContent = `zobrazených ${cislo(mam)} z ${cislo(celkom)}, `
+    + `ďalších ${cislo(Math.min(LIMIT, zvysok))} na jeden klik`;
+}
 
 // ── Prihlasovaci odkaz z e-mailu ──────────────────────────────────────────
 // TOTO BOLA SKUTOCNA CHYBA, NA KTOROM SA NEDALO PRIHLASIT ANI MNE ANI
@@ -1534,7 +1586,7 @@ async function dashboard(supabase) {
     const { data, count, error } = await q
       .order(stlpec, { ascending: vzostupne, nullsFirst: false })
       .order('skore', { ascending: false })
-      .limit(LIMIT);
+      .limit(zobrazene.zmluvy);
     if (error) {
       el('pocet').textContent = 'Chyba: ' + error.message;
       return;
@@ -1563,8 +1615,8 @@ async function dashboard(supabase) {
       konci: 'podľa konca zmluvy', signal: 'podľa sily signálu',
     };
     const podla = POPIS_RADENIA[el('f-radenie').value] ?? '';
-    const zaklad = c > LIMIT
-      ? `${cislo(c)} záznamov, zobrazujeme prvých ${LIMIT} ${podla}`
+    const zaklad = c > posledne.zmluvy.length
+      ? `${cislo(c)} záznamov, zobrazujeme prvých ${cislo(posledne.zmluvy.length)} ${podla}`
       : `${cislo(c)} ${c === 1 ? 'záznam' : c < 5 ? 'záznamy' : 'záznamov'}`;
     // Skryte riadky musia byt VIDIET ako cislo. Ticho odfiltrovana sestina
     // databazy je presne ten druh "pomoci", ktory zakaznik objavi az vtedy,
@@ -1572,6 +1624,7 @@ async function dashboard(supabase) {
     el('pocet').textContent = jeCas && skrytych > 0
       ? `${zaklad} · ${cislo(skrytych)} skrytých, kde tender už asi beží`
       : zaklad;
+    nastavViac('zmluvy', 'viac-z-obal', 'viac-z-stav', c, posledne.zmluvy.length);
   }
 
   // Filtre dotacii ako samostatna funkcia — pouziva ich zobrazenie
@@ -1612,7 +1665,7 @@ async function dashboard(supabase) {
     const { data, count, error } = await q
       .order(stlpecD, { ascending: vzostupneD, nullsFirst: false })
       .order('suma', { ascending: false })
-      .limit(LIMIT);
+      .limit(zobrazene.dotacie);
     if (error) {
       el('pocet-dot').textContent = 'Chyba: ' + error.message;
       return;
@@ -1630,12 +1683,13 @@ async function dashboard(supabase) {
       otvorene: 'kde okno tendra už beží',
     };
     const stavText = POPIS_STAVU[el('d-stav').value];
-    const zakladD = c > LIMIT
-      ? `${cislo(c)} dotácií, zobrazujeme prvých ${LIMIT} ${POPIS_D[el('d-radenie').value] ?? ''}`
+    const zakladD = c > posledne.dotacie.length
+      ? `${cislo(c)} dotácií, zobrazujeme prvých ${cislo(posledne.dotacie.length)} ${POPIS_D[el('d-radenie').value] ?? ''}`
       : `${cislo(c)} ${c === 1 ? 'dotácia' : c < 5 ? 'dotácie' : 'dotácií'}`;
     el('pocet-dot').textContent = stavText
       ? `${zakladD} — ${stavText}`
       : zakladD;
+    nastavViac('dotacie', 'viac-d-obal', 'viac-d-stav', c, posledne.dotacie.length);
   }
 
   function filtreZiadatelov(q) {
@@ -1657,7 +1711,7 @@ async function dashboard(supabase) {
     // najdlhsi predstih — a to je cela hodnota tejto vrstvy.
     const { data, count, error } = await q
       .order('najate', { ascending: false, nullsFirst: false })
-      .limit(LIMIT);
+      .limit(zobrazene.ziadatelia);
     if (error) {
       el('pocet-zia').textContent = 'Chyba: ' + error.message;
       return;
@@ -1667,9 +1721,10 @@ async function dashboard(supabase) {
     el('prazdny-zi').classList.toggle('hidden', posledne.ziadatelia.length > 0);
 
     const c = count ?? posledne.ziadatelia.length;
-    el('pocet-zia').textContent = c > LIMIT
-      ? `${cislo(c)} obcí, zobrazujeme prvých ${LIMIT} od najnovšie najatej`
+    el('pocet-zia').textContent = c > posledne.ziadatelia.length
+      ? `${cislo(c)} obcí, zobrazujeme prvých ${cislo(posledne.ziadatelia.length)} od najnovšie najatej`
       : `${cislo(c)} ${c === 1 ? 'obec' : c < 5 ? 'obce' : 'obcí'}`;
+    nastavViac('ziadatelia', 'viac-zi-obal', 'viac-zi-stav', c, posledne.ziadatelia.length);
   }
 
   function filtreDodavatelov(q) {
@@ -1690,7 +1745,7 @@ async function dashboard(supabase) {
     q = filtreDodavatelov(q);
 
     const { data, count, error } = await q
-      .order(radenie, { ascending: false, nullsFirst: false }).limit(LIMIT);
+      .order(radenie, { ascending: false, nullsFirst: false }).limit(zobrazene.dodavatelia);
     if (error) {
       el('pocet-dod').textContent = 'Chyba: ' + error.message;
       return;
@@ -1700,10 +1755,11 @@ async function dashboard(supabase) {
     el('prazdny-dod').classList.toggle('hidden', posledne.dodavatelia.length > 0);
 
     const c = count ?? posledne.dodavatelia.length;
-    el('pocet-dod').textContent = c > LIMIT
-      ? `${cislo(c)} firiem, zobrazujeme prvých ${LIMIT}`
+    el('pocet-dod').textContent = c > posledne.dodavatelia.length
+      ? `${cislo(c)} firiem, zobrazujeme prvých ${cislo(posledne.dodavatelia.length)}`
       : `${cislo(c)} ${c === 1 ? 'firma' : c < 5 ? 'firmy' : 'firiem'}`;
     el('pocet-f').textContent = `(${cislo(c)})`;
+    nastavViac('dodavatelia', 'viac-f-obal', 'viac-f-stav', c, posledne.dodavatelia.length);
   }
 
   // Prvotne pocty do zalozok. Head-only dopyty, nestahuju riadky.
@@ -1755,16 +1811,42 @@ async function dashboard(supabase) {
     if (!pzi.error) el('pocet-zi').textContent = `(${cislo(pzi.count ?? 0)})`;
   } catch (e) { /* ticho */ }
 
+  // ── Strankovanie ──────────────────────────────────────────────────────
+  // Zmena filtra, zoradenia alebo textu musi zobrazenie vratit na prvych
+  // 200. Bez toho by clovek, ktory si doklikal 1 000 riadkov, pri zmene
+  // filtra stiahol 1 000 riadkov noveho vysledku — a hlavne by cakal,
+  // ze vidi vsetko, pretoze tlacidlo "zobrazit dalsich" by zmizlo.
+  const odznova = (kluc, fn) => () => { zobrazene[kluc] = LIMIT; return fn(); };
+
+  /** Tlacidlo "Zobrazit dalsich 200" pod tabulkou. */
+  function napojViac(bid, kluc, fn) {
+    el(bid).addEventListener('click', async () => {
+      const b = el(bid);
+      b.disabled = true;
+      const povodne = b.textContent;
+      b.textContent = 'Načítavam…';
+      try {
+        zobrazene[kluc] += LIMIT;
+        await fn();
+      } finally {
+        b.disabled = false;
+        b.textContent = povodne;
+      }
+    });
+  }
+
   // Filtre
-  const prekresliZ = pozdrz(nacitajZmluvy);
+  const prekresliZ = pozdrz(odznova('zmluvy', nacitajZmluvy));
   for (const id of ['f-kraj', 'f-sektor', 'f-skore', 'f-radenie', 'f-jeCas', 'f-predstih']) {
-    el(id).addEventListener('change', nacitajZmluvy);
+    el(id).addEventListener('change', odznova('zmluvy', nacitajZmluvy));
   }
   el('f-text').addEventListener('input', prekresliZ);
+  napojViac('viac-z', 'zmluvy', nacitajZmluvy);
 
-  const prekresliZi = pozdrz(nacitajZiadatelov);
-  el('zi-kraj').addEventListener('change', nacitajZiadatelov);
+  const prekresliZi = pozdrz(odznova('ziadatelia', nacitajZiadatelov));
+  el('zi-kraj').addEventListener('change', odznova('ziadatelia', nacitajZiadatelov));
   el('zi-text').addEventListener('input', prekresliZi);
+  napojViac('viac-zi', 'ziadatelia', nacitajZiadatelov);
   el('export-zi').addEventListener('click', () => sExportom('export-zi', async () => {
     const riadky = await stahniVsetko(() => filtreZiadatelov(
       supabase.from('obce_ziadatelia').select('*'))
@@ -1773,6 +1855,9 @@ async function dashboard(supabase) {
   }));
 
   function reset() {
+    // Aj strankovanie. Zrusenie filtrov, ktore by nechalo nacitanych
+    // 1 000 riadkov, by tvrdilo "toto je vsetko" pri neprazdnom zvysku.
+    for (const k of Object.keys(zobrazene)) zobrazene[k] = LIMIT;
     el('f-kraj').value = ''; el('f-sektor').value = '';
     el('f-skore').value = '0'; el('f-text').value = '';
     el('f-radenie').value = 'signal';
@@ -1785,11 +1870,12 @@ async function dashboard(supabase) {
   el('f-reset').addEventListener('click', reset);
   el('f-reset-2').addEventListener('click', reset);
 
-  const prekresliD = pozdrz(nacitajDotacie);
+  const prekresliD = pozdrz(odznova('dotacie', nacitajDotacie));
   for (const id of ['d-kraj', 'd-sektor', 'd-radenie', 'd-stav']) {
-    el(id).addEventListener('change', nacitajDotacie);
+    el(id).addEventListener('change', odznova('dotacie', nacitajDotacie));
   }
   el('d-text').addEventListener('input', prekresliD);
+  napojViac('viac-d', 'dotacie', nacitajDotacie);
 
   el('export-z').addEventListener('click', () => sExportom('export-z', async () => {
     const riadky = await stahniVsetko(() => {
@@ -1812,11 +1898,12 @@ async function dashboard(supabase) {
   // ako pokazeny produkt.
   if (jePro) {
     ukaz('dod-obsah');
-    const prekresliF = pozdrz(nacitajDodavatelov);
+    const prekresliF = pozdrz(odznova('dodavatelia', nacitajDodavatelov));
     for (const id of ['s-sektor', 's-radenie']) {
-      el(id).addEventListener('change', nacitajDodavatelov);
+      el(id).addEventListener('change', odznova('dodavatelia', nacitajDodavatelov));
     }
     el('s-text').addEventListener('input', prekresliF);
+    napojViac('viac-f', 'dodavatelia', nacitajDodavatelov);
     el('export-f').addEventListener('click',
       () => sExportom('export-f', async () => {
         const riadky = await stahniVsetko(() => filtreDodavatelov(
