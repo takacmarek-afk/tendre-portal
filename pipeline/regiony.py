@@ -306,11 +306,14 @@ def nauc_psc(adresy, log=None):
     prekracuju (napr. 05x je aj Presovsky aj Kosicky), takze poistka
     ich zahodi — a to je spravne, radsej prazdno nez zle.
 
-    PRI UCENI MUSI POLE MESTA NAZVOM ZACINAT, NIE HO LEN OBSAHOVAT.
-    Toto nie je prehnana prisnost, je to oprava chyby odmeranej v behu
-    #43. Diagnostika vypisala, ze VSETKYCH 20 zahodenych trojcifernych
-    prefixov padlo na spor, a ten spor bol skoro vzdy jedno mesto proti
-    styrom — pricom to jedno mesto tam geograficky vobec nepatrilo:
+    UCI SA Z VOLNEHO HLADANIA NAZVU MESTA — a to je ZAMER, nie lenivost.
+    Skusal som to sprisnit dvomi sposobmi, oba som odmeral a oba boli
+    HORSIE. Cely postup je nizsie, aby to nikto (ani ja) nerobil znova.
+
+    ODKIAL TO ISLO: diagnostika SPORY v behu #43 vypisala, ze VSETKYCH
+    20 zahodenych trojcifernych prefixov padlo na spor, a ten spor bol
+    skoro vzdy jedno mesto proti styrom — pricom to jedno mesto tam
+    geograficky vobec nepatrilo:
 
         080xx: Presovsky=2 (presov, svidnik); Bratislavsky=1 (bratislava)
         082xx: Presovsky=4 (lipany, presov, sabinov, velky saris);
@@ -324,24 +327,37 @@ def nauc_psc(adresy, log=None):
     objavilo v niecom, co skoncilo v poli mesta, a cely okres Presov
     prisiel o kraj. Presne toto stalo kraj obce Kapusany aj Lubovec.
 
-    PRVY POKUS BOL PRISNY PRIVELA a zmeral som si to: ked som pri uceni
-    vyzadoval, aby pole mesta bolo CELE nazvom znameho mesta, spory
-    klesli z 20 na 5, ale prijatych prefixov ubylo zo 172 na 156 —
-    lebo "Kosice - Stare Mesto" je uplne platny hlas a prestal sa
-    pocitat. Na produkte to bolo horsie, nie lepsie:
+    CO SOM SKUSIL A CO Z TOHO VYSLO (tri behy, rovnake data):
 
-        prilezitosti bez kraja   84 -> 97
-        dotacie bez kraja       859 -> 875
-        ziadatelia bez kraja     10 -> 8    (jedina vrstva, co ziskala)
+                            prijate  sporne | prilezitosti  dotacie  ziadatelia
+                            prefixy          |   bez kraja  bez kraja  bez kraja
+        #43 volne hladanie     172      20   |     84         859        10
+        #44 cele pole = nazov  156       5   |     97         875         8
+        #45 pole zacina nazvom 155      10   |     (nezmerane, viz nizsie)
 
-    Preto je podmienka nastavena na ZACIATOK pola, nie na celé pole:
-    "kosice - stare mesto" hlasuje (zacina nazvom mesta),
-    "prevadzka bratislava - juh" nehlasuje (nazov je zahrabany vnutri).
+    Sprisnenie naozaj zabilo nahodne hlasy — spory klesli z 20 na 5.
+    Ale zaroven zhodilo ~17 PLATNYCH prefixov pod hranicu vzoriek,
+    pretoze "Kosice - Stare Mesto" alebo "Mesto Humenne" su uplne
+    legitimne hlasy a prestali sa pocitat. Na produkte to bolo horsie:
+    ziskal len 2 riadky v tretej vrstve a stratil 29 inde.
 
-    Pri POUZITI mapy zostava hladanie volne — tam substringova zhoda
-    pomaha a nic nekazi. Sprisnenie hlasy iba ODOBERA, nikdy nepridava,
-    takze chybu typu Kralova nad Vahom (prefix priradeny k zlemu kraju)
-    sposobit nemoze.
+    Variant "pole zacina nazvom" mal byt zlaty stred a nebol — skoncil
+    na 155 prijatych prefixoch, teda prakticky rovnako ako ten uplne
+    prisny. Preto je tu spat VOLNE hladanie, a preto ma `_hladaj()`
+    parameter `od_zaciatku`, ktory sa NIKDE nepouziva: je to zaznam
+    toho, ze sa to skusalo. Ked ho niekto bude chcet zapnut, ma tu
+    cisla, ktore mu povedia, ze to uz raz nevyslo.
+
+    CO BY NA TO SKUTOCNE POMOHLO: prefixy 080 (PSC Presova s hlasom za
+    Bratislavu) a 040 (Kosice, Zilina a Nove Zamky naraz) sa nepokazili
+    substringovou zhodou — tam je pole mesta naozaj ten cudzi nazov,
+    takze chyba je nizsie, v rozobrani adresy alebo v samotnych datach
+    CRZ. To sa neda opravit prahom, to sa musi najprv pozriet po jednej
+    adrese. Neurobene, zamerne.
+
+    Sprisnenie hlasy vzdy len ODOBERA, nikdy nepridava, takze chybu typu
+    Kralova nad Vahom (prefix priradeny k zlemu kraju) sposobit nemoze —
+    to je jedina dobra sprava z tejto vetvy.
     """
     PSC_KRAJ.clear()
     PSC2_KRAJ.clear()
@@ -349,8 +365,9 @@ def nauc_psc(adresy, log=None):
     for adresa in adresy:
         if not adresa:
             continue
-        # ZHODA OD ZACIATKU POLA, a to len TU pri uceni. Vysvetlenie nizsie.
-        mesto, psc, kraj = rozober_adresu(adresa, mesto_od_zaciatku=True)
+        # VOLNE hladanie, vratene po meraniach #44 a #45. Tabulka cisel
+        # je vyssie v dokumentacii tejto funkcie.
+        mesto, psc, kraj = rozober_adresu(adresa)
         if not (psc and kraj and mesto):
             continue
         cifry = re.sub(r"\D", "", psc)
