@@ -9,16 +9,66 @@ agentura) v poli objednavatela a PRIJIMATEL, teda obec, je v poli dodavatela.
 Je to naopak nez pri beznej zmluve.
 """
 import logging
+import re
 from datetime import date, timedelta
 
 import pandas as pd
 
 import regiony
 import score
-from classify import klasifikuj_ucel, SEKTOR_DOTACIE
+from classify import klasifikuj_ucel, SEKTOR_DOTACIE, bez_diakritiky
 from config import DOTACIA_OKNO_OD_DNI, DOTACIA_OKNO_DO_DNI, MIN_DOTACIA_EUR
 
 log = logging.getLogger("subsidies")
+
+
+# Samosprava sa pozna podla ZACIATKU nazvu, nie podla vyskytu kdekolvek.
+#
+# TOTO BOLA SKUTOCNA CHYBA A MALA VIDITELNY DOSLEDOK. V CRZ je za nazvom
+# organizacie casto prilepena aj jej adresa:
+#
+#   "Ministerstvo financií SR, Štefanovičova 5, 817 82
+#    Bratislava - mestská časť Staré Mesto"
+#
+# Stara verzia hladala "mestska cast" KDEKOLVEK v texte a nasla to
+# v ADRESE. Ministerstvo teda preslo filtrom na samospravu a skoncilo
+# v tabulke dotacii ako PRIJIMATEL. Kedze kraj sa odvodzuje z nazvu
+# prijimatela, dostalo Bratislavsky kraj a mesto Bratislava — takze
+# dotacia pre Obec Ludovitova (Nitriansky kraj) sa zakaznikovi
+# zobrazovala ako bratislavska. Odmerane 16. 9. 2026: 4 taketo riadky.
+#
+# Je to ta ista trieda chyby ako pri uceni mapy PSC (viz regiony.py):
+# zhoda podretazcom v poli, ktore obsahuje viac nez nazov.
+_PREFIXY_OBCE = ("obec ", "mesto ", "mestska cast", "mestsky urad",
+                 "obecny urad")
+
+# Kraj sa menuje "Kosicky samospravny kraj", takze "samospravny kraj" NIE JE
+# na zaciatku nazvu a prefixova zhoda tu nefunguje. V adresach sa to ale
+# nevyskytuje, takze substringova zhoda je bezpecna. To iste plati pre skoly
+# a nemocnice.
+_KDEKOLVEK_SAMOSPRAVA = ("samospravny kraj", "vyssi uzemny celok",
+                         "zakladna skola", "materska skola", "stredna skola",
+                         "gymnazium", "domov socialnych", "nemocnica",
+                         "poliklinika", "zakladna umelecka")
+
+
+def _norm_nazov(nazov) -> str:
+    return bez_diakritiky(str(nazov or "")).lower().strip()
+
+
+def _je_obec_alebo_mesto(nazov: str) -> bool:
+    """Len OBEC alebo MESTO, nie kraj, nie skola, nie poliklinika.
+
+    Pouziva sa ako JEDNA Z DVOCH podmienok pri odhalovani vymenenych
+    stran. Sama o sebe NESTACI a moj prvy pokus na tom padol: obec v poli
+    poskytovatela je totiz aj vtedy, ked mesto legitimne dava dotaciu
+    svojej vlastnej organizacii ("Mesto Senica -> Mestska poliklinika").
+    Takych riadkov je 17 a su spravne orientovane.
+
+    Rozhoduje az dvojica: vyssi subjekt ako prijimatel A obec ako
+    poskytovatel. Viz `_je_vyssi_subjekt`.
+    """
+    return _norm_nazov(nazov).startswith(_PREFIXY_OBCE)
 
 
 def _je_samosprava(nazov: str) -> bool:
@@ -26,13 +76,36 @@ def _je_samosprava(nazov: str) -> bool:
     Firmy dostavaju dotacie tiez, ale tie si obstaravanie robit nemusia."""
     if not nazov:
         return False
-    n = str(nazov).lower()
-    kluc = ("obec ", "mesto ", "mestska cast", "mestská časť", "samospravny kraj",
-            "samosprávny kraj", "vyssi uzemny celok", "vyšší územný celok",
-            "zakladna skola", "základná škola", "materska skola", "materská škola",
-            "stredna skola", "stredná škola", "gymnazium", "gymnázium",
-            "domov socialnych", "domov sociálnych", "nemocnica", "poliklinika")
-    return any(k in n for k in kluc)
+    n = _norm_nazov(nazov)
+    return (n.startswith(_PREFIXY_OBCE)
+            or any(k in n for k in _KDEKOLVEK_SAMOSPRAVA))
+
+
+# Subjekt NAD obcou: ten, kto obci peniaze rozdava. Obec mu dotaciu
+# nikdy nedava, takze taky subjekt v poli PRIJIMATELA znamena, ze su
+# strany vymenene.
+_VYSSI_PREFIX = ("ministerstv", "urad vlady", "agentura", "slovenska agentura",
+                 "slovenska inovacn", "environmentalny fond", "fond na podporu",
+                 "statny fond", "posta")
+# Kraj sa menuje "Kosicky samospravny kraj", teda nie na zaciatku.
+_VYSSI_KDEKOLVEK = ("samospravny kraj", "vyssi uzemny celok")
+
+
+def _je_vyssi_subjekt(nazov: str) -> bool:
+    """Ministerstvo, agentura, fond alebo samospravny kraj.
+
+    NIE organizacia zriadena obcou. To je podstatny rozdiel a moj prvy
+    pokus na nom padol: pravidlo "poskytovatel je obec" samo o sebe
+    otocilo aj riadok "Mesto Senica -> Mestska poliklinika Senica",
+    ktory je pritom SPRAVNE orientovany — mesto naozaj dava dotaciu
+    svojej vlastnej poliklinike. Takych je 17 a otocit ich by znamenalo
+    vyrobit 17 novych chyb pri oprave 11 starych.
+    """
+    if not nazov:
+        return False
+    n = _norm_nazov(nazov)
+    return (n.startswith(_VYSSI_PREFIX)
+            or any(k in n for k in _VYSSI_KDEKOLVEK))
 
 
 POTREBNE_STLPCE = ("sector", "price_total", "signed_on", "effective_from",
@@ -114,6 +187,38 @@ def z_contracts(df: pd.DataFrame, dnes: date = None,
     d["prijimatel"] = d["supplier_name"]
     d["prijimatel_ico"] = d["supplier_cin"]
     d["poskytovatel"] = d["authority_name"]
+    d["strany_vymenene"] = False
+
+    # ── VYMENENE STRANY ───────────────────────────────────────────────────
+    # To "naopak" v hlavicke tohto modulu NEPLATI VZDY. Pri casti zmluv je
+    # poskytovatel v poli dodavatela a obec v poli objednavatela, teda
+    # presne naopak nez inak. Odmerane 16. 9. 2026: 11 riadkov z 3 276
+    # (0,4 %) — malo, ale kazdy jeden je viditelna nezmysel: "Ministerstvo
+    # financii" alebo "Kosicky samospravny kraj" ako PRIJIMATEL dotacie.
+    #
+    # A skoda nie je len v poradi stlpcov. Kraj sa odvodzuje z nazvu
+    # prijimatela, takze tych 11 riadkov dostalo kraj a mesto SIDLA
+    # POSKYTOVATELA: styri Bratislavu, sest Kosice. Dotacia pre Obec
+    # Ludovitova sa teda zakaznikovi zobrazovala ako bratislavska.
+    #
+    # Riadky NEZAHADZUJEM, ale otacam — obec za nimi je skutocna
+    # prilezitost a prisli by sme o nu.
+    # PRAVIDLO: obec alebo mesto v poli POSKYTOVATELA a zaroven NIE obec
+    # v poli prijimatela. Obec totiz nikdy nedava dotaciu ministerstvu ani
+    # kraju — taky riadok je teda spolahlivo otoceny.
+    #
+    # Naopak "Mesto Senica dava dotaciu Mestskej poliklinike Senica" je
+    # spravna orientacia a tych je 17. Tie sa NEOTACAJU, len oznacia.
+    vymenene = (d["prijimatel"].apply(_je_vyssi_subjekt)
+                & d["poskytovatel"].apply(_je_obec_alebo_mesto))
+    if vymenene.any():
+        log.info("Dotacie: %s zmluv ma vymenene strany (poskytovatel v poli "
+                 "prijimatela), otacam ich.", int(vymenene.sum()))
+        # `authority_cin` je ICO tej strany, ktora je v poli objednavatela —
+        # po otoceni je to prijimatel, takze ICO musi ist s nim.
+        d.loc[vymenene, ["prijimatel", "poskytovatel", "prijimatel_ico"]] = (
+            d.loc[vymenene, ["poskytovatel", "prijimatel", "authority_cin"]].values)
+        d.loc[vymenene, "strany_vymenene"] = True
 
     d = d[d["prijimatel"].apply(_je_samosprava)].copy()
     if d.empty:
@@ -152,7 +257,8 @@ def z_contracts(df: pd.DataFrame, dnes: date = None,
 
     stlpce = ["contract_id", "prijimatel", "prijimatel_ico", "poskytovatel",
               "ucel", "suma", "podpisane", "ucinne_od", "sektor_odhad",
-              "okno_od", "okno_do", "odkaz", "mesto", "kraj"]
+              "okno_od", "okno_do", "odkaz", "mesto", "kraj",
+              "strany_vymenene"]
     out = d[stlpce].sort_values("suma", ascending=False).reset_index(drop=True)
     out["contract_id"] = pd.to_numeric(out["contract_id"], errors="coerce").astype("Int64")
     return out

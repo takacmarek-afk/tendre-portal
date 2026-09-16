@@ -1076,6 +1076,9 @@ function riadokDotacie(r) {
                          rounded bg-emerald-50 text-emerald-800">NOVÁ</span>` : ''}
         </div>
         <div class="text-[12px] text-slate2 mt-1">${bezpecne(r.poskytovatel)}</div>
+        ${r.strany_vymenene ? `<div class="text-[11px] text-slate2 mt-1"
+             title="V registri boli strany zapísané naopak. Otočili sme ich, aby prijímateľ aj kraj boli správne.">
+             strany v CRZ naopak, opravené</div>` : ''}
         ${kde ? `<div class="text-[12px] text-slate2 mt-1">${bezpecne(kde)}</div>` : ''}
         ${r.podpisane ? `<div class="text-[11px] text-slate2 mt-1">podpísaná ${bezpecne(r.podpisane)}</div>` : ''}
       </td>
@@ -1504,13 +1507,13 @@ async function dashboard(supabase) {
   const STLPCE_Z = 'contract_id, skore, subject, sector, authority_name, ' +
                    'price_total, cena_neuvedena, effective_to, odhad_vyhlasenia, ' +
                    'dni_do_konca, mesto, kraj, supplier_name, dodavatel_od, ' +
-                   'dodavatel_zmluv_celkom, historicky_pocet'
-                   // `odkaz` sa tu ZAMERNE NETAHA. Stlpec vznikne az
-                   // migraciou 14 a PostgREST na neznamy stlpec vracia
-                   // 400, cim by sa cela zalozka rozbila skor, nez ju
-                   // spustis. V UI ho sklada odkazCrz() z contract_id,
-                   // takze odkaz funguje aj bez stlpca. Do exportu ho
-                   // pridam v A5, az po migracii.;
+                   // `odkaz` doplnila migracia 14, spustena 16. 9. 2026
+                   // (kontrola vratila "bez odkazu 0 z 1 130"). Kym stlpec
+                   // neexistoval, tahat ho tu NESLO — PostgREST na neznamy
+                   // stlpec vracia 400 a rozbilo by to celu zalozku.
+                   // odkazCrz() ho aj tak umi zlozit z contract_id, takze
+                   // odkaz funguje aj keby sa stlpec raz stratil.
+                   'dodavatel_zmluv_celkom, historicky_pocet, odkaz';
 
   // Filtre zo vstupov pridame na lubovolny dopyt. Je to samostatna funkcia
   // preto, lebo ich teraz potrebujem dvakrat: raz na data a raz na spocitanie
@@ -1651,7 +1654,7 @@ async function dashboard(supabase) {
   async function nacitajDotacie() {
     let q = supabase.from('subsidies')
       .select('contract_id, prijimatel, poskytovatel, ucel, suma, sektor_odhad, ' +
-              'podpisane, okno_od, okno_do, mesto, kraj, odkaz', { count: 'exact' });
+              'podpisane, okno_od, okno_do, mesto, kraj, odkaz, strany_vymenene', { count: 'exact' });
 
     q = filtreDotacii(q);
 

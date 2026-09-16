@@ -21,6 +21,9 @@ create table if not exists public.subsidies (
     okno_od        date,          -- odhad, odkedy moze tender prist
     okno_do        date,          -- dokedy ma zmysel cakat
     odkaz          text,
+    -- TRUE = v CRZ boli strany zamenene a pipeline ich otocila.
+    -- Odmerane 16. 9. 2026: 11 z 3 276 riadkov. Detaily v subsidies.py.
+    strany_vymenene boolean not null default false,
     refreshed_at   timestamptz not null default now()
 );
 
