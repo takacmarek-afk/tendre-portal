@@ -41,3 +41,29 @@ comment on table public.ucely_dotacii is
 
 select 'ucely_dotacii: ' || count(*)::text || ' riadkov (naplni ich beh pipeline)'
     as vysledok from public.ucely_dotacii;
+
+
+-- ════════════════════════════════════════════════════════════════════════
+--  DOPLNENÉ 16. 9. 2026 — OPRAVA MAZANIA STARÝCH RIADKOV
+--
+--  Našiel som to až na produkcii. `_nahrad_tabulku` mazalo staré riadky
+--  podmienkou `last_seen_at < dnes`. Lenže `last_seen_at` je DÁTUM, takže
+--  pri dvoch behoch v ten istý deň majú staré riadky tiež dnešný dátum
+--  a podmienka „starší než dnes" ich NEZMAŽE.
+--
+--  Prejavilo sa to takto: opravil som kód tak, aby sa zo stránky prestalo
+--  zobrazovať meno fyzickej osoby ako poskytovateľa dotácií. Kód bol
+--  správny, beh prešiel — a meno tam zostalo. Až do polnoci.
+--
+--  Pipeline teraz porovnáva `refreshed_at`, čo je timestamptz, takže dva
+--  behy o tri minúty od seba sa už rozlíšia. Táto tabuľka bola jediná,
+--  ktorá ten stĺpec nemala.
+-- ════════════════════════════════════════════════════════════════════════
+
+alter table public.ceny_prilezitosti
+    add column if not exists refreshed_at timestamptz not null default now();
+
+select 'ceny_prilezitosti ma refreshed_at: ' ||
+       (select count(*)::text from information_schema.columns
+        where table_schema='public' and table_name='ceny_prilezitosti'
+          and column_name='refreshed_at') as vysledok;

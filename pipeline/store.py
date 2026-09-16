@@ -10,6 +10,7 @@ v GitHub Secrets a nikdy sa nedostane do prehliadaca.
 import os
 import math
 import logging
+from datetime import datetime, timezone
 
 import pandas as pd
 from supabase import create_client
@@ -145,27 +146,38 @@ def _nahrad_tabulku(sb, tabulka: str, df: pd.DataFrame, kluc: str = "contract_id
                     tabulka)
         return 0
 
+    # Jedna znacka casu na cely beh. Kazdy zapisany riadok ju dostane
+    # a mazu sa presne tie, ktore ju nemaju.
+    beh = datetime.now(timezone.utc).isoformat()
+
     zaznamy = _zaznamy(df)
+    for z in zaznamy:
+        z["refreshed_at"] = beh
     for i in range(0, len(zaznamy), DAVKA):
         sb.table(tabulka).upsert(zaznamy[i:i + DAVKA], on_conflict=kluc).execute()
 
-    # Zmazanie toho, co v novom behu nie je. `last_seen_at` je dnesok pri
-    # kazdom prave zapisanom riadku, takze staci zmazat starsie.
+    # ── ZMAZANIE TOHO, CO V NOVOM BEHU UZ NIE JE ──────────────────────────
+    #
+    # POROVNAVA SA CAS BEHU, NIE DATUM. Povodne tu bolo
+    # `last_seen_at.lt.<dnes>` a to je chyba, ktoru som nasiel az na
+    # produkcii: `last_seen_at` je DATUM, takze pri dvoch behoch v ten isty
+    # den maju stare riadky tiez dnesny datum a podmienka "starsi nez dnes"
+    # ich NEZMAZE. Odmerane 16. 9. 2026 — po oprave, ktora mala zo stranky
+    # odstranit meno fyzickej osoby, tam to meno zostalo, pretoze kod bol
+    # spravny, ale stary riadok sa nemazal. Az do polnoci.
+    #
+    # `refreshed_at` je timestamptz, takze dva behy o tri minuty od seba
+    # sa uz rozlisia.
     #
     # POZOR NA SQL: `NULL < cokolvek` nie je NEPRAVDA, ale NEZNAMA hodnota,
-    # takze podmienka `last_seen_at < dnes` riadky s prazdnym `last_seen_at`
-    # NEZMAZE. Su to zaznamy, ktore v tabulke boli este pred zavedenim
-    # historizacie — a bez tejto podmienky by tam zostali navzdy so starymi
-    # hodnotami. Namerane: jeden taky riadok mal prazdne skore aj po oprave
-    # vypoctu, pretoze sa vobec neprepisoval.
-    if "last_seen_at" in df.columns:
-        dnes = str(df["last_seen_at"].iloc[0])
-        odpad = (sb.table(tabulka).delete()
-                   .or_(f"last_seen_at.is.null,last_seen_at.lt.{dnes}")
-                   .execute())
-        if odpad.data:
-            log.info("%s: odstranenych %s zaznamov mimo aktualneho behu",
-                     tabulka, len(odpad.data))
+    # takze samotna podmienka `refreshed_at < beh` riadky s prazdnou
+    # znackou NEZMAZE. Preto je tam aj `is.null`.
+    odpad = (sb.table(tabulka).delete()
+               .or_(f"refreshed_at.is.null,refreshed_at.lt.{beh}")
+               .execute())
+    if odpad.data:
+        log.info("%s: odstranenych %s zaznamov mimo aktualneho behu",
+                 tabulka, len(odpad.data))
 
     return len(zaznamy)
 
