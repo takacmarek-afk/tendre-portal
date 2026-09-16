@@ -136,6 +136,14 @@ _V_NAZVE = re.compile(
 # vo filtri vypada ako chyba.
 _CISLO_DOMU = re.compile(r"\s*\d+\s*[a-zA-Z]?\s*$")
 
+# A po nom aj znacku cisla, ktora tam zostane. Adresa "Rakovice c. 8" dala
+# po odstraneni cisla "Rakovice c." a strip(" ,.-") z toho urobil
+# "Rakovice c" — takto to aj naozaj bolo na stranke v zalozke ziadatelov.
+# Pozor na diakritiku: v adresach je "c." aj "c." s hackom, takze trieda
+# znakov [cc] obsahuje oba tvary. Bez toho by sa opravila len polovica.
+_ZNACKA_CISLA = re.compile(r"[\s,.\-]*\b(?:[cč]|[cč]islo|no|nr)\b[\s,.\-]*$",
+                           re.IGNORECASE)
+
 
 def _hladaj(text: str):
     """Najde znamy nazov mesta v texte. Vrati (spravny nazov, kraj) alebo (None, None)."""
@@ -150,11 +158,23 @@ def rozober_adresu(adresa):
 
     Adresy v CRZ maju tvar "Ulica 1, P.O. Box 5, 814 99 Bratislava" alebo
     "Namestie 1, 010 01 Zilina". Mesto je teda za PSC.
+
+    POZOR NA NaN. Toto tu uz raz nefungovalo a bolo to VIDIET NA STRANKE:
+    Obec Smrdaky mala v zalozke ziadatelov ako mesto napisane "nan".
+    Pandas dava do chybajucej hodnoty float("nan") a `not float("nan")`
+    je v Pythone False, takze stara podmienka `if not adresa` NaN
+    prepustila, `str(nan)` z toho urobil retazec "nan" a ten preposol
+    az do databazy. Preto sa tu NaN testuje explicitne.
     """
-    if not adresa:
+    if adresa is None:
+        return None, None, None
+    # NaN sa nerovna sam sebe. Nechcem tu importovat pandas len pre isna().
+    if isinstance(adresa, float) and adresa != adresa:
         return None, None, None
 
     text = re.sub(r"\s+", " ", str(adresa)).strip()
+    if not text or text.lower() in ("nan", "none", "null", "<na>"):
+        return None, None, None
 
     def prve_slovo_mesta(s):
         """"Bratislava - mestska cast Karlova Ves" -> "Bratislava"."""
@@ -185,7 +205,12 @@ def rozober_adresu(adresa):
     if znamy:
         mesto = znamy
     elif mesto:
-        mesto = _CISLO_DOMU.sub("", mesto).strip(" ,.-") or None
+        mesto = _CISLO_DOMU.sub("", mesto)
+        mesto = _ZNACKA_CISLA.sub("", mesto).strip(" ,.-") or None
+        # Po odstraneni cisla a znacky moze zostat samotna cast adresy
+        # bez nazvu obce. Cokolvek kratsie nez tri znaky nie je nazov.
+        if mesto and len(mesto) < 3:
+            mesto = None
 
     return (mesto or None), psc, kraj
 
@@ -195,6 +220,13 @@ def rozober_adresu(adresa):
 # Chcem, aby sa pipeline bez nauceneho kroku chovala presne ako predtym.
 PSC_KRAJ = {}     # tri cislice -> kraj, presnejsie
 PSC2_KRAJ = {}    # dve cislice -> kraj, hrubsie, len ked je jednoznacne
+
+# Diagnostika, nie data: trojciferne prefixy, ktore sa zahodili PRE SPOR
+# medzi krajmi, a kto za ktory kraj hlasoval. Zapisuje sa v _prijmi()
+# a vypisuje v nauc_psc(). Nic sa podla toho nerozhoduje — sluzi to na to,
+# aby sa dalo pozriet, ci je zahodenie skutocna hranica kraja, alebo jedno
+# pokazene mesto, ktore kazi cely okres.
+SPORY = {}
 
 # Hlasuju MESTA, nie zmluvy — vid vysvetlenie v _prijmi().
 MIN_CISTOTA_PSC = 1.0    # ZIADNY spor. Prefix na hranici kraja radsej zahodim.
@@ -226,6 +258,9 @@ def _prijmi(hlasy, kam, min_miest):
     ked je jedna strana v datach zastupena stokrat viac.
     """
     zahodene = 0
+    zapisuj_spory = kam is PSC_KRAJ
+    if zapisuj_spory:
+        SPORY.clear()
     for prefix, po_krajoch in hlasy.items():
         # po_krajoch je {kraj: mnozina normalizovanych nazvov miest}
         spolu = sum(len(m) for m in po_krajoch.values())
@@ -234,6 +269,12 @@ def _prijmi(hlasy, kam, min_miest):
             kam[prefix] = kraj
         else:
             zahodene += 1
+            # Zapisem SI, PRECO sa prefix zahodil. Bez tohto sa neda
+            # rozhodnut, ci je zahodenie spravne (skutocna hranica kraja)
+            # alebo ci jedno pokazene mesto kazi cely okres. Hadat to
+            # z hlavy som skusil a nevedel som to rozhodnut.
+            if zapisuj_spory and len(po_krajoch) > 1:
+                SPORY[prefix] = {k: sorted(v) for k, v in po_krajoch.items()}
     return len(kam), zahodene
 
 
@@ -276,6 +317,25 @@ def nauc_psc(adresy, log=None):
         log.info("PSC mapa: 3-ciferne %s prijatych / %s zahodenych, "
                  "2-ciferne %s / %s. Hlasuju mesta (nie zmluvy), "
                  "vyzaduje sa uplna zhoda.", p3, z3, p2, z2)
+
+        # Vypis sporov. Zoradene tak, aby boli hore prefixy, kde je
+        # nesuhlas NAJTESNEJSI (jedno mesto proti mnohym) — tam je
+        # najvyssia sanca, ze nejde o hranicu kraja, ale o chybu.
+        def _tesnost(kv):
+            po_krajoch = kv[1]
+            pocty = sorted((len(m) for m in po_krajoch.values()), reverse=True)
+            return (pocty[1], -pocty[0])      # najmensia mensina, najvacsia vacsina
+
+        for prefix, po_krajoch in sorted(SPORY.items(), key=_tesnost)[:12]:
+            rozpis = "; ".join(
+                f"{kraj.replace(' kraj', '')}={len(mesta)} ({', '.join(mesta[:4])})"
+                for kraj, mesta in sorted(po_krajoch.items(),
+                                          key=lambda kv: -len(kv[1])))
+            log.info("PSC spor %sxx: %s", prefix, rozpis)
+        if SPORY:
+            log.info("PSC: spornych trojcifernych prefixov %s z %s zahodenych. "
+                     "Zvysok sa zahodil pre nedostatok vzoriek, nie pre spor.",
+                     len(SPORY), z3)
     return p3
 
 

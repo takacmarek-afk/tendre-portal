@@ -188,4 +188,49 @@ vysl3 = regiony.doplnit_z_nazvu(dot.copy(), "prijimatel")
 assert vysl3.loc[0, "kraj"] == "Košický kraj"
 print("OK")
 
+
+hlavicka("7. NaN v adrese nesmie skoncit ako mesto 'nan'")
+# Toto NEBOL hypoteticky pripad. Obec Smrdaky mala 16. 9. 2026 v zalozke
+# ziadatelov v zobrazeni mesta napisane doslova "nan": pandas dal do
+# chybajucej adresy float("nan"), `not float("nan")` je False, takze
+# povodna podmienka NaN prepustila a str(nan) == "nan" preposol do DB.
+import math
+for zla in (float("nan"), None, "", "   ", "nan", "None", "NULL"):
+    m, p, k = regiony.rozober_adresu(zla)
+    assert m is None and p is None and k is None, \
+        f"z {zla!r} vypadlo mesto {m!r}"
+print("OK: NaN, None, prazdny retazec ani text 'nan' mesto nevyrobia")
+
+# A to iste cez cely df, lebo tam to naozaj zlyhalo.
+df_nan = pd.DataFrame([
+    {"authority_address": float("nan"), "authority_name": "Obec Smrdáky"},
+    {"authority_address": "Smrdáky 181, 906 03 Smrdáky",
+     "authority_name": "Obec Smrdáky"},
+])
+v7 = regiony.doplnit(df_nan.copy())
+assert v7.loc[0, "mesto"] is None or pd.isna(v7.loc[0, "mesto"]), \
+    f"mesto z NaN adresy je {v7.loc[0, 'mesto']!r}"
+assert v7.loc[1, "mesto"] == "Smrdáky", v7.loc[1, "mesto"]
+print("OK: aj cez doplnit(df) — z NaN prazdno, z adresy 'Smrdáky'")
+
+hlavicka("8. Znacka cisla domu nesmie zostat v nazve mesta")
+# Na stranke bolo "Rakovice č" — _CISLO_DOMU odstranilo cislo, zostalo
+# "Rakovice č." a strip(" ,.-") uz len odsekol tecku.
+pripady = {
+    # Skutocna adresa Obce Rakovice z CRZ. PSC je tu na KONCI, takze
+    # mesto sa berie z casti PRED nim — a presne tato vetva bola zla.
+    "Rakovice č. 42, 922 08": "Rakovice",
+    "Rakovice č. 8, 922 08 Rakovice č. 8": "Rakovice",
+    "Hlavná č. 12, 900 01 Neznáma č. 12": "Neznáma",
+    "Neznáma cislo 4, 900 01 Neznáma cislo 4": "Neznáma",
+    "Neznáma 15, 900 01 Neznáma 15": "Neznáma",
+    # Nazov, ktory sam obsahuje slovo na 'c', sa nesmie okresat.
+    "Hlavná 1, 900 01 Nová Ves": "Nová Ves",
+}
+for adresa, ocakavane in pripady.items():
+    m, p, k = regiony.rozober_adresu(adresa)
+    assert m == ocakavane, f"{adresa!r} -> {m!r}, cakal som {ocakavane!r}"
+    print(f"  {adresa[:46]:46} -> {m}")
+print("OK: znacka cisla sa odstranuje, nazov obce zostava cely")
+
 print("\nVSETKY TESTY PRESLI\n")
