@@ -121,14 +121,31 @@ def aktivne_programy(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
         "posledna_zmluva": g["podpisane"].max().dt.strftime("%Y-%m-%d").values,
     })
 
-    # Najcastejsi ucel. Berie sa z nasej klasifikacie ucelu, ktora uz
-    # v datach je — nie z volneho textu, ten by v prehlade nebol citatelny.
-    if "sektor_odhad" in okno.columns:
-        ucel = (okno.groupby("authority_name")["sektor_odhad"]
-                    .agg(lambda s: s.mode().iat[0] if not s.mode().empty else None))
-        out["hlavny_ucel"] = out["poskytovatel"].map(ucel)
-    else:
-        out["hlavny_ucel"] = None
+    # Najcastejsi ucel poskytovatela.
+    #
+    # POZOR, TU BOLA CHYBA. Povodne som to cital zo stlpca `sektor_odhad`,
+    # ktory na tabulke contracts VOBEC NIE JE — vznika az v subsidies.
+    # Podmienka `if "sektor_odhad" in okno.columns` teda nikdy nesadla
+    # a `hlavny_ucel` bol NULL pri vsetkych programoch. Na stranke sa
+    # tym stratila jedina informacia, ktoru starostka naozaj potrebuje:
+    # NA CO ten program peniaze dava. Tichy `else: None` to zamaskoval.
+    #
+    # Teraz sa ucel urcuje z textu zmluvy nasou taxonomiou, ktora je
+    # napisana v jazyku obce ("Cesty, chodníky, most"), nie v sektoroch
+    # navrhnutych na parovanie dodavatelov ("STAVEBNE_PRACE").
+    import ucely
+    text = (okno["subject"].fillna("") + " "
+            + okno.get("subject_description", pd.Series("", index=okno.index)).fillna(""))
+    okno["_ucel"] = [ucely.priradit(t)[1] for t in text]
+
+    najcastejsi = (okno[okno["_ucel"].notna()]
+                   .groupby("authority_name")["_ucel"]
+                   .agg(lambda s: s.mode().iat[0] if not s.mode().empty else None))
+    out["hlavny_ucel"] = out["poskytovatel"].map(najcastejsi)
+
+    bez_ucelu = int(out["hlavny_ucel"].isna().sum())
+    if bez_ucelu:
+        log.info("Programov bez urceneho ucelu: %s z %s", bez_ucelu, len(out))
 
     out = out[out["zmluv_90d"] >= MIN_ZMLUV_AKTIVNY].copy()
     out = out.sort_values("objem_90d", ascending=False).reset_index(drop=True)

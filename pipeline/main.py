@@ -17,6 +17,7 @@ import regiony
 import subsidies
 import analytics
 import obce
+import ucely
 import vyzvy
 from classify import SEKTOR_DOTACIE
 from config import (
@@ -154,7 +155,7 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     # ── VRSTVA PRE OBCE ────────────────────────────────────────────────────
     # Vlastny try, aby zlyhanie tejto vrstvy nezhodilo prilezitosti ani
     # analytiku. Je to najnovsia cast a najmenej zabehnuta.
-    programov = sprostred = vyziev = 0
+    programov = sprostred = vyziev = ucelov = 0
     try:
         if vsetky is not None and not vsetky.empty:
             prog = obce.aktivne_programy(vsetky)
@@ -163,8 +164,20 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
             spr = obce.sprostredkovatelia(vsetky)
             sprostred = store.nahrad_sprostredkovatelov(sb, spr, dnes)
 
-            log.info("Obce: aktivnych programov %s, sprostredkovatelov %s",
-                     programov, sprostred)
+            # NA CO obce peniaze dostavaju. Bez tohto stranka pre obce
+            # hovorila len "ministerstvo rozdelilo 39 M EUR", co je
+            # z pohladu starostky nepouzitelne.
+            uc = ucely.z_contracts(vsetky)
+            ucelov = store.nahrad_ucely(sb, uc, dnes)
+            if uc is not None and not uc.empty:
+                log.info("Na co obce dostavaju peniaze:")
+                for _, r in uc.head(10).iterrows():
+                    log.info("   %-38s %4s obci / %4s dotacii / median %9.0f EUR",
+                             str(r["popis"])[:38], r["obci"], r["dotacii"],
+                             r["median_suma"])
+
+            log.info("Obce: aktivnych programov %s, sprostredkovatelov %s, ucelov %s",
+                     programov, sprostred, ucelov)
             if prog is not None and not prog.empty:
                 log.info("Kto prave teraz rozdava obciam (90 dni):")
                 for _, r in prog.head(8).iterrows():
