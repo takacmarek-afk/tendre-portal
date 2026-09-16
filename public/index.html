@@ -154,13 +154,14 @@ tailwind.config = {
 <!-- ══════════════ DVE VRSTVY ══════════════ -->
 <section id="vrstvy" class="wrap py-20 md:py-28">
   <h2 class="text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
-    Dva signály, ktoré prichádzajú pred tendrom
+    Tri signály, ktoré prichádzajú pred tendrom
   </h2>
   <p class="mt-4 text-[17px] text-slate2 max-w-2xl">
     Ani jeden z nich nie je tender. Preto o nich konkurencia nevie.
+    Idú od najbližšieho po najvzdialenejší.
   </p>
 
-  <div class="mt-14 grid md:grid-cols-2 gap-6">
+  <div class="mt-14 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
 
     <div class="border border-line rounded-lg p-8">
       <div class="text-[12px] font-semibold uppercase tracking-wider text-slate2 mb-4">
@@ -203,6 +204,41 @@ tailwind.config = {
       <div class="mt-6 pt-5 border-t border-line">
         <div class="text-[13px] text-slate2">Predstih</div>
         <div class="text-[17px] font-semibold mt-0.5">6 až 18 mesiacov</div>
+      </div>
+    </div>
+
+    <!-- VRSTVA 3. Cisla su ODMERANE na vlastnych datach, nie odhadnute:
+         101 obci si najalo sprostredkovatela, 70 z nich (69,3 %) potom
+         dotaciu dostalo, median odstupu 382 dni. Preto je v karte aj veta
+         o tom, ze to nie je pricinnost — obec, ktora si poradcu najme, je
+         uz typ obce, co o peniaze ide. Na predpoved to staci, na zasluhu
+         nie, a tvrdit to druhe by bolo nepravdive.
+
+         Tato karta smie byt na stranke az odvtedy, co je vrstva v aplikacii
+         (zalozka "Ziadaju o dotaciu"). Slubovat na uvodnej stranke nieco,
+         co po prihlaseni nie je, je ta ista chyba ako e-mail, ktory nechodil. -->
+    <div class="border border-line rounded-lg p-8">
+      <div class="text-[12px] font-semibold uppercase tracking-wider text-slate2 mb-4">
+        Vrstva 3
+      </div>
+      <h3 class="text-[21px] font-semibold leading-snug">Obec, ktorá o peniaze žiada</h3>
+      <p class="mt-4 text-[15px] leading-relaxed text-slate2">
+        Obec si zaplatí firmu, ktorá jej napíše žiadosť o dotáciu. Dotáciu
+        ešte nemá — ale už za ňou ide. A tá zmluva s tou firmou je verejná
+        od prvého dňa.
+      </p>
+      <p class="mt-4 text-[15px] leading-relaxed text-slate2">
+        Zo 101 obcí, ktoré si takú firmu najali, dotáciu potom dostalo
+        <strong class="text-ink font-semibold">69 %</strong>. Medián odstupu
+        bol 382 dní. Potom ešte príde obstarávanie.
+      </p>
+      <div class="mt-6 pt-5 border-t border-line">
+        <div class="text-[13px] text-slate2">Predstih</div>
+        <div class="text-[17px] font-semibold mt-0.5">1,5 až 2,5 roka</div>
+        <div class="text-[12px] text-slate2 mt-1.5">
+          Pri takom predstihu sa nepripravuje ponuka. Nadväzuje sa vzťah
+          s obcou &mdash; a to bez konkurencie.
+        </div>
       </div>
     </div>
 

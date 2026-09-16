@@ -294,6 +294,15 @@ def nahrad_sprostredkovatelov(sb, df: pd.DataFrame, dnes: str):
     return _nahrad_tabulku(sb, "sprostredkovatelia", d, kluc="kluc")
 
 
+def nahrad_ziadatelov(sb, df: pd.DataFrame, dnes: str):
+    """Obce, ktore si najali projektanta a dotaciu este nemaju."""
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "obce_ziadatelia", df, kluc="contract_id")
+    d = df.copy()
+    d["last_seen_at"] = dnes
+    return _nahrad_tabulku(sb, "obce_ziadatelia", d, kluc="contract_id")
+
+
 def nahrad_ucely(sb, df: pd.DataFrame, dnes: str):
     """Na co obce dostavaju peniaze — v jazyku starostky, nie v sektoroch."""
     if df is None or df.empty:

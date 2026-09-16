@@ -201,6 +201,13 @@ tailwind.config = { theme: { extend: {
               class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap">
         Dotácie <span id="pocet-d" class="font-normal text-slate2"></span>
       </button>
+      <!-- Tretia vrstva. Zamerne az za dotaciami: ma najdlhsi predstih,
+           ale aj najmensiu istotu. Kto prichadza po zakazku na najblizsi
+           mesiac, ma najprv vidiet konciace zmluvy. -->
+      <button data-zalozka="ziadatelia"
+              class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap">
+        Žiadajú o dotáciu <span id="pocet-zi" class="font-normal text-slate2"></span>
+      </button>
       <button data-zalozka="dodavatelia"
               class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap">
         Dodávatelia <span id="pocet-f" class="font-normal text-slate2"></span>
@@ -439,6 +446,77 @@ tailwind.config = { theme: { extend: {
         Okno je odhad, nie istota. Projekt sa môže odložiť, zrušiť, alebo
         si ho obec zrealizuje vlastnými kapacitami. Kraj určujeme z názvu
         prijímateľa — pri prijímateľoch bez rozpoznateľnej obce zostáva prázdny.
+      </p>
+    </div>
+
+    <!-- ── ŽIADAJÚ O DOTÁCIU ───────────────────────────────────
+         Tretia vrstva, najdlhsi predstih. Cisla v texte NIE SU odhad:
+         odmerane na 101 obciach, ktore si najali sprostredkovatela, z toho
+         70 (69,3 %) potom dotaciu dostalo, median odstupu 382 dni.
+         Preto je tam aj poctiva veta o tom, ze to nie je pricinnost. -->
+    <div id="ziadatelia" class="hidden">
+      <p class="text-[14px] leading-relaxed text-slate2 mb-3 max-w-3xl">
+        Obce, ktoré si zaplatili firmu na napísanie žiadosti o dotáciu &mdash;
+        ale dotáciu ešte nemajú. Je to najskorší signál, aký vieme dať:
+        najprv príde dotácia, až potom obstarávanie.
+      </p>
+      <div class="rounded-lg border border-line bg-[#fafbfc] p-4 mb-5 max-w-3xl">
+        <p class="text-[13px] leading-relaxed text-slate2">
+          <strong class="text-ink">Odmerané, nie odhadnuté.</strong>
+          Zo 101 obcí, ktoré si takú firmu najali, dotáciu potom dostalo
+          <strong class="text-ink">70, teda 69&nbsp;%</strong>. Medián odstupu
+          bol <strong class="text-ink">382 dní</strong>, stredná polovica
+          medzi 219 a 584 dňami. Typická dotácia 129&nbsp;094&nbsp;€.
+          Neznamená to, že dotáciu dostali <em>vďaka</em> tej firme &mdash; obec,
+          ktorá si ju najme, je už typ obce, čo o peniaze ide. Na predpovedanie
+          to stačí, na zásluhu nie.
+        </p>
+      </div>
+
+      <div class="bg-white border border-line rounded-lg p-4 mb-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="zi-kraj" class="block text-[12px] font-semibold text-slate2 mb-1">Kraj</label>
+            <select id="zi-kraj" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
+                                        focus:outline-none focus:border-accent"></select>
+          </div>
+          <div>
+            <label for="zi-text" class="block text-[12px] font-semibold text-slate2 mb-1">Hľadať</label>
+            <input id="zi-text" type="search" placeholder="obec, mesto, firma"
+                   class="w-full border border-line rounded-md px-3 py-2 text-[14px]
+                          focus:outline-none focus:border-accent">
+          </div>
+        </div>
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
+          <span id="pocet-zia" class="text-[13px] text-slate2"></span>
+          <button id="export-zi" class="text-[13px] font-semibold text-accent">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="bg-white border border-line rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="karty-mobil w-full text-left">
+            <thead class="bg-[#fafbfc] border-b border-line">
+              <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+                <th class="px-4 py-3">Obec</th>
+                <th class="px-4 py-3">Kto jej to píše</th>
+                <th class="px-4 py-3 text-right whitespace-nowrap">Za koľko</th>
+                <th class="px-4 py-3 whitespace-nowrap">Najala</th>
+                <th class="px-4 py-3 whitespace-nowrap">Dotáciu čakáme</th>
+              </tr>
+            </thead>
+            <tbody id="riadky-zi"></tbody>
+          </table>
+        </div>
+        <div id="prazdny-zi" class="hidden p-10 text-center">
+          <p class="text-[14px] text-slate2">Pre tieto filtre nemáme žiadny záznam.</p>
+        </div>
+      </div>
+      <p class="mt-4 text-[12px] leading-relaxed text-slate2 max-w-3xl">
+        Pri jeden a pol až dvoch rokoch predstihu sa nedá pripravovať ponuka.
+        Dá sa nadviazať vzťah s obcou &mdash; a to je presne to okno, kedy sa to
+        dá urobiť bez konkurencie. Obce, ktoré už dotáciu dostali, tu nie sú;
+        tie nájdete v záložke Dotácie.
       </p>
     </div>
 
@@ -842,6 +920,36 @@ function oknoDotacie(r) {
           <span class="text-[12px]">až ${bezpecne(r.okno_do) || '—'}</span>`;
 }
 
+function riadokZiadatela(r) {
+  const kde = [r.mesto, r.kraj].filter(Boolean).join(', ');
+  const doDotacie = dniOdDnes(r.ocakavane);
+  return `
+    <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
+      <td data-hlavny class="px-4 py-4 align-top">
+        <div class="text-[14px] font-medium leading-snug">${bezpecne(r.obec)}</div>
+        ${kde ? `<div class="text-[12px] text-slate2 mt-1">${bezpecne(kde)}</div>` : ''}
+      </td>
+      <td data-popis="Kto jej to píše" data-blok class="px-4 py-4 align-top text-[14px] text-slate2">
+        ${bezpecne(r.sprostredkovatel) || '—'}
+      </td>
+      <td data-popis="Za koľko" class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">
+        ${suma(r.cena_sluzby)}
+      </td>
+      <td data-popis="Najala" class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
+        <span class="whitespace-nowrap">${bezpecne(r.najate)}</span>
+      </td>
+      <td data-popis="Dotáciu čakáme" class="px-4 py-4 align-top text-[14px] text-slate2">
+        <span class="font-medium whitespace-nowrap">${bezpecne(r.ocakavane)}</span>
+        ${!Number.isNaN(doDotacie) && doDotacie > 0
+          ? `<div class="text-[11px] mt-0.5">o ${doDotacie} dní</div>`
+          : (!Number.isNaN(doDotacie)
+              ? `<div class="text-[11px] mt-0.5 text-amber-800">okno už beží</div>` : '')}
+        <div class="text-[11px] mt-0.5">rozsah ${bezpecne(r.okno_od)} – ${bezpecne(r.okno_do)}</div>
+      </td>
+    </tr>`;
+}
+
+
 function riadokDodavatela(r) {
   const sektor = POPIS_SEKTORA[r.hlavny_sektor] ?? r.hlavny_sektor;
   const od = (r.prva_zmluva ?? '').slice(0, 4);
@@ -1117,9 +1225,10 @@ async function dashboard(supabase) {
   naplnSelect('f-sektor', sektory, 'všetky sektory');
   naplnSelect('d-sektor', sektory, 'všetko');
   naplnSelect('s-sektor', sektory, 'všetky sektory');
+  naplnSelect('zi-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
 
   // Posledne stiahnute data drzime, aby ich export nemusel tahat znova.
-  const posledne = { zmluvy: [], dotacie: [], dodavatelia: [] };
+  const posledne = { zmluvy: [], dotacie: [], ziadatelia: [], dodavatelia: [] };
 
   const STLPCE_Z = 'contract_id, skore, subject, sector, authority_name, ' +
                    'price_total, cena_neuvedena, effective_to, odhad_vyhlasenia, ' +
@@ -1263,6 +1372,35 @@ async function dashboard(supabase) {
       : `${cislo(c)} ${c === 1 ? 'dotácia' : c < 5 ? 'dotácie' : 'dotácií'}`;
   }
 
+  async function nacitajZiadatelov() {
+    let q = supabase.from('obce_ziadatelia')
+      .select('contract_id, obec, mesto, kraj, sprostredkovatel, cena_sluzby, ' +
+              'najate, okno_od, ocakavane, okno_do, odkaz', { count: 'exact' });
+
+    const kraj = el('zi-kraj').value;
+    const text = ocisti(el('zi-text').value);
+    if (kraj) q = q.eq('kraj', kraj);
+    if (text) q = q.or(`obec.ilike.*${text}*,sprostredkovatel.ilike.*${text}*,mesto.ilike.*${text}*`);
+
+    // Od najnovsie najatej. Kto si poradcu najal minuly mesiac, ma
+    // najdlhsi predstih — a to je cela hodnota tejto vrstvy.
+    const { data, count, error } = await q
+      .order('najate', { ascending: false, nullsFirst: false })
+      .limit(LIMIT);
+    if (error) {
+      el('pocet-zia').textContent = 'Chyba: ' + error.message;
+      return;
+    }
+    posledne.ziadatelia = data ?? [];
+    el('riadky-zi').innerHTML = posledne.ziadatelia.map(riadokZiadatela).join('');
+    el('prazdny-zi').classList.toggle('hidden', posledne.ziadatelia.length > 0);
+
+    const c = count ?? posledne.ziadatelia.length;
+    el('pocet-zia').textContent = c > LIMIT
+      ? `${cislo(c)} obcí, zobrazujeme prvých ${LIMIT} od najnovšie najatej`
+      : `${cislo(c)} ${c === 1 ? 'obec' : c < 5 ? 'obce' : 'obcí'}`;
+  }
+
   async function nacitajDodavatelov() {
     let q = supabase.from('dodavatelia')
       .select('supplier_cin, dodavatel, hlavny_sektor, zmluv, objem_eur, uradov, ' +
@@ -1320,12 +1458,26 @@ async function dashboard(supabase) {
   el('pocet-z').textContent = `(${cislo(pz.count ?? 0)})`;
   el('pocet-d').textContent = `(${cislo(pd.count ?? 0)})`;
 
+  // Pocet v zalozke tretej vrstvy. Ked tabulka este neexistuje alebo
+  // je prazdna, zalozka zostane bez cisla a nic sa nerozbije.
+  try {
+    const pzi = await supabase.from('obce_ziadatelia')
+      .select('contract_id', { count: 'exact', head: true });
+    if (!pzi.error) el('pocet-zi').textContent = `(${cislo(pzi.count ?? 0)})`;
+  } catch (e) { /* ticho */ }
+
   // Filtre
   const prekresliZ = pozdrz(nacitajZmluvy);
   for (const id of ['f-kraj', 'f-sektor', 'f-skore', 'f-radenie', 'f-jeCas']) {
     el(id).addEventListener('change', nacitajZmluvy);
   }
   el('f-text').addEventListener('input', prekresliZ);
+
+  const prekresliZi = pozdrz(nacitajZiadatelov);
+  el('zi-kraj').addEventListener('change', nacitajZiadatelov);
+  el('zi-text').addEventListener('input', prekresliZi);
+  el('export-zi').addEventListener('click',
+    () => exportCsv('obce-ziadaju-o-dotaciu', posledne.ziadatelia));
 
   function reset() {
     el('f-kraj').value = ''; el('f-sektor').value = '';
@@ -1369,6 +1521,11 @@ async function dashboard(supabase) {
   await Promise.all([
     mameZmluvy ? nacitajZmluvy() : Promise.resolve(),
     mameDotacie ? nacitajDotacie() : Promise.resolve(),
+    // Tretia vrstva vo vlastnom catch: je najnovsia a keby jej tabulka
+    // este neexistovala, nesmie zhodit prilezitosti ani dotacie.
+    nacitajZiadatelov().catch(() => {
+      el('pocet-zia').textContent = 'Túto vrstvu sa nepodarilo načítať.';
+    }),
   ]);
 
   // Panel odberu az na konci, aby prazdny alebo pokazeny odber nezhodil

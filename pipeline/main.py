@@ -18,6 +18,7 @@ import subsidies
 import analytics
 import obce
 import ucely
+import ziadatelia
 import vyzvy
 from classify import SEKTOR_DOTACIE
 from config import (
@@ -155,7 +156,7 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     # ── VRSTVA PRE OBCE ────────────────────────────────────────────────────
     # Vlastny try, aby zlyhanie tejto vrstvy nezhodilo prilezitosti ani
     # analytiku. Je to najnovsia cast a najmenej zabehnuta.
-    programov = sprostred = vyziev = ucelov = 0
+    programov = sprostred = vyziev = ucelov = ziadatelov = 0
     try:
         if vsetky is not None and not vsetky.empty:
             prog = obce.aktivne_programy(vsetky)
@@ -169,6 +170,13 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
             # z pohladu starostky nepouzitelne.
             uc = ucely.z_contracts(vsetky)
             ucelov = store.nahrad_ucely(sb, uc, dnes)
+
+            # Tretia vrstva: obce, ktore si najali projektanta a dotaciu
+            # este nemaju. Najdlhsi predstih v produkte — odmerane 382 dni
+            # medianovo po najati, a az potom 6-18 mesiacov na tender.
+            zia = ziadatelia.z_contracts(vsetky)
+            ziadatelov = store.nahrad_ziadatelov(sb, zia, dnes)
+            log.info("Obce, ktore si najali projektanta: %s", ziadatelov)
             if uc is not None and not uc.empty:
                 log.info("Na co obce dostavaju peniaze:")
                 for _, r in uc.head(10).iterrows():
