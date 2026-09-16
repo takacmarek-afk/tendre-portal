@@ -1132,6 +1132,69 @@ function riadokDodavatela(r) {
 }
 
 // ── EXPORT ──────────────────────────────────────────────────────────────
+//
+// EXPORT SI TAHA VLASTNE DATA. Do 16. 9. 2026 dostaval `posledne.*`, teda
+// presne to, co sa stiahlo na zobrazenie s `.limit(200)`. Zakaznik si
+// v Dotaciach vyexportoval 200 z 3 276 riadkov a NIKDE sa to nedozvedel —
+// externy audit to oznacil za jediny nalez, ktory zakaznika priamo
+// poskodzuje, a mal pravdu.
+//
+// Taha sa po strankach po 1 000, nie jednym dopytom. PostgREST ma
+// nastavitelny strop `db-max-rows` a jeden dopyt na 3 276 riadkov by sa
+// oň mohol ticho odrezat — a tichy strop je presne ta chyba, ktoru tu
+// opravujeme.
+const EXPORT_KROK = 1000;
+const EXPORT_STROP = 50000;   // poistka proti nekonecnemu cyklu
+
+/**
+ * Stiahne VSETKY riadky dopytu. `stavQ` musi dopyt postavit ZNOVA pri
+ * kazdom volani — objekt dopytu v supabase-js je jednorazovy a druhe
+ * `.range()` na tom istom objekte by sa neuplatnilo.
+ */
+async function stahniVsetko(stavQ) {
+  const vsetko = [];
+  for (let od = 0; od < EXPORT_STROP; od += EXPORT_KROK) {
+    const { data, error } = await stavQ().range(od, od + EXPORT_KROK - 1);
+    if (error) throw error;
+    const davka = data ?? [];
+    vsetko.push(...davka);
+    if (davka.length < EXPORT_KROK) break;
+  }
+  return vsetko;
+}
+
+/**
+ * Doplni odkaz na CRZ tam, kde ho riadok nema. Stlpec `odkaz` v
+ * `opportunities` vznika az migraciou 14, ale vo vyvezenom subore
+ * musi byt vzdy — je to nas dokaz overitelnosti a zaroven plnenie
+ * bodu 4.2 podmienok datasetu.
+ */
+function dopelnOdkaz(riadky) {
+  return riadky.map(r => (r.odkaz || r.contract_id == null)
+    ? r
+    : { ...r, odkaz: `${CRZ_ZMLUVA}${r.contract_id}/` });
+}
+
+/** Obali export: zablokuje tlacidlo, ukaze stav a chybu nezahltne. */
+async function sExportom(tlacidloId, praca) {
+  const b = el(tlacidloId);
+  const povodne = b.textContent;
+  b.disabled = true;
+  b.textContent = 'Pripravujem…';
+  try {
+    await praca();
+    b.textContent = povodne;
+  } catch (e) {
+    console.error(e);
+    // Chyba exportu sa NESMIE stratit v konzole. Zakaznik, ktoremu sa
+    // subor nestiahol, musi vediet preco.
+    b.textContent = 'Export zlyhal';
+    setTimeout(() => { b.textContent = povodne; }, 4000);
+  } finally {
+    b.disabled = false;
+  }
+}
+
 function exportCsv(nazov, riadky) {
   if (!riadky?.length) return;
   const hlavicky = Object.keys(riadky[0]);
@@ -1377,7 +1440,13 @@ async function dashboard(supabase) {
   naplnSelect('s-sektor', sektory, 'všetky sektory');
   naplnSelect('zi-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
 
-  // Posledne stiahnute data drzime, aby ich export nemusel tahat znova.
+  // Posledne ZOBRAZENE data (max LIMIT riadkov). Sluzia na vykreslenie
+  // a na dohladanie cenoveho benchmarku k zobrazenym riadkom.
+  //
+  // EXPORT ICH UZ NEPOUZIVA. Pouzival, a to bola chyba: exportoval sa
+  // presne ten orezany zoznam, takze zakaznik dostal 200 z 3 276 riadkov
+  // bez akejkolvek zmienky. Export si teraz taha vlastne data — viz
+  // stahniVsetko() vyssie.
   const posledne = { zmluvy: [], dotacie: [], ziadatelia: [], dodavatelia: [] };
 
   const STLPCE_Z = 'contract_id, skore, subject, sector, authority_name, ' +
@@ -1505,11 +1574,11 @@ async function dashboard(supabase) {
       : zaklad;
   }
 
-  async function nacitajDotacie() {
-    let q = supabase.from('subsidies')
-      .select('contract_id, prijimatel, poskytovatel, ucel, suma, sektor_odhad, ' +
-              'podpisane, okno_od, okno_do, mesto, kraj, odkaz', { count: 'exact' });
-
+  // Filtre dotacii ako samostatna funkcia — pouziva ich zobrazenie
+  // AJ export. Dve kopie tych istych podmienok by sa pri prvej uprave
+  // rozisli a vyvezeny subor by obsahoval nieco ine, nez zakaznik vidi
+  // na obrazovke. To je horsie nez chybajuci export.
+  function filtreDotacii(q) {
     const kraj = el('d-kraj').value;
     const sektor = el('d-sektor').value;
     const text = ocisti(el('d-text').value);
@@ -1523,6 +1592,15 @@ async function dashboard(supabase) {
     const stav = el('d-stav').value;
     if (stav === 'otvara') q = q.gt('okno_od', oDni(0));
     else if (stav === 'otvorene') q = q.lte('okno_od', oDni(0));
+    return q;
+  }
+
+  async function nacitajDotacie() {
+    let q = supabase.from('subsidies')
+      .select('contract_id, prijimatel, poskytovatel, ucel, suma, sektor_odhad, ' +
+              'podpisane, okno_od, okno_do, mesto, kraj, odkaz', { count: 'exact' });
+
+    q = filtreDotacii(q);
 
     const RADENIE_D = {
       nove: ['podpisane', false],
@@ -1560,15 +1638,20 @@ async function dashboard(supabase) {
       : zakladD;
   }
 
+  function filtreZiadatelov(q) {
+    const kraj = el('zi-kraj').value;
+    const text = ocisti(el('zi-text').value);
+    if (kraj) q = q.eq('kraj', kraj);
+    if (text) q = q.or(`obec.ilike.*${text}*,sprostredkovatel.ilike.*${text}*,mesto.ilike.*${text}*`);
+    return q;
+  }
+
   async function nacitajZiadatelov() {
     let q = supabase.from('obce_ziadatelia')
       .select('contract_id, obec, mesto, kraj, sprostredkovatel, cena_sluzby, ' +
               'najate, okno_od, ocakavane, okno_do, odkaz', { count: 'exact' });
 
-    const kraj = el('zi-kraj').value;
-    const text = ocisti(el('zi-text').value);
-    if (kraj) q = q.eq('kraj', kraj);
-    if (text) q = q.or(`obec.ilike.*${text}*,sprostredkovatel.ilike.*${text}*,mesto.ilike.*${text}*`);
+    q = filtreZiadatelov(q);
 
     // Od najnovsie najatej. Kto si poradcu najal minuly mesiac, ma
     // najdlhsi predstih — a to je cela hodnota tejto vrstvy.
@@ -1589,18 +1672,22 @@ async function dashboard(supabase) {
       : `${cislo(c)} ${c === 1 ? 'obec' : c < 5 ? 'obce' : 'obcí'}`;
   }
 
+  function filtreDodavatelov(q) {
+    const sektor = el('s-sektor').value;
+    const text = ocisti(el('s-text').value);
+    if (sektor) q = q.eq('hlavny_sektor', sektor);
+    if (text) q = q.or(`dodavatel.ilike.*${text}*,supplier_cin.ilike.*${text}*`);
+    return q;
+  }
+
   async function nacitajDodavatelov() {
     let q = supabase.from('dodavatelia')
       .select('supplier_cin, dodavatel, hlavny_sektor, zmluv, objem_eur, uradov, ' +
               'sektorov, priemerna_zmluva_eur, prva_zmluva, posledna_zmluva',
               { count: 'exact' });
 
-    const sektor = el('s-sektor').value;
-    const text = ocisti(el('s-text').value);
     const radenie = el('s-radenie').value;
-
-    if (sektor) q = q.eq('hlavny_sektor', sektor);
-    if (text) q = q.or(`dodavatel.ilike.*${text}*,supplier_cin.ilike.*${text}*`);
+    q = filtreDodavatelov(q);
 
     const { data, count, error } = await q
       .order(radenie, { ascending: false, nullsFirst: false }).limit(LIMIT);
@@ -1678,8 +1765,12 @@ async function dashboard(supabase) {
   const prekresliZi = pozdrz(nacitajZiadatelov);
   el('zi-kraj').addEventListener('change', nacitajZiadatelov);
   el('zi-text').addEventListener('input', prekresliZi);
-  el('export-zi').addEventListener('click',
-    () => exportCsv('obce-ziadaju-o-dotaciu', posledne.ziadatelia));
+  el('export-zi').addEventListener('click', () => sExportom('export-zi', async () => {
+    const riadky = await stahniVsetko(() => filtreZiadatelov(
+      supabase.from('obce_ziadatelia').select('*'))
+      .order('najate', { ascending: false, nullsFirst: false }));
+    exportCsv('obce-ziadaju-o-dotaciu', dopelnOdkaz(riadky));
+  }));
 
   function reset() {
     el('f-kraj').value = ''; el('f-sektor').value = '';
@@ -1700,8 +1791,21 @@ async function dashboard(supabase) {
   }
   el('d-text').addEventListener('input', prekresliD);
 
-  el('export-z').addEventListener('click', () => exportCsv('konciace-zmluvy', posledne.zmluvy));
-  el('export-d').addEventListener('click', () => exportCsv('dotacie', posledne.dotacie));
+  el('export-z').addEventListener('click', () => sExportom('export-z', async () => {
+    const riadky = await stahniVsetko(() => {
+      let q = filtreZmluv(supabase.from('opportunities').select('*'));
+      if (el('f-jeCas').checked) q = q.gte('dni_do_konca', DNI_TENDER_UZ_BEZI);
+      return q.order('skore', { ascending: false, nullsFirst: false });
+    });
+    exportCsv('konciace-zmluvy', dopelnOdkaz(riadky));
+  }));
+
+  el('export-d').addEventListener('click', () => sExportom('export-d', async () => {
+    const riadky = await stahniVsetko(() => filtreDotacii(
+      supabase.from('subsidies').select('*'))
+      .order('suma', { ascending: false, nullsFirst: false }));
+    exportCsv('dotacie', dopelnOdkaz(riadky));
+  }));
 
   // Dodavatelia su Pro. Pri Starte tabulku vobec nedotahujeme — RLS by ju
   // aj tak vratila prazdnu, ale prazdna tabulka bez vysvetlenia vypada
@@ -1714,7 +1818,12 @@ async function dashboard(supabase) {
     }
     el('s-text').addEventListener('input', prekresliF);
     el('export-f').addEventListener('click',
-      () => exportCsv('dodavatelia', posledne.dodavatelia));
+      () => sExportom('export-f', async () => {
+        const riadky = await stahniVsetko(() => filtreDodavatelov(
+          supabase.from('dodavatelia').select('*'))
+          .order('objem_eur', { ascending: false, nullsFirst: false }));
+        exportCsv('dodavatelia', riadky);
+      }));
     await nacitajDodavatelov();
   } else {
     ukaz('dod-zamknute');
