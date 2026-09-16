@@ -1,0 +1,8 @@
+0=Banskobystrický kraj
+1=Trnavský kraj
+2=Prešovský kraj
+3=Žilinský kraj
+4=Trenčiansky kraj
+5=Nitriansky kraj
+6=Košický kraj
+7=Bratislavský kraj
