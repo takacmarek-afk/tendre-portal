@@ -69,6 +69,71 @@ def _je_obec(nazov) -> bool:
     return bool(nazov) and bool(_JE_OBEC.match(str(nazov)))
 
 
+# ── KTO SMIE VYSTUPOVAT AKO POSKYTOVATEL ───────────────────────────────────
+# Odmerane 16. 9. 2026: zo 6 690 dotacii obciam nad 20 000 EUR malo len
+# 3 642 (54 %) skutocne verejneho poskytovatela. Vo zvysku boli futbalove
+# kluby, televizna spolocnost, neziskovky — a 162 zaznamov s MENOM
+# FYZICKEJ OSOBY ("Jana Fecurova", "Mgr. Gabriela Skotakova").
+#
+# Pricina je v CRZ: role v zmluve nie su dosledne vyplnene. Ked obec sama
+# rozdava maly grant miestnemu klubu, objavi sa v poli dodavatela ona
+# a v poli objednavatela ten klub — teda presne naopak. Moja vrstva to
+# brala doslovne a na verejnej stranke by z futbaloveho klubu urobila
+# poskytovatela dotacii na skolky.
+#
+# Meno fyzickej osoby na verejnej stranke je navyse ta ista hranica,
+# ktoru sme uz raz nakreslili pri profiloch dodavatelov.
+#
+# Radsej teda 54 % riadkov, kde je kazdy pravdivy, nez 100 % s hlupostami.
+_VEREJNY_POSKYTOVATEL = re.compile(
+    r"(ministerstvo"
+    r"|\bagent[uú]r"
+    r"|\bfond\b|fondu\b|fondom\b"
+    r"|samospr[aá]vny\s+kraj"
+    r"|[uú]rad\s+vl[aá]dy"
+    r"|\bslovensk[aá]\s+(inovacn|agent|akadem)"
+    r"|platobn[aá]\s+agent"
+    r"|\bimplementacn"
+    r"|environment[aá]ln\w*\s+fond"
+    r"|\bkancel[aá]ria\s+n[aá]rodnej"
+    r"|\bvyssi\s+uzemn|vy[sš][sš][ií]\s+[uú]zemn"
+    r")", re.IGNORECASE)
+
+_NEUVEDENE = re.compile(r"^\s*(neuveden|nezaden|n/?a|-+)\s*$", re.IGNORECASE)
+
+# Titul na zaciatku, alebo dve-tri velke slova bez akehokolvek institucneho
+# slova — to je clovek, nie urad. Je to pas navrch, pretoze hlavnu pracu
+# tu robi allowlist nizsie; meno cloveka ziadne z tych slov neobsahuje.
+_FYZICKA_OSOBA = re.compile(
+    r"^\s*(mgr|ing|judr|mudr|rndr|phdr|paeddr|doc|prof|bc|mvdr|mgr\.art)\.",
+    re.IGNORECASE)
+
+
+def je_verejny_poskytovatel(nazov) -> bool:
+    """Smie tento nazov vystupovat na verejnej stranke ako poskytovatel?
+
+    Pri pochybnosti FALSE. Chybajuci poskytovatel je horsi len tym, ze je
+    prazdny — zly je nepravdivy a pri fyzickej osobe navyse zverejnuje
+    meno cloveka.
+
+    POZOR, TU SOM SA RAZ UZ SEKOL: povodne som na vylucenie fyzickych osob
+    pouzil analytics.je_pravnicka_osoba(). Tá funkcia je ale navrhnuta na
+    FIRMY a hlada pravne formy typu s.r.o. alebo a.s. Ministerstvo ziadnu
+    nema, takze mi vyhodila VSETKYCH legitimnych poskytovatelov a zostali
+    by len tie hluposti, ktore som chcel odfiltrovat. Zachytil to test,
+    nie oko.
+
+    Hlavnu pracu preto robi allowlist institucnych slov. Meno cloveka
+    ziadne z nich neobsahuje.
+    """
+    if not nazov:
+        return False
+    n = str(nazov).strip()
+    if not n or _NEUVEDENE.match(n) or _FYZICKA_OSOBA.match(n):
+        return False
+    return bool(_VEREJNY_POSKYTOVATEL.search(n))
+
+
 def aktivne_programy(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     """Kto v poslednych mesiacoch realne podpisoval dotacne zmluvy s obcami.
 
@@ -93,6 +158,17 @@ def aktivne_programy(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     d["suma"] = pd.to_numeric(d["price_total"], errors="coerce")
     d = d[d["podpisane"].notna() & (d["suma"] >= MIN_SUMA_DOTACIE)]
     d = d[d["supplier_name"].apply(_je_obec)].copy()
+
+    # Poskytovatelom smie byt len skutocna verejna institucia. Bez tohto
+    # by sa medzi "programy, ktore teraz platia" dostal futbalovy klub
+    # alebo meno fyzickej osoby — vid je_verejny_poskytovatel().
+    pred = len(d)
+    d = d[d["authority_name"].apply(je_verejny_poskytovatel)].copy()
+    if pred and len(d) < pred:
+        log.info("Aktivne programy: vyradenych %s z %s zmluv, kde "
+                 "poskytovatel nie je verejna institucia (%.0f %%).",
+                 pred - len(d), pred, 100.0 * (pred - len(d)) / pred)
+
     if d.empty:
         log.warning("Aktivne programy: po filtroch nezostala ziadna zmluva.")
         return pd.DataFrame()

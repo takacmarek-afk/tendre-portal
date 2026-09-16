@@ -134,6 +134,19 @@ def z_contracts(df: pd.DataFrame) -> pd.DataFrame:
     d["podpisane"] = pd.to_datetime(d["signed_on"], errors="coerce")
     d = d[d["suma"] >= MIN_SUMA]
     d = d[d["supplier_name"].fillna("").apply(lambda s: bool(_JE_OBEC.match(s)))]
+
+    # Poskytovatel musi byt verejna institucia. Inak by sa v stlpci
+    # "Kto to dáva" objavilo "Neuvedené · Mgr. Gabriela Skotáková" —
+    # co bol skutocny vystup prvej verzie. Vysvetlenie je v obce.py.
+    import obce
+    pred = len(d)
+    d = d[d["authority_name"].apply(obce.je_verejny_poskytovatel)].copy()
+    if pred:
+        log.info("Ucely: %s z %s dotacii ma verejneho poskytovatela (%.0f %%). "
+                 "Zvysok su zvycajne granty, ktore obec sama rozdava, "
+                 "a role v CRZ tam byvaju naopak.",
+                 len(d), pred, 100.0 * len(d) / pred)
+
     if d.empty:
         log.warning("Ucely: po filtroch nezostala ziadna dotacia obci.")
         return pd.DataFrame()
