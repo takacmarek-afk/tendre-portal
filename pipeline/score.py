@@ -223,6 +223,41 @@ def je_transfer(subject, popis) -> bool:
     return bool(_TRANSFER.search(bez_diakritiky(f"{subject or ''} {popis or ''}")))
 
 
+# ── REGULOVANY MONOPOL ─────────────────────────────────────────────────────
+# Zmluvy, kde ZO ZAKONA existuje jediny mozny dodavatel. Tender z nich
+# nikdy nebude a v predikcii tendrov posobia, akoby sme nerozumeli trhu.
+#
+# Nasiel som to az na obsahu prveho e-mailu: medzi osmimi prilezitostami
+# bola "ZMLUVA o dodavke vody z verejneho vodovodu" — obec kupuje vodu od
+# vodarenskej spolocnosti — a "Zmluva o poskytovani vybranych udajov
+# z informacneho systemu", teda pristup do statneho registra. Dodavatel,
+# ktory toto uvidi v platenom feede, prestane veriti zvysku.
+#
+# Odmerane 16. 9. 2026: 36 z 1 163 prilezitosti, teda 3,1 %.
+#
+# ZAMERNE JE TO TU A NIE V config.NEGATIVNE. Ked som tam raz pridal
+# transferove slova, prestala sa klasifikovat cela dotacna vrstva —
+# NEGATIVNE sa uplatnuje pred zaradenim do sektora, takze vyradi zmluvu
+# uplne. Tu ide len o to, aby sa nestala PRILEZITOSTOU.
+_MONOPOL = re.compile(
+    r"(dodavk\w*\s+vody"
+    r"|verejneho?\s+vodovod|verejnou?\s+vodovod"
+    r"|odvadzan\w*\s+odpadov\w*\s+vod"
+    r"|stocn"
+    r"|distribuci\w*\s+(elektr|plyn)"
+    r"|zdruzen\w*\s+dodavk\w*\s+(elektr|plyn)"
+    r"|pripojen\w*\s+do\s+distribucn"
+    r"|poskytovan\w*\s+(vybranych\s+)?udajov"
+    r"|pristup\w*\s+do\s+informacn"
+    r"|z\s+informacneho\s+systemu"
+    r")")
+
+
+def je_monopol(subject, popis) -> bool:
+    """Je to dodavka, kde zo zakona nie je o co sutazit?"""
+    return bool(_MONOPOL.search(bez_diakritiky(f"{subject or ''} {popis or ''}")))
+
+
 def je_dodatok(subject, popis) -> bool:
     """Pozor na diakritiku: "Úprava rozpočtu" nesedi na vzor "uprava rozpoctu",
     kym text neznormalizujeme. Rovnaka chyba nas uz raz stala tri stvrtiny
@@ -291,6 +326,16 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     if pred_transferami != len(okno):
         log_score.info("Transfery penazi vylucene z prilezitosti: %s z %s",
                        pred_transferami - len(okno), pred_transferami)
+
+    pred_monopolom = len(okno)
+    okno = okno[~okno.apply(
+        lambda r: je_monopol(r["subject"], r["subject_description"]), axis=1)].copy()
+    if pred_monopolom != len(okno):
+        log_score.info("Regulovany monopol vyluceny z prilezitosti: %s z %s "
+                       "(dodavka vody, distribucia energii, udaje zo statnych "
+                       "registrov — nie je o co sutazit)",
+                       pred_monopolom - len(okno), pred_monopolom)
+
     if okno.empty:
         return pd.DataFrame()
 

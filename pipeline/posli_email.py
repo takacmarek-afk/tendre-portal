@@ -58,14 +58,18 @@ def _bezpecne(t):
             .replace('"', "&quot;"))
 
 
-def _eur(v):
+def _cislo_kladne(v) -> bool:
+    """Ma zmluva uvedenu kladnu cenu? Cena 0 v CRZ znamena ramcovu dohodu."""
     try:
-        n = float(v)
+        return float(v) > 0
     except (TypeError, ValueError):
+        return False
+
+
+def _eur(v):
+    if not _cislo_kladne(v):
         return "neuvedená"
-    if n <= 0:
-        return "neuvedená"
-    return f"{n:,.0f}".replace(",", " ") + " €"
+    return f"{float(v):,.0f}".replace(",", " ") + " €"
 
 
 def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie):
@@ -173,8 +177,16 @@ def pre_dodavatela(sb, o, dnes):
             "titul": (z.get("subject") or "")[:140],
             "popis": ((z.get("authority_name") or "")
                       + (f" · {kde}" if kde else "")),
-            "zvyraznene": (f"{_eur(z.get('price_total'))} · zmluva končí "
-                           f"{z.get('effective_to') or '—'}"),
+            # Cena 0 je v CRZ bezna: znamena ramcovu dohodu, kde sa sutazi
+            # o jednotkove ceny, nie o celkovu sumu. Odmerane: 28,8 %
+            # prilezitosti. V e-maile s osmimi polozkami by pat riadkov
+            # s holym "neuvedena" vyzeralo ako diera v datach — pritom je
+            # to informacia. Preto to aj povieme.
+            "zvyraznene": (
+                (f"{_eur(z.get('price_total'))} · "
+                 if _cislo_kladne(z.get("price_total"))
+                 else "Rámcová dohoda, súťaží sa o jednotkové ceny · ")
+                + f"zmluva končí {z.get('effective_to') or '—'}"),
         })
 
     kde_text = o.get("kraj") or "celom Slovensku"

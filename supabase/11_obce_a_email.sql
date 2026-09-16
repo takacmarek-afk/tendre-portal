@@ -150,3 +150,30 @@ union all select '  sprostredkovatelia — ' || count(*)::text || ' riadkov' fro
 union all select '  vyzvy              — ' || count(*)::text || ' riadkov' from public.vyzvy
 union all select '  odber_obce         — ' || count(*)::text || ' riadkov' from public.odber_obce
 union all select 'Naplni ich najblizsi beh pipeline.';
+
+
+-- ════════════════════════════════════════════════════════════════════════
+--  DOPLNENÉ 16. 9. 2026 — CHÝBAJÚCI STĹPEC V TABUĽKE `odber`
+--
+--  Tabuľka `odber` (dodávatelia) vznikla v 08_zadarmo.sql, teda skôr než
+--  odosielač e-mailov. Stĺpec `posledny_email` som pridal len do novej
+--  `odber_obce` a do tejto nie.
+--
+--  Prejavilo sa to takto: zápis po odoslaní je v try/except, takže nič
+--  nespadlo — len tichý warning. Ale keďže sa nikam nezapíše, kedy e-mail
+--  naposledy odišiel, každý ďalší by sa pozeral len 7 dní dozadu namiesto
+--  „od posledného odoslania". Pri týždennej kadencii to náhodou vychádza,
+--  pri vynechanom behu by prišli duplikáty alebo by sa niečo stratilo.
+--
+--  Našiel som to až pri kontrole dát po prvom behu nasucho — v logu to
+--  vidieť nebolo, pretože tichý warning sa nevypísal (zápis sa spúšťa len
+--  pri skutočnom odoslaní, nie nasucho).
+-- ════════════════════════════════════════════════════════════════════════
+
+alter table public.odber
+    add column if not exists posledny_email timestamptz;
+
+select 'odber ma posledny_email: ' ||
+       (select count(*)::text from information_schema.columns
+        where table_schema='public' and table_name='odber'
+          and column_name='posledny_email') as vysledok;
