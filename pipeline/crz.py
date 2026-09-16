@@ -9,6 +9,8 @@ import re
 import time
 import logging
 
+import score as score_modul
+
 import requests
 
 from config import CRZ_SYNC_URL, USER_AGENT
@@ -35,6 +37,22 @@ def _num(v):
 
 def _date(v):
     return str(v)[:10] if v else None
+
+
+def _text(v):
+    """Ocisti textove pole zo zdroja: HTML entity a nezlomitelne medzery.
+
+    CRZ posiela predmet zmluvy s HTML entitami — na stranke to bolo vidiet
+    ako `&quot;Obnova ulice Sv.Štefana&quot`. Ciste sa to TU, pri ukladani,
+    aby v `contracts` nebol ani jeden zakodovany retazec a nemusela to
+    riesit kazda odvodena vrstva zvlast.
+
+    Pouziva sa tá istá funkcia ako v odvodenych vrstvach (score.py), aby
+    sa ocistenie nemohlo rozist na dvoch miestach.
+    """
+    if not isinstance(v, str):
+        return v
+    return score_modul.odkoduj_entity(v)
 
 
 def _riadok(z, sector, score):
@@ -65,13 +83,13 @@ def _riadok(z, sector, score):
     return {
         "id": z.get("id"),
         "contract_identifier": z.get("contract_identifier"),
-        "authority_name": z.get("contracting_authority_name"),
+        "authority_name": _text(z.get("contracting_authority_name")),
         "authority_cin": str(z.get("contracting_authority_cin") or "").strip() or None,
         "authority_address": z.get("contracting_authority_formatted_address"),
-        "supplier_name": z.get("supplier_name"),
+        "supplier_name": _text(z.get("supplier_name")),
         "supplier_cin": str(z.get("supplier_cin") or "").strip() or None,
-        "subject": z.get("subject"),
-        "subject_description": z.get("subject_description"),
+        "subject": _text(z.get("subject")),
+        "subject_description": _text(z.get("subject_description")),
         "signed_on": _date(z.get("signed_on")),
         "effective_from": _date(z.get("effective_from")),
         "effective_to": _date(z.get("effective_to")),

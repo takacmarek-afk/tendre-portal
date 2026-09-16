@@ -4,6 +4,7 @@ Oproti povodnej verzii pracuje s DataFrame namiesto SQLite, inak je logika
 aj kalibracia prahov rovnaka.
 """
 import math
+import html
 import re
 import logging
 from datetime import date, timedelta
@@ -172,12 +173,49 @@ _BOILERPLATE = re.compile(
     r"^\s*zmluva o dielo\s*:\s*predmetom\s+zmluvy\s+(?:s[úu]|je)\s*", re.I)
 
 
+# ── HTML entity a chybajuce medzery v predmete ────────────────────────────
+# Toto bolo VIDIET NA DRUHOM RIADKU prvej obrazovky aplikacie:
+#
+#   Zmluva o dielo - &quot;Obnova ulice Sv.Štefana Veľký Meder&quot
+#
+# Dve chyby naraz. CRZ posiela predmet s HTML entitami a my sme ich nikde
+# nedekodovali. A ta posledna entita je `&quot` BEZ bodkocirky, pretoze
+# text je v zdroji utaty — na to `html.unescape` nastastie staci, HTML5
+# povoluje niektore entity aj bez bodkocirky (overene v teste nizsie).
+#
+# MEDZERA PO BODKE sa doplna LEN pred VELKYM pismenom, a to zamerne:
+# "Sv.Štefana" -> "Sv. Štefana", ale "s.r.o." a "a.s." musia zostat
+# nedotknute. Cenou je, ze pripad "Prír.štavy" (male pismeno za bodkou)
+# sa neopravi — tych bolo 1 z 1 130. Rozsirit vzor na male pismena by
+# rozbilo kazdu pravnu formu v databaze, takze to necham tak.
+_BODKA_BEZ_MEDZERY = re.compile(
+    r"([a-záäéíóôúýčďĺňŕšťžľĽ])\.([A-ZÁÄÉÍÓÔÚÝČĎĹŇŔŠŤŽĽ])")
+
+
+def odkoduj_entity(text: str) -> str:
+    """Dekoduje HTML entity a nahradi nezlomitelnu medzeru obycajnou.
+
+    Dekoduje sa OPAKOVANE, kym sa text meni. V CRZ su totiz aj dvojito
+    zakodovane retazce (`&amp;quot;`), a jedno kolo by z nich urobilo
+    `&quot;` — teda by entitu nechalo v texte a kriterium by neprejsalo.
+    Limit na tri kola je poistka proti nekonecnemu cyklu.
+    """
+    for _ in range(3):
+        nove = html.unescape(text)
+        if nove == text:
+            break
+        text = nove
+    return text.replace("\xa0", " ")
+
+
 def vycisti_predmet(text) -> str:
-    """Odstrani z predmetu pravnu vatu a oznacenie zverejnenych stran."""
+    """Odstrani z predmetu pravnu vatu, HTML entity a chybajuce medzery."""
     if not text:
         return ""
-    t = _STRANY.sub("", str(text))
+    t = odkoduj_entity(str(text))
+    t = _STRANY.sub("", t)
     t = _BOILERPLATE.sub("", t)
+    t = _BODKA_BEZ_MEDZERY.sub(r"\1. \2", t)
     return re.sub(r"\s+", " ", t).strip(" .:;-")
 
 

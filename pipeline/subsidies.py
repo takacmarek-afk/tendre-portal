@@ -14,6 +14,7 @@ from datetime import date, timedelta
 import pandas as pd
 
 import regiony
+import score
 from classify import klasifikuj_ucel, SEKTOR_DOTACIE
 from config import DOTACIA_OKNO_OD_DNI, DOTACIA_OKNO_DO_DNI, MIN_DOTACIA_EUR
 
@@ -119,7 +120,14 @@ def z_contracts(df: pd.DataFrame, dnes: date = None,
         return pd.DataFrame()
 
     d["ucel"] = d["subject"].fillna("") + " " + d["subject_description"].fillna("")
-    d["ucel"] = d["ucel"].str.strip()
+    # Rovnake ocistenie ako pri prilezitostiach. CRZ posiela HTML entity
+    # aj v dotacnych predmetoch a bez tohto by sa `&quot;` zobrazilo
+    # zakaznikovi ako text. Drzim to na jednej funkcii v score.py, aby
+    # sa obe vrstvy nemohli rozist.
+    d["ucel"] = d["ucel"].apply(score.odkoduj_entity).str.strip()
+    for stlpec in ("prijimatel", "poskytovatel"):
+        d[stlpec] = d[stlpec].apply(
+            lambda x: score.odkoduj_entity(x) if isinstance(x, str) else x)
     d["sektor_odhad"] = d.apply(
         lambda r: klasifikuj_ucel(r["subject"], r["subject_description"]), axis=1)
 
