@@ -635,6 +635,67 @@ const skry = (id) => el(id).classList.add('hidden');
 const PRIHLASENIE = './prihlasenie.html';
 const LIMIT = 200;
 
+// ── Prihlasovaci odkaz z e-mailu ──────────────────────────────────────────
+// TOTO BOLA SKUTOCNA CHYBA, NA KTOROM SA NEDALO PRIHLASIT ANI MNE ANI
+// MARKOVI. Projekt ma flowType "implicit", takze Supabase po kliknuti na
+// odkaz presmeruje na app.html a token PRILEPI DO HASH-U:
+//
+//     app.html#access_token=...&refresh_token=...&type=magiclink
+//
+// supabase-js ten hash spracuva ASYNCHRONNE, az po vytvoreni klienta.
+// Stara verzia start() sa vsak pytala na getSession() OKAMZITE. Ked tu
+// sutaz prehrala, session este neexistovala, kod presmeroval na
+// prihlasenie a hash sa tym NAVZDY ZAHODIL. Pouzivatel skoncil zase na
+// prihlasovacej stranke, vyziadal si novy odkaz a cele sa to zopakovalo.
+//
+// V auth logu to vypadalo presne takto: /otp vzdy presiel (e-maily
+// odchadzali v poriadku), ale /verify hlasil "One-time token not found",
+// a len raz za par pokusov sa sutaz vyhrala a Login presiel.
+//
+// Preto sa tu na session CAKA, ked je v adrese vidno prihlasovacie udaje.
+const AUTH_V_ADRESE = /(access_token|refresh_token|[?&]code=|error_description|error_code)/;
+
+function maPrihlasovacieUdaje() {
+  return AUTH_V_ADRESE.test(location.hash) || AUTH_V_ADRESE.test(location.search);
+}
+
+/** Vrati chybu, ktoru Supabase poslal v adrese, alebo null. */
+function chybaZOdkazu() {
+  const zdroj = new URLSearchParams(
+    (location.hash.startsWith('#') ? location.hash.slice(1) : location.hash)
+    || location.search.slice(1));
+  const popis = zdroj.get('error_description') || zdroj.get('error');
+  return popis ? decodeURIComponent(popis.replace(/\+/g, ' ')) : null;
+}
+
+/** Pocka, kym supabase-js dokonci spracovanie tokenu z adresy. */
+function pockajNaSession(supabase, limitMs = 8000) {
+  return new Promise((hotovo) => {
+    let dokoncene = false;
+    const skonci = (session) => {
+      if (dokoncene) return;
+      dokoncene = true;
+      clearTimeout(cas);
+      odhlas?.subscription?.unsubscribe();
+      hotovo(session);
+    };
+    const odhlas = supabase.auth.onAuthStateChange((_, session) => {
+      if (session) skonci(session);
+    });
+    const cas = setTimeout(async () => {
+      // Posledna kontrola — udalost uz mohla prebehnut pred odberom.
+      const { data } = await supabase.auth.getSession();
+      skonci(data?.session ?? null);
+    }, limitMs);
+  });
+}
+
+/** Odstrani token z adresy, aby nezostal v historii ani v referere. */
+function vycistiAdresu() {
+  if (!maPrihlasovacieUdaje()) return;
+  history.replaceState({}, document.title, location.pathname);
+}
+
 // Ked do konca zmluvy zostava menej nez tolko dni, tender uz podla vsetkeho
 // bezi a predstih sme stratili. Pouziva to ODZNAK v riadku aj PREDVOLENY
 // FILTER — schvalne ta ista konstanta. Ked sa raz rozhodneme hranicu zmenit,
@@ -1547,7 +1608,25 @@ async function start() {
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const { data: { session } } = await supabase.auth.getSession();
+  // Ked Supabase v adrese poslal chybu (najcastejsie "odkaz uz bol
+  // pouzity alebo vyprsal"), neprehltnem ju. Pouzivatel musi vidiet
+  // DOVOD, inak si vyziada dalsi odkaz a skonci v tom istom kruhu.
+  const chybaOdkazu = chybaZOdkazu();
+  if (chybaOdkazu) {
+    vycistiAdresu();
+    return location.replace(
+      PRIHLASENIE + '?chyba=' + encodeURIComponent(chybaOdkazu));
+  }
+
+  let { data: { session } } = await supabase.auth.getSession();
+
+  // Ked session nie je, ale v adrese su prihlasovacie udaje, tak ich
+  // supabase-js prave spracuva. Cakat MUSIM — inak token zahodim.
+  if (!session && maPrihlasovacieUdaje()) {
+    session = await pockajNaSession(supabase);
+  }
+
+  vycistiAdresu();
   if (!session) return location.replace(PRIHLASENIE);
 
   for (const id of ['odhlasit', 'odhlasit-2']) {

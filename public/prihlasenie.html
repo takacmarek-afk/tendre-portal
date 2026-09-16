@@ -68,6 +68,10 @@ tailwind.config = { theme: { extend: {
         Poslali sme odkaz na <strong id="poslane-na"></strong>.
         Kliknutím sa prihlásite. Ak nedorazí do minúty, pozrite sa do spamu.
       </p>
+      <p class="mt-3 text-[13px] leading-relaxed text-slate2">
+        Ak si odkaz necháte poslať znova, platiť bude už len ten nový.
+        Klikajte preto vždy na najnovší e-mail.
+      </p>
       <button id="znova" class="mt-6 text-[14px] text-accent font-semibold hover:underline">
         Použiť iný e-mail
       </button>
@@ -95,6 +99,19 @@ const tlacidlo = document.getElementById('odoslat');
 function ukazChybu(text) {
   chyba.textContent = text;
   chyba.classList.remove('hidden');
+}
+
+// Chyba, ktoru sem poslala app.html, ked odkaz z e-mailu neplatil.
+// Bez tohto pouzivatel len znova skoncil na prihlasovacej stranke,
+// nevedel preco, vyziadal si dalsi odkaz a zopakoval to dokola.
+const zAdresy = new URLSearchParams(location.search).get('chyba');
+if (zAdresy) {
+  ukazChybu(/expired|invalid|not found/i.test(zAdresy)
+    ? 'Ten odkaz už neplatí. Platí len jeden, a to ten NAJNOVŠÍ — '
+      + 'keď si necháte poslať odkaz druhýkrát, prvý prestane fungovať. '
+      + 'Vyžiadajte si nový a kliknite na ten posledný e-mail.'
+    : zAdresy);
+  history.replaceState({}, document.title, location.pathname);
 }
 
 if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
