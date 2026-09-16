@@ -27,6 +27,8 @@ import unicodedata
 
 import pandas as pd
 
+import subsidies
+
 log = logging.getLogger("ucely")
 
 MIN_SUMA = 20000        # rovnaky prah ako vsade v dotacnej vrstve
@@ -130,6 +132,9 @@ def z_contracts(df: pd.DataFrame) -> pd.DataFrame:
         raise KeyError(f"Ucely: v datach chybaju stlpce {chyba}.")
 
     d = df[df["sector"] == "DOTACIE_NFP"].copy()
+    # Bez dodatkov a bez dvojiteho zverejnenia — inak by "typicky
+    # 890 859 EUR" bolo sucotom tych istych peniazi dvakrat.
+    d = subsidies.bez_dvojitych_zapisov(d, "supplier_name", "Ucely")
     d["suma"] = pd.to_numeric(d["price_total"], errors="coerce")
     d["podpisane"] = pd.to_datetime(d["signed_on"], errors="coerce")
     d = d[d["suma"] >= MIN_SUMA]

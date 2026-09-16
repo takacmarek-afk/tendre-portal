@@ -6,7 +6,34 @@ o pol roka az rok a pol skor, nez sa tender objavi vo vestniku.
 
 Pozor na semantiku CRZ: pri dotacnej zmluve je poskytovatel (ministerstvo,
 agentura) v poli objednavatela a PRIJIMATEL, teda obec, je v poli dodavatela.
-Je to naopak nez pri beznej zmluve.
+Je to naopak nez pri beznej zmluve — ale NIE VZDY. Cast zmluv ma strany
+zapisane obratene a pipeline ich otaca, viz komentar pri `_je_vyssi_subjekt`.
+
+DODATKY: PRILEZITOSTI ICH ZAHADZUJU VSETKY, DOTACIE NIE
+Nie je to nekonzistencia, je to iny dovod a stoji za to to zapisat, aby to
+niekto (aj ja) "neopravil" na jednotny postup:
+
+  * V prilezitostiach je rozhodujuci KONIEC ZMLUVY. Ten ma materska
+    zmluva, takze dodatok nepridava ziadny novy signal — len by tu istu
+    zakazku zobrazil druhy raz.
+  * V dotaciach je OSIRELY dodatok casto JEDINY DOKAZ, ze peniaze boli
+    priznane. Materska zmluva moze byt mimo nasej historie, alebo jej
+    uz preslo okno (`okno_do` = ucinne_od + 540 dni) a odfiltrovala sa
+    skor. Zahodit osirely dodatok teda znamena stratit celu prilezitost.
+
+Preto sa v dotaciach zahadzuje len dodatok, ktoremu sa NASIEL rodic,
+a osirele sa ponechavaju a oznacia. Zo SUCTOV OBJEMU sa vsak dodatky
+vyhadzuju vzdy — viz `bez_dvojitych_zapisov`.
+
+OKNO SA POCITA Z UCINNOSTI, NIE Z PODPISU
+`okno_od` = ucinne_od + 180 dni, `okno_do` = ucinne_od + 540 dni, a ked
+`ucinne_od` chyba, pouzije sa podpis. Preto ma zmluva podpisana v roku
+2002 s ucinnostou 2025 okno az na rok 2026 — a je to spravne, lebo
+obstaravat sa zacne po ucinnosti.
+
+Riadky s `okno_do` pred dneskom sa ZAHADZUJU (viz filter nizsie). Dosledok,
+ktory treba mat na pamati pri citani cisel: "okno preslo" je preto vzdy
+NULA a v UI sa taky stav ani neponuka.
 """
 import logging
 import re
@@ -81,6 +108,74 @@ def _je_samosprava(nazov: str) -> bool:
             or any(k in n for k in _KDEKOLVEK_SAMOSPRAVA))
 
 
+# ── Kanonicky nazov subjektu ───────────────────────────────────────────────
+# V CRZ je za nazvom casto prilepena adresa a ten isty subjekt ma viacero
+# pisanych podob. Odmerane 16. 9. 2026: Ministerstvo dopravy figuruje ako
+# 19 ROZNYCH subjektov — "Ministerstvo dopravy SR", "...a vystavby SR",
+# "...Slovenskej republiky", "...vystavby a regionalneho rozvoja", jedna
+# verzia s dvojitou medzerou a jedna so sekciou na konci. Bez zjednotenia
+# hovori kazdy sucet podla poskytovatela o zlomku skutocnosti.
+_PSC_V_TEXTE = re.compile(r"\b\d{3}\s?\d{2}\b")
+_PRAVNA_FORMA = re.compile(
+    r"\b(s\s?r\s?o|spol\s+s\s?r\s?o|a\s?s|v\s?o\s?s|k\s?s|n\s?o|sro|"
+    r"prispevkova\s+organizacia|statny\s+podnik|sp)\b")
+
+
+def bez_adresy(nazov) -> str:
+    """Odstrani adresu prilepenu za nazov organizacie.
+
+    Reze na PRVEJ ciarke, za ktorou sa este nachadza PSC:
+
+        "Mesto Gelnica, Banicke namestie 4, 056 01 Gelnica"  -> "Mesto Gelnica"
+        "Obec Mestecko, c. 118, 020 52 Mestecko"             -> "Obec Mestecko"
+        "Diervilla, spol. s r.o."                            -> nezmenene (nema PSC)
+
+    PRVA a nie POSLEDNA ciarka zamerne. Rezanie na poslednej nechavalo
+    v texte ulicu: "ProjektyEuropskychSpolocenstiev, s.r.o., 1. maja
+    1091/37, 953 01 Zlate Moravce" davalo kluc
+    "projektyeuropskychspolocenstiev 1 maja", takze ten isty subjekt
+    s inou adresou by sa nezlucil.
+
+    CENA: pri firmach sa odreze aj pravna forma (", s.r.o."). Je to
+    prijatelne, pretoze `bez_adresy` sluzi na KLUCE, nie na zobrazovanie,
+    a `kanonicky_subjekt` pravne formy aj tak odstranuje. Na stranku ide
+    vzdy povodny nazov.
+    """
+    s = str(nazov or "").strip()
+    if not _PSC_V_TEXTE.search(s):
+        return s
+    kus = ""
+    for i, cast in enumerate(s.split(",")):
+        zvysok = ",".join(s.split(",")[i:])
+        if i > 0 and _PSC_V_TEXTE.search(zvysok):
+            break
+        kus = (kus + "," + cast) if kus else cast
+    return kus.strip().rstrip(",-– ").strip() or s
+
+
+def kanonicky_subjekt(nazov) -> str:
+    """Zjednoteny kluc na porovnavanie subjektov. NIE na zobrazovanie.
+
+    Ministerstva sa krati na dve slova ("ministerstvo dopravy"), cim sa
+    zlucia vsetky premenovania a sekcie. Ostatne subjekty na tri slova
+    bez pravnej formy, cim sa zlucia "Diervilla s.r.o" a "Diervilla,
+    spol. s r.o.".
+
+    POZOR: je to kluc, nie nazov. Na stranku patri povodny `poskytovatel`,
+    nie tento vystup — inak by sa zakaznikovi zobrazovalo "ministerstvo
+    dopravy" malymi pismenami a bez SR.
+    """
+    n = bez_diakritiky(bez_adresy(nazov)).lower()
+    n = re.sub(r"[^a-z0-9 ]+", " ", n)
+    n = _PRAVNA_FORMA.sub(" ", n)
+    slova = [w for w in n.split() if w]
+    if not slova:
+        return ""
+    if slova[0] == "ministerstvo":
+        return " ".join(slova[:2])
+    return " ".join(slova[:3])
+
+
 # Subjekt NAD obcou: ten, kto obci peniaze rozdava. Obec mu dotaciu
 # nikdy nedava, takze taky subjekt v poli PRIJIMATELA znamena, ze su
 # strany vymenene.
@@ -111,6 +206,137 @@ def _je_vyssi_subjekt(nazov: str) -> bool:
 POTREBNE_STLPCE = ("sector", "price_total", "signed_on", "effective_from",
                    "supplier_name", "supplier_cin", "authority_name",
                    "subject", "subject_description", "id")
+
+
+def bez_dvojitych_zapisov(df: pd.DataFrame, stlpec_prijimatela: str,
+                          log_nazov: str = "") -> pd.DataFrame:
+    """Odstrani dodatky a dvojite zverejnenie. Pre SUCTY OBJEMU.
+
+    `obce.py` a `ucely.py` pocitaju z hrubych `contracts`, nie z uz
+    odduplikovaneho vystupu tohto modulu, takze ich sucty boli
+    nadhodnotene dvakrat nezavisle:
+
+        dodatky:              682 riadkov = 14,4 % objemu (565 M EUR)
+        dvojite zverejnenie: 1 524 riadkov
+
+    Cislo "rozdelil 39 470 869 EUR" na obce.html teda hovorilo o inej
+    sume, nez sa naozaj rozdelilo. Objem MUSI byt spravny bez ohladu na
+    to, ako sa raz zmeni heuristika na dodatky — preto sa dodatky zo
+    suctov vyhadzuju VZDY, aj ked v zozname dotacii ostavaju ako osirele.
+    """
+    if df.empty:
+        return df
+    pred = len(df)
+    d = df[~df["subject"].apply(lambda x: score.je_dodatok(x, ""))].copy()
+    bez_dodatkov = len(d)
+
+    kluc = d[stlpec_prijimatela].apply(
+        lambda x: bez_diakritiky(bez_adresy(x)).lower()[:40])
+    d = d.assign(_k=kluc).drop_duplicates(
+        ["_k", "price_total", "signed_on"], keep="first").drop(columns=["_k"])
+
+    if log_nazov and pred != len(d):
+        log.info("%s: zo suctov vyradenych %s dodatkov a %s dvojitych "
+                 "zapisov (z %s riadkov zostalo %s).", log_nazov,
+                 pred - bez_dodatkov, bez_dodatkov - len(d), pred, len(d))
+    return d
+
+
+def _deduplikuj(d: pd.DataFrame) -> pd.DataFrame:
+    """Odstrani dvojite zapisy toho isteho prispevku. Dve nezavisle faze.
+
+    ── FAZA 1: DVOJITE ZVEREJNENIE ────────────────────────────────────────
+    Ten isty prispevok je v CRZ casto zverejneny DVAKRAT, raz z kazdej
+    strany, a kazdy zapis ma vlastne contract_id. Odmerane 16. 9. 2026:
+    z 7 698 riadkov bolo 1 524 nadbytocnych.
+    Kluc: prijimatel + suma + datum podpisu.
+
+    ── FAZA 2: DODATKY ────────────────────────────────────────────────────
+    Dodatok nie je nova dotacia, je to zmena uz priznanej. Spojit ho
+    s materskou zmluvou PRESNE NEVIEME — v CRZ na to nie je pole:
+    `contract_identifier` je identifikator TOHTO dokumentu, nie rodica,
+    a `type_id` je 1 pri dodatku aj pri beznej zmluve. Vytiahnut cislo
+    rodica z textu sa da pri 87 % dodatkov, ale na `contract_identifier`
+    sedelo 1 z 12 vzoriek — tá cesta je slepa.
+
+    Pouziva sa preto HEURISTIKA a je zamerne TESNA: dodatok zahodime len
+    vtedy, ked ten isty prijimatel ma zakladnu zmluvu OD TOHO ISTEHO
+    POSKYTOVATELA. Odmerane:
+
+        siroky kluc (len prijimatel):      611 spojenych,  71 osirelych
+        tesny (prijimatel + poskytovatel): 341 spojenych, 341 osirelych
+
+    Siroky kluc teda spajal 270 dodatkov s NESUVISIACIMI dotaciami tej
+    istej obce — dodatok k prispevku od Ministerstva investicii pripojil
+    k dotacii od Fondu na podporu umenia. Tesny kluc necha viac osirelych,
+    ale nezahadzuje naslepo, a to je pri dotaciach spravna vymena.
+
+    ── CO TO NERIESI A PRIZNAVA SA TO NA RIADKU ───────────────────────────
+    Dodatok casto nesie AKTUALNEJSIU sumu nez materska zmluva: pri 87
+    z 682 dodatkov je suma vyssia. Ked dodatok zahodime, zobrazujeme
+    prekonanu sumu. Spojit ich nedokazeme, takze sa to hovori nahlas —
+    `ma_dodatky` drzi ich pocet a UI k tomu pise, ze suma sa mohla zmenit
+    a da sa overit v CRZ (odkaz na riadku je od migracie 14).
+
+    ── PRECO PRILEZITOSTI ZAHADZUJU VSETKY DODATKY A DOTACIE NIE ──────────
+    Nie je to nekonzistencia, je to iny dovod. V prilezitostiach je
+    rozhodujuci KONIEC ZMLUVY a ten ma materska zmluva, takze dodatok
+    ziadny novy signal nepridava. V dotaciach je osirely dodatok casto
+    JEDINY DOKAZ, ze peniaze boli priznane — materska zmluva moze byt
+    mimo nasej historie. Preto sa osirele dodatky ponechavaju.
+    """
+    if d.empty:
+        return d
+
+    pred = len(d)
+    d = d.copy()
+    d["_prij_kluc"] = d["prijimatel"].apply(
+        lambda x: bez_diakritiky(bez_adresy(x)).lower()[:40])
+    d["_posk_kluc"] = d["poskytovatel"].apply(kanonicky_subjekt)
+    d["je_dodatok"] = d["ucel"].apply(lambda x: score.je_dodatok(x, ""))
+    d["contract_id_alt"] = pd.NA
+    d["ma_dodatky"] = 0
+
+    # Poradie preferencie pri zluceni: ma kraj -> ma ICO -> nizsie
+    # contract_id. Posledne kriterium je tam pre DETERMINIZMUS — bez neho
+    # by ten isty vstup dal pri kazdom behu iny primarny zaznam a odkaz
+    # do CRZ by sa zakaznikovi menil pod rukami.
+    d["_ma_kraj"] = d["kraj"].notna().astype(int)
+    d["_ma_ico"] = d["prijimatel_ico"].notna().astype(int)
+    d = d.sort_values(["_ma_kraj", "_ma_ico", "contract_id"],
+                      ascending=[False, False, True])
+
+    # ── FAZA 1 ────────────────────────────────────────────────────────────
+    kluc1 = ["_prij_kluc", "suma", "podpisane"]
+    alt = (d.groupby(kluc1, dropna=False)["contract_id"]
+             .apply(lambda s: s.iloc[1] if len(s) > 1 else pd.NA))
+    d = d.drop_duplicates(kluc1, keep="first").copy()
+    d["contract_id_alt"] = d.set_index(kluc1).index.map(alt).values
+    po_faze1 = len(d)
+
+    # ── FAZA 2 ────────────────────────────────────────────────────────────
+    zakladne = d[~d["je_dodatok"]]
+    pary = set(zip(zakladne["_prij_kluc"], zakladne["_posk_kluc"]))
+    ma_rodica = d["je_dodatok"] & d.apply(
+        lambda r: (r["_prij_kluc"], r["_posk_kluc"]) in pary, axis=1)
+
+    if ma_rodica.any():
+        # Pocitadlo na PREZIVAJUCI riadok, aby sa zahodenie neslo bez stopy.
+        pocty = (d[ma_rodica].groupby(["_prij_kluc", "_posk_kluc"]).size())
+        idx = pd.MultiIndex.from_arrays(
+            [d["_prij_kluc"], d["_posk_kluc"]])
+        d["ma_dodatky"] = idx.map(pocty).fillna(0).astype(int).values
+        d.loc[d["je_dodatok"], "ma_dodatky"] = 0
+
+    d = d[~ma_rodica].copy()
+
+    log.info("Dotacie po deduplikacii: %s riadkov (z %s). Dvojite "
+             "zverejnenie zlucilo %s, dodatkov s rodicom zahodenych %s, "
+             "osirelych dodatkov ponechanych %s.",
+             len(d), pred, pred - po_faze1, int(ma_rodica.sum()),
+             int(d["je_dodatok"].sum()))
+
+    return d.drop(columns=["_prij_kluc", "_posk_kluc", "_ma_kraj", "_ma_ico"])
 
 
 def adresy_samosprav(df: pd.DataFrame) -> dict:
@@ -236,6 +462,7 @@ def z_contracts(df: pd.DataFrame, dnes: date = None,
     d["sektor_odhad"] = d.apply(
         lambda r: klasifikuj_ucel(r["subject"], r["subject_description"]), axis=1)
 
+
     # POZOR: nie regiony.doplnit(). Adresa v dotacnej zmluve patri
     # ministerstvu v Bratislave, nie obci, ktora dotaciu dostala. Kraj sa
     # tu preto odvodzuje z NAZVU prijimatela, a ked nazov nesadne (male
@@ -252,13 +479,21 @@ def z_contracts(df: pd.DataFrame, dnes: date = None,
     d["odkaz"] = "https://www.crz.gov.sk/zmluva/" + d["id"].astype(str) + "/"
     d["contract_id"] = d["id"]
 
+    # Deduplikacia AZ TU, po vypocte kraja. Preferencia pri zluceni je
+    # "ma kraj -> ma ICO -> nizsie contract_id", takze kraj uz musi
+    # existovat — inak by sa vyberal primarny zaznam naslepo.
+    d = _deduplikuj(d)
+    if d.empty:
+        return pd.DataFrame()
+
     for c in ("podpisane", "ucinne_od", "okno_od", "okno_do"):
         d[c] = d[c].dt.strftime("%Y-%m-%d")
 
     stlpce = ["contract_id", "prijimatel", "prijimatel_ico", "poskytovatel",
               "ucel", "suma", "podpisane", "ucinne_od", "sektor_odhad",
               "okno_od", "okno_do", "odkaz", "mesto", "kraj",
-              "strany_vymenene"]
+              "strany_vymenene", "contract_id_alt", "ma_dodatky",
+              "je_dodatok"]
     out = d[stlpce].sort_values("suma", ascending=False).reset_index(drop=True)
     out["contract_id"] = pd.to_numeric(out["contract_id"], errors="coerce").astype("Int64")
     return out

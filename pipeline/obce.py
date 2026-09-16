@@ -32,6 +32,8 @@ from datetime import date, timedelta
 
 import pandas as pd
 
+import subsidies
+
 import regiony
 
 log = logging.getLogger("obce")
@@ -151,6 +153,9 @@ def aktivne_programy(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
         raise KeyError(f"Aktivne programy: v datach chybaju stlpce {chyba}.")
 
     d = df[df["sector"] == "DOTACIE_NFP"].copy()
+    # Objem MUSI byt bez dodatkov a bez dvojiteho zverejnenia. Detaily
+    # a odmerane cisla su v subsidies.bez_dvojitych_zapisov().
+    d = subsidies.bez_dvojitych_zapisov(d, "supplier_name", "Aktivne programy")
     if d.empty:
         return pd.DataFrame()
 

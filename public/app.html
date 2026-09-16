@@ -1062,6 +1062,35 @@ function dniOdDnes(datum) {
 
 const DNI_NOVA_DOTACIA = 30;
 
+// ── Priznanie neistoty pri dodatkoch ──────────────────────────────────────
+// Dodatok casto nesie AKTUALNEJSIU sumu nez materska zmluva: pri 87 z 682
+// dodatkov je suma vyssia. Spojit dodatok s rodicom presne nedokazeme —
+// v CRZ na to nie je pole — takze ked dodatok zahodime, na riadku moze
+// byt PREKONANA suma.
+//
+// Nedokazeme to opravit, tak to aspon hovorime nahlas. Zakaznik ma vedla
+// toho odkaz do CRZ (migracia 14), takze si to overi jednym klikom. To je
+// presne ta vymena, ktoru ma tento produkt robit: nepredstierat presnost,
+// ale povedat, kde si nie sme isti.
+function poznamkaDodatky(r) {
+  const n = Number(r.ma_dodatky) || 0;
+
+  // OSIRELY dodatok: materska zmluva v nasej historii nie je, casto preto,
+  // ze jej uz preslo okno. Datum je datum dodatku, nie vznik projektu,
+  // takze odhad okna je systematicky posunuty — reálne to zacalo skor.
+  if (r.je_dodatok) {
+    return `<div class="text-[11px] text-amber-800 mt-1"
+       title="Toto je dodatok k zmluve, ktorú v našej histórii nemáme. Dátum je dátum dodatku, nie vznik projektu, takže tender mohol byť vyhlásený skôr, než ukazujeme.">
+       dodatok bez pôvodnej zmluvy &mdash; termín môže byť skorší</div>`;
+  }
+  if (n <= 0) return '';
+  return `<div class="text-[11px] text-slate2 mt-1"
+     title="Dodatok často mení sumu. Spojiť ho s touto zmluvou presne nedokážeme, preto sumu overte v CRZ.">
+     ${n === 1 ? 'k tejto zmluve je v CRZ 1 dodatok' :
+       n < 5 ? `k tejto zmluve sú v CRZ ${n} dodatky` :
+               `k tejto zmluve je v CRZ ${n} dodatkov`}, suma sa mohla zmeniť</div>`;
+}
+
 function riadokDotacie(r) {
   const sektor = POPIS_SEKTORA[r.sektor_odhad];
   const kde = [r.mesto, r.kraj].filter(Boolean).join(', ');
@@ -1079,6 +1108,7 @@ function riadokDotacie(r) {
         ${r.strany_vymenene ? `<div class="text-[11px] text-slate2 mt-1"
              title="V registri boli strany zapísané naopak. Otočili sme ich, aby prijímateľ aj kraj boli správne.">
              strany v CRZ naopak, opravené</div>` : ''}
+        ${poznamkaDodatky(r)}
         ${kde ? `<div class="text-[12px] text-slate2 mt-1">${bezpecne(kde)}</div>` : ''}
         ${r.podpisane ? `<div class="text-[11px] text-slate2 mt-1">podpísaná ${bezpecne(r.podpisane)}</div>` : ''}
       </td>
@@ -1654,7 +1684,8 @@ async function dashboard(supabase) {
   async function nacitajDotacie() {
     let q = supabase.from('subsidies')
       .select('contract_id, prijimatel, poskytovatel, ucel, suma, sektor_odhad, ' +
-              'podpisane, okno_od, okno_do, mesto, kraj, odkaz, strany_vymenene', { count: 'exact' });
+              'podpisane, okno_od, okno_do, mesto, kraj, odkaz, strany_vymenene, '
+              + 'contract_id_alt, ma_dodatky, je_dodatok', { count: 'exact' });
 
     q = filtreDotacii(q);
 
