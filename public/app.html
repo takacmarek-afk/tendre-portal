@@ -952,6 +952,7 @@ function riadok(r, benchmark) {
                      rounded bg-accent/10 text-accent">${sektor}</span>` : ''}
         ${ktoToMa(r)}
         ${porovnanieCeny(b)}
+        ${odkazCrz(r)}
       </td>
       <td data-popis="Obstarávateľ" data-blok class="px-4 py-4 align-top text-[14px] text-slate2">
         ${bezpecne(r.authority_name)}
@@ -968,6 +969,33 @@ function riadok(r, benchmark) {
               : '')}
       </td>
     </tr>`;
+}
+
+// ── Odkaz na povodnu zmluvu v CRZ ─────────────────────────────────────────
+// Do 16. 9. 2026 nebol v aplikacii ANI JEDEN odkaz do CRZ, hoci zdroje.html
+// tvrdi opak: "Povodny nezmeneny text je vzdy dostupny v Centralnom registri
+// zmluv pod odkazom pri kazdom zazname." Bez odkazu je ten text nepravda,
+// nie nedokoncena funkcia — a je to deklarovane plnenie bodov 4.2, 4.3
+// a 4.9 podmienok Slovensko.Digital.
+//
+// Pri dotaciach a ziadateloch stlpec `odkaz` v databaze existoval uz
+// predtym — len sa stahoval a potom zahodil, nikam sa nevykreslil.
+//
+// ZALOZNE ZLOZENIE Z contract_id je tu zamerne. Stlpec `odkaz` sa do
+// `opportunities` dostane az po migracii 14 a najblizsom behu, ale odkaz
+// musi fungovat hned. Vzor je ten isty, aky pouziva pipeline.
+const CRZ_ZMLUVA = 'https://www.crz.gov.sk/zmluva/';
+
+function odkazCrz(r, popis = 'Zmluva v CRZ') {
+  const url = r.odkaz
+    || (r.contract_id != null ? `${CRZ_ZMLUVA}${r.contract_id}/` : null);
+  if (!url) return '';
+  // Odkaz vedie na cudzi web, takze rel=noopener. A `noreferrer` zamerne
+  // NIE — nech CRZ vidi, ze im posielame navstevnikov.
+  return `<a href="${bezpecne(url)}" target="_blank" rel="noopener"
+             class="inline-block mt-2 text-[12px] text-accent hover:text-accentDark
+                    hover:underline whitespace-nowrap"
+             title="Otvorí pôvodnú zmluvu v Centrálnom registri zmlúv">${popis} ↗</a>`;
 }
 
 // Kolko dni od dnes po dany datum. Zaporne = uz bolo. NaN = nemame datum.
@@ -1006,6 +1034,7 @@ function riadokDotacie(r) {
         </div>
         ${sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5
                      rounded bg-accent/10 text-accent">${sektor}</span>` : ''}
+        <div>${odkazCrz(r, 'Dotačná zmluva v CRZ')}</div>
       </td>
       <td data-popis="Suma" class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${suma(r.suma)}</td>
       <td data-popis="Tender" class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
@@ -1051,6 +1080,7 @@ function riadokZiadatela(r) {
       </td>
       <td data-popis="Kto jej to píše" data-blok class="px-4 py-4 align-top text-[14px] text-slate2">
         ${bezpecne(r.sprostredkovatel) || '—'}
+        <div>${odkazCrz(r, 'Zmluva s poradcom v CRZ')}</div>
       </td>
       <td data-popis="Za koľko" class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">
         ${suma(r.cena_sluzby)}
@@ -1353,7 +1383,13 @@ async function dashboard(supabase) {
   const STLPCE_Z = 'contract_id, skore, subject, sector, authority_name, ' +
                    'price_total, cena_neuvedena, effective_to, odhad_vyhlasenia, ' +
                    'dni_do_konca, mesto, kraj, supplier_name, dodavatel_od, ' +
-                   'dodavatel_zmluv_celkom, historicky_pocet';
+                   'dodavatel_zmluv_celkom, historicky_pocet'
+                   // `odkaz` sa tu ZAMERNE NETAHA. Stlpec vznikne az
+                   // migraciou 14 a PostgREST na neznamy stlpec vracia
+                   // 400, cim by sa cela zalozka rozbila skor, nez ju
+                   // spustis. V UI ho sklada odkazCrz() z contract_id,
+                   // takze odkaz funguje aj bez stlpca. Do exportu ho
+                   // pridam v A5, az po migracii.;
 
   // Filtre zo vstupov pridame na lubovolny dopyt. Je to samostatna funkcia
   // preto, lebo ich teraz potrebujem dvakrat: raz na data a raz na spocitanie
@@ -1472,7 +1508,7 @@ async function dashboard(supabase) {
   async function nacitajDotacie() {
     let q = supabase.from('subsidies')
       .select('contract_id, prijimatel, poskytovatel, ucel, suma, sektor_odhad, ' +
-              'podpisane, okno_od, okno_do, mesto, kraj', { count: 'exact' });
+              'podpisane, okno_od, okno_do, mesto, kraj, odkaz', { count: 'exact' });
 
     const kraj = el('d-kraj').value;
     const sektor = el('d-sektor').value;

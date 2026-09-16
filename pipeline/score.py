@@ -426,13 +426,20 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
         "supplier_name", "dodavatel_od", "dodavatel_zmluv_celkom",
         "top_dodavatel", "podiel_top_dodavatela", "historicky_pocet",
         "pocet_dodavatelov", "riziko", "skore", "okres_kod",
-        "mesto", "kraj", "typicka_dlzka_dni",
+        "mesto", "kraj", "typicka_dlzka_dni", "odkaz",
         # Nasledujuce su PRO. store.py ich odlomi do vlastnej tabulky,
         # do `opportunities` sa NESMU dostat — RLS je riadkova, nie stlpcova,
         # takze Start by si ich vytiahol cez ?select=*.
         "porovnavacia_cena", "zaklad", "median_cena", "odchylka_pct",
         "vzoriek", "q1", "q3", "rozptyl", "spolahlivy",
     ]
+    # Odkaz na povodnu zmluvu v CRZ. Vzor je ten isty ako v subsidies.py
+    # a ziadatelia.py — drzim ho rovnaky, aby sa tri vrstvy nemohli
+    # rozist. Je to zaroven plnenie bodu 4.2 podmienok Slovensko.Digital,
+    # ktore mame v zdroje.html deklarovane.
+    okno["odkaz"] = ("https://www.crz.gov.sk/zmluva/"
+                     + okno["contract_id"].astype(str) + "/")
+
     okno["subject"] = okno["subject"].apply(vycisti_predmet)
     okno["subject_description"] = okno["subject_description"].apply(vycisti_predmet)
 

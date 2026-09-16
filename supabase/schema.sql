@@ -119,8 +119,13 @@ create table if not exists public.opportunities (
     riziko                 text,
     skore                  integer,
     okres_kod              text,          -- doplni sa neskor, na filtrovanie podla regionu
-    refreshed_at           timestamptz not null default now()
-);
+    -- Odkaz na povodnu zmluvu v CRZ. Nie je to kozmetika: v zdroje.html
+    -- mame deklarovane plnenie bodov 4.2, 4.3 a 4.9 podmienok
+    -- Slovensko.Digital vetou "povodny nezmeneny text je vzdy dostupny
+    -- pod odkazom pri kazdom zazname". Do 16. 9. 2026 ten odkaz nebol
+    -- v produkte ani raz. Doplnene migraciou 14_odkaz_prilezitosti.sql.
+    odkaz                  text,
+    refreshed_at           timestamptz not null default now());
 
 create index if not exists ix_opp_skore  on public.opportunities(skore desc);
 create index if not exists ix_opp_sector on public.opportunities(sector);

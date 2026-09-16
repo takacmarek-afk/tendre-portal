@@ -59,7 +59,7 @@ ZAKLAD = {"contract_id","sector","cpv","authority_name","authority_cin","departm
  "price_total","supplier_name","top_dodavatel","podiel_top_dodavatela",
  "historicky_pocet","pocet_dodavatelov","riziko","skore","okres_kod",
  "mesto","kraj","dodavatel_od","dodavatel_zmluv_celkom","cena_neuvedena",
- "typicka_dlzka_dni"}
+ "typicka_dlzka_dni","odkaz"}
 # Pro stlpce, ktore score.rozdel_na_start_a_pro() odkroji do ceny_prilezitosti
 PRO = {"porovnavacia_cena","zaklad","median_cena","odchylka_pct","vzoriek",
  "q1","q3","rozptyl","spolahlivy"}
