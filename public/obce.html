@@ -39,6 +39,24 @@ tailwind.config = { theme: { extend: {
 </head>
 <body class="font-sans text-ink bg-white antialiased">
 
+<!-- Ten isty prepinac ako na uvodnej stranke. Vysvetlenie, preco tu nie je
+     tretia zalozka, je v index.html. Drz oba pruhy zhodne — projekt nema
+     build, takze je to jediny sposob, ako to mat na oboch stranach. -->
+<div class="border-b border-line bg-[#fafbfc]">
+  <div class="wrap flex items-center gap-3 h-11 overflow-x-auto">
+    <span class="hidden sm:inline text-[12px] text-slate2 whitespace-nowrap shrink-0">Hľadám:</span>
+    <nav class="flex items-center gap-1.5">
+      <a href="./index.html"
+         class="text-[13px] font-medium px-3 py-1.5 rounded-full whitespace-nowrap
+                text-slate2 hover:text-ink hover:bg-white border border-transparent
+                hover:border-line transition"><span class="sm:hidden">Pre firmu</span><span class="hidden sm:inline">zákazky pre moju firmu</span></a>
+      <a href="./obce.html" aria-current="page"
+         class="text-[13px] font-semibold px-3 py-1.5 rounded-full whitespace-nowrap
+                bg-ink text-white"><span class="sm:hidden">Pre obec</span><span class="hidden sm:inline">peniaze pre moju obec</span></a>
+    </nav>
+  </div>
+</div>
+
 <header class="border-b border-line sticky top-0 bg-white/95 backdrop-blur z-40">
   <div class="wrap flex items-center justify-between h-16">
     <a href="./index.html" class="font-bold text-[17px] tracking-tight">
@@ -226,6 +244,61 @@ tailwind.config = { theme: { extend: {
       </button>
     </form>
     <p id="o-hlaska" class="hidden mt-4 text-[14px]"></p>
+
+    <!-- Ukazka e-mailu pre obce. Struktura sedi s tym, co sklada
+         posli_email.py vo funkcii pre_obec(). Cisla su ZAMERNE popisne
+         ("Ministerstvo vo vasom odbore"), aby to nikto nepovazoval za
+         aktualne data. -->
+    <div class="mt-9 max-w-[560px]">
+      <p class="text-[12px] font-semibold uppercase tracking-wider text-white/55">
+        Takto to bude vyzerať
+      </p>
+      <div class="mt-2 rounded-lg bg-white text-ink overflow-hidden">
+        <div class="px-4 pt-4">
+          <div class="text-[13px] font-bold">PredTendrom<span class="text-accent">.sk</span></div>
+          <div class="mt-3 text-[15px] font-bold leading-snug">
+            Kto práve teraz rozdáva peniaze obciam
+          </div>
+          <p class="mt-1.5 text-[12px] leading-relaxed text-slate2">
+            Toto nie je zoznam výziev, je to niečo istejšie: poskytovatelia,
+            ktorí za posledné tri mesiace naozaj podpísali zmluvy s obcami.
+          </p>
+        </div>
+        <div class="mt-3 divide-y divide-line border-t border-line">
+          <div class="px-4 py-3">
+            <div class="text-[13px] font-semibold leading-snug">Ministerstvo vo vašom odbore</div>
+            <div class="text-[12px] text-slate2 mt-0.5">
+              Za 90 dní podpísalo 33 zmlúv s 23 obcami · naposledy pred týždňom
+            </div>
+            <div class="text-[12px] font-semibold text-accent mt-1">
+              Rozdelilo 39 470 869 €, typicky 591 982 € na obec
+            </div>
+          </div>
+          <div class="px-4 py-3">
+            <div class="text-[13px] font-semibold leading-snug">Fond, ktorý dáva na vašu vec</div>
+            <div class="text-[12px] text-slate2 mt-0.5">
+              Za 90 dní podpísal 12 zmlúv so 11 obcami
+            </div>
+            <div class="text-[12px] font-semibold text-accent mt-1">
+              Rozdelil 4 200 000 €, typicky 180 000 € na obec
+            </div>
+          </div>
+        </div>
+        <div class="px-4 py-3.5 border-t border-line">
+          <span class="inline-block bg-ink text-white text-[12px] font-semibold px-3.5 py-2 rounded">
+            Pozrieť podrobnosti a sprostredkovateľov
+          </span>
+        </div>
+        <div class="px-4 pb-4 text-[11px] leading-relaxed text-slate2 border-t border-line pt-3">
+          Údaje z Centrálneho registra zmlúv. Majú informatívny charakter.<br>
+          Odhlásiť sa dá odpoveďou na tento e-mail.
+        </div>
+      </div>
+      <p class="mt-2 text-[12px] text-white/50">
+        Žiadne obrázky, žiadne sledovacie pixely. Raz týždenne, nič medzitým.
+        Keď nebude nič nové, e-mail nepošleme.
+      </p>
+    </div>
     <p class="mt-5 text-[12px] leading-relaxed text-white/45 max-w-[600px]">
       E-mail použijeme výhradne na posielanie tohto prehľadu. Nikomu ho
       nepredávame. Odhlásiť sa dá odpoveďou na ktorýkoľvek e-mail.

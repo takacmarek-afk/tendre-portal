@@ -27,6 +27,35 @@ tailwind.config = {
 </head>
 <body class="font-sans text-ink bg-white antialiased">
 
+<!-- ══════════════ PREPÍNAČ PUBLIKA ══════════════
+     Portál má dve publiká na opačných stranách toho istého trhu: firmu,
+     ktorá hľadá zákazky, a obec, ktorá hľadá peniaze. Bez tohto pruhu sa
+     dalo na obecnú časť dostať len odkazom až dole pod obsahom.
+
+     Je to samostatný pruh NAD hlavičkou, nie ďalšia položka v nej.
+     V hlavičke je už logo, štyri odkazy a dve tlačidlá — pri 768 až 1023 px
+     sa to raz lámalo a nechcem to tam vracať.
+
+     TRETIA ZÁLOŽKA (sprostredkovateľ/agentúra) tu zámerne NIE JE. Firma
+     má celý produkt, obec má stránku, sprostredkovateľ nemá zatiaľ nič —
+     figuruje len v dátach ako zoznam. Prepínač, ktorý vedie na prázdnu
+     stránku, je to isté ako tlačidlo „Zapnúť e-mail", ktorý nechodí.
+     Pridať sa dá jedným <a> nižšie, keď preň bude obsah. -->
+<div class="border-b border-line bg-[#fafbfc]">
+  <div class="wrap flex items-center gap-3 h-11 overflow-x-auto">
+    <span class="hidden sm:inline text-[12px] text-slate2 whitespace-nowrap shrink-0">Hľadám:</span>
+    <nav class="flex items-center gap-1.5">
+      <a href="./index.html" aria-current="page"
+         class="text-[13px] font-semibold px-3 py-1.5 rounded-full whitespace-nowrap
+                bg-ink text-white"><span class="sm:hidden">Pre firmu</span><span class="hidden sm:inline">zákazky pre moju firmu</span></a>
+      <a href="./obce.html"
+         class="text-[13px] font-medium px-3 py-1.5 rounded-full whitespace-nowrap
+                text-slate2 hover:text-ink hover:bg-white border border-transparent
+                hover:border-line transition"><span class="sm:hidden">Pre obec</span><span class="hidden sm:inline">peniaze pre moju obec</span></a>
+    </nav>
+  </div>
+</div>
+
 <!-- ══════════════ NAV ══════════════ -->
 <header class="border-b border-line sticky top-0 bg-white/95 backdrop-blur z-40">
   <div class="wrap flex items-center justify-between h-16">
@@ -286,6 +315,58 @@ tailwind.config = {
         ho písať. Keď prvý vyjde, dostanete ho zadarmo a o cene povieme
         mesiac vopred.
       </p>
+      <!-- ══ UKÁŽKA E-MAILU ══
+           Kto si niečo zapína, má vidieť, čo mu príde. Štruktúra je presne
+           taká, akú skladá posli_email.py — nadpis, položky s hodnotou
+           a koncom zmluvy, tlačidlo, pätička so zdrojom a odhlásením.
+
+           Obsah je ZÁMERNE popisný, nie konkrétny: „Mesto vo vašom kraji"
+           si nikto nespletie so skutočným záznamom z registra. Vymyslený
+           názov obce so vymyslenou sumou by vyzeral ako reálne dáta
+           a to je presne to, čo na tomto portáli nechceme. -->
+      <div class="mt-7">
+        <p class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+          Takto vyzerá
+        </p>
+        <div class="mt-2 rounded-lg border border-line bg-white overflow-hidden">
+          <div class="px-4 pt-4">
+            <div class="text-[13px] font-bold">PredTendrom<span class="text-accent">.sk</span></div>
+            <div class="mt-3 text-[15px] font-bold leading-snug">8 nových príležitostí</div>
+            <p class="mt-1.5 text-[12px] leading-relaxed text-slate2">
+              Od posledného e-mailu pribudlo v upratovaní (Prešovský kraj) toto.
+              Pri každej zákazke zostáva aspoň 90 dní do konca zmluvy.
+            </p>
+          </div>
+          <div class="mt-3 divide-y divide-line border-t border-line">
+            <div class="px-4 py-3">
+              <div class="text-[13px] font-semibold leading-snug">Zabezpečenie upratovacích služieb</div>
+              <div class="text-[12px] text-slate2 mt-0.5">Mesto vo vašom kraji</div>
+              <div class="text-[12px] font-semibold text-accent mt-1">48 000 € · zmluva končí 31. 3. 2027</div>
+            </div>
+            <div class="px-4 py-3">
+              <div class="text-[13px] font-semibold leading-snug">Dodávka potravín pre školskú jedáleň</div>
+              <div class="text-[12px] text-slate2 mt-0.5">Obec vo vašom okrese</div>
+              <div class="text-[12px] font-semibold text-accent mt-1">
+                Rámcová dohoda, súťaží sa o jednotkové ceny · zmluva končí 31. 1. 2027
+              </div>
+            </div>
+            <div class="px-4 py-2.5 text-[12px] text-slate2 italic">a ďalších šesť</div>
+          </div>
+          <div class="px-4 py-3.5 border-t border-line">
+            <span class="inline-block bg-ink text-white text-[12px] font-semibold px-3.5 py-2 rounded">
+              Otvoriť portál
+            </span>
+          </div>
+          <div class="px-4 pb-4 text-[11px] leading-relaxed text-slate2 border-t border-line pt-3">
+            Údaje z Centrálneho registra zmlúv. Majú informatívny charakter.<br>
+            Filtre a odhlásenie nájdete v portáli.
+          </div>
+        </div>
+        <p class="mt-2 text-[12px] text-slate2">
+          Bez obrázkov a bez sledovacích pixelov. Raz týždenne, nič medzitým.
+        </p>
+      </div>
+
       <a href="./prihlasenie.html"
          class="inline-block mt-6 bg-ink text-white font-semibold px-5 py-3
                 rounded-md hover:bg-accent transition text-[15px]">
