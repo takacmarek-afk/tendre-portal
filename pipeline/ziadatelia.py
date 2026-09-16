@@ -137,6 +137,23 @@ def z_contracts(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     if d.empty:
         return pd.DataFrame()
 
+    # A ZAROVEN von s tymi, ktorym uz CELE OKNO PRESLO. Toto je samostatna
+    # podmienka a nie je zbytocna: okno_do je `najate` + 584 dni, ale
+    # platnost sa merala na 730, takze obec najata pred 600 dnami filtrom
+    # vyssie presla, hoci jej okno zatvorilo pred dvoma mesiacmi. Odmerane
+    # 16. 9. 2026 to boli 2 riadky z 24, teda 8,3 % vrstvy — mrtve leady,
+    # ktore by sli aj do tyzdenneho e-mailu.
+    #
+    # Rovnake pravidlo ma subsidies.py (`d = d[d["okno_do"] >= dnes]`).
+    # Drzim to konzistentne: co ma okno za sebou, do produktu nepatri.
+    pred = len(d)
+    d = d[d["okno_do"] >= pd.Timestamp(dnes)].copy()
+    if pred != len(d):
+        log.info("Ziadatelia: %s zaznamov s uz zatvorenym oknom vyradenych "
+                 "(okno_do < dnes)", pred - len(d))
+    if d.empty:
+        return pd.DataFrame()
+
     d = regiony.doplnit(d)
 
     d["obec"] = d["authority_name"]
