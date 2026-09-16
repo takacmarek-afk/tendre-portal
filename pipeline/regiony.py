@@ -128,9 +128,15 @@ _PSC = re.compile(r"\b(\d{3})\s?(\d{2})\b")
 
 # Vzor na hladanie mesta v nazve organizacie. Od najdlhsieho nazvu, aby
 # "Banska Bystrica" vyhrala nad pripadnou kratsou zhodou.
-_V_NAZVE = re.compile(
-    r"\b(" + "|".join(re.escape(m) for m in
-                      sorted(MESTO_KRAJ, key=len, reverse=True)) + r")\b")
+_ZORADENE_MESTA = "|".join(re.escape(m) for m in
+                           sorted(MESTO_KRAJ, key=len, reverse=True))
+
+_V_NAZVE = re.compile(r"\b(" + _ZORADENE_MESTA + r")\b")
+
+# To iste, ale zakotvene na ZACIATOK pola. "kosice - stare mesto" sadne,
+# "prevadzka bratislava - juh" uz nie. Rozdiel medzi tymito dvomi je
+# presne rozdiel medzi platnym a nahodnym hlasom pri uceni mapy PSC.
+_V_ZACIATKU = re.compile(r"(" + _ZORADENE_MESTA + r")\b")
 
 # Pri neznamom meste odstranime cislo domu — "Neznama 1" ako nazov mesta
 # vo filtri vypada ako chyba.
@@ -145,22 +151,21 @@ _ZNACKA_CISLA = re.compile(r"[\s,.\-]*\b(?:[cč]|[cč]islo|no|nr)\b[\s,.\-]*$",
                            re.IGNORECASE)
 
 
-def _hladaj(text: str, presne: bool = False):
+def _hladaj(text: str, od_zaciatku: bool = False):
     """Najde znamy nazov mesta v texte. Vrati (spravny nazov, kraj) alebo (None, None).
 
-    `presne=True` vyzaduje, aby CELE pole bolo nazvom mesta, nie aby ho
-    len obsahovalo. Pouziva sa VYLUCNE pri uceni mapy PSC — vysvetlenie
-    je v nauc_psc().
+    `od_zaciatku=True` vyzaduje, aby pole mesta nazvom ZACINALO, nie aby
+    ho len niekde obsahovalo. Pouziva sa VYLUCNE pri uceni mapy PSC —
+    vysvetlenie a odmerane cisla su v nauc_psc().
     """
-    if presne:
-        return MESTO_KRAJ.get(_norm(text), (None, None))
-    m = _V_NAZVE.search(_norm(text))
+    n = _norm(text)
+    m = _V_ZACIATKU.match(n) if od_zaciatku else _V_NAZVE.search(n)
     if m:
         return MESTO_KRAJ[m.group(1)]
     return None, None
 
 
-def rozober_adresu(adresa, presna_zhoda_mesta: bool = False):
+def rozober_adresu(adresa, mesto_od_zaciatku: bool = False):
     """Vrati (mesto, psc, kraj). Kazda hodnota moze byt None.
 
     Adresy v CRZ maju tvar "Ulica 1, P.O. Box 5, 814 99 Bratislava" alebo
@@ -208,7 +213,7 @@ def rozober_adresu(adresa, presna_zhoda_mesta: bool = False):
 
     # Ked mesto pozname, pouzijeme NASU podobu nazvu. Inak zostane surovy
     # text z adresy, ale bez cisla domu.
-    znamy, kraj = (_hladaj(mesto, presna_zhoda_mesta) if mesto
+    znamy, kraj = (_hladaj(mesto, mesto_od_zaciatku) if mesto
                    else (None, None))
     if znamy:
         mesto = znamy
@@ -301,9 +306,9 @@ def nauc_psc(adresy, log=None):
     prekracuju (napr. 05x je aj Presovsky aj Kosicky), takze poistka
     ich zahodi — a to je spravne, radsej prazdno nez zle.
 
-    PRI UCENI SA VYZADUJE PRESNA ZHODA NAZVU MESTA. Toto nie je
-    prehnana prisnost, je to oprava chyby, ktoru som odmeral v behu #43.
-    Diagnostika vypisala, ze VSETKYCH 20 zahodenych trojcifernych
+    PRI UCENI MUSI POLE MESTA NAZVOM ZACINAT, NIE HO LEN OBSAHOVAT.
+    Toto nie je prehnana prisnost, je to oprava chyby odmeranej v behu
+    #43. Diagnostika vypisala, ze VSETKYCH 20 zahodenych trojcifernych
     prefixov padlo na spor, a ten spor bol skoro vzdy jedno mesto proti
     styrom — pricom to jedno mesto tam geograficky vobec nepatrilo:
 
@@ -319,11 +324,24 @@ def nauc_psc(adresy, log=None):
     objavilo v niecom, co skoncilo v poli mesta, a cely okres Presov
     prisiel o kraj. Presne toto stalo kraj obce Kapusany aj Lubovec.
 
-    Pri UCENI teda beriem len adresy, kde je pole mesta CELE nazvom
-    znameho mesta. Pri POUZITI mapy zostava hladanie volne — tam
-    substringova zhoda pomaha a nic nekazi. Sprisnenie hlasy iba
-    ODOBERA, nikdy nepridava, takze chybu typu Kralova nad Vahom
-    (prefix priradeny k zlemu kraju) sposobit nemoze.
+    PRVY POKUS BOL PRISNY PRIVELA a zmeral som si to: ked som pri uceni
+    vyzadoval, aby pole mesta bolo CELE nazvom znameho mesta, spory
+    klesli z 20 na 5, ale prijatych prefixov ubylo zo 172 na 156 —
+    lebo "Kosice - Stare Mesto" je uplne platny hlas a prestal sa
+    pocitat. Na produkte to bolo horsie, nie lepsie:
+
+        prilezitosti bez kraja   84 -> 97
+        dotacie bez kraja       859 -> 875
+        ziadatelia bez kraja     10 -> 8    (jedina vrstva, co ziskala)
+
+    Preto je podmienka nastavena na ZACIATOK pola, nie na celé pole:
+    "kosice - stare mesto" hlasuje (zacina nazvom mesta),
+    "prevadzka bratislava - juh" nehlasuje (nazov je zahrabany vnutri).
+
+    Pri POUZITI mapy zostava hladanie volne — tam substringova zhoda
+    pomaha a nic nekazi. Sprisnenie hlasy iba ODOBERA, nikdy nepridava,
+    takze chybu typu Kralova nad Vahom (prefix priradeny k zlemu kraju)
+    sposobit nemoze.
     """
     PSC_KRAJ.clear()
     PSC2_KRAJ.clear()
@@ -331,8 +349,8 @@ def nauc_psc(adresy, log=None):
     for adresa in adresy:
         if not adresa:
             continue
-        # PRESNA ZHODA, a to len TU pri uceni. Vysvetlenie nizsie.
-        mesto, psc, kraj = rozober_adresu(adresa, presna_zhoda_mesta=True)
+        # ZHODA OD ZACIATKU POLA, a to len TU pri uceni. Vysvetlenie nizsie.
+        mesto, psc, kraj = rozober_adresu(adresa, mesto_od_zaciatku=True)
         if not (psc and kraj and mesto):
             continue
         cifry = re.sub(r"\D", "", psc)

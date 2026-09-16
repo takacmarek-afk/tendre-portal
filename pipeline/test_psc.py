@@ -234,7 +234,7 @@ for adresa, ocakavane in pripady.items():
 print("OK: znacka cisla sa odstranuje, nazov obce zostava cely")
 
 
-hlavicka("9. Pri uceni mapy PSC sa vyzaduje PRESNA zhoda nazvu mesta")
+hlavicka("9. Pri uceni mapy PSC musi pole mesta nazvom ZACINAT")
 # Toto je oprava chyby odmeranej v behu #43. Diagnostika ukazala, ze
 # prefix 080 (Presov) sa zahodil preto, ze niekto hlasoval "Bratislava",
 # a prefix 082 preto, ze niekto hlasoval "Trstena". Take hlasy vznikaju
@@ -275,5 +275,24 @@ print("OK: 053 je naozaj hranica dvoch krajov a zostava zahodene")
 m, p, k = regiony.rozober_adresu("Ulica 1, 040 01 Košice - Staré Mesto")
 assert k == "Košický kraj" and m == "Košice", (m, k)
 print("OK: pri pouziti zostava volne hladanie — 'Košice - Staré Mesto' sadne")
+
+# A TOTO je rozdiel medzi "zacina nazvom" a "je cele nazvom". Prvy pokus
+# vyzadoval cele pole a "Kosice - Stare Mesto" tym prestalo hlasovat —
+# prijatych prefixov ubylo zo 172 na 156 a na produkte to bolo HORSIE.
+# Mestska cast teda hlasovat MUSI.
+regiony.PSC_KRAJ.clear()
+regiony.PSC2_KRAJ.clear()
+regiony.nauc_psc(["Ulica 1, 040 11 Košice - Západ"])
+assert regiony.PSC_KRAJ.get("040") == "Košický kraj", \
+    "mestska cast musi hlasovat, inak stracame viac nez ziskavame"
+print("OK: 'Košice - Západ' hlasuje (zacina nazvom mesta)")
+
+# ...ale nazov zahrabany vnutri pola hlasovat NESMIE. Presne tento tvar
+# zabil prefix 080 (Presov) hlasom za Bratislavu.
+regiony.PSC_KRAJ.clear()
+regiony.nauc_psc(["Sklad 9, 080 05 Prevádzka Bratislava - juh"])
+assert "080" not in regiony.PSC_KRAJ, \
+    "zahrabany nazov mesta NESMIE hlasovat"
+print("OK: 'Prevádzka Bratislava - juh' nehlasuje (nazov je vnutri)")
 
 print("\nVSETKY TESTY PRESLI\n")
