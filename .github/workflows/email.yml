@@ -1,0 +1,82 @@
+name: Tyzdenny email
+
+# ══════════════════════════════════════════════════════════════════════════
+#  PRED PRVYM SPUSTENIM:
+#
+#  1. V Resend si vytvor API kluc (Dashboard -> API Keys -> Create).
+#     Staci mu pravo "Sending access".
+#  2. Tu v repozitari: Settings -> Secrets and variables -> Actions
+#     -> New repository secret -> nazov RESEND_API_KEY, hodnota ten kluc.
+#     Kluc mi neposielaj, ja ho nepotrebujem a vidiet ho nemam.
+#  3. Pusti tento workflow RUCNE s nasucho = true. Nic sa neposle,
+#     len uvidis v logu, komu a co by islo.
+#  4. Potom s nasucho = true a komu = tvoj@email.sk? NIE — naopak:
+#     nasucho = false a komu = tvoj@email.sk. Tak posle jeden jediny
+#     e-mail tebe a uvidis, ako naozaj vyzera v Outlooku.
+#  5. Az ked ti ten e-mail sedi, nechaj bezat pravidelne.
+#
+#  Plánovaný beh je zamerne ZAKOMENTOVANY. Hromadny e-mail sa neda vratit,
+#  takze sa nespusti sam, kym to vedome nezapnes odstranenim tych dvoch
+#  riadkov nizsie.
+# ══════════════════════════════════════════════════════════════════════════
+
+on:
+  workflow_dispatch:
+    inputs:
+      nasucho:
+        description: "Nasucho — nic neposielat, len vypisat (nechaj true, kym si neistý)"
+        type: boolean
+        default: true
+      komu:
+        description: "Poslat len na tuto adresu (na test). Prazdne = vsetkym."
+        type: string
+        default: ""
+
+  # ── ZAPNUTIE PRAVIDELNEHO BEHU ──────────────────────────────────────────
+  # Odkomentuj az potom, co ti testovaci e-mail sedel.
+  # Utorok 6:20 UTC = 8:20 letny cas. Utorok rano zamerne: v piatok to
+  # nikto nerieši a v pondelok sa prehrabuje cez tyzdennu postu.
+  # schedule:
+  #   - cron: "20 6 * * 2"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: email
+  cancel-in-progress: false
+
+jobs:
+  posli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Poslat tyzdenny email
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          ARGS=""
+          # Planovany beh posiela naozaj. Rucny beh sa riadi prepinacom.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] \
+             && [ "${{ inputs.nasucho }}" = "true" ]; then
+            ARGS="$ARGS --nasucho"
+          fi
+          if [ -n "${{ inputs.komu }}" ]; then
+            ARGS="$ARGS --komu ${{ inputs.komu }}"
+          fi
+          echo "Spustam: python posli_email.py $ARGS"
+          python posli_email.py $ARGS

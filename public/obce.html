@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Peniaze pre obce — PredTendrom.sk</title>
+<meta name="description" content="Kto práve teraz rozdáva peniaze obciam a mestám. Z Centrálneho registra zmlúv, bez registrácie.">
+<meta name="robots" content="index,follow">
+<script src="./config.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  fontFamily: { sans: ['Inter','system-ui','sans-serif'] },
+  colors: { ink:'#0f1a2b', slate2:'#5a6472', line:'#e4e8ee', accent:'#1a56c4' }
+}}}
+</script>
+<style>
+.wrap { max-width: 900px; margin: 0 auto; padding: 0 1.25rem; }
+/* Rovnaky princip ako v aplikacii: na telefone z riadku karta. */
+@media (max-width: 639px) {
+  table.karty, table.karty tbody { display: block; width: 100%; }
+  table.karty thead { display: none; }
+  table.karty tbody tr { display: block; border: 1px solid #e4e8ee; border-radius: .5rem;
+    background: #fff; padding: .5rem .9rem; margin-bottom: .7rem; }
+  table.karty tbody td { display: flex; align-items: baseline; justify-content: space-between;
+    gap: .9rem; width: auto !important; padding: .35rem 0 !important;
+    text-align: right !important; border: 0; white-space: normal !important; }
+  table.karty tbody td + td { border-top: 1px solid #f1f3f6; }
+  table.karty tbody td[data-popis]::before { content: attr(data-popis); flex: 0 0 auto;
+    text-align: left; font-size: 10px; font-weight: 600; letter-spacing: .04em;
+    text-transform: uppercase; color: #5a6472; white-space: nowrap; }
+  table.karty tbody td[data-hlavny] { display: block; text-align: left !important; }
+  table.karty tbody td[data-hlavny]::before { display: none; }
+}
+</style>
+</head>
+<body class="font-sans text-ink bg-white antialiased">
+
+<header class="border-b border-line sticky top-0 bg-white/95 backdrop-blur z-40">
+  <div class="wrap flex items-center justify-between h-16">
+    <a href="./index.html" class="font-bold text-[17px] tracking-tight">
+      PredTendrom<span class="text-accent">.sk</span></a>
+    <span class="text-[13px] text-slate2">Pre obce a mestá</span>
+  </div>
+</header>
+
+<!-- ══════════════ ÚVOD ══════════════ -->
+<section class="wrap pt-12 pb-8">
+  <p class="inline-block text-[12px] font-semibold text-accent bg-accent/10 rounded-full px-3 py-1">
+    Bez registrácie · zadarmo
+  </p>
+  <h1 class="mt-5 text-[30px] sm:text-[38px] font-bold leading-tight tracking-tight">
+    Kto práve teraz rozdáva peniaze obciam.
+  </h1>
+  <p class="mt-4 text-[16px] leading-relaxed text-slate2 max-w-[640px]">
+    Toto nie je zoznam výziev. Je to zoznam poskytovateľov, ktorí za posledné
+    tri mesiace <strong class="text-ink">naozaj podpísali zmluvy s obcami</strong>
+    &mdash; aj s tým, koľko rozdelili a koľko dostala typická obec.
+    Výzva je prísľub, podpísaná zmluva je dôkaz, že program platí.
+  </p>
+  <p class="mt-3 text-[14px] leading-relaxed text-slate2 max-w-[640px]">
+    Všetko nižšie je spočítané z Centrálneho registra zmlúv. Nič si
+    nevymýšľame a každý údaj sa dá overiť v zdroji.
+  </p>
+</section>
+
+<!-- ══════════════ AKTÍVNE PROGRAMY ══════════════ -->
+<section class="wrap pb-12">
+  <h2 class="text-[22px] font-semibold">Programy, ktoré teraz platia</h2>
+  <p class="mt-2 text-[14px] text-slate2">
+    Za posledných 90 dní. Ak niektorý rozdáva na to, čo potrebujete,
+    má zmysel obrátiť sa priamo na neho.
+  </p>
+
+  <div id="programy-nacitavam" class="mt-6 text-[14px] text-slate2">Načítavam…</div>
+  <div id="programy-chyba" class="hidden mt-6 rounded-lg border border-line bg-[#fafbfc] p-5">
+    <p class="text-[14px] text-slate2">
+      Údaje sa teraz nepodarilo načítať. Skúste stránku obnoviť o chvíľu.
+    </p>
+  </div>
+
+  <div id="programy-obal" class="hidden mt-6 overflow-x-auto border border-line rounded-lg">
+    <table class="karty w-full text-left">
+      <thead class="bg-[#fafbfc] border-b border-line">
+        <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+          <th class="px-4 py-3">Poskytovateľ</th>
+          <th class="px-4 py-3 whitespace-nowrap">Zmlúv za 90 dní</th>
+          <th class="px-4 py-3 text-right whitespace-nowrap">Rozdelil</th>
+          <th class="px-4 py-3 text-right whitespace-nowrap">Typicky na obec</th>
+          <th class="px-4 py-3 whitespace-nowrap">Naposledy</th>
+        </tr>
+      </thead>
+      <tbody id="programy"></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════ VÝZVY ══════════════ -->
+<section id="vyzvy-sekcia" class="hidden wrap pb-12">
+  <h2 class="text-[22px] font-semibold">Výzvy, ktoré sme našli</h2>
+  <p class="mt-2 text-[14px] text-slate2 max-w-[640px]">
+    Zbierame ich automaticky z verejných zdrojov. Zoznam <strong class="text-ink">nie je
+    úplný</strong> &mdash; niektoré úrady výzvy strojovo nezverejňujú. Berte to ako
+    pomôcku, nie ako prehľad všetkého, čo je otvorené.
+  </p>
+  <div id="vyzvy" class="mt-6 space-y-3"></div>
+</section>
+
+<!-- ══════════════ SPROSTREDKOVATELIA ══════════════ -->
+<section class="wrap pb-12">
+  <h2 class="text-[22px] font-semibold">Kto obciam žiadosti píše</h2>
+  <p class="mt-2 text-[14px] leading-relaxed text-slate2 max-w-[640px]">
+    Firmy, ktoré majú s obcami zverejnenú zmluvu na vypracovanie žiadosti
+    alebo na riadenie projektu.
+  </p>
+
+  <!-- Toto tu musi byt napisane a musi to byt napisane zrozumitelne.
+       Starostka si priala vidiet uspesnost. Neexistuje spravna cesta, ako
+       ju z verejnych dat spocitat, a nespravne cislo pri mene firmy, ktorej
+       z toho zije, je pravny problem. Tak to povieme priamo. -->
+  <div class="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-5">
+    <p class="text-[14px] leading-relaxed text-amber-900">
+      <strong>Prečo tu nie je úspešnosť.</strong>
+      Sprostredkovateľ v žiadosti o dotáciu nefiguruje &mdash; žiadosť podáva obec.
+      Z verejných dát sa teda nedá odlíšiť, či obec dotáciu dostala vďaka firme,
+      popri nej, alebo úplne bez nej. Väčšina týchto firiem má navyše zmluvu
+      s jednou či dvomi obcami a percento úspešnosti pri dvoch prípadoch nie je
+      štatistika. Radšej vám dáme fakty, ktoré si overíte, než číslo,
+      ktoré by sme nevedeli obhájiť.
+    </p>
+  </div>
+
+  <div id="sprostred-obal" class="hidden mt-6 overflow-x-auto border border-line rounded-lg">
+    <table class="karty w-full text-left">
+      <thead class="bg-[#fafbfc] border-b border-line">
+        <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+          <th class="px-4 py-3">Firma</th>
+          <th class="px-4 py-3 whitespace-nowrap">Obcí</th>
+          <th class="px-4 py-3">Kde pracuje</th>
+          <th class="px-4 py-3 text-right whitespace-nowrap">Typická cena</th>
+          <th class="px-4 py-3 whitespace-nowrap">Naposledy</th>
+        </tr>
+      </thead>
+      <tbody id="sprostred"></tbody>
+    </table>
+  </div>
+  <p id="sprostred-prazdne" class="hidden mt-6 text-[14px] text-slate2">
+    Zatiaľ sme žiadnu takú zmluvu nenašli.
+  </p>
+</section>
+
+<!-- ══════════════ ODBER ══════════════ -->
+<section class="border-y border-line bg-ink text-white">
+  <div class="wrap py-12">
+    <h2 class="text-[24px] font-semibold">Nech vám to chodí samo</h2>
+    <p class="mt-3 text-[15px] leading-relaxed text-white/75 max-w-[600px]">
+      Raz týždenne pošleme, ktoré programy platia a čo je nové. Stačí e-mail
+      a názov obce. Bez registrácie a bez hesla.
+    </p>
+    <p class="mt-2 text-[13px] text-white/50 max-w-[600px]">
+      Prvý e-mail ešte len pripravujeme &mdash; zapíšeme si vás a dostanete ho,
+      hneď ako vyjde.
+    </p>
+
+    <form id="odber" class="mt-6 flex flex-col sm:flex-row gap-3 max-w-[640px]">
+      <input id="o-obec" type="text" required placeholder="Obec Revúcka Lehota"
+             autocomplete="organization"
+             class="flex-1 rounded-md px-4 py-3 text-[15px] text-ink
+                    focus:outline-none focus:ring-2 focus:ring-white/60">
+      <input id="o-email" type="email" required placeholder="starosta@obec.sk"
+             autocomplete="email"
+             class="flex-1 rounded-md px-4 py-3 text-[15px] text-ink
+                    focus:outline-none focus:ring-2 focus:ring-white/60">
+      <button id="o-btn" type="submit"
+              class="bg-white text-ink font-semibold px-6 py-3 rounded-md
+                     hover:bg-white/90 transition text-[15px] whitespace-nowrap">
+        Chcem to dostávať
+      </button>
+    </form>
+    <p id="o-hlaska" class="hidden mt-4 text-[14px]"></p>
+    <p class="mt-5 text-[12px] leading-relaxed text-white/45 max-w-[600px]">
+      E-mail použijeme výhradne na posielanie tohto prehľadu. Nikomu ho
+      nepredávame. Odhlásiť sa dá odpoveďou na ktorýkoľvek e-mail.
+      Prevádzkovateľ: LoveHome s.r.o., IČO 47 586 362.
+    </p>
+  </div>
+</section>
+
+<footer class="wrap py-10">
+  <p class="text-[13px] leading-relaxed text-slate2">
+    Zdroj údajov: <strong class="text-ink">Centrálny register zmlúv</strong> a
+    <strong class="text-ink">Služby Slovensko.Digital</strong>.
+    Údaje majú informatívny charakter a nie sú právne záväzné &mdash;
+    pred rozhodnutím si ich overte v pôvodnom zdroji.
+    <a href="./zdroje.html" class="text-accent hover:underline">Podrobnosti o zdrojoch</a>.
+  </p>
+  <p class="mt-3 text-[13px] text-slate2">
+    Nie sme štátny orgán ani s ním prepojení.
+    Hľadáte zákazky ako dodávateľ? <a href="./index.html" class="text-accent hover:underline">Druhá časť portálu</a>.
+  </p>
+</footer>
+
+<script type="module">
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG ?? {};
+
+const el = (id) => document.getElementById(id);
+const bezpecne = (t) => String(t ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;');
+
+function eur(v) {
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return '—';
+  return n.toLocaleString('sk-SK', { maximumFractionDigits: 0 }) + ' €';
+}
+
+// Bez SDK. Na tri dopyty by bolo 40 kB javascriptu navyse zbytocnych,
+// a tato stranka ma byt rychla aj na mobilnom internete v dedine.
+async function citaj(tabulka, dotaz) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/${tabulka}?${dotaz}`, {
+    headers: { apikey: SUPABASE_ANON_KEY,
+               Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
+  });
+  if (!r.ok) throw new Error(tabulka + ': HTTP ' + r.status);
+  return r.json();
+}
+
+const POPIS_UCELU = {
+  STAVEBNE_PRACE: 'stavebné práce', STRECHY_IZOLACIE: 'strechy a zateplenie',
+  OKNA_DVERE_POVRCHY: 'okná, dvere, povrchy', KURENIE_VODA_PLYN: 'kúrenie, voda, plyn',
+  ELEKTROINSTALACIE: 'elektroinštalácie', ZELEN_ZIMNA_UDRZBA: 'zeleň a zimná údržba',
+  UPRATOVANIE: 'upratovanie', STRAVOVANIE: 'stravovanie', OSTRAHA: 'ostraha',
+  IT_TECHNIKA: 'IT technika', TLAC_KANCELARIA: 'tlač a kancelária',
+  DOPRAVA_MECHANIZACIA: 'doprava a mechanizácia',
+  PASPORTIZACIA: 'pasportizácia a správa budov',
+};
+
+async function nacitajProgramy() {
+  try {
+    const data = await citaj('aktivne_programy',
+      'select=poskytovatel,zmluv_30d,zmluv_90d,obci_90d,objem_90d,' +
+      'median_dotacie,hlavny_ucel,posledna_zmluva&order=objem_90d.desc&limit=25');
+
+    el('programy-nacitavam').classList.add('hidden');
+    if (!data.length) { el('programy-chyba').classList.remove('hidden'); return; }
+
+    el('programy').innerHTML = data.map(p => {
+      const ucel = POPIS_UCELU[p.hlavny_ucel] ?? null;
+      return `<tr class="border-b border-line last:border-0">
+        <td data-hlavny class="px-4 py-4 align-top">
+          <div class="text-[14px] font-medium leading-snug">${bezpecne(p.poskytovatel)}</div>
+          ${ucel ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5
+                     rounded bg-accent/10 text-accent">najčastejšie ${bezpecne(ucel)}</span>` : ''}
+        </td>
+        <td data-popis="Zmlúv za 90 dní" class="px-4 py-4 align-top text-[14px]">
+          <span class="font-medium">${p.zmluv_90d ?? '—'}</span>
+          <span class="text-slate2"> s ${p.obci_90d ?? '—'} obcami</span>
+          ${Number(p.zmluv_30d) > 0
+            ? `<div class="text-[12px] text-accent mt-0.5">z toho ${p.zmluv_30d} za posledný mesiac</div>`
+            : ''}
+        </td>
+        <td data-popis="Rozdelil" class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${eur(p.objem_90d)}</td>
+        <td data-popis="Typicky na obec" class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${eur(p.median_dotacie)}</td>
+        <td data-popis="Naposledy" class="px-4 py-4 align-top text-[14px] text-slate2">
+          <span class="whitespace-nowrap">${bezpecne(p.posledna_zmluva)}</span>
+        </td>
+      </tr>`;
+    }).join('');
+    el('programy-obal').classList.remove('hidden');
+  } catch (e) {
+    el('programy-nacitavam').classList.add('hidden');
+    el('programy-chyba').classList.remove('hidden');
+  }
+}
+
+async function nacitajVyzvy() {
+  try {
+    const dnes = new Date().toISOString().slice(0, 10);
+    const data = await citaj('vyzvy',
+      'select=nazov,poskytovatel,url,zdroj,uzavretie,popis' +
+      `&or=(uzavretie.is.null,uzavretie.gte.${dnes})` +
+      '&order=uzavretie.asc&limit=25');
+    if (!data.length) return;          // sekcia zostane skryta, to je v poriadku
+
+    el('vyzvy').innerHTML = data.map(v => `
+      <div class="border border-line rounded-lg p-4">
+        <div class="text-[15px] font-medium leading-snug">${bezpecne(v.nazov)}</div>
+        ${v.popis ? `<p class="mt-1.5 text-[13px] leading-relaxed text-slate2">${bezpecne(v.popis).slice(0, 240)}</p>` : ''}
+        <div class="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-slate2">
+          ${v.poskytovatel ? `<span>${bezpecne(v.poskytovatel)}</span>` : ''}
+          ${v.uzavretie ? `<span class="font-semibold text-ink">uzávierka ${bezpecne(v.uzavretie)}</span>` : ''}
+          <span>zdroj: ${bezpecne(v.zdroj)}</span>
+          ${v.url ? `<a href="${bezpecne(v.url)}" target="_blank" rel="noopener"
+                        class="text-accent hover:underline font-medium">otvoriť</a>` : ''}
+        </div>
+      </div>`).join('');
+    el('vyzvy-sekcia').classList.remove('hidden');
+  } catch (e) { /* ticho — sekcia zostane skryta */ }
+}
+
+async function nacitajSprostredkovatelov() {
+  try {
+    const data = await citaj('sprostredkovatelia',
+      'select=sprostredkovatel,obci,zmluv,kraje,median_ceny,posledna_zmluva' +
+      '&order=obci.desc&limit=40');
+    if (!data.length) { el('sprostred-prazdne').classList.remove('hidden'); return; }
+
+    el('sprostred').innerHTML = data.map(s => `
+      <tr class="border-b border-line last:border-0">
+        <td data-hlavny class="px-4 py-4 align-top">
+          <div class="text-[14px] font-medium leading-snug">${bezpecne(s.sprostredkovatel)}</div>
+        </td>
+        <td data-popis="Obcí" class="px-4 py-4 align-top text-[14px]">
+          <span class="font-medium">${s.obci ?? '—'}</span>
+          ${Number(s.zmluv) > Number(s.obci)
+            ? `<span class="text-slate2"> · ${s.zmluv} zmlúv</span>` : ''}
+        </td>
+        <td data-popis="Kde pracuje" class="px-4 py-4 align-top text-[13px] text-slate2">${bezpecne(s.kraje) || '—'}</td>
+        <td data-popis="Typická cena" class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${eur(s.median_ceny)}</td>
+        <td data-popis="Naposledy" class="px-4 py-4 align-top text-[14px] text-slate2">
+          <span class="whitespace-nowrap">${bezpecne(s.posledna_zmluva)}</span>
+        </td>
+      </tr>`).join('');
+    el('sprostred-obal').classList.remove('hidden');
+  } catch (e) {
+    el('sprostred-prazdne').classList.remove('hidden');
+  }
+}
+
+// ── Odber ────────────────────────────────────────────────────────────────
+el('odber').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = el('o-btn');
+  const hlaska = el('o-hlaska');
+  const obec = el('o-obec').value.trim();
+  const email = el('o-email').value.trim();
+
+  function povedz(text, chyba) {
+    hlaska.textContent = text;
+    hlaska.className = 'mt-4 text-[14px] ' + (chyba ? 'text-amber-200' : 'text-white');
+    hlaska.classList.remove('hidden');
+  }
+
+  if (!email.includes('@') || !obec) {
+    povedz('Vyplňte názov obce aj e-mail, prosím.', true);
+    return;
+  }
+
+  btn.disabled = true;
+  const povodny = btn.textContent;
+  btn.textContent = 'Zapisujem…';
+
+  try {
+    const r = await fetch(`${SUPABASE_URL}/rest/v1/odber_obce`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY,
+                 Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+                 'Content-Type': 'application/json',
+                 Prefer: 'return=minimal' },
+      body: JSON.stringify({ email, obec, zdroj: 'obce.html' }),
+    });
+
+    if (r.ok) {
+      el('odber').classList.add('hidden');
+      povedz('Zapísali sme si vás. Prvý prehľad dostanete, hneď ako vyjde.', false);
+    } else if (r.status === 409) {
+      // Unikatny index na e-mail. Nie je to chyba uzivatela.
+      el('odber').classList.add('hidden');
+      povedz('Túto adresu už máme zapísanú. Nič viac netreba.', false);
+    } else {
+      btn.disabled = false;
+      btn.textContent = povodny;
+      povedz('Nepodarilo sa to zapísať. Skúste to znova o chvíľu, '
+             + 'alebo napíšte na info@predtendrom.sk.', true);
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = povodny;
+    povedz('Nepodarilo sa to zapísať. Skontrolujte pripojenie, prosím.', true);
+  }
+});
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  el('programy-nacitavam').classList.add('hidden');
+  el('programy-chyba').classList.remove('hidden');
+} else {
+  nacitajProgramy();
+  nacitajVyzvy();
+  nacitajSprostredkovatelov();
+}
+</script>
+
+</body>
+</html>

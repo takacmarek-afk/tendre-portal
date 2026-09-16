@@ -16,6 +16,8 @@ import store
 import regiony
 import subsidies
 import analytics
+import obce
+import vyzvy
 from classify import SEKTOR_DOTACIE
 from config import (
     BOOTSTRAP_SINCE, TIME_BUDGET_MIN, DNI_MIN, DNI_MAX, SEKTORY,
@@ -148,6 +150,39 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     except Exception as e:
         log.exception("Analytika zlyhala")
         print(f"::warning::Analytika zlyhala: {type(e).__name__}: {e}")
+
+    # ── VRSTVA PRE OBCE ────────────────────────────────────────────────────
+    # Vlastny try, aby zlyhanie tejto vrstvy nezhodilo prilezitosti ani
+    # analytiku. Je to najnovsia cast a najmenej zabehnuta.
+    programov = sprostred = vyziev = 0
+    try:
+        if vsetky is not None and not vsetky.empty:
+            prog = obce.aktivne_programy(vsetky)
+            programov = store.nahrad_aktivne_programy(sb, prog, dnes)
+
+            spr = obce.sprostredkovatelia(vsetky)
+            sprostred = store.nahrad_sprostredkovatelov(sb, spr, dnes)
+
+            log.info("Obce: aktivnych programov %s, sprostredkovatelov %s",
+                     programov, sprostred)
+            if prog is not None and not prog.empty:
+                log.info("Kto prave teraz rozdava obciam (90 dni):")
+                for _, r in prog.head(8).iterrows():
+                    log.info("   %-46s %4s zmluv / %3s obci / %10.0f EUR",
+                             str(r["poskytovatel"])[:46], r["zmluv_90d"],
+                             r["obci_90d"], r["objem_90d"])
+    except Exception as e:
+        log.exception("Vrstva pre obce zlyhala")
+        print(f"::warning::Vrstva pre obce zlyhala: {type(e).__name__}: {e}")
+
+    # ── VYZVY ──────────────────────────────────────────────────────────────
+    # Nespolahlive externe zdroje. Zlyhanie je tu ocakavany stav, nie chyba —
+    # preto len warning a stranka pre obce ukaze aktivne programy z CRZ.
+    try:
+        zoznam = vyzvy.stiahni()
+        vyziev = store.nahrad_vyzvy(sb, zoznam, dnes)
+    except Exception as e:
+        log.warning("Zber vyziev zlyhal cely: %s: %s", type(e).__name__, e)
 
     try:
         celkom = store.pocet_contracts(sb)

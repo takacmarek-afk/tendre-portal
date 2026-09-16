@@ -264,6 +264,51 @@ def nahrad_ceny_sektor(sb, df: pd.DataFrame, dnes: str):
     return _nahrad_tabulku(sb, "ceny_sektor", d, kluc="sector")
 
 
+def nahrad_aktivne_programy(sb, df: pd.DataFrame, dnes: str):
+    """Kto prave teraz rozdava peniaze obciam."""
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "aktivne_programy", df, kluc="poskytovatel")
+    d = df.copy()
+    d["last_seen_at"] = dnes
+    return _nahrad_tabulku(sb, "aktivne_programy", d, kluc="poskytovatel")
+
+
+def nahrad_sprostredkovatelov(sb, df: pd.DataFrame, dnes: str):
+    """Firmy, ktore obciam pisu ziadosti. Fakty, ziadne skore."""
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "sprostredkovatelia", df, kluc="kluc")
+    d = df.copy()
+    d["last_seen_at"] = dnes
+    return _nahrad_tabulku(sb, "sprostredkovatelia", d, kluc="kluc")
+
+
+def nahrad_vyzvy(sb, zaznamy: list, dnes: str):
+    """Vyzvy z externych zdrojov.
+
+    Tu NEPOUZIVAM _nahrad_tabulku, ktora stary obsah maze. Vyzvy chodia
+    z nespolahlivych zdrojov — ked zdroj jeden tyzden odpadne, nechcem
+    prist o to, co uz mam. Preto len upsert a nic nemazem.
+    """
+    if not zaznamy:
+        log.warning("Vyzvy: ziadny zdroj nedal data, existujuce nechavam.")
+        return 0
+
+    s_url = [dict(z, last_seen_at=dnes) for z in zaznamy if z.get("url")]
+    bez_url = [dict(z, last_seen_at=dnes) for z in zaznamy if not z.get("url")]
+
+    vlozene = 0
+    for davka, kluc in ((s_url, "url"), (bez_url, "nazov")):
+        for i in range(0, len(davka), DAVKA):
+            cast = davka[i:i + DAVKA]
+            try:
+                sb.table("vyzvy").upsert(cast, on_conflict=kluc).execute()
+                vlozene += len(cast)
+            except Exception as e:
+                log.warning("Vyzvy: davka podla %s sa nezapisala (%s)", kluc, e)
+    log.info("Vyzvy: zapisanych %s z %s", vlozene, len(zaznamy))
+    return vlozene
+
+
 def zapis_verejne_pocty(sb, pocty: dict):
     """Agregaty pre uvodnu stranku, ktoru cita aj neprihlaseny navstevnik.
 
