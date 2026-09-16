@@ -22,6 +22,15 @@ on:
         description: "Nestahovat nic, len prepocitat prilezitosti, dotacie a analytiku"
         type: boolean
         default: false
+      # Tvrda brana v main.py zablokuje zapis, ked novy vypocet ma vyrazne
+      # menej riadkov nez databaza — chrani pred tym, aby pokazeny beh
+      # ticho vymazal data. Pri ZAMERNEJ zmene (napr. deduplikacia znizila
+      # dotacie zo 7 698 na 5 621, teda o 27 %) to treba raz povolit.
+      # NECHAJ PRAZDNE, pokial presne nevies, o aky pokles ide a preco.
+      povoleny_pokles:
+        description: "Povoleny pokles riadkov, napr. 0.40. Prazdne = 0.25. Len pre vedome zmeny!"
+        type: string
+        default: ""
 
 # actions: write je potrebne, aby si beh mohol zavolat pokracovanie sam.
 # workflow_dispatch je jedina vynimka z ochrany proti nekonecnej slucke.
@@ -56,6 +65,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TIME_BUDGET_MIN: ${{ inputs.budget || '45' }}
+          POVOLENY_POKLES: ${{ inputs.povoleny_pokles }}
         run: |
           if [ "${{ inputs.iba_prepocet }}" = "true" ]; then
             python main.py --iba-prepocet

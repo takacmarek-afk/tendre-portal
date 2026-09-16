@@ -59,4 +59,25 @@ for zle in [None, '', '   ', '&', '&&&', '&#xxx;', '&quot', 0, 1.5, float('nan')
     crz._text(zle)
 print("  OK: 10 hranicnych hodnot prezilo")
 
+hlavicka("5. Koncova bodka: skratky sa NESMU okresat (chyba O1)")
+# Stary `.strip(" .:;-")` robil dve skody: odsekol `;` z koncovej HTML
+# entity (co vypadalo ako orezavanie textu o jeden znak a poslal ma
+# hladat chybu do stahovania), a odsekaval koncovu bodku pravnych foriem.
+pripady = {
+    'Dodávka potravín pre ŠJ s.r.o.': 'Dodávka potravín pre ŠJ s.r.o.',
+    'Služby a.s.':                     'Služby a.s.',
+    'Poradenstvo n.o.':                'Poradenstvo n.o.',
+    'Doprava v.o.s.':                  'Doprava v.o.s.',
+    # Bezna koncova bodka sa odrezat MA.
+    'Zmluva č. 15/2026.':              'Zmluva č. 15/2026',
+    'Oprava ciest - II. etapa.':        'Oprava ciest - II. etapa',
+    'Nákup techniky:':                 'Nákup techniky',
+    # A entita s bodkocirkou uz nesmie o ten znak prist.
+    'Zmluva - &quot;Obnova&quot;':      'Zmluva - "Obnova"',
+}
+for vstup, ocakavane in pripady.items():
+    dostal = score.vycisti_predmet(vstup)
+    assert dostal == ocakavane, f"{vstup!r} -> {dostal!r}, cakal {ocakavane!r}"
+    print(f"  OK  {vstup[:44]:46} -> {dostal[:40]}")
+
 print("\nVSETKY TESTY PRESLI\n")

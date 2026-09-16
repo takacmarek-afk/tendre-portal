@@ -178,16 +178,30 @@ _BOILERPLATE = re.compile(
 #
 #   Zmluva o dielo - &quot;Obnova ulice Sv.Štefana Veľký Meder&quot
 #
-# Dve chyby naraz. CRZ posiela predmet s HTML entitami a my sme ich nikde
-# nedekodovali. A ta posledna entita je `&quot` BEZ bodkocirky, pretoze
-# text je v zdroji utaty — na to `html.unescape` nastastie staci, HTML5
-# povoluje niektore entity aj bez bodkocirky (overene v teste nizsie).
+# Dve chyby naraz a druha z nich bola NASA VLASTNA.
+#
+# Prva: CRZ posiela predmet s HTML entitami a my sme ich nikde nedekodovali.
+#
+# Druha: ta posledna entita bola `&quot` BEZ bodkocirky. Najprv som si
+# myslel, ze je text v zdroji utaty — v `contracts` bolo pritom `&quot;`
+# CELE a utate len v `opportunities`. Pricinou bol `.strip(" .:;-")` na
+# konci tejto funkcie: BODKOCIARKA je v tej sade znakov, takze si
+# odsekla `;` z entity. Hladal som chybu v stahovani, a bola v cistení
+# o tri riadky nizsie.
+#
+# `html.unescape` zvlada entitu aj bez bodkocirky (HTML5 to pri niektorych
+# povoluje), takze aj keby sa to stalo znova, dekoduje sa spravne.
 #
 # MEDZERA PO BODKE sa doplna LEN pred VELKYM pismenom, a to zamerne:
 # "Sv.Štefana" -> "Sv. Štefana", ale "s.r.o." a "a.s." musia zostat
 # nedotknute. Cenou je, ze pripad "Prír.štavy" (male pismeno za bodkou)
 # sa neopravi — tych bolo 1 z 1 130. Rozsirit vzor na male pismena by
 # rozbilo kazdu pravnu formu v databaze, takze to necham tak.
+# Skratka na konci textu: "s.r.o.", "a.s.", "n.o.", "v.o.s.", "spol. s r.o."
+# Rozhodujuce je, ze pred koncovou bodkou je jedno az tri pismena a pred
+# nimi DALSIA bodka — to bezne slovo nema.
+_SKRATKA_NA_KONCI = re.compile(r"\w\.\s?\w{1,3}\.$")
+
 _BODKA_BEZ_MEDZERY = re.compile(
     r"([a-záäéíóôúýčďĺňŕšťžľĽ])\.([A-ZÁÄÉÍÓÔÚÝČĎĹŇŔŠŤŽĽ])")
 
@@ -216,7 +230,24 @@ def vycisti_predmet(text) -> str:
     t = _STRANY.sub("", t)
     t = _BOILERPLATE.sub("", t)
     t = _BODKA_BEZ_MEDZERY.sub(r"\1. \2", t)
-    return re.sub(r"\s+", " ", t).strip(" .:;-")
+    t = re.sub(r"\s+", " ", t).strip(" :;-–")
+
+    # Koncova bodka sa odrezava, ale NIE zo skratky. Stara verzia mala
+    # `strip(" .:;-")` a to robilo dve skody naraz:
+    #
+    #   1. Zo "Dodavka pre SJ s.r.o." urobila "... s.r.o" — chybajuca
+    #      bodka v pravnej forme pri tisicoch zaznamov.
+    #   2. A hlavne: BODKOCIARKA je v tej sade, takze z koncoveho
+    #      `&quot;` odsekla `;` a zostalo `&quot`. Presne toto sposobilo,
+    #      ze v `opportunities` bola entita bez bodkocirky, kym
+    #      v `contracts` bola cela — vypadalo to ako orezavanie textu
+    #      o jeden znak a hladal som chybu v uplne inom mieste.
+    #
+    # Entity sa dnes dekoduju uz vyssie, takze bod 2 sa uz stat nemoze.
+    # Bod 1 by sa stat mohol, preto tu tá vynimka zostava.
+    if t.endswith(".") and not _SKRATKA_NA_KONCI.search(t):
+        t = t[:-1].rstrip(" :;-–")
+    return t
 
 
 # Dodatok nie je prilezitost. Nikto ho nevyhlasuje — je to zmena uz podpisanej

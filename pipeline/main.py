@@ -48,7 +48,15 @@ def zapis_vystup(**hodnoty):
 # Ked nova vrstva strati viac nez toto oproti tomu, co uz v databaze je,
 # beh spadne a nezapise nic. Tichy pokles je nebezpecnejsi nez pad: pad
 # uvidime v Actions, tichy pokles az vtedy, ked sa zakaznik oplati.
-MAX_POKLES = 0.25
+# Tvrda brana: ked novy vypocet ma vyrazne menej riadkov nez databaza,
+# nic sa nezapise. Chrani pred tym, aby pokazeny beh ticho vymazal data.
+#
+# PREPISOVATELNE cez POVOLENY_POKLES, a to ZAMERNE len pre JEDNORAZOVE
+# a VEDOME zmeny. Stalo sa to 16. 9. 2026: deduplikacia dotacii znizila
+# pocet zo 7 698 na 5 621, teda o 27 %, a tato brana zapis spravne
+# zablokovala — nemala ako vediet, ze je ten pokles zamyslany. Prah sa
+# NEZVYSUJE natrvalo; zvysi sa na jeden beh a vrati sa.
+MAX_POKLES = float(os.getenv("POVOLENY_POKLES") or 0.25)
 
 
 class KontrolaZlyhala(Exception):
@@ -88,6 +96,10 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     dnes = date.today().isoformat()
     tabulka, vlozene, dotacii, dodav, cien, cenPril = None, 0, 0, 0, 0, 0
     vsetky = None
+    # Zoznam zlyhani, ktore MUSIA zhodit beh. Faze su izolovane (analytika
+    # nesmie zhodit prilezitosti), ale zlyhanie sa nesmie stratit — inak
+    # GitHub hlasi "success" pri nezapisanych datach.
+    zlyhania = []
     try:
         vsetky = store.nacitaj_contracts(sb)
 
@@ -117,8 +129,18 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
         if dotacii:
             log.info("Dotacie s ocakavanym tendrom: %s", dotacii)
     except Exception as e:
+        # POZOR: tato chyba MUSI zhodit cely beh. Do 16. 9. 2026 sa len
+        # zalogovala, beh skoncil s kodom 0 a GitHub hlasil "success" —
+        # takze zlyhanie prepoctu vypadalo ako uspesny beh a ja som
+        # cely cyklus veril, ze sa data zapisali. Presne ta trieda tichej
+        # chyby, ktoru tento projekt inde vsade odstranuje.
+        #
+        # Izolacia fazi zostava (analytika nizsie ma vlastny try, aby
+        # nezhodila prilezitosti), ale zlyhanie sa ZAPAMATA a beh spadne
+        # na konci.
         log.exception("Prepocet zlyhal")
         print(f"::error::Prepocet zlyhal: {type(e).__name__}: {e}")
+        zlyhania.append(f"prepocet: {type(e).__name__}: {e}")
 
     # ── ANALYTIKA: profily dodavatelov a cenove mediany ────────────────────
     # Vlastny try, aby zlyhanie analytiky nezhodilo prilezitosti — tie su
@@ -260,6 +282,14 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     print(f"::notice::stiahnute={fetched} zaradene={kept} zmluv_v_db={celkom} "
           f"prilezitosti={vlozene} dotacie={dotacii} dodavatelia={dodav} "
           f"benchmark={cenPril} dokoncene={hotovo}")
+
+    # Zlyhanie jadra MUSI zhodit beh. Sync uz je zapisany a bootstrap
+    # retazenie ma svoj vystup zapisany skor, takze nenavratne sa nic
+    # nestrati — ale beh sa nesmie tvarit, ze presiel.
+    if zlyhania:
+        for z in zlyhania:
+            log.error("ZLYHALO: %s", z)
+        return 1
     return 0
 
 
