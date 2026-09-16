@@ -151,6 +151,10 @@ def z_contracts(df: pd.DataFrame) -> pd.DataFrame:
         log.warning("Ucely: po filtroch nezostala ziadna dotacia obci.")
         return pd.DataFrame()
 
+    # `subject_description` je v CRZ VZDY prazdny — odmerane na celej
+    # databaze aj priamo na API, podrobnosti v crz.py. Zretazenie tu teda
+    # nic nepridava a nechavam ho len preto, aby sa kod nerozbil, keby
+    # zdroj to pole niekedy zacal plnit. Nehladaj tu zisk.
     text = (d["subject"].fillna("") + " " + d["subject_description"].fillna(""))
     priradene = text.apply(priradit)
     d["ucel"] = [p[0] for p in priradene]

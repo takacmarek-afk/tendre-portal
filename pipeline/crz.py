@@ -38,7 +38,29 @@ def _date(v):
 
 
 def _riadok(z, sector, score):
-    """Prevedie zaznam z API na dict so stlpcami tabulky contracts."""
+    """Prevedie zaznam z API na dict so stlpcami tabulky contracts.
+
+    ── SUBJECT_DESCRIPTION JE V ZDROJI VZDY PRAZDNY ──────────────────────
+    Odmerane 16. 9. 2026 priamo na API, na 100 zaznamoch a potom na celej
+    nasej databaze (228 663 zmluv):
+
+        subject               100 / 100      vzdy vyplnene
+        subject_description     0 / 100      VZDY PRAZDNE
+        description             0 / 100      VZDY PRAZDNE
+        note                   11 / 100      obcas ucel, ale aj mena osob
+        internal_note          46 / 100      cisla ticketov, nic viac
+        attachments           100 / 100      nazvy suborov su cisla
+        procurement_url         5 / 100
+
+    Mapovanie je teda spravne, pole len nikto neplni. Nehladajte tu chybu.
+    Dosledok: klasifikator aj urcovanie ucelu dotacie pracuju VYHRADNE
+    s `subject`. Preto sa ucel dotacie da urcit len pri asi 3 % zmluv —
+    pri zvysku je v nazve len pravna formulka a cislo vyzvy.
+
+    `note` som zamerne NEPRIBRAL: ma nizke pokrytie a medzi ukazkami boli
+    aj mena fyzickych osob ("D. Bobokova"). Na verejnu stranku to nepatri
+    a par percent pokrytia za to nestoji.
+    """
     dep = z.get("department") or {}
     return {
         "id": z.get("id"),
