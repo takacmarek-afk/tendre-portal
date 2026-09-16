@@ -24,6 +24,7 @@ CO SA NEPOSIELA
 import argparse
 import logging
 import os
+import re
 import sys
 import time
 from datetime import date, datetime, timedelta, timezone
@@ -276,6 +277,16 @@ def main():
                     help="nic neposle, len vypise co by poslal")
     ap.add_argument("--komu", help="posle len na tuto adresu (test)")
     args = ap.parse_args()
+
+    # `--komu` prichadza z rucneho vstupu vo workflowe, takze mu neverim.
+    # Nechcem, aby sa cokolvek necakane dostalo do pola "to" v Resende
+    # alebo do logu. Adresa musi vypadat ako adresa, inak koniec.
+    if args.komu is not None:
+        args.komu = args.komu.strip()
+        if not re.fullmatch(r"[^@\s,;<>\"]+@[^@\s,;<>\"]+\.[A-Za-z]{2,}",
+                            args.komu):
+            log.error("--komu nie je platna e-mailova adresa. Nepokracujem.")
+            return 1
 
     url = os.getenv("SUPABASE_URL")
     servis = os.getenv("SUPABASE_SERVICE_ROLE_KEY")

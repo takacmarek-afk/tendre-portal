@@ -233,4 +233,47 @@ for adresa, ocakavane in pripady.items():
     print(f"  {adresa[:46]:46} -> {m}")
 print("OK: znacka cisla sa odstranuje, nazov obce zostava cely")
 
+
+hlavicka("9. Pri uceni mapy PSC sa vyzaduje PRESNA zhoda nazvu mesta")
+# Toto je oprava chyby odmeranej v behu #43. Diagnostika ukazala, ze
+# prefix 080 (Presov) sa zahodil preto, ze niekto hlasoval "Bratislava",
+# a prefix 082 preto, ze niekto hlasoval "Trstena". Take hlasy vznikaju
+# substringovou zhodou v poli, ktore nazvom mesta nie je.
+regiony.PSC_KRAJ.clear()
+regiony.PSC2_KRAJ.clear()
+
+adresy_s_smetim = [
+    # Styri ciste adresy z Presovskeho kraja, prefix 082.
+    "Hlavná 1, 082 21 Veľký Šariš",
+    "Nám. 2, 082 71 Lipany",
+    "Hlavná 3, 082 22 Šarišské Michaľany",   # neznama obec, nehlasuje
+    "Ulica 4, 080 01 Prešov",
+    "Ulica 5, 082 12 Kapušany",              # neznama obec, nehlasuje
+    # A jedna, ktorej pole mesta OBSAHUJE cudzi nazov, ale nie je nim.
+    # Presne takto vznikol hlas "Bratislava" pri prefixe 080.
+    "Sklad 9, 082 33 Prevádzka Bratislava - juh",
+]
+regiony.nauc_psc(adresy_s_smetim)
+assert regiony.PSC_KRAJ.get("082") == "Prešovský kraj", \
+    f"082 malo vyjst Presovsky, vyslo {regiony.PSC_KRAJ.get('082')!r}"
+print("OK: 082 -> Prešovský kraj; cudzi nazov v poli mesta uz nehlasuje")
+
+# Kontrola, ze sprisnenie hlasy len ODOBERA. Ked su dva ROZNE zname
+# mesta z roznych krajov na tom istom prefixe, spor ma zostat sporom
+# a prefix sa ma dalej zahodit.
+regiony.PSC_KRAJ.clear()
+regiony.nauc_psc([
+    "A 1, 053 04 Spišské Podhradie",   # Presovsky
+    "B 2, 053 61 Spišské Vlachy",      # Kosicky
+])
+assert "053" not in regiony.PSC_KRAJ, \
+    "skutocna hranica kraja sa NESMIE prijat"
+print("OK: 053 je naozaj hranica dvoch krajov a zostava zahodene")
+
+# A pri POUZITI mapy ma hladanie zostat volne — substringova zhoda
+# tam pomaha a nic nekazi.
+m, p, k = regiony.rozober_adresu("Ulica 1, 040 01 Košice - Staré Mesto")
+assert k == "Košický kraj" and m == "Košice", (m, k)
+print("OK: pri pouziti zostava volne hladanie — 'Košice - Staré Mesto' sadne")
+
 print("\nVSETKY TESTY PRESLI\n")

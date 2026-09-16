@@ -145,15 +145,22 @@ _ZNACKA_CISLA = re.compile(r"[\s,.\-]*\b(?:[cč]|[cč]islo|no|nr)\b[\s,.\-]*$",
                            re.IGNORECASE)
 
 
-def _hladaj(text: str):
-    """Najde znamy nazov mesta v texte. Vrati (spravny nazov, kraj) alebo (None, None)."""
+def _hladaj(text: str, presne: bool = False):
+    """Najde znamy nazov mesta v texte. Vrati (spravny nazov, kraj) alebo (None, None).
+
+    `presne=True` vyzaduje, aby CELE pole bolo nazvom mesta, nie aby ho
+    len obsahovalo. Pouziva sa VYLUCNE pri uceni mapy PSC — vysvetlenie
+    je v nauc_psc().
+    """
+    if presne:
+        return MESTO_KRAJ.get(_norm(text), (None, None))
     m = _V_NAZVE.search(_norm(text))
     if m:
         return MESTO_KRAJ[m.group(1)]
     return None, None
 
 
-def rozober_adresu(adresa):
+def rozober_adresu(adresa, presna_zhoda_mesta: bool = False):
     """Vrati (mesto, psc, kraj). Kazda hodnota moze byt None.
 
     Adresy v CRZ maju tvar "Ulica 1, P.O. Box 5, 814 99 Bratislava" alebo
@@ -201,7 +208,8 @@ def rozober_adresu(adresa):
 
     # Ked mesto pozname, pouzijeme NASU podobu nazvu. Inak zostane surovy
     # text z adresy, ale bez cisla domu.
-    znamy, kraj = _hladaj(mesto) if mesto else (None, None)
+    znamy, kraj = (_hladaj(mesto, presna_zhoda_mesta) if mesto
+                   else (None, None))
     if znamy:
         mesto = znamy
     elif mesto:
@@ -292,6 +300,30 @@ def nauc_psc(adresy, log=None):
     ukazuju na jeden kraj. Dvojciferne prefixy skutocne hranice krajov
     prekracuju (napr. 05x je aj Presovsky aj Kosicky), takze poistka
     ich zahodi — a to je spravne, radsej prazdno nez zle.
+
+    PRI UCENI SA VYZADUJE PRESNA ZHODA NAZVU MESTA. Toto nie je
+    prehnana prisnost, je to oprava chyby, ktoru som odmeral v behu #43.
+    Diagnostika vypisala, ze VSETKYCH 20 zahodenych trojcifernych
+    prefixov padlo na spor, a ten spor bol skoro vzdy jedno mesto proti
+    styrom — pricom to jedno mesto tam geograficky vobec nepatrilo:
+
+        080xx: Presovsky=2 (presov, svidnik); Bratislavsky=1 (bratislava)
+        082xx: Presovsky=4 (lipany, presov, sabinov, velky saris);
+               Zilinsky=1 (trstena)
+        908xx: Trnavsky=4 (gbely, holic, senica, skalica);
+               Bratislavsky=1 (svaty jur)
+
+    080 je PSC Presova. Bratislava tam nema co robit. Ten hlas nevznikol
+    z adresy v Bratislave, ale z toho, ze `_hladaj()` hladal znamy nazov
+    mesta KDEKOLVEK v texte — takze staci, aby sa slovo "Bratislava"
+    objavilo v niecom, co skoncilo v poli mesta, a cely okres Presov
+    prisiel o kraj. Presne toto stalo kraj obce Kapusany aj Lubovec.
+
+    Pri UCENI teda beriem len adresy, kde je pole mesta CELE nazvom
+    znameho mesta. Pri POUZITI mapy zostava hladanie volne — tam
+    substringova zhoda pomaha a nic nekazi. Sprisnenie hlasy iba
+    ODOBERA, nikdy nepridava, takze chybu typu Kralova nad Vahom
+    (prefix priradeny k zlemu kraju) sposobit nemoze.
     """
     PSC_KRAJ.clear()
     PSC2_KRAJ.clear()
@@ -299,7 +331,8 @@ def nauc_psc(adresy, log=None):
     for adresa in adresy:
         if not adresa:
             continue
-        mesto, psc, kraj = rozober_adresu(adresa)
+        # PRESNA ZHODA, a to len TU pri uceni. Vysvetlenie nizsie.
+        mesto, psc, kraj = rozober_adresu(adresa, presna_zhoda_mesta=True)
         if not (psc and kraj and mesto):
             continue
         cifry = re.sub(r"\D", "", psc)

@@ -68,15 +68,24 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # Vstupy chodia cez premenne prostredia, NIE priamo do skriptu.
+          # Povodne tu bolo `--komu ${{ inputs.komu }}`, cim sa obsah pola
+          # vlepil do shellu — kto vie spustit workflow, mohol do toho pola
+          # napisat prikaz a ten by sa vykonal. Spustit ho vies len ty,
+          # takze to nebola dira do sveta, ale je to vzor, ktory sa
+          # v CI nepise. Takto sa hodnota k shellu dostane ako DATA.
+          EVENT: ${{ github.event_name }}
+          NASUCHO: ${{ inputs.nasucho }}
+          KOMU: ${{ inputs.komu }}
         run: |
-          ARGS=""
+          set -euo pipefail
+          ARGS=()
           # Planovany beh posiela naozaj. Rucny beh sa riadi prepinacom.
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] \
-             && [ "${{ inputs.nasucho }}" = "true" ]; then
-            ARGS="$ARGS --nasucho"
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$NASUCHO" = "true" ]; then
+            ARGS+=(--nasucho)
           fi
-          if [ -n "${{ inputs.komu }}" ]; then
-            ARGS="$ARGS --komu ${{ inputs.komu }}"
+          if [ -n "${KOMU:-}" ]; then
+            ARGS+=(--komu "$KOMU")
           fi
-          echo "Spustam: python posli_email.py $ARGS"
-          python posli_email.py $ARGS
+          echo "Spustam: python posli_email.py ${ARGS[*]-}"
+          python posli_email.py "${ARGS[@]}"
