@@ -18,12 +18,28 @@ from config import DNI_MIN, DNI_MAX, MIN_HODNOTA_EUR, SEKTORY
 
 
 def _historia(df: pd.DataFrame) -> pd.DataFrame:
-    """Pre kazdu dvojicu (obstaravatel, sektor) spocita historiu nakupov."""
+    """Pre kazdu dvojicu (obstaravatel, sektor) spocita historiu nakupov.
+
+    #13 (17.9.2026): top_dodavatel_cin / top_dodavatel_pravnicky /
+    podiel_top_dodavatela_pravnicky su NOVE, GDPR-bezpecne zlozky pre
+    osobnu "sancu na vyhru" (moje_ico vs. kto tu historicky vyhrava).
+    Pocitaju sa LEN z pravnickych osob (analytics.je_pravnicka_osoba,
+    rovnaky filter ako uz pouziva dodavatelia()/trhovy_podiel()) a
+    identifikuju dodavatela podla ICO, nie mena — meno v CRZ ma priestor na
+    preklep/formatovaci rozdiel (viz oprava &quot v audite 16.9.2026), ICO
+    nie.
+
+    Povodne top_dodavatel/podiel_top_dodavatela (bez GDPR filtra, podla
+    mena) OSTAVAJU NEZMENENE — pouziva ich uz kalibrovana _riziko()/_skore()
+    a menit ich spatne by nekontrolovane prepocitalo cele skore bez noveho
+    merania na zivych datach."""
     zdroj = df[df["authority_cin"].notna()]
     if zdroj.empty:
         return pd.DataFrame(columns=[
             "authority_cin", "sector", "historicky_pocet", "pocet_dodavatelov",
             "priemerna_hodnota", "top_dodavatel", "podiel_top_dodavatela",
+            "top_dodavatel_cin", "top_dodavatel_pravnicky",
+            "podiel_top_dodavatela_pravnicky",
         ])
 
     out = []
@@ -35,6 +51,20 @@ def _historia(df: pd.DataFrame) -> pd.DataFrame:
         else:
             top, podiel = None, None
         priemer = g["price_total"].dropna().mean()
+
+        # GDPR-bezpecna verzia: len pravnicke osoby, identifikacia podla ICO.
+        pravnicke = g[g["supplier_cin"].notna()
+                      & (g["supplier_cin"].astype(str) != "")
+                      & g["supplier_name"].apply(analytics.je_pravnicka_osoba)]
+        if len(pravnicke):
+            pocty_cin = pravnicke["supplier_cin"].value_counts()
+            top_cin = pocty_cin.index[0]
+            podiel_pravnicky = round(float(pocty_cin.iloc[0]) / pocty_cin.sum(), 2)
+            top_pravnicky = (pravnicke[pravnicke["supplier_cin"] == top_cin]
+                             ["supplier_name"].value_counts().index[0])
+        else:
+            top_cin, top_pravnicky, podiel_pravnicky = None, None, None
+
         out.append({
             "authority_cin": cin,
             "sector": sector,
@@ -43,6 +73,9 @@ def _historia(df: pd.DataFrame) -> pd.DataFrame:
             "priemerna_hodnota": round(float(priemer), 2) if pd.notna(priemer) else None,
             "top_dodavatel": top,
             "podiel_top_dodavatela": podiel,
+            "top_dodavatel_cin": top_cin,
+            "top_dodavatel_pravnicky": top_pravnicky,
+            "podiel_top_dodavatela_pravnicky": podiel_pravnicky,
         })
     return pd.DataFrame(out)
 
@@ -458,11 +491,17 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
         "top_dodavatel", "podiel_top_dodavatela", "historicky_pocet",
         "pocet_dodavatelov", "riziko", "skore", "okres_kod",
         "mesto", "kraj", "typicka_dlzka_dni", "odkaz",
-        # Nasledujuce su PRO. store.py ich odlomi do vlastnej tabulky,
-        # do `opportunities` sa NESMU dostat — RLS je riadkova, nie stlpcova,
-        # takze Start by si ich vytiahol cez ?select=*.
+        # Nasledujuce su PRO. store.py ich odlomi do vlastnej tabulky (resp.
+        # tabuliek), do `opportunities` sa NESMU dostat — RLS je riadkova,
+        # nie stlpcova, takze Start by si ich vytiahol cez ?select=*.
         "porovnavacia_cena", "zaklad", "median_cena", "odchylka_pct",
         "vzoriek", "q1", "q3", "rozptyl", "spolahlivy",
+        # #13 (17.9.2026): "sanca na vyhru" — ide do `sanca_na_vyhru`,
+        # viz rozdel_na_sancu() nizsie. supplier_cin je ICO SUCASNEHO
+        # dodavatela tejto konkretnej zakazky (na porovnanie s moje_ico),
+        # zvysne tri prichadzaju z _historia().
+        "supplier_cin", "top_dodavatel_cin", "top_dodavatel_pravnicky",
+        "podiel_top_dodavatela_pravnicky",
     ]
     # Odkaz na povodnu zmluvu v CRZ. Vzor je ten isty ako v subsidies.py
     # a ziadatelia.py — drzim ho rovnaky, aby sa tri vrstvy nemohli
@@ -507,6 +546,41 @@ def prilezitosti(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
 # na plane Start by si ich vytiahol jednoduchym ?select=*.
 PRO_STLPCE = ("contract_id", "porovnavacia_cena", "zaklad", "median_cena",
               "odchylka_pct", "vzoriek", "q1", "q3", "rozptyl", "spolahlivy")
+
+# Stlpce pre NOVU PRO tabulku `sanca_na_vyhru` (#13, 17.9.2026). Vlastna
+# tabulka, nie pridanie do ceny_prilezitosti — ina Pro funkcia, iny ucel,
+# rovnaky vzor ako tam_sektor/trhovy_podiel dostali vlastne tabulky
+# namiesto pridania do uz existujucich.
+SANCA_STLPCE = ("contract_id", "supplier_cin", "top_dodavatel_cin",
+                "top_dodavatel_pravnicky", "podiel_top_dodavatela_pravnicky",
+                "riziko")
+
+
+def rozdel_na_sancu(df: pd.DataFrame):
+    """Oddeli PRO tabulku `sanca_na_vyhru` od zvysku, PRED
+    rozdel_na_start_a_pro() — ten o novych stlpcoch nevie a nesmel by ich
+    nechat prejst do `opportunities` (rovnaky dovod ako pri PRO_STLPCE).
+
+    POZOR: `riziko` a `contract_id` sa DO SANCA skopiruju (pohodlny join),
+    ale z `tabulka` (-> opportunities) sa NEODSTRANUJU — `riziko` je uz
+    existujuci FREE stlpec (viz povodny zoznam `stlpce` v prilezitosti()),
+    len 4 skutocne NOVE polia (supplier_cin, top_dodavatel_cin,
+    top_dodavatel_pravnicky, podiel_top_dodavatela_pravnicky) su PRO-only.
+
+    Vracia (df bez PRO-only sanca-stlpcov, DataFrame pre `sanca_na_vyhru`)."""
+    if df is None or df.empty:
+        return df, pd.DataFrame()
+    sanca = df[[c for c in SANCA_STLPCE if c in df.columns]].copy()
+    # Bez znameho rizika (teda aj bez min. 3 zaznamov historie, viz _riziko)
+    # by bol riadok len prazdne hodnoty — nema zmysel ho ukladat.
+    if "riziko" in sanca.columns:
+        sanca = sanca[sanca["riziko"].notna() & (sanca["riziko"] != "NEZNAME")]
+    len_z_tabulky = ("supplier_cin", "top_dodavatel_cin",
+                      "top_dodavatel_pravnicky",
+                      "podiel_top_dodavatela_pravnicky")
+    zvysok = df.drop(columns=[c for c in len_z_tabulky if c in df.columns],
+                      errors="ignore")
+    return zvysok, sanca.reset_index(drop=True)
 
 
 def rozdel_na_start_a_pro(df: pd.DataFrame):

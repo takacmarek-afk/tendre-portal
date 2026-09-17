@@ -241,6 +241,18 @@ def nahrad_ceny_prilezitosti(sb, df: pd.DataFrame, dnes: str):
     return _nahrad_tabulku(sb, "ceny_prilezitosti", d)
 
 
+def nahrad_sanca_na_vyhru(sb, df: pd.DataFrame, dnes: str):
+    """PRO tabulka pre #13 (17.9.2026) — osobna 'sanca na vyhru'. Rovnaky
+    dovod na oddelenie od `opportunities` ako pri ceny_prilezitosti vyssie:
+    riadkova RLS by inak nezabranila Start planu vidiet tieto stlpce cez
+    ?select=*."""
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "sanca_na_vyhru", df)
+    d = df.copy()
+    d["last_seen_at"] = dnes
+    return _nahrad_tabulku(sb, "sanca_na_vyhru", d)
+
+
 # Stlpce, ktore tabulka `dodavatelia` naozaj ma. Analytika pocita aj
 # `zmluv_v_historii` a podobne pomocne veci — tie by REST odmietol.
 STLPCE_DODAVATELIA = (

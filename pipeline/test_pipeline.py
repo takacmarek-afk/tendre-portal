@@ -63,7 +63,13 @@ ZAKLAD = {"contract_id","sector","cpv","authority_name","authority_cin","departm
 # Pro stlpce, ktore score.rozdel_na_start_a_pro() odkroji do ceny_prilezitosti
 PRO = {"porovnavacia_cena","zaklad","median_cena","odchylka_pct","vzoriek",
  "q1","q3","rozptyl","spolahlivy"}
-OPP = ZAKLAD | PRO
+# #13 (17.9.2026): Pro stlpce pre sanca_na_vyhru, odkrojene este PRED
+# rozdel_na_start_a_pro() — viz score.rozdel_na_sancu(). `riziko` je uz
+# v ZAKLAD (existujuci free stlpec), tu NIE JE duplicitne — rozdel_na_sancu()
+# ho do sanca_na_vyhru len SKOPIRUJE, z verejnej tabulky ho neodoberá.
+SANCA = {"supplier_cin", "top_dodavatel_cin", "top_dodavatel_pravnicky",
+         "podiel_top_dodavatela_pravnicky"}
+OPP = ZAKLAD | PRO | SANCA
 chyba = OPP - set(t.columns)
 navyse = set(t.columns) - OPP
 print(f"5) stlpce opportunities: {len(t.columns)} | chybaju: {chyba or 'ziadne'} "
@@ -71,13 +77,31 @@ print(f"5) stlpce opportunities: {len(t.columns)} | chybaju: {chyba or 'ziadne'}
 assert not chyba, f"chybaju stlpce: {chyba}"
 assert not navyse, f"nove stlpce, doplnte ich do schemy aj do testu: {navyse}"
 
+# Rozdelenie na sancu (#13) musi byt PRVE — presne ako v main.py — inak by
+# rozdel_na_start_a_pro() nevedelo o SANCA stlpcoch a necham ich unikat
+# do verejnej tabulky (rovnaka diera, aka uz raz bola s cenovym benchmarkom).
+t_bez_sance, sancaDf = score.rozdel_na_sancu(t)
+unik_sanca_v_tabulke = SANCA & set(t_bez_sance.columns)
+print(f"5a) po rozdel_na_sancu: {len(t_bez_sance.columns)} stlpcov v tabulke, "
+      f"{len(sancaDf)} riadkov v sanca_na_vyhru | SANCA stlpce v tabulke: "
+      f"{unik_sanca_v_tabulke or 'ziadne'}")
+assert not unik_sanca_v_tabulke, (
+    f"SANCA stlpce neboli odstranene z tabulky: {unik_sanca_v_tabulke}")
+assert "riziko" in t_bez_sance.columns, (
+    "riziko je FREE stlpec, rozdel_na_sancu ho nesmie odobrat z tabulky")
+assert SANCA <= set(sancaDf.columns), "sanca_na_vyhru nema vsetky ocakavane stlpce"
+
 # Rozdelenie na Start a Pro musi Pro stlpce z verejnej tabulky odobrat.
 # Prave tato diera raz uz bola: Pro data sa dali vytiahnut cez ?select=*.
-startDf, proDf = score.rozdel_na_start_a_pro(t)
+# POZOR: vstupom je uz t_bez_sance (po odkrojeni #13), presne ako v main.py.
+startDf, proDf = score.rozdel_na_start_a_pro(t_bez_sance)
 unik = PRO & set(startDf.columns) - {"contract_id"}
+unik_sanca = SANCA & set(startDf.columns)
 print(f"5b) Start vrstva: {len(startDf.columns)} stlpcov | "
-      f"Pro stlpce v nej: {unik or 'ziadne'}")
+      f"Pro stlpce v nej: {unik or 'ziadne'} | Sanca stlpce v nej: "
+      f"{unik_sanca or 'ziadne'}")
 assert not unik, f"Pro stlpce presakuju do verejnej vrstvy: {unik}"
+assert not unik_sanca, f"Sanca stlpce presakuju do verejnej vrstvy: {unik_sanca}"
 
 # ── 3. serializacia pre REST (numpy typy JSON nezje) ──
 import json

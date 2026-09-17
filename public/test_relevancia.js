@@ -21,6 +21,11 @@ const relevanciaBlok = vyrez(
   '// ── OSOBNA RELEVANCIA (#7, 17.9.2026) ──────────────────────────────────',
   '\n\n  const STLPCE_Z',
   'blok relevancie');
+const bezpecneFn = vyrez('function bezpecne(t) {', '\n}\n', 'bezpecne()') + '\n}';
+const sancaBlok = vyrez(
+  '// ── SANCA NA VYHRU (#13, PRO) ────────────────────────────────────────────',
+  '\n\n// ── TYPICKY CYKLUS',
+  'blok sanca na vyhru');
 
 // ── mock prostredie ─────────────────────────────────────────────────────
 const domHodnoty = { 'f-radenie': 'signal' };
@@ -47,7 +52,9 @@ const posledne = { zmluvy: [], benchmark: null };
 function riadok(x) { return String(x.contract_id); }
 const sandbox = { el, supabase, posledne, Math, console, riadok };
 vm.createContext(sandbox);
-vm.runInContext(numFn + '\n' + platneIcoFn + '\n' + relevanciaBlok, sandbox);
+vm.runInContext(
+  bezpecneFn + '\n' + numFn + '\n' + platneIcoFn + '\n' + relevanciaBlok + '\n' + sancaBlok,
+  sandbox);
 
 let zlyhania = 0;
 function over(popis, ok) {
@@ -113,6 +120,35 @@ sandbox.nastavRelevanciu(null).then(() => {
       domHodnoty['f-radenie'] = 'signal';
     });
 }).then(() => {
+  // 6) sancaNaVyhru: bez moje_ico mlci aj ked data existuju
+  const sancaMapa = new Map([
+    [1, { supplier_cin: '11111111', top_dodavatel_cin: '11111111', top_dodavatel_pravnicky: 'Firma s.r.o.' }],
+    [2, { supplier_cin: '22222222', top_dodavatel_cin: '33333333', top_dodavatel_pravnicky: 'Iná Firma a.s.' }],
+    [3, { supplier_cin: '22222222', top_dodavatel_cin: null, top_dodavatel_pravnicky: null }],
+  ]);
+  over('bez moje_ico vracia prazdny retazec',
+    sandbox.sancaNaVyhru({ contract_id: 1 }, sancaMapa, null) === '');
+  over('bez zaznamu v sanca vracia prazdny retazec',
+    sandbox.sancaNaVyhru({ contract_id: 99 }, sancaMapa, '11111111') === '');
+
+  // 7) priamy nastupnik (supplier_cin === moje_ico) -> "uz mate"
+  const priamy = sandbox.sancaNaVyhru({ contract_id: 1 }, sancaMapa, '11111111');
+  over('priamy nastupnik hlasi "už máte"', priamy.includes('už máte'));
+
+  // 8) historicky dominantny (top_dodavatel_cin === moje_ico, ina zmluva) -> "vyhravali"
+  const historicky = sandbox.sancaNaVyhru({ contract_id: 2 }, sancaMapa, '33333333');
+  over('historicka dominancia hlasi "vyhrávali"', historicky.includes('vyhrávali'));
+
+  // 9) silny iny hrac (dominuje niekto iny) -> jasne odlisena farba/text, nikdy sa netvari ako moj uspech
+  const iny = sandbox.sancaNaVyhru({ contract_id: 2 }, sancaMapa, '99999999');
+  over('iny dominantny hrac hlasi "vyhrával iný"', iny.includes('vyhrával iný'));
+  over('iny dominantny hrac NIKDY netvrdi "už máte" ani "vyhrávali"',
+    !iny.includes('už máte') && !iny.includes('tu ste'));
+
+  // 10) ticho: ziadna historia (NEZNAME/riziko chyba -> v tabulke ani nie je) -> prazdny retazec
+  over('bez historickeho dominanta (contract 3) mlci',
+    sandbox.sancaNaVyhru({ contract_id: 3 }, sancaMapa, '44444444') === '');
+
   console.log(zlyhania === 0 ? '\nVSETKO OK' : `\n${zlyhania} ZLYHANI`);
   process.exit(zlyhania === 0 ? 0 : 1);
 }).catch(e => { console.error(e); process.exit(1); });

@@ -96,6 +96,7 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     dnes = date.today().isoformat()
     tabulka, vlozene, dotacii, dodav, cien, cenPril = None, 0, 0, 0, 0, 0
     tam = podiel = 0
+    sanca = 0
     vsetky = None
     # Zoznam zlyhani, ktore MUSIA zhodit beh. Faze su izolovane (analytika
     # nesmie zhodit prilezitosti), ale zlyhanie sa nesmie stratit — inak
@@ -118,10 +119,14 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
         # riadkov, nieco je zle a zapisat to je horsie nez nezapisat nic.
         skontroluj_pokles(sb, "opportunities", tabulka)
 
-        # Pro stlpce idu do vlastnej tabulky, nie do `opportunities`.
+        # Pro stlpce idu do vlastnych tabuliek, nie do `opportunities`.
+        # #13: sanca_na_vyhru sa oddeluje AKO PRVA, aby rozdel_na_start_a_pro()
+        # uz tie stlpce nevidel a nemohol ich necham ostat v startDf.
+        tabulka, sancaDf = score.rozdel_na_sancu(tabulka)
         startDf, proDf = score.rozdel_na_start_a_pro(tabulka)
         vlozene = store.nahrad_opportunities(sb, startDf, dnes)
         cenPril = store.nahrad_ceny_prilezitosti(sb, proDf, dnes)
+        sanca = store.nahrad_sanca_na_vyhru(sb, sancaDf, dnes)
 
         # Dotacie su samostatna vrstva: nie zakazka, ale predzvest tendra.
         dot = subsidies.z_contracts(vsetky, adresy_podla_ica=adresy_ico)
@@ -292,7 +297,7 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
                  dodavatelia=dodav, benchmark=cenPril)
     print(f"::notice::stiahnute={fetched} zaradene={kept} zmluv_v_db={celkom} "
           f"prilezitosti={vlozene} dotacie={dotacii} dodavatelia={dodav} "
-          f"benchmark={cenPril} dokoncene={hotovo}")
+          f"benchmark={cenPril} sanca_na_vyhru={sanca} dokoncene={hotovo}")
 
     # Zlyhanie jadra MUSI zhodit beh. Sync uz je zapisany a bootstrap
     # retazenie ma svoj vystup zapisany skor, takze nenavratne sa nic

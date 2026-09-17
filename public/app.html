@@ -1123,6 +1123,43 @@ function ktoToMa(r) {
           </div>`;
 }
 
+// ── SANCA NA VYHRU (#13, PRO) ────────────────────────────────────────────
+// Data z `sanca_na_vyhru`: porovnanie vlastneho ICO (odber.moje_ico) s tym,
+// kto tuto konkretnu zmluvu drzi TERAZ (supplier_cin) a s tym, kto u tohto
+// uradu v tomto sektore historicky vyhrava najcastejsie (top_dodavatel_cin,
+// z pipeline/score.py::_historia() — pocitane len z pravnickych osob).
+//
+// ZAMERNE ZIADNE CISLO/PERCENTO. Historia je riedka — len 1,7 % prilezitosti
+// ma riziko=VYSOKE (audit 17.9.2026, zhodne s dovodmi, preco bol povodny
+// detektor koncentracie zrusen) — fingovana presnost by klamala. Tri stavy:
+// priamy nastupnik/historicky dominantny (ja) / silny iny hrac / ticho.
+function sancaNaVyhru(r, sanca, mojIco) {
+  if (!mojIco) return '';
+  const s = sanca?.get(r.contract_id);
+  if (!s) return '';
+
+  if (s.supplier_cin && s.supplier_cin === mojIco) {
+    return odznakSanca('emerald', 'túto zmluvu už máte',
+      'Podľa CRZ ste súčasným dodávateľom tejto zmluvy.');
+  }
+  if (s.top_dodavatel_cin && s.top_dodavatel_cin === mojIco) {
+    return odznakSanca('emerald', 'tu ste doteraz vyhrávali najčastejšie',
+      'V histórii tohto úradu a sektora ste doteraz vyhrávali najčastejšie vy.');
+  }
+  if (s.top_dodavatel_cin && s.top_dodavatel_pravnicky) {
+    return odznakSanca('amber', 'tu doteraz vyhrával iný dodávateľ',
+      `V histórii tohto úradu a sektora doteraz najčastejšie vyhrávala firma ${bezpecne(s.top_dodavatel_pravnicky)}.`);
+  }
+  return '';
+}
+
+function odznakSanca(farba, text, title) {
+  const trieda = farba === 'emerald'
+    ? 'text-emerald-800 bg-emerald-50' : 'text-amber-800 bg-amber-50';
+  return `<div class="text-[11px] font-semibold ${trieda} rounded px-1.5 py-0.5 mt-1 inline-block"
+               title="${bezpecne(title)}">${bezpecne(text)}</div>`;
+}
+
 // ── TYPICKY CYKLUS U TOHTO URADU ─────────────────────────────────────────
 // `typicka_dlzka_dni` pocita pipeline (analytics.cykly) z historie vlastnych
 // zmluv tohto uradu v tomto sektore — median dlzky trvania, min. 2 zmluvy
@@ -1139,7 +1176,7 @@ function typickyCyklus(r) {
           </div>`;
 }
 
-function riadok(r, benchmark) {
+function riadok(r, benchmark, sanca, mojIco) {
   const sektor = POPIS_SEKTORA[r.sector];
   const kde = [r.mesto, r.kraj].filter(Boolean).join(', ');
   const b = benchmark?.get(r.contract_id);
@@ -1172,6 +1209,7 @@ function riadok(r, benchmark) {
         ${sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5
                      rounded bg-accent/10 text-accent">${sektor}</span>` : ''}
         ${ktoToMa(r)}
+        ${sancaNaVyhru(r, sanca, mojIco)}
         ${porovnanieCeny(b)}
         ${odkazCrz(r)}
       </td>
@@ -1810,7 +1848,8 @@ async function dashboard(supabase) {
     }
     zoradPodlaRelevancie();
     if (posledne.zmluvy.length) {
-      el('riadky').innerHTML = posledne.zmluvy.map(x => riadok(x, posledne.benchmark)).join('');
+      el('riadky').innerHTML = posledne.zmluvy.map(
+        x => riadok(x, posledne.benchmark, posledne.sanca, mojOdber?.moje_ico)).join('');
     }
   }
 
@@ -1909,6 +1948,7 @@ async function dashboard(supabase) {
     // Benchmark je v samostatnej Pro tabulke. Start ju precitat NEMOZE —
     // RLS vrati prazdno, nie chybu, takze sa jednoducho nezobrazi.
     let benchmark = null;
+    let sanca = null;
     if (jePro && posledne.zmluvy.length) {
       const ids = posledne.zmluvy.map(x => x.contract_id).filter(x => x != null);
       const bq = await supabase.from('ceny_prilezitosti')
@@ -1916,11 +1956,24 @@ async function dashboard(supabase) {
                 'vzoriek, q1, q3, rozptyl, spolahlivy')
         .in('contract_id', ids);
       if (!bq.error) benchmark = new Map((bq.data ?? []).map(x => [x.contract_id, x]));
+
+      // Sanca na vyhru (#13): rovnaky vzor ako benchmark vyssie, ale
+      // vypytana LEN ked ma zakaznik ulozene vlastne ICO — bez neho je
+      // porovnanie s top_dodavatel_cin/supplier_cin bezpredmetne a dopyt
+      // navyse by len zbytocne zatazil DB.
+      if (mojOdber?.moje_ico) {
+        const sq = await supabase.from('sanca_na_vyhru')
+          .select('contract_id, supplier_cin, top_dodavatel_cin, top_dodavatel_pravnicky')
+          .in('contract_id', ids);
+        if (!sq.error) sanca = new Map((sq.data ?? []).map(x => [x.contract_id, x]));
+      }
     }
     posledne.benchmark = benchmark;
+    posledne.sanca = sanca;
     zoradPodlaRelevancie();
 
-    el('riadky').innerHTML = posledne.zmluvy.map(x => riadok(x, benchmark)).join('');
+    el('riadky').innerHTML = posledne.zmluvy.map(
+      x => riadok(x, benchmark, sanca, mojOdber?.moje_ico)).join('');
     el('prazdny-filter').classList.toggle('hidden', posledne.zmluvy.length > 0);
 
     const c = count ?? posledne.zmluvy.length;
