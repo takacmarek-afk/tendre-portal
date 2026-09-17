@@ -988,6 +988,22 @@ function ktoToMa(r) {
           </div>`;
 }
 
+// ── TYPICKY CYKLUS U TOHTO URADU ─────────────────────────────────────────
+// `typicka_dlzka_dni` pocita pipeline (analytics.cykly) z historie vlastnych
+// zmluv tohto uradu v tomto sektore — median dlzky trvania, min. 2 zmluvy
+// v historii. NEZVALIDOVANE (viz analytics.py): nevieme, ci urad s dvoma
+// dvojrocnymi zmluvami podpise tretiu tiez na dva roky, preto je to len
+// doplnkovy kontext k odhadu tendra, nie samostatne tvrdenie.
+function typickyCyklus(r) {
+  const d = num(r.typicka_dlzka_dni);
+  if (Number.isNaN(d) || d <= 0) return '';
+  const text = d >= 60 ? `${Math.round(d / 30.44)} mesiacov` : `${Math.round(d)} dní`;
+  return `<div class="text-[11px] text-slate2 mt-1 whitespace-nowrap"
+               title="Medián dĺžky doterajších zmlúv tohto úradu v tomto sektore. Nie je to predpoveď, len história.">
+            typický cyklus u úradu: ${text}
+          </div>`;
+}
+
 function riadok(r, benchmark) {
   const sektor = POPIS_SEKTORA[r.sector];
   const kde = [r.mesto, r.kraj].filter(Boolean).join(', ');
@@ -1037,6 +1053,7 @@ function riadok(r, benchmark) {
           : (r.odhad_vyhlasenia
               ? `<div class="text-[12px] mt-1 whitespace-nowrap">tender ~ ${bezpecne(r.odhad_vyhlasenia)}</div>`
               : '')}
+        ${typickyCyklus(r)}
       </td>
     </tr>`;
 }
@@ -1570,7 +1587,7 @@ async function dashboard(supabase) {
                    // stlpec vracia 400 a rozbilo by to celu zalozku.
                    // odkazCrz() ho aj tak umi zlozit z contract_id, takze
                    // odkaz funguje aj keby sa stlpec raz stratil.
-                   'dodavatel_zmluv_celkom, historicky_pocet, odkaz';
+                   'dodavatel_zmluv_celkom, historicky_pocet, typicka_dlzka_dni, odkaz';
 
   // Filtre zo vstupov pridame na lubovolny dopyt. Je to samostatna funkcia
   // preto, lebo ich teraz potrebujem dvakrat: raz na data a raz na spocitanie
