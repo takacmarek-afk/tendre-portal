@@ -266,11 +266,13 @@ def nahrad_dodavatelia(sb, df: pd.DataFrame, dnes: str, limit: int = 5000):
 
 
 def nahrad_ceny_sektor(sb, df: pd.DataFrame, dnes: str):
-    """Medianne mesacne ceny per sektor."""
+    """Medianne mesacne ceny per sektor, vratane poslednej skutocnej ceny
+    (migracia 19_posledna_cena_sektor.sql)."""
     if df is None or df.empty:
         return _nahrad_tabulku(sb, "ceny_sektor", df, kluc="sector")
-    d = df[["sector", "median_cena", "vzoriek", "q1", "q3", "zaklad",
-            "rozptyl", "spolahlivy"]].copy()
+    stlpce = ["sector", "median_cena", "vzoriek", "q1", "q3", "zaklad",
+              "rozptyl", "spolahlivy", "posledna_cena", "posledna_cena_datum"]
+    d = df[[c for c in stlpce if c in df.columns]].copy()
     d["vzoriek"] = pd.to_numeric(d["vzoriek"], errors="coerce").astype("Int64")
     d["last_seen_at"] = dnes
     return _nahrad_tabulku(sb, "ceny_sektor", d, kluc="sector")

@@ -698,6 +698,37 @@ tailwind.config = { theme: { extend: {
             proti komu idete, užitočnejšie než samotný objem.
           </p>
         </div>
+
+        <!-- Cenovy prehlad podla sektora. Data z `ceny_sektor` — pipeline ich
+             pocitala kazdy den, ale do 17.9.2026 sa nikde nezobrazovali. -->
+        <div id="ceny-sektor-panel" class="hidden mt-5 bg-white border border-line rounded-lg overflow-hidden max-w-3xl">
+          <div class="px-4 py-3 border-b border-line bg-[#F3F0E6]">
+            <h3 class="text-[13px] font-semibold text-slate2 uppercase tracking-wide">
+              Cenový prehľad podľa sektora
+            </h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="karty-mobil w-full text-left">
+              <thead class="bg-[#F3F0E6] border-b border-line">
+                <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+                  <th class="px-4 py-2">Sektor</th>
+                  <th class="px-4 py-2 text-right whitespace-nowrap">Medián</th>
+                  <th class="px-4 py-2 text-right whitespace-nowrap">Posledná cena</th>
+                  <th class="px-4 py-2 text-right whitespace-nowrap">Vzoriek</th>
+                </tr>
+              </thead>
+              <tbody id="ceny-sektor-telo"></tbody>
+            </table>
+          </div>
+          <div class="px-4 py-3 border-t border-line">
+            <p class="text-[12px] leading-relaxed text-slate2">
+              Medián a pásmo tvrdíme len tam, kde je rozptyl v sektore znesiteľný
+              (označené nižšie). „Posledná cena“ je konkrétna zmluva s najnovším
+              dátumom podpisu, ktorá prežila rovnaký orez extrémov ako medián —
+              informatívny príklad, nie odporúčanie na naceňovanie ponuky.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1895,6 +1926,38 @@ async function dashboard(supabase) {
     await vykresliSledovaneFirmy();
   }
 
+  // ── CENOVY PREHLAD PODLA SEKTORA (ceny_sektor) ──────────────────────
+  async function nacitajCenySektora() {
+    const panel = el('ceny-sektor-panel');
+    const telo = el('ceny-sektor-telo');
+    if (!panel || !telo) return;
+    const { data, error } = await supabase.from('ceny_sektor')
+      .select('sector, median_cena, vzoriek, zaklad, spolahlivy, ' +
+              'posledna_cena, posledna_cena_datum')
+      .order('median_cena', { ascending: false, nullsFirst: false });
+    if (error || !data || data.length === 0) return;
+
+    telo.innerHTML = data.map(r => {
+      const nazov = POPIS_SEKTORA[r.sector] ?? r.sector;
+      const jednotka = r.zaklad === 'zmluva' ? '/zmluva' : '/mes.';
+      const medianTxt = r.spolahlivy
+        ? `${suma(r.median_cena)}${jednotka}`
+        : `<span class="text-slate2" title="Rozptyl v sektore je príliš veľký, medián by klamal.">príliš rozptýlené</span>`;
+      const poslednaTxt = (r.posledna_cena != null)
+        ? `${suma(r.posledna_cena)}${jednotka}
+           <div class="text-[11px] text-slate2 mt-0.5">${bezpecne(r.posledna_cena_datum ?? '')}</div>`
+        : '<span class="text-slate2">—</span>';
+      return `
+        <tr class="border-b border-line last:border-0">
+          <td data-hlavny class="px-4 py-3 align-top text-[14px]">${bezpecne(nazov)}</td>
+          <td data-popis="Medián" class="px-4 py-3 align-top text-[14px] text-right whitespace-nowrap">${medianTxt}</td>
+          <td data-popis="Posledná cena" class="px-4 py-3 align-top text-[14px] text-right whitespace-nowrap">${poslednaTxt}</td>
+          <td data-popis="Vzoriek" class="px-4 py-3 align-top text-[13px] text-slate2 text-right whitespace-nowrap">${cislo(r.vzoriek)}</td>
+        </tr>`;
+    }).join('');
+    panel.classList.remove('hidden');
+  }
+
   function filtreDodavatelov(q) {
     const sektor = el('s-sektor').value;
     const text = ocisti(el('s-text').value);
@@ -2068,6 +2131,7 @@ async function dashboard(supabase) {
     ukaz('dod-obsah');
     await nacitajSledovane();
     await vykresliSledovaneFirmy();
+    await nacitajCenySektora();
     el('riadky-f').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-sleduj]');
       if (btn) prepniSledovanie(btn.dataset.sleduj, btn.dataset.nazov);

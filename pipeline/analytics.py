@@ -99,15 +99,60 @@ def cenovy_zaklad(df: pd.DataFrame) -> pd.DataFrame:
     return d
 
 
+def _orez_extremov(s: pd.Series) -> pd.Series:
+    """Boolean maska: True pre hodnoty v ramci orezaneho rozsahu (ODSTRIH).
+
+    Vytiahnute zo `statistiky()` nizsie, aby ten isty orez pouzivala aj
+    `posledna_skutocna_cena()` — bez tejto zdielanej funkcie by sa obe
+    miesta casom rozisli a "posledna cena" by mohla byt outlier, ktory
+    median uz davno vyradil.
+    """
+    if len(s) < 20:
+        return pd.Series(True, index=s.index)
+    dolna, horna = s.quantile(ODSTRIH), s.quantile(1 - ODSTRIH)
+    return s.between(dolna, horna)
+
+
+def _posledna_skutocna_cena(d: pd.DataFrame, sektory: set) -> pd.DataFrame:
+    """Pre kazdy sektor v `sektory`: cena a datum NAJNOVSIEHO (podla signed_on)
+    zaznamu, ktory prezil rovnaky orez extremov ako median.
+
+    Median je abstrakcia rozdelenia. Zakaznik sa casto pyta na konkretnejsiu
+    vec: za kolko sa naposledy REALNE sutazilo. Toto je odpoved na tu otazku,
+    nie na "aka je typicka cena" — preto vlastne pole, nie nahrada medianu.
+    """
+    if "signed_on" not in d.columns:
+        return pd.DataFrame(columns=["sector", "posledna_cena", "posledna_cena_datum"])
+    d = d.copy()
+    d["signed_on"] = pd.to_datetime(d["signed_on"], errors="coerce")
+    riadky = []
+    for sektor, skupina in d.groupby("sector"):
+        if sektor not in sektory:
+            continue
+        skupina = skupina[_orez_extremov(skupina["porovnavacia_cena"])]
+        skupina = skupina[skupina["signed_on"].notna()]
+        if skupina.empty:
+            continue
+        posledny = skupina.sort_values("signed_on").iloc[-1]
+        riadky.append({
+            "sector": sektor,
+            "posledna_cena": round(float(posledny["porovnavacia_cena"]), 2),
+            "posledna_cena_datum": posledny["signed_on"].strftime("%Y-%m-%d"),
+        })
+    return pd.DataFrame(riadky, columns=["sector", "posledna_cena", "posledna_cena_datum"])
+
+
 def medianySektora(df: pd.DataFrame) -> pd.DataFrame:
-    """Median porovnavacej ceny per sektor, s poctom vzoriek, kvartilmi
-    a priznakom, ci je vobec pouzitelny ako porovnavacia kotva.
+    """Median porovnavacej ceny per sektor, s poctom vzoriek, kvartilmi,
+    priznakom, ci je vobec pouzitelny ako porovnavacia kotva, a poslednou
+    skutocnou cenou (konkretne cislo s datumom, popri abstraktnom pasme).
 
     Kvartily su tam zamerne. Jediny median bez rozptylu vyzera ako presna
     hodnota, ktorou sa da nacenit ponuka — a to nie je.
     """
     stlpce = ["sector", "median_cena", "vzoriek", "q1", "q3",
-              "rozptyl", "spolahlivy", "zaklad"]
+              "rozptyl", "spolahlivy", "zaklad",
+              "posledna_cena", "posledna_cena_datum"]
     if df.empty or "porovnavacia_cena" not in df.columns:
         return pd.DataFrame(columns=stlpce)
     d = df[df["porovnavacia_cena"].notna()]
@@ -118,8 +163,7 @@ def medianySektora(df: pd.DataFrame) -> pd.DataFrame:
         # Odstrih extremov pred vypoctom. Nie kvoli kozmetike: dlhe ramcove
         # zmluvy za male sumy davaju desiatky EUR mesacne a posuvaju aj
         # median, aj kvartily.
-        if len(s) >= 20:
-            s = s[s.between(s.quantile(ODSTRIH), s.quantile(1 - ODSTRIH))]
+        s = s[_orez_extremov(s)]
         if s.empty:
             return pd.Series({"median_cena": None, "vzoriek": 0,
                               "q1": None, "q3": None})
@@ -139,6 +183,9 @@ def medianySektora(df: pd.DataFrame) -> pd.DataFrame:
     g["spolahlivy"] = g["rozptyl"].notna() & (g["rozptyl"] <= MAX_ROZPTYL)
     g["zaklad"] = g["sector"].apply(zaklad_sektora)
     g["vzoriek"] = g["vzoriek"].astype("Int64")
+
+    posledne = _posledna_skutocna_cena(d, set(g["sector"]))
+    g = g.merge(posledne, on="sector", how="left")
 
     nespolahlive = g.loc[~g["spolahlivy"], "sector"].tolist()
     if nespolahlive:
