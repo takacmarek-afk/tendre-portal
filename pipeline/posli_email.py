@@ -20,6 +20,11 @@ CO SA POSIELA
 CO SA NEPOSIELA
   Prazdny e-mail. Ked pre cloveka nic nove nie je, radsej nepride nic —
   tyzdenny e-mail "tento tyzden nic" je najrychlejsia cesta k odhlaseniu.
+
+VOLITELNE: SLACK/TEAMS
+  Ak ma odberatel (len dodavatelia, stlpec odber.webhook_url) vyplneny
+  webhook, dostane rovnaky obsah aj tam — ako doplnok k e-mailu, nie
+  nahradu. Zlyhanie webhooku nema ovplyvnit odosielanie e-mailu.
 """
 import argparse
 import logging
@@ -79,6 +84,24 @@ def _eur(v):
     if not _cislo_kladne(v):
         return "neuvedená"
     return f"{float(v):,.0f}".replace(",", " ") + " €"
+
+
+def platny_webhook(url) -> bool:
+    """Zakladna kontrola predtym, nez sa nan nieco posle: musi to vyzerat
+    ako https URL bez medzier. Nekontroluje dosiahnutelnost — to sa zisti
+    az pri samotnom posielani a zlyhanie tam nezhadzuje beh."""
+    if not url:
+        return False
+    url = str(url).strip()
+    return bool(re.fullmatch(r"https://\S+", url)) and len(url) <= 500
+
+
+def _bezpecne_text(t):
+    """Escapovanie pre webhook (Slack aj Teams). Rovnaky dovod ako
+    _bezpecne(): obsah je z CRZ, cudzi text. Slack pouziva &, <, > na
+    odkazy a zmienky, preto ich treba escapovat aj v obycajnom texte."""
+    return (str(t if t is not None else "")
+            .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
 
 
 def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie):
@@ -297,6 +320,52 @@ def posli(kluc, komu, predmet, html, nasucho):
     return False
 
 
+def posli_webhook(url, obsah, nasucho):
+    """Posle rovnaky obsah ako e-mail na Slack alebo Teams incoming webhook.
+    Format podla domeny: hooks.slack.com pouziva jednoduchy Slack text
+    payload, vsetko ostatne (Teams incoming webhook connector) pouziva
+    MessageCard JSON. Doplnkovy kanal -- zlyhanie tu nesmie ovplyvnit
+    odosielanie e-mailu ani zhodit cely beh.
+    """
+    polozky = obsah["bloky"][:MAX_POLOZIEK]
+    if "hooks.slack.com" in url:
+        riadky = "\n".join(
+            f"• *{_bezpecne_text(b['titul'])}* — {_bezpecne_text(b['popis'])}\n"
+            f"   {_bezpecne_text(b['zvyraznene'])}"
+            for b in polozky
+        )
+        text = (f"*{_bezpecne_text(obsah['titulok'])}*\n{_bezpecne_text(obsah['uvod'])}"
+               f"\n\n{riadky}\n\n<{obsah['cta_url']}|{_bezpecne_text(obsah['cta_text'])}>")
+        payload = {"text": text}
+    else:
+        telo = "\n\n".join(
+            f"**{_bezpecne_text(b['titul'])}**  \n{_bezpecne_text(b['popis'])}  \n"
+            f"{_bezpecne_text(b['zvyraznene'])}"
+            for b in polozky
+        )
+        payload = {
+            "@type": "MessageCard",
+            "@context": "http://schema.org/extensions",
+            "summary": obsah["titulok"],
+            "title": obsah["titulok"],
+            "text": (f"{_bezpecne_text(obsah['uvod'])}\n\n{telo}\n\n"
+                    f"[{_bezpecne_text(obsah['cta_text'])}]({obsah['cta_url']})"),
+        }
+
+    if nasucho:
+        log.info("NASUCHO webhook -> %s... | %s znakov", url[:32], len(str(payload)))
+        return True
+    try:
+        r = requests.post(url, timeout=15, json=payload)
+    except requests.RequestException as e:
+        log.warning("webhook %s...: siet zlyhala (%s)", url[:32], type(e).__name__)
+        return False
+    if r.status_code in (200, 201, 204):
+        return True
+    log.warning("webhook %s...: HTTP %s %s", url[:32], r.status_code, r.text[:200])
+    return False
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--nasucho", action="store_true",
@@ -377,6 +446,11 @@ def main():
             log.info("%s: nic nove, neposielam", komu)
             preskocene += 1
             continue
+
+        # Doplnkovy kanal, len dodavatelia (stlpec je na `odber`, nie
+        # `odber_obce`), nezavisly od uspechu e-mailu nizsie.
+        if o["_typ"] == "dodavatel" and platny_webhook(o.get("webhook_url")):
+            posli_webhook(o["webhook_url"], obsah, args.nasucho)
 
         html = _obal(obsah["titulok"], obsah["uvod"], obsah["bloky"],
                      obsah["cta_text"], obsah["cta_url"], obsah["odhlasenie"])
