@@ -25,9 +25,21 @@ VOLITELNE: SLACK/TEAMS
   Ak ma odberatel (len dodavatelia, stlpec odber.webhook_url) vyplneny
   webhook, dostane rovnaky obsah aj tam — ako doplnok k e-mailu, nie
   nahradu. Zlyhanie webhooku nema ovplyvnit odosielanie e-mailu.
+
+VOLITELNE: OSOBNA RELEVANCIA (#7, 17.9.2026)
+  Ak ma odberatel vyplnene odber.moje_ico A NEMA naraz nastavene aj sektor
+  aj kraj (teda aspon jedna os je "vsetko"), vyber top MAX_POLOZIEK sa
+  nerobi len chronologicky, ale podla relevancie — rovnaky princip ako
+  v app.html (bodRelevancie): zhoda s explicitne nastavenym sektorom/krajom
+  a zhoda s vlastnou historiou firmy (dodavatelia.hlavny_sektor,
+  priemerna_zmluva_eur). Explicitne nastaveny sektor/kraj OSTAVA tvrdym
+  filtrom — firma, ktora si ho vedome zvolila, nema v e-maile dostat nieco
+  ine. Bez moje_ico (dnes vsetci existujuci odberatelia) sa sprava presne
+  ako doteraz.
 """
 import argparse
 import logging
+import math
 import os
 import re
 import sys
@@ -53,6 +65,13 @@ PAUZA_S = 0.6
 
 MAX_POLOZIEK = 8        # viac nez tolko do e-mailu nedavam, nikto to necita
 DNI_SPAT = 7            # ked odberatel nema zaznam o poslednom e-maile
+
+# Siria vzorka kandidatov, z ktorej sa VYBERA top MAX_POLOZIEK podla
+# relevancie (#7, 17.9.2026) — pouziva sa len ked firma vyplnila moje_ico
+# a nema oba filtre (sektor AJ kraj) nastavene naraz (viz pouzit_relevanciu
+# v pre_dodavatela). Bez tejto sirsej vzorky by relevancia nemala z coho
+# vyberat — dostali by sme len prvych 8 podla odhad_vyhlasenia tak ci tak.
+KANDIDATOV_NA_VYBER = 60
 
 # Odkedy beha workflow DENNE (predtym len tyzdenne, viz email.yml), tyzdenny
 # odberatel by bez tohto dostaval mail prakticky kazdy den, len co pribudne
@@ -172,13 +191,68 @@ def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie):
 
 # ── DODAVATELIA ─────────────────────────────────────────────────────────────
 
+def _cislo(v):
+    """Bezpecny prevod na float. None namiesto vynimky aj namiesto 0 —
+    0 by v _relevancii znamenalo "cena 0", nie "cena chyba", a to su
+    v CRZ dve rozne veci (ramcova dohoda vs. neznamy udaj)."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if f == f else None  # f == f vylucuje NaN
+
+
+def _moj_profil(sb, ico):
+    """Vlastny profil firmy z uz existujucej `dodavatelia` (hlavny sektor,
+    priemerna hodnota zmluvy) — ziadna nova agregacia, rovnaky zdroj ako
+    v app.html. Prazdny vysledok (RLS, neznamy ICO) vrati None, nie chybu."""
+    try:
+        r = (sb.table("dodavatelia")
+               .select("hlavny_sektor, priemerna_zmluva_eur")
+               .eq("supplier_cin", ico).limit(1).execute().data)
+        return r[0] if r else None
+    except Exception as e:
+        log.warning("Vlastny profil (moje_ico=%s) sa nepodarilo zistit: %s",
+                    ico, e)
+        return None
+
+
+def _relevancia(z, o, profil):
+    """Rovnaky princip ako bodRelevancie() v app.html (#7, 17.9.2026):
+    doplnkovy bonus k tomu, co uz o zakazke vieme, nie novy nezavisly
+    vypocet. Vahy su zamerne rovnake ako na webe, aby sa poradie v appke
+    a vyber do e-mailu nerozchadzali bez dovodu."""
+    b = 0.0
+    if o.get("sektor") and z.get("sector") == o["sektor"]:
+        b += 15
+    if o.get("kraj") and z.get("kraj") == o["kraj"]:
+        b += 10
+    if profil and profil.get("hlavny_sektor") and z.get("sector") == profil["hlavny_sektor"]:
+        b += 20
+    vlastna_cena = _cislo(profil.get("priemerna_zmluva_eur")) if profil else None
+    cena = _cislo(z.get("price_total"))
+    if vlastna_cena and vlastna_cena > 0 and cena and cena > 0:
+        b += 15 / (1 + abs(math.log10(cena / vlastna_cena)))
+    return b
+
+
 def pre_dodavatela(sb, o, dnes):
-    """Co je nove v jeho sektore a kraji od posledneho e-mailu."""
+    """Co je nove v jeho sektore a kraji od posledneho e-mailu.
+
+    Ak firma vyplnila vlastne ICO a nema OBA filtre (sektor aj kraj)
+    nastavene naraz, vyber top MAX_POLOZIEK sa robi z sirsej vzorky podla
+    relevancie namiesto ciste chronologicky — viz _relevancia() a docstring
+    modulu. Explicitne nastaveny sektor/kraj zostava tvrdym SQL filtrom aj
+    tu, nezavisly na relevancii.
+    """
     od = o.get("posledny_email")
     if od:
         od = str(od)[:10]
     else:
         od = (dnes - timedelta(days=DNI_SPAT)).isoformat()
+
+    pouzit_relevanciu = bool(o.get("moje_ico")) and not (o.get("sektor") and o.get("kraj"))
+    limit = KANDIDATOV_NA_VYBER if pouzit_relevanciu else MAX_POLOZIEK
 
     q = (sb.table("opportunities")
            .select("subject, authority_name, mesto, kraj, price_total, "
@@ -186,7 +260,7 @@ def pre_dodavatela(sb, o, dnes):
            .gte("first_seen_at", od)
            .gte("dni_do_konca", 90)
            .order("odhad_vyhlasenia", desc=False)
-           .limit(MAX_POLOZIEK))
+           .limit(limit))
     if o.get("sektor"):
         q = q.eq("sector", o["sektor"])
     if o.get("kraj"):
@@ -201,6 +275,16 @@ def pre_dodavatela(sb, o, dnes):
 
     if not zmluvy:
         return None
+
+    if pouzit_relevanciu and len(zmluvy) > MAX_POLOZIEK:
+        profil = _moj_profil(sb, o["moje_ico"])
+        zmluvy = sorted(zmluvy, key=lambda z: _relevancia(z, o, profil), reverse=True)
+        zmluvy = zmluvy[:MAX_POLOZIEK]
+        # Naspat na chronologicke poradie na citanie — relevancia rozhodla
+        # LEN o tom, KTORE polozky sa do e-mailu dostanu, nie v akom
+        # poradi tam stoja. "Najskorsi tender hore" ostava citatelne aj
+        # ked bol vyber urceny inak, nez predtym.
+        zmluvy.sort(key=lambda z: z.get("odhad_vyhlasenia") or "9999-99-99")
 
     bloky = []
     for z in zmluvy:
