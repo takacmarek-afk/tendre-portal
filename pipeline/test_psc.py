@@ -173,15 +173,40 @@ assert pd.isna(vysl.loc[4, "kraj"]) or vysl.loc[4, "kraj"] is None, \
     "bez ICO nemame odkial brat"
 print("OK: 3 z 5 doplnene, zvysne dve zostali prazdne a nehadalo sa")
 
-hlavicka("5. Bez naucenia sa nic nesmie zmenit (spatna kompatibilita)")
+hlavicka("5. Register obci NEZAVISI od naucenej mapy PSC (od 17. 9. 2026)")
 regiony.PSC_KRAJ.clear()
 regiony.PSC2_KRAJ.clear()
 vysl2 = regiony.doplnit_z_nazvu(dot.copy(), "prijimatel",
                                 adresy_podla_ica=adresy,
                                 stlpec_ica="prijimatel_ico")
-# Zdana ma teraz mesto z adresy, ale kraj nie — mapa je prazdna.
-assert vysl2.loc[1, "kraj"] is None or pd.isna(vysl2.loc[1, "kraj"])
-print("OK: prazdna mapa = chovanie ako pred zmenou")
+# DOVOD ZMENY: Zdana bola povodne priklad obce, ktoru vie zaradit LEN
+# naucena mapa PSC — v OKRESY (122 okresnych/velkych miest) nebola.
+# Register obci (register_obci.py, doplneny 17. 9. 2026) ju odvtedy
+# pozna priamo z nazvu, nezavisle od mapy PSC. Test teraz preto overuje
+# presny opak povodneho zamerania: register musi obec zaradit SPRAVNE
+# aj ked je mapa PSC prazdna, lebo na nej vobec nestoji.
+assert vysl2.loc[1, "kraj"] == "Košický kraj", \
+    "Zdanu uz zaraduje register obci, bez ohladu na stav mapy PSC"
+assert vysl2.loc[2, "kraj"] == "Žilinský kraj", \
+    "rovnako Rabcu"
+print("OK: register obci zaraduje obce nezavisle od naucenej mapy PSC")
+
+hlavicka("5b. Co register nepozna, bez naucenej mapy PSC ostava prazdne")
+# Rohoznik je jeden z 83 nazvov, ktore register_obci.nacitaj() zamerne
+# vynechava — patri viacerym obciam v roznych krajoch naraz (Bratislavsky
+# aj Presovsky), takze nie je v MESTO_KRAJ jednoznacny (pozri docstring
+# register_obci.py). Bez naucenej mapy PSC ho teda nezaradi ani register,
+# ani PSC fallback — presne to, co povodne na Zdani overoval tento test.
+dot5 = pd.DataFrame([
+    {"prijimatel": "Obec Rohožník", "prijimatel_ico": "00000001"},
+])
+adresy5 = {"00000001": "Hlavná 1, 906 38 Rohožník"}
+vysl2b = regiony.doplnit_z_nazvu(dot5, "prijimatel",
+                                 adresy_podla_ica=adresy5,
+                                 stlpec_ica="prijimatel_ico")
+assert vysl2b.loc[0, "kraj"] is None or pd.isna(vysl2b.loc[0, "kraj"]), \
+    "ambiguitnu obec bez naucenej mapy PSC nesmieme hadat"
+print("OK: ambiguitna obec bez mapy PSC zostava prazdna, ako predtym")
 
 hlavicka("6. Stary podpis bez mapy musi dalej fungovat")
 vysl3 = regiony.doplnit_z_nazvu(dot.copy(), "prijimatel")
@@ -208,10 +233,19 @@ df_nan = pd.DataFrame([
      "authority_name": "Obec Smrdáky"},
 ])
 v7 = regiony.doplnit(df_nan.copy())
-assert v7.loc[0, "mesto"] is None or pd.isna(v7.loc[0, "mesto"]), \
-    f"mesto z NaN adresy je {v7.loc[0, 'mesto']!r}"
+# DOVOD ZMENY (17. 9. 2026): riadok 0 tu povodne zostaval bez mesta, lebo
+# Smrdaky neboli v OKRESY (122 okresnych/velkych miest) a nazvovy fallback
+# v doplnit() ich teda nenasiel. Register obci ich odvtedy pozna, takze
+# fallback z "authority_name" teraz mesto aj kraj spravne dopocita aj bez
+# adresy — presne preto, ze adresa je NaN. Podstata testu (ziadne "nan"
+# ako mesto) plati dalej, len uz s presnejsim vysledkom nez prazdnym.
+assert v7.loc[0, "mesto"] == "Smrdáky", \
+    f"mesto z NaN adresy malo prist z nazvu uradu cez register obci, je {v7.loc[0, 'mesto']!r}"
+assert v7.loc[0, "kraj"] == "Trnavský kraj", \
+    f"kraj z NaN adresy malo prist z nazvu uradu, je {v7.loc[0, 'kraj']!r}"
 assert v7.loc[1, "mesto"] == "Smrdáky", v7.loc[1, "mesto"]
-print("OK: aj cez doplnit(df) — z NaN prazdno, z adresy 'Smrdáky'")
+print("OK: aj cez doplnit(df) — NaN adresa sa dopocitala z nazvu, "
+      "'nan' ako text sa nikde neobjavilo")
 
 hlavicka("8. Znacka cisla domu nesmie zostat v nazve mesta")
 # Na stranke bolo "Rakovice č" — _CISLO_DOMU odstranilo cislo, zostalo

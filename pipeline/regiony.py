@@ -124,6 +124,16 @@ for _kraj, _mesta in OKRESY.items():
     for _m in _mesta:
         MESTO_KRAJ[_norm(_m)] = (_m, _kraj)
 
+# Rozsirenie o oficialny register obci (register_obci.py). Zoznam OKRESY
+# vyssie pokryva len 122 okresnych a velkych miest — register pridava
+# zvysok Slovenska (~2600 dalsich obci) rovnakym mechanizmom. Kuratorovany
+# zoznam vyssie ma VZDY prednost (setdefault, nie prepisanie) pre pripad
+# buducej rucnej opravy typu "Velky Saris".
+import register_obci as _register_obci
+for _n, _hodnota in _register_obci.nacitaj().items():
+    MESTO_KRAJ.setdefault(_n, _hodnota)
+del _register_obci
+
 _PSC = re.compile(r"\b(\d{3})\s?(\d{2})\b")
 
 # Vzor na hladanie mesta v nazve organizacie. Od najdlhsieho nazvu, aby
