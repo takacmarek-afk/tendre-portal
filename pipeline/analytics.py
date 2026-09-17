@@ -310,3 +310,126 @@ def dodavatelia(df: pd.DataFrame, min_zmluv: int = MIN_ZMLUV_DODAVATELA) -> pd.D
     g = g.merge(hlavny, on="supplier_cin", how="left")
 
     return g.sort_values("objem_eur", ascending=False).reset_index(drop=True)
+
+
+# ── 4. TAM A TRHOVY PODIEL ────────────────────────────────────────────────
+#
+# Oboje su z toho isteho dovodu "Nizka narocnost" v ziskatelnej analyze
+# (Pilier 2 bod 2, Pilier 4 bod 2): ciste agregacie nad uz stiahnutymi
+# zmluvami, ziadny novy datovy zdroj. Zdielaju rovnake okno a rovnaky
+# hlavny risk: cena 0 v CRZ znamena ramcovu dohodu bez celkovej sumy (rovnaky
+# fakt ako _eur()/_cislo_kladne() v posli_email.py), takze objem pocitany
+# len zo znamych cien VZDY podhodnocuje skutocny trh o neznamu mieru.
+
+# TAM ma zmysel ako "kolko sa v tomto segmente rocne minie", nie ako
+# kumulativny sucet od zaciatku datasetu (ten by len rastol a nehovoril nic
+# o buducom roku). Preto klzave okno, nie cela historia.
+DNI_TAM = 365
+
+# Pod tymto poctom zmluv SO ZNAMOU CENOU v okne sektor vobec nezobrazujeme —
+# rovnaky dovod ako MIN_VZORIEK vyssie.
+MIN_VZORIEK_TAM = MIN_VZORIEK
+
+# Ked viac nez tuto cast zmluv v okne nema uvedenu cenu (ramcove dohody),
+# objem_eur uz nie je len "trocha nizsie cislo" ale systematicky
+# podhodnoteny odhad neznamej velkosti — priznak nespolahlivy, rovnaky
+# vzor ako `spolahlivy` pri cenovom medianе.
+MAX_PODIEL_BEZ_CENY = 0.5
+
+# Kolko najlepsich dodavatelov na sektor ukazujeme. Viac by uz vyzeralo ako
+# uplny zoznam trhu, co nie je — je to len TOP.
+TOP_DODAVATELOV_SEKTOR = 5
+
+
+def tamSektora(df: pd.DataFrame, dnes) -> pd.DataFrame:
+    """Odhad velkosti trhu (TAM) za sektor, za poslednych DNI_TAM dni.
+
+    `df` je rovnaky vstup ako pre dodavatelia()/medianySektora() — uz bez
+    dotacnych zmluv (tie maju v poli dodavatela prijimatela, nie firmu).
+    """
+    stlpce = ["sector", "objem_eur", "pocet_s_cenou", "pocet_bez_ceny",
+              "podiel_bez_ceny_pct", "spolahlivy"]
+    if df.empty or "signed_on" not in df.columns:
+        return pd.DataFrame(columns=stlpce)
+
+    d = df.copy()
+    d["signed_on"] = pd.to_datetime(d["signed_on"], errors="coerce")
+    hranica = pd.Timestamp(dnes) - pd.Timedelta(days=DNI_TAM)
+    d = d[d["signed_on"].notna() & (d["signed_on"] >= hranica)]
+    if d.empty:
+        return pd.DataFrame(columns=stlpce)
+
+    d["cena"] = pd.to_numeric(d.get("price_total"), errors="coerce")
+    ma_cenu = d["cena"].notna() & (d["cena"] > 0)
+
+    riadky = []
+    for sektor, skupina in d.groupby("sector"):
+        s_cenou = skupina[ma_cenu.loc[skupina.index]]
+        if len(s_cenou) < MIN_VZORIEK_TAM:
+            continue
+        pocet_spolu = len(skupina)
+        podiel_bez_ceny = 1 - (len(s_cenou) / pocet_spolu)
+        riadky.append({
+            "sector": sektor,
+            "objem_eur": round(float(s_cenou["cena"].sum()), 2),
+            "pocet_s_cenou": int(len(s_cenou)),
+            "pocet_bez_ceny": int(pocet_spolu - len(s_cenou)),
+            "podiel_bez_ceny_pct": round(podiel_bez_ceny * 100, 1),
+            "spolahlivy": bool(podiel_bez_ceny <= MAX_PODIEL_BEZ_CENY),
+        })
+    return pd.DataFrame(riadky, columns=stlpce)
+
+
+def trhovyPodiel(df: pd.DataFrame, dnes) -> pd.DataFrame:
+    """TOP dodavatelov v kazdom sektore za poslednych DNI_TAM dni, s
+    podielom na objeme sektora (pocitanom len zo zmluv so znamou cenou).
+
+    GDPR filter je rovnaky ako v dodavatelia() — fyzicke osoby (zivnostnici)
+    sem nesmu, aj keby v sektore vyhrali najviac zmluv.
+    """
+    stlpce = ["sector", "supplier_cin", "dodavatel", "zmluv", "objem_eur",
+              "podiel_sektora_pct", "poradie"]
+    if (df.empty or "supplier_cin" not in df.columns
+            or "signed_on" not in df.columns):
+        return pd.DataFrame(columns=stlpce)
+
+    d = df.copy()
+    d["signed_on"] = pd.to_datetime(d["signed_on"], errors="coerce")
+    hranica = pd.Timestamp(dnes) - pd.Timedelta(days=DNI_TAM)
+    d = d[d["signed_on"].notna() & (d["signed_on"] >= hranica)]
+    d = d[d["supplier_cin"].notna() & (d["supplier_cin"].astype(str) != "")]
+    d["cena"] = pd.to_numeric(d.get("price_total"), errors="coerce")
+    d = d[d["cena"].notna() & (d["cena"] > 0)]
+    if d.empty:
+        return pd.DataFrame(columns=stlpce)
+
+    d = d[d["supplier_name"].apply(je_pravnicka_osoba)].copy()
+    if d.empty:
+        return pd.DataFrame(columns=stlpce)
+
+    vysledky = []
+    for sektor, skupina in d.groupby("sector"):
+        if len(skupina) < MIN_VZORIEK_TAM:
+            continue
+        objem_sektora = float(skupina["cena"].sum())
+        if objem_sektora <= 0:
+            continue
+        g = (skupina.groupby("supplier_cin")
+                    .agg(dodavatel=("supplier_name", "first"),
+                         zmluv=("cena", "count"),
+                         objem_eur=("cena", "sum"))
+                    .reset_index()
+                    .sort_values("objem_eur", ascending=False)
+                    .head(TOP_DODAVATELOV_SEKTOR))
+        g["sector"] = sektor
+        g["objem_eur"] = g["objem_eur"].round(2)
+        g["podiel_sektora_pct"] = (g["objem_eur"] / objem_sektora * 100).round(1)
+        g["poradie"] = range(1, len(g) + 1)
+        vysledky.append(g)
+
+    if not vysledky:
+        return pd.DataFrame(columns=stlpce)
+    out = pd.concat(vysledky, ignore_index=True)
+    out["zmluv"] = out["zmluv"].astype(int)
+    out["poradie"] = out["poradie"].astype(int)
+    return out[stlpce]

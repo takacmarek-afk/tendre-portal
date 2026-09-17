@@ -743,6 +743,75 @@ tailwind.config = { theme: { extend: {
             </p>
           </div>
         </div>
+
+        <!-- TAM: odhad velkosti trhu za sektor, poslednych 12 mesiacov.
+             Data z `tam_sektor` (pipeline/analytics.py: tamSektora()). -->
+        <div id="tam-sektor-panel" class="hidden mt-5 bg-white border border-line rounded-lg overflow-hidden max-w-3xl">
+          <div class="px-4 py-3 border-b border-line bg-[#F3F0E6]">
+            <h3 class="text-[13px] font-semibold text-slate2 uppercase tracking-wide">
+              Veľkosť trhu podľa sektora (posledných 12 mesiacov)
+            </h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="karty-mobil w-full text-left">
+              <thead class="bg-[#F3F0E6] border-b border-line">
+                <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+                  <th class="px-4 py-2">Sektor</th>
+                  <th class="px-4 py-2 text-right whitespace-nowrap">Objem</th>
+                  <th class="px-4 py-2 text-right whitespace-nowrap">Zmlúv so známou cenou</th>
+                </tr>
+              </thead>
+              <tbody id="tam-sektor-telo"></tbody>
+            </table>
+          </div>
+          <div class="px-4 py-3 border-t border-line">
+            <p class="text-[12px] leading-relaxed text-slate2">
+              Súčet cien zmlúv podpísaných za posledných 12 mesiacov v danom
+              sektore — hrubý odhad veľkosti trhu, nie presné číslo. Rámcové
+              dohody v CRZ nemajú celkovú sumu, takže sa do súčtu nepočítajú;
+              sektory, kde ich je veľa, majú objem podhodnotený (označené
+              nižšie).
+            </p>
+          </div>
+        </div>
+
+        <!-- Kto v sektore najviac vyhrava — TOP 5 dodavatelov podla objemu
+             za poslednych 12 mesiacov. Data z `trhovy_podiel`. Viaze sa na
+             filter "Hlavny sektor" hore vo formulari — bez vybraneho
+             sektora nema zoberanie do jedneho rebricka zmysel. -->
+        <div id="trhovy-podiel-panel" class="hidden mt-5 bg-white border border-line rounded-lg overflow-hidden max-w-3xl">
+          <div class="px-4 py-3 border-b border-line bg-[#F3F0E6]">
+            <h3 class="text-[13px] font-semibold text-slate2 uppercase tracking-wide">
+              Kto vyhráva v sektore <span id="trhovy-podiel-sektor"></span>
+            </h3>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="karty-mobil w-full text-left">
+              <thead class="bg-[#F3F0E6] border-b border-line">
+                <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+                  <th class="px-4 py-2">#</th>
+                  <th class="px-4 py-2">Dodávateľ</th>
+                  <th class="px-4 py-2 text-right whitespace-nowrap">Zmlúv</th>
+                  <th class="px-4 py-2 text-right whitespace-nowrap">Objem</th>
+                  <th class="px-4 py-2 text-right whitespace-nowrap">Podiel sektora</th>
+                </tr>
+              </thead>
+              <tbody id="trhovy-podiel-telo"></tbody>
+            </table>
+          </div>
+          <div class="px-4 py-3 border-t border-line">
+            <p class="text-[12px] leading-relaxed text-slate2">
+              TOP 5 podľa objemu zmlúv so známou cenou za posledných 12
+              mesiacov v tomto sektore, nie kompletný zoznam. Podiel sektora
+              sa počíta len z objemu zmlúv so známou cenou — pri malom počte
+              víťazov v úzkom sektore nepôsobí ako presnejšie číslo, než je.
+            </p>
+          </div>
+        </div>
+        <p id="trhovy-podiel-vyzva" class="hidden mt-5 text-[13px] text-slate2 max-w-3xl">
+          Vyberte konkrétny sektor vo filtri vyššie a uvidíte, kto v ňom za
+          posledných 12 mesiacov najviac vyhráva.
+        </p>
       </div>
     </div>
 
@@ -1984,6 +2053,64 @@ async function dashboard(supabase) {
     panel.classList.remove('hidden');
   }
 
+  async function nacitajTamSektora() {
+    const panel = el('tam-sektor-panel');
+    const telo = el('tam-sektor-telo');
+    if (!panel || !telo) return;
+    const { data, error } = await supabase.from('tam_sektor')
+      .select('sector, objem_eur, pocet_s_cenou, podiel_bez_ceny_pct, spolahlivy')
+      .order('objem_eur', { ascending: false, nullsFirst: false });
+    if (error || !data || data.length === 0) return;
+
+    telo.innerHTML = data.map(r => {
+      const nazov = POPIS_SEKTORA[r.sector] ?? r.sector;
+      const objemTxt = r.spolahlivy
+        ? suma(r.objem_eur)
+        : `<span title="${bezpecne(cislo(r.podiel_bez_ceny_pct))} % zmlúv v sektore nemá uvedenú cenu (rámcová dohoda) — objem je podhodnotený.">
+             ${suma(r.objem_eur)}+ <span class="text-slate2">(podhodnotené)</span>
+           </span>`;
+      return `
+        <tr class="border-b border-line last:border-0">
+          <td data-hlavny class="px-4 py-3 align-top text-[14px]">${bezpecne(nazov)}</td>
+          <td data-popis="Objem" class="px-4 py-3 align-top text-[14px] text-right whitespace-nowrap">${objemTxt}</td>
+          <td data-popis="Zmlúv so známou cenou" class="px-4 py-3 align-top text-[13px] text-slate2 text-right whitespace-nowrap">${cislo(r.pocet_s_cenou)}</td>
+        </tr>`;
+    }).join('');
+    panel.classList.remove('hidden');
+  }
+
+  async function nacitajTrhovyPodiel() {
+    const panel = el('trhovy-podiel-panel');
+    const telo = el('trhovy-podiel-telo');
+    const vyzva = el('trhovy-podiel-vyzva');
+    if (!panel || !telo || !vyzva) return;
+    const sektor = el('s-sektor').value;
+    if (!sektor) {
+      panel.classList.add('hidden');
+      vyzva.classList.remove('hidden');
+      return;
+    }
+    vyzva.classList.add('hidden');
+    const { data, error } = await supabase.from('trhovy_podiel')
+      .select('dodavatel, supplier_cin, zmluv, objem_eur, podiel_sektora_pct, poradie')
+      .eq('sector', sektor)
+      .order('poradie', { ascending: true });
+    if (error || !data || data.length === 0) {
+      panel.classList.add('hidden');
+      return;
+    }
+    el('trhovy-podiel-sektor').textContent = '— ' + (POPIS_SEKTORA[sektor] ?? sektor);
+    telo.innerHTML = data.map(r => `
+      <tr class="border-b border-line last:border-0">
+        <td data-popis="#" class="px-4 py-3 align-top text-[13px] text-slate2">${cislo(r.poradie)}</td>
+        <td data-hlavny class="px-4 py-3 align-top text-[14px]">${bezpecne(r.dodavatel ?? r.supplier_cin)}</td>
+        <td data-popis="Zmlúv" class="px-4 py-3 align-top text-[13px] text-slate2 text-right whitespace-nowrap">${cislo(r.zmluv)}</td>
+        <td data-popis="Objem" class="px-4 py-3 align-top text-[14px] text-right whitespace-nowrap">${suma(r.objem_eur)}</td>
+        <td data-popis="Podiel sektora" class="px-4 py-3 align-top text-[14px] text-right whitespace-nowrap">${r.podiel_sektora_pct != null ? r.podiel_sektora_pct.toLocaleString('sk-SK') + ' %' : '—'}</td>
+      </tr>`).join('');
+    panel.classList.remove('hidden');
+  }
+
   function filtreDodavatelov(q) {
     const sektor = el('s-sektor').value;
     const text = ocisti(el('s-text').value);
@@ -2158,6 +2285,8 @@ async function dashboard(supabase) {
     await nacitajSledovane();
     await vykresliSledovaneFirmy();
     await nacitajCenySektora();
+    await nacitajTamSektora();
+    await nacitajTrhovyPodiel();
     el('riadky-f').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-sleduj]');
       if (btn) prepniSledovanie(btn.dataset.sleduj, btn.dataset.nazov);
@@ -2173,6 +2302,7 @@ async function dashboard(supabase) {
     for (const id of ['s-sektor', 's-radenie']) {
       el(id).addEventListener('change', odznova('dodavatelia', nacitajDodavatelov));
     }
+    el('s-sektor').addEventListener('change', nacitajTrhovyPodiel);
     el('s-text').addEventListener('input', prekresliF);
     napojViac('viac-f', 'dodavatelia', nacitajDodavatelov);
     el('export-f').addEventListener('click',

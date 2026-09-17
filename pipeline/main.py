@@ -95,6 +95,7 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     """
     dnes = date.today().isoformat()
     tabulka, vlozene, dotacii, dodav, cien, cenPril = None, 0, 0, 0, 0, 0
+    tam = podiel = 0
     vsetky = None
     # Zoznam zlyhani, ktore MUSIA zhodit beh. Faze su izolovane (analytika
     # nesmie zhodit prilezitosti), ale zlyhanie sa nesmie stratit — inak
@@ -159,8 +160,18 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
             ceny = analytics.medianySektora(s_cenou)
             cien = store.nahrad_ceny_sektor(sb, ceny, dnes)
 
-            log.info("Analytika: profilov dodavatelov %s, sektorov s medianom %s",
-                     dodav, cien)
+            # TAM a trhovy podiel: rovnaky vstup (bezne), vlastne okno
+            # (poslednych 12 mesiacov, analytics.DNI_TAM) — pozri Pilier 2
+            # bod 2 a Pilier 4 bod 2 v strategii funkcii pre rast.
+            tamDf = analytics.tamSektora(bezne, dnes)
+            tam = store.nahrad_tam_sektor(sb, tamDf, dnes)
+
+            podielDf = analytics.trhovyPodiel(bezne, dnes)
+            podiel = store.nahrad_trhovy_podiel(sb, podielDf, dnes)
+
+            log.info("Analytika: profilov dodavatelov %s, sektorov s medianom %s, "
+                     "sektorov s TAM %s, riadkov trhoveho podielu %s",
+                     dodav, cien, tam, podiel)
             if not ceny.empty:
                 log.info("Cenovy benchmark podla sektora:")
                 for _, r in ceny.sort_values("median_cena", ascending=False).iterrows():

@@ -278,6 +278,37 @@ def nahrad_ceny_sektor(sb, df: pd.DataFrame, dnes: str):
     return _nahrad_tabulku(sb, "ceny_sektor", d, kluc="sector")
 
 
+def nahrad_tam_sektor(sb, df: pd.DataFrame, dnes: str):
+    """Odhad velkosti trhu (TAM) per sektor, poslednych 12 mesiacov
+    (analytics.tamSektora, migracia 22_tam_a_trhovy_podiel.sql)."""
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "tam_sektor", df, kluc="sector")
+    stlpce = ["sector", "objem_eur", "pocet_s_cenou", "pocet_bez_ceny",
+              "podiel_bez_ceny_pct", "spolahlivy"]
+    d = df[[c for c in stlpce if c in df.columns]].copy()
+    for stlpec in ("pocet_s_cenou", "pocet_bez_ceny"):
+        d[stlpec] = pd.to_numeric(d[stlpec], errors="coerce").astype("Int64")
+    d["last_seen_at"] = dnes
+    return _nahrad_tabulku(sb, "tam_sektor", d, kluc="sector")
+
+
+def nahrad_trhovy_podiel(sb, df: pd.DataFrame, dnes: str):
+    """TOP dodavatelov per sektor za poslednych 12 mesiacov
+    (analytics.trhovyPodiel, migracia 22_tam_a_trhovy_podiel.sql).
+
+    Kluc je zlozeny (sector, supplier_cin) — jeden dodavatel moze byt v
+    TOPke viacerych sektorov naraz."""
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "trhovy_podiel", df, kluc="sector,supplier_cin")
+    stlpce = ["sector", "supplier_cin", "dodavatel", "zmluv", "objem_eur",
+              "podiel_sektora_pct", "poradie"]
+    d = df[[c for c in stlpce if c in df.columns]].copy()
+    for stlpec in ("zmluv", "poradie"):
+        d[stlpec] = pd.to_numeric(d[stlpec], errors="coerce").astype("Int64")
+    d["last_seen_at"] = dnes
+    return _nahrad_tabulku(sb, "trhovy_podiel", d, kluc="sector,supplier_cin")
+
+
 def nahrad_aktivne_programy(sb, df: pd.DataFrame, dnes: str):
     """Kto prave teraz rozdava peniaze obciam."""
     if df is None or df.empty:

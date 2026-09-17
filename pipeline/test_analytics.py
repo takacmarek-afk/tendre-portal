@@ -90,3 +90,101 @@ print(f"5) sektor s 2 zmluvami (pod MIN_VZORIEK): riadkov={len(vysledok3)}")
 assert len(vysledok3) == 0, "pod MIN_VZORIEK sa nesmie zobrazit vobec"
 
 print("VSETKY TESTY PRESLI")
+
+
+# ── 4. tamSektora() a trhovyPodiel() ────────────────────────────────────────
+#
+# DNES je fixny referencny bod, aby testy nezavideli od aktualneho datumu.
+# Okno DNI_TAM=365 pocita spatne od tohto dna.
+DNES = pd.Timestamp("2026-09-17")
+
+
+def _zmluva_tam(cena, dni_dozadu, ico="12345678", nazov="Firma s.r.o.",
+                sektor=SEKTOR):
+    """Riadok s POSTOU cenou (price_total), nie odvodenou mesacnou — presne
+    to, co tamSektora()/trhovyPodiel() pouzivaju priamo, bez cenovy_zaklad()."""
+    return {
+        "sector": sektor,
+        "price_total": cena,
+        "signed_on": (DNES - pd.Timedelta(days=dni_dozadu)).strftime("%Y-%m-%d"),
+        "supplier_cin": ico,
+        "supplier_name": nazov,
+    }
+
+
+# 6) TAM: zaklad — vsetky zmluvy v okne, vsetky so znamou cenou.
+riadky_tam = [_zmluva_tam(1000 + i * 10, dni_dozadu=i * 20, ico=f"ico{i}")
+              for i in range(10)]
+df_tam = _df(riadky_tam)
+tam = analytics.tamSektora(df_tam, DNES)
+print(f"6) TAM riadkov={len(tam)}")
+assert len(tam) == 1, tam
+r = tam.iloc[0]
+print(f"   objem={r.objem_eur} pocet_s_cenou={r.pocet_s_cenou} spolahlivy={r.spolahlivy}")
+assert r.objem_eur == sum(1000 + i * 10 for i in range(10)), r.objem_eur
+assert r.pocet_s_cenou == 10
+assert r.pocet_bez_ceny == 0
+assert r.spolahlivy == True
+
+# 7) TAM: zmluvy STARSIE nez DNI_TAM (365 dni) sa do okna nepocitaju.
+riadky_okno = list(riadky_tam) + [_zmluva_tam(999999, dni_dozadu=400, ico="stary")]
+df_okno = _df(riadky_okno)
+tam2 = analytics.tamSektora(df_okno, DNES)
+r2 = tam2.iloc[0]
+print(f"7) so starou zmluvou (400 dni) objem={r2.objem_eur} (nesmie obsahovat 999999)")
+assert r2.objem_eur == r.objem_eur, "zmluva mimo okna DNI_TAM sa nesmie pocitat"
+
+# 8) TAM: ramcove dohody (cena 0) sa NEPOCITAJU do objem_eur, ale zvysia
+#    pocet_bez_ceny. Vela z nich -> spolahlivy=False.
+riadky_ramcove = list(riadky_tam) + [
+    _zmluva_tam(0, dni_dozadu=10, ico=f"ramcova{i}") for i in range(15)
+]
+df_ramcove = _df(riadky_ramcove)
+tam3 = analytics.tamSektora(df_ramcove, DNES)
+r3 = tam3.iloc[0]
+print(f"8) s 15 ramcovymi (0 EUR): objem={r3.objem_eur} pocet_bez_ceny={r3.pocet_bez_ceny} "
+     f"spolahlivy={r3.spolahlivy}")
+assert r3.objem_eur == r.objem_eur, "ramcove dohody (cena 0) nesmu zvysit objem_eur"
+assert r3.pocet_bez_ceny == 15
+assert r3.spolahlivy == False, "15 z 25 (60 %) bez ceny prekracuje MAX_PODIEL_BEZ_CENY"
+
+# 9) TAM: sektor pod MIN_VZORIEK_TAM (menej nez 8 zmluv so ZNAMOU cenou)
+#    sa vobec nezobrazi.
+riadky_malo = [_zmluva_tam(500, dni_dozadu=5, ico=f"malo{i}") for i in range(5)]
+tam4 = analytics.tamSektora(_df(riadky_malo), DNES)
+print(f"9) 5 zmluv (pod MIN_VZORIEK_TAM): riadkov={len(tam4)}")
+assert len(tam4) == 0
+
+# 10) trhovyPodiel: TOP 5 z 8 dodavatelov, podiel_sektora_pct sa scita na
+#     blizko 100 % (viac firiem ako TOP 5 v menovateli, takze menej).
+riadky_podiel = []
+for i in range(8):
+    riadky_podiel += [_zmluva_tam(1000 * (8 - i), dni_dozadu=5,
+                                   ico=f"firma{i}", nazov=f"Firma{i} s.r.o.")
+                      for _ in range(2)]  # 2 zmluvy kazda firma, aby n>=8
+podiel = analytics.trhovyPodiel(_df(riadky_podiel), DNES)
+print(f"10) trhovy podiel riadkov={len(podiel)} (top 5 z 8 firiem)")
+assert len(podiel) == 5, podiel
+assert list(podiel["poradie"]) == [1, 2, 3, 4, 5]
+assert podiel.iloc[0]["supplier_cin"] == "firma0", "najvacsi objem musi byt na 1. mieste"
+assert podiel["podiel_sektora_pct"].iloc[0] > podiel["podiel_sektora_pct"].iloc[-1]
+
+# 11) trhovyPodiel: fyzicka osoba (bez pravnej formy v nazve) sa NESMIE
+#     objavit, ani keby mala najvacsi objem.
+riadky_fo = list(riadky_podiel) + [
+    _zmluva_tam(999999, dni_dozadu=5, ico="fyzickaosoba", nazov="Jan Novak")
+    for _ in range(3)
+]
+podiel2 = analytics.trhovyPodiel(_df(riadky_fo), DNES)
+print(f"11) s fyzickou osobou (najvyssi objem): jej ICO v top5 = "
+     f"{'fyzickaosoba' in set(podiel2['supplier_cin'])}")
+assert "fyzickaosoba" not in set(podiel2["supplier_cin"]), \
+    "fyzicka osoba sa nesmie zobrazit ani s najvacsim objemom (GDPR)"
+
+# 12) trhovyPodiel: sektor pod MIN_VZORIEK_TAM sa vobec nezobrazi.
+riadky_malo2 = [_zmluva_tam(1000, dni_dozadu=5, ico=f"m{i}") for i in range(4)]
+podiel3 = analytics.trhovyPodiel(_df(riadky_malo2), DNES)
+print(f"12) 4 zmluvy v sektore (pod MIN_VZORIEK_TAM): riadkov={len(podiel3)}")
+assert len(podiel3) == 0
+
+print("VSETKY TESTY PRESLI (TAM a trhovy podiel)")
