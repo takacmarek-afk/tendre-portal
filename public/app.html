@@ -90,7 +90,7 @@ tailwind.config = { theme: { extend: {
 }
 </style>
 </head>
-<body class="font-sans text-ink bg-[#f5f6f8] min-h-screen">
+<body class="font-sans text-ink bg-[#F3F0E6] min-h-screen">
 
 <div id="nacitavam" class="min-h-screen flex items-center justify-center">
   <div class="text-[14px] text-slate2">Načítavam...</div>
@@ -104,7 +104,7 @@ tailwind.config = { theme: { extend: {
       Nastala neočakávaná chyba. Skúste stránku obnoviť. Ak potrvá,
       pošlite nám prosím text nižšie.
     </p>
-    <pre id="chyba-text" class="mt-4 text-[12px] bg-[#fafbfc] border border-line
+    <pre id="chyba-text" class="mt-4 text-[12px] bg-[#F3F0E6] border border-line
          rounded p-3 overflow-x-auto whitespace-pre-wrap"></pre>
     <button onclick="location.reload()"
             class="mt-5 bg-accent text-white font-semibold px-5 py-2.5 rounded-md">
@@ -117,7 +117,16 @@ tailwind.config = { theme: { extend: {
 <div id="onboarding" class="hidden min-h-screen flex items-center justify-center p-5">
   <div class="w-full max-w-[460px]">
     <div class="text-center mb-8">
-      <div class="font-bold text-[20px] tracking-tight">PredTendrom<span class="text-accent">.sk</span></div>
+      <div class="flex items-center justify-center gap-2">
+        <svg width="24" height="24" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+        <span class="font-serif italic text-[22px] text-ink">predtendrom</span>
+      </div>
     </div>
     <div class="bg-white border border-line rounded-lg p-7">
       <h1 class="text-[19px] font-semibold">Ešte jedna vec</h1>
@@ -163,7 +172,16 @@ tailwind.config = { theme: { extend: {
   <header class="bg-white border-b border-line sticky top-0 z-30">
     <div class="max-w-[1280px] mx-auto px-5 h-16 flex items-center justify-between">
       <div class="flex items-center gap-6">
-        <span class="font-bold text-[17px] tracking-tight">PredTendrom<span class="text-accent">.sk</span></span>
+        <span class="flex items-center gap-2">
+          <svg width="19" height="19" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+          <span class="font-serif italic text-[18px] text-ink">predtendrom</span>
+        </span>
         <span id="nazov-firmy" class="text-[14px] text-slate2 hidden sm:block"></span>
       </div>
       <div class="flex items-center gap-4">
@@ -360,7 +378,7 @@ tailwind.config = { theme: { extend: {
       <div class="bg-white border border-line rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="karty-mobil w-full text-left">
-            <thead class="bg-[#fafbfc] border-b border-line">
+            <thead class="bg-[#F3F0E6] border-b border-line">
               <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
                 <th class="px-4 py-3 w-20"
                     title="Poradie v rámci sektora: 85 znamená horná sedmina zákaziek vo vašom odbore. Porovnávať sa dá len v tom istom sektore. Nie je to pravdepodobnosť výhry.">
@@ -475,7 +493,7 @@ tailwind.config = { theme: { extend: {
       <div class="bg-white border border-line rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="karty-mobil w-full text-left">
-            <thead class="bg-[#fafbfc] border-b border-line">
+            <thead class="bg-[#F3F0E6] border-b border-line">
               <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
                 <th class="px-4 py-3">Prijímateľ</th>
                 <th class="px-4 py-3">Na čo</th>
@@ -508,7 +526,7 @@ tailwind.config = { theme: { extend: {
         ale dotáciu ešte nemajú. Je to najskorší signál, aký vieme dať:
         najprv príde dotácia, až potom obstarávanie.
       </p>
-      <div class="rounded-lg border border-line bg-[#fafbfc] p-4 mb-5 max-w-3xl">
+      <div class="rounded-lg border border-line bg-[#F3F0E6] p-4 mb-5 max-w-3xl">
         <p class="text-[13px] leading-relaxed text-slate2">
           <strong class="text-ink">Odmerané, nie odhadnuté.</strong>
           Zo 101 obcí, ktoré si takú firmu najali, dotáciu potom dostalo
@@ -550,7 +568,7 @@ tailwind.config = { theme: { extend: {
       <div class="bg-white border border-line rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="karty-mobil w-full text-left">
-            <thead class="bg-[#fafbfc] border-b border-line">
+            <thead class="bg-[#F3F0E6] border-b border-line">
               <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
                 <th class="px-4 py-3">Obec</th>
                 <th class="px-4 py-3">Kto jej to píše</th>
@@ -636,7 +654,7 @@ tailwind.config = { theme: { extend: {
         <div class="bg-white border border-line rounded-lg overflow-hidden">
           <div class="overflow-x-auto">
             <table class="karty-mobil w-full text-left">
-              <thead class="bg-[#fafbfc] border-b border-line">
+              <thead class="bg-[#F3F0E6] border-b border-line">
                 <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
                   <th class="px-4 py-3">Dodávateľ</th>
                   <th class="px-4 py-3 text-right whitespace-nowrap">Objem</th>
@@ -660,7 +678,7 @@ tailwind.config = { theme: { extend: {
           </div>
         </div>
 
-        <div class="mt-5 bg-[#fafbfc] border border-line rounded-lg p-4 max-w-3xl">
+        <div class="mt-5 bg-[#F3F0E6] border border-line rounded-lg p-4 max-w-3xl">
           <p class="text-[13px] leading-relaxed text-slate2">
             <strong class="text-ink">Ako to čítať.</strong> Sú to súčty zmlúv
             z Centrálneho registra za obdobie, ktoré máme stiahnuté &mdash; nie
@@ -988,7 +1006,7 @@ function riadok(r, benchmark) {
     : suma(r.price_total);
 
   return `
-    <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
       <td data-popis="Sila signálu" class="px-4 py-4 align-top">
         <span class="text-[18px] font-bold">${r.skore ?? '—'}</span>
         <div class="text-[10px] text-slate2 leading-tight mt-0.5">
@@ -1097,7 +1115,7 @@ function riadokDotacie(r) {
   const odPodpisu = -dniOdDnes(r.podpisane);
   const nova = !Number.isNaN(odPodpisu) && odPodpisu >= 0 && odPodpisu <= DNI_NOVA_DOTACIA;
   return `
-    <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
       <td data-hlavny class="px-4 py-4 align-top">
         <div class="text-[14px] font-medium leading-snug">
           ${bezpecne(r.prijimatel)}
@@ -1158,7 +1176,7 @@ function riadokZiadatela(r) {
   const kde = [r.mesto, r.kraj].filter(Boolean).join(', ');
   const doDotacie = dniOdDnes(r.ocakavane);
   return `
-    <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
       <td data-hlavny class="px-4 py-4 align-top">
         <div class="text-[14px] font-medium leading-snug">${bezpecne(r.obec)}</div>
         ${kde ? `<div class="text-[12px] text-slate2 mt-1">${bezpecne(kde)}</div>` : ''}
@@ -1201,7 +1219,7 @@ function riadokDodavatela(r) {
     : '<span class="text-slate2">—</span>';
 
   return `
-    <tr class="border-b border-line last:border-0 hover:bg-[#fafbfc]">
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
       <td data-hlavny class="px-4 py-4 align-top max-w-[340px]">
         <div class="text-[14px] font-medium leading-snug">${bezpecne(r.dodavatel)}</div>
         <div class="text-[12px] text-slate2 mt-1">
@@ -1358,7 +1376,16 @@ function obrazovkaTrialVycerpany(supabase) {
   el('onboarding').innerHTML = `
     <div class="w-full max-w-[460px]">
       <div class="text-center mb-8">
-        <div class="font-bold text-[20px] tracking-tight">PredTendrom<span class="text-accent">.sk</span></div>
+        <div class="flex items-center justify-center gap-2">
+        <svg width="24" height="24" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+        <span class="font-serif italic text-[22px] text-ink">predtendrom</span>
+      </div>
       </div>
       <div class="bg-white border border-line rounded-lg p-7 text-center">
         <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 text-[22px]

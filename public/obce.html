@@ -37,12 +37,12 @@ tailwind.config = { theme: { extend: {
 }
 </style>
 </head>
-<body class="font-sans text-ink bg-white antialiased">
+<body class="font-sans text-ink bg-paper antialiased">
 
 <!-- Ten isty prepinac ako na uvodnej stranke. Vysvetlenie, preco tu nie je
      tretia zalozka, je v index.html. Drz oba pruhy zhodne — projekt nema
      build, takze je to jediny sposob, ako to mat na oboch stranach. -->
-<div class="border-b border-line bg-[#fafbfc]">
+<div class="border-b border-line bg-[#F3F0E6]">
   <div class="wrap flex items-center gap-3 h-11 overflow-x-auto">
     <span class="hidden sm:inline text-[12px] text-slate2 whitespace-nowrap shrink-0">Hľadám:</span>
     <nav class="flex items-center gap-1.5">
@@ -59,8 +59,16 @@ tailwind.config = { theme: { extend: {
 
 <header class="border-b border-line sticky top-0 bg-white/95 backdrop-blur z-40">
   <div class="wrap flex items-center justify-between h-16">
-    <a href="./index.html" class="font-bold text-[17px] tracking-tight">
-      PredTendrom<span class="text-accent">.sk</span></a>
+    <a href="./index.html" class="flex items-center gap-2">
+      <svg width="19" height="19" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+      <span class="font-serif italic text-[18px] text-ink">predtendrom</span>
+    </a>
     <span class="text-[13px] text-slate2">Pre obce a mestá</span>
   </div>
 </header>
@@ -99,7 +107,7 @@ tailwind.config = { theme: { extend: {
   </p>
 
   <div id="ucely-nacitavam" class="mt-6 text-[14px] text-slate2">Načítavam…</div>
-  <div id="ucely-chyba" class="hidden mt-6 rounded-lg border border-line bg-[#fafbfc] p-5">
+  <div id="ucely-chyba" class="hidden mt-6 rounded-lg border border-line bg-[#F3F0E6] p-5">
     <p class="text-[14px] text-slate2">Údaje sa teraz nepodarilo načítať.
       Skúste stránku obnoviť o chvíľu.</p>
   </div>
@@ -118,7 +126,7 @@ tailwind.config = { theme: { extend: {
        Bez tohto priznania by starostka citala zoznam siestich veci ako
        "na nic ine sa peniaze nedavaju" — co je nepravda a poslalo by ju
        to zlym smerom. -->
-  <div class="mt-5 rounded-lg border border-line bg-[#fafbfc] p-5 max-w-[640px]">
+  <div class="mt-5 rounded-lg border border-line bg-[#F3F0E6] p-5 max-w-[640px]">
     <p class="text-[13px] leading-relaxed text-slate2">
       <strong class="text-ink">Toto nie je všetko, na čo sa dotácie dávajú.</strong>
       Účel dokážeme z registra spoľahlivo určiť len pri malej časti zmlúv
@@ -139,7 +147,7 @@ tailwind.config = { theme: { extend: {
   </p>
 
   <div id="programy-nacitavam" class="mt-6 text-[14px] text-slate2">Načítavam…</div>
-  <div id="programy-chyba" class="hidden mt-6 rounded-lg border border-line bg-[#fafbfc] p-5">
+  <div id="programy-chyba" class="hidden mt-6 rounded-lg border border-line bg-[#F3F0E6] p-5">
     <p class="text-[14px] text-slate2">
       Údaje sa teraz nepodarilo načítať. Skúste stránku obnoviť o chvíľu.
     </p>
@@ -147,7 +155,7 @@ tailwind.config = { theme: { extend: {
 
   <div id="programy-obal" class="hidden mt-6 overflow-x-auto border border-line rounded-lg">
     <table class="karty w-full text-left">
-      <thead class="bg-[#fafbfc] border-b border-line">
+      <thead class="bg-[#F3F0E6] border-b border-line">
         <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
           <th class="px-4 py-3">Poskytovateľ</th>
           <th class="px-4 py-3 whitespace-nowrap">Zmlúv za 90 dní</th>
@@ -198,7 +206,7 @@ tailwind.config = { theme: { extend: {
 
   <div id="sprostred-obal" class="hidden mt-6 overflow-x-auto border border-line rounded-lg">
     <table class="karty w-full text-left">
-      <thead class="bg-[#fafbfc] border-b border-line">
+      <thead class="bg-[#F3F0E6] border-b border-line">
         <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
           <th class="px-4 py-3">Firma</th>
           <th class="px-4 py-3 whitespace-nowrap">Obcí</th>
@@ -255,7 +263,7 @@ tailwind.config = { theme: { extend: {
       </p>
       <div class="mt-2 rounded-lg bg-white text-ink overflow-hidden">
         <div class="px-4 pt-4">
-          <div class="text-[13px] font-bold">PredTendrom<span class="text-accent">.sk</span></div>
+          <div class="text-[13px] font-serif italic text-ink">predtendrom</div>
           <div class="mt-3 text-[15px] font-bold leading-snug">
             Kto práve teraz rozdáva peniaze obciam
           </div>
