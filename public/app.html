@@ -260,9 +260,8 @@ tailwind.config = { theme: { extend: {
                  zapisuje, nic sa neposiela. Povodne tu stalo "Raz tyzdenne
                  e-mail...", co znelo ako bezici sluzba. -->
             <p class="mt-2 text-[14px] leading-relaxed text-white/70">
-              Pripravujeme týždenný prehľad toho, čo je nové vo vašom sektore
-              a kraji. Zatiaľ ho ešte neposielame — povedzte nám, čo vás
-              zaujíma, a prvý dostanete hneď, ako vyjde. Zadarmo.
+              Pošleme vám prehľad toho, čo je nové vo vašom sektore a kraji —
+              týždenne alebo denne, podľa toho, čo si vyberiete. Zadarmo.
             </p>
           </div>
           <div class="flex flex-col sm:flex-row gap-2 lg:shrink-0">
@@ -272,6 +271,12 @@ tailwind.config = { theme: { extend: {
             <select id="o-kraj"
                     class="border border-white/20 bg-white/10 text-white rounded-md
                            px-3 py-2 text-[14px] focus:outline-none focus:border-white/60"></select>
+            <select id="o-frekvencia"
+                    class="border border-white/20 bg-white/10 text-white rounded-md
+                           px-3 py-2 text-[14px] focus:outline-none focus:border-white/60">
+              <option value="tyzdenne">týždenne</option>
+              <option value="denne">denne</option>
+            </select>
             <button id="o-zapnut"
                     class="bg-white text-ink font-semibold px-5 py-2 rounded-md
                            hover:bg-white/90 transition text-[14px] whitespace-nowrap">
@@ -1532,7 +1537,7 @@ async function nastavOdber(supabase, sektory, email) {
 
   // Uz zapnuty odber sa nacita a panel sa prepne do stavu "mate zapnuty".
   const { data: existujuci } = await supabase.from('odber')
-    .select('chce_email, sektor, kraj').limit(1).maybeSingle();
+    .select('chce_email, sektor, kraj, frekvencia').limit(1).maybeSingle();
 
   // Oba stavy nastavuje kod, nie znackovanie. Keby text tlacidla zavisel
   // od HTML, po prvom prekresleni by sa rozisiel so skutocnym stavom.
@@ -1543,6 +1548,7 @@ async function nastavOdber(supabase, sektory, email) {
   function stavZapnute(o, zbal = true) {
     el('o-sektor').value = o?.sektor ?? '';
     el('o-kraj').value = o?.kraj ?? '';
+    el('o-frekvencia').value = o?.frekvencia ?? 'tyzdenne';
     btn.textContent = 'Uložiť zmenu';
     ukazHlasku('Zapísali sme si to. Meniť to môžete kedykoľvek.');
 
@@ -1550,8 +1556,9 @@ async function nastavOdber(supabase, sektory, email) {
     // ju treba pomenovat — "Zapnuty pre , " by vyzeralo ako chyba.
     const sektorText = o?.sektor ? (POPIS_SEKTORA[o.sektor] ?? o.sektor) : 'všetky sektory';
     const krajText = o?.kraj || 'celé Slovensko';
+    const frekvenciaText = o?.frekvencia === 'denne' ? 'denne' : 'týždenne';
     el('o-zhrnutie-filtre').textContent =
-      ` Keď prvý vyjde, pošleme ${sektorText}, ${krajText}.`;
+      ` ${sektorText}, ${krajText} — ${frekvenciaText}.`;
 
     if (zbal) {
       el('odber-detail').classList.add('hidden');
@@ -1582,6 +1589,7 @@ async function nastavOdber(supabase, sektory, email) {
       chce_email: true,
       sektor: el('o-sektor').value || null,
       kraj: el('o-kraj').value || null,
+      frekvencia: el('o-frekvencia').value || 'tyzdenne',
       email: email ?? user?.email ?? null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' });
@@ -1592,7 +1600,11 @@ async function nastavOdber(supabase, sektory, email) {
       ukazHlasku('Nepodarilo sa uložiť: ' + error.message);
       return;
     }
-    stavZapnute({ sektor: el('o-sektor').value, kraj: el('o-kraj').value });
+    stavZapnute({
+      sektor: el('o-sektor').value,
+      kraj: el('o-kraj').value,
+      frekvencia: el('o-frekvencia').value,
+    });
   });
 
   ukaz('odber-panel');

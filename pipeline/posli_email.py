@@ -49,6 +49,14 @@ PAUZA_S = 0.6
 MAX_POLOZIEK = 8        # viac nez tolko do e-mailu nedavam, nikto to necita
 DNI_SPAT = 7            # ked odberatel nema zaznam o poslednom e-maile
 
+# Odkedy beha workflow DENNE (predtym len tyzdenne, viz email.yml), tyzdenny
+# odberatel by bez tohto dostaval mail prakticky kazdy den, len co pribudne
+# cokolvek nove v jeho sektore/kraji — pre_dodavatela() totiz posiela vzdy,
+# ked je "nieco nove od posledneho mailu", bez ohladu na to, ako casto beh
+# skutocne bezi. 6, nie 7: rezerva pred tyzdennym cyklom, aby hodinovy posun
+# medzi behmi nikdy nevynechal riadny termin.
+MIN_DNI_TYZDENNE = 6
+
 
 # ── HTML ────────────────────────────────────────────────────────────────────
 
@@ -247,6 +255,24 @@ def pre_obec(sb, o, dnes):
     }
 
 
+def pripraveny_na_dalsi(o: dict) -> bool:
+    """Tyzdenny odberatel je na rade najskor MIN_DNI_TYZDENNE dni po
+    predoslom maile. Denny odberatel (alebo ten bez zaznamu frekvencie —
+    povodni odberatelia pred migraciou 20 default na 'tyzdenne' v databaze,
+    toto je len poistka, ked by stlpec chybal) je na rade vzdy.
+    """
+    if (o.get("frekvencia") or "tyzdenne") != "tyzdenne":
+        return True
+    posledny = o.get("posledny_email")
+    if not posledny:
+        return True
+    try:
+        posledny_dt = datetime.fromisoformat(str(posledny).replace("Z", "+00:00"))
+    except ValueError:
+        return True
+    return (datetime.now(timezone.utc) - posledny_dt).days >= MIN_DNI_TYZDENNE
+
+
 # ── ODOSIELANIE ─────────────────────────────────────────────────────────────
 
 def posli(kluc, komu, predmet, html, nasucho):
@@ -337,6 +363,10 @@ def main():
     for o in odberatelia:
         komu = (o.get("email") or "").strip()
         if not komu or "@" not in komu:
+            preskocene += 1
+            continue
+
+        if o["_typ"] == "dodavatel" and not pripraveny_na_dalsi(o):
             preskocene += 1
             continue
 

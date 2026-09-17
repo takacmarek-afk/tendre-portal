@@ -1,23 +1,22 @@
-name: Tyzdenny email
+name: Email
 
 # ══════════════════════════════════════════════════════════════════════════
-#  PRED PRVYM SPUSTENIM:
+#  STAV: ZAPNUTE NAOSTRO (17.9.2026). Beh je planovany kazdy pracovny den —
+#  to neznamena, ze kazdy odberatel dostane mail kazdy den. `posli_email.py`
+#  (funkcia pripraveny_na_dalsi, migracia 20_frekvencia_odberu.sql) posle
+#  tyzdennemu odberatelovi dalsi mail najskor o 6 dni po predoslom; denny
+#  odberatel je na rade vzdy, ked je nieco nove. Beh kazdy den teda len
+#  umoznuje DENNU volbu fungovat — tyzdennych sa nedotkne.
 #
+#  AK BY SI NIEKEDY POTREBOVAL VYPNUT CELE POSIELANIE:
+#  Zakomentuj `schedule:` blok nizsie (rovnako, ako bol predtym) — rucne
+#  spustenie cez workflow_dispatch (s nasucho=true na test) funguje aj tak.
+#
+#  PRED PRVYM SPUSTENIM (uz hotove, pre buducu referenciu):
 #  1. V Resend si vytvor API kluc (Dashboard -> API Keys -> Create).
-#     Staci mu pravo "Sending access".
-#  2. Tu v repozitari: Settings -> Secrets and variables -> Actions
-#     -> New repository secret -> nazov RESEND_API_KEY, hodnota ten kluc.
-#     Kluc mi neposielaj, ja ho nepotrebujem a vidiet ho nemam.
-#  3. Pusti tento workflow RUCNE s nasucho = true. Nic sa neposle,
-#     len uvidis v logu, komu a co by islo.
-#  4. Potom s nasucho = true a komu = tvoj@email.sk? NIE — naopak:
-#     nasucho = false a komu = tvoj@email.sk. Tak posle jeden jediny
-#     e-mail tebe a uvidis, ako naozaj vyzera v Outlooku.
-#  5. Az ked ti ten e-mail sedi, nechaj bezat pravidelne.
-#
-#  Plánovaný beh je zamerne ZAKOMENTOVANY. Hromadny e-mail sa neda vratit,
-#  takze sa nespusti sam, kym to vedome nezapnes odstranenim tych dvoch
-#  riadkov nizsie.
+#  2. Settings -> Secrets and variables -> Actions -> RESEND_API_KEY.
+#  3. Test: workflow_dispatch s nasucho=true, potom nasucho=false
+#     a komu=tvoj@email.sk, aby si videl skutocny e-mail v Outlooku.
 # ══════════════════════════════════════════════════════════════════════════
 
 on:
@@ -28,16 +27,16 @@ on:
         type: boolean
         default: true
       komu:
-        description: "Poslat len na tuto adresu (na test). Prazdne = vsetkym."
+        description: "Poslat len na tuto adresu (na test). Prazdne = vsetkym, komu prislo na rad."
         type: string
         default: ""
 
-  # ── ZAPNUTIE PRAVIDELNEHO BEHU ──────────────────────────────────────────
-  # Odkomentuj az potom, co ti testovaci e-mail sedel.
-  # Utorok 6:20 UTC = 8:20 letny cas. Utorok rano zamerne: v piatok to
-  # nikto nerieši a v pondelok sa prehrabuje cez tyzdennu postu.
-  # schedule:
-  #   - cron: "20 6 * * 2"
+  # Kazdy pracovny den o 6:20 UTC (8:20 letny cas), hodinu po pipeline
+  # (05:10 UTC) — nove prilezitosti z toho rana su uz v databaze. Ktori
+  # odberatelia naozaj dostanu mail v ktory den, riadi pripraveny_na_dalsi()
+  # v posli_email.py, nie tento cron.
+  schedule:
+    - cron: "20 6 * * 1-5"
 
 permissions:
   contents: read
@@ -62,7 +61,7 @@ jobs:
 
       - run: pip install -r pipeline/requirements.txt
 
-      - name: Poslat tyzdenny email
+      - name: Poslat email (podla frekvencie kazdeho odberatela)
         working-directory: pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
