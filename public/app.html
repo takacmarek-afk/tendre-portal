@@ -532,6 +532,12 @@ tailwind.config = { theme: { extend: {
         <div id="prazdny-dot" class="hidden p-10 text-center">
           <p class="text-[14px] text-slate2">Pre tieto filtre nemáme žiadny záznam.</p>
         </div>
+        <div id="viac-d-obal" class="hidden px-4 py-5 text-center border-t border-line">
+          <button id="viac-d" class="text-[14px] font-semibold text-accent hover:text-accentDark">
+            Zobraziť ďalších 200
+          </button>
+          <div id="viac-d-stav" class="text-[12px] text-slate2 mt-1"></div>
+        </div>
       </div>
       <p class="mt-4 text-[12px] leading-relaxed text-slate2 max-w-3xl">
         Okno je odhad, nie istota. Projekt sa môže odložiť, zrušiť, alebo
@@ -582,12 +588,6 @@ tailwind.config = { theme: { extend: {
           <span id="pocet-zia" class="text-[13px] text-slate2"></span>
           <button id="export-zi" class="text-[13px] font-semibold text-accent">Export CSV</button>
         </div>
-        <div id="viac-d-obal" class="hidden px-4 py-5 text-center border-t border-line">
-          <button id="viac-d" class="text-[14px] font-semibold text-accent hover:text-accentDark">
-            Zobraziť ďalších 200
-          </button>
-          <div id="viac-d-stav" class="text-[12px] text-slate2 mt-1"></div>
-        </div>
       </div>
 
       <div class="bg-white border border-line rounded-lg overflow-hidden">
@@ -607,6 +607,12 @@ tailwind.config = { theme: { extend: {
         </div>
         <div id="prazdny-zi" class="hidden p-10 text-center">
           <p class="text-[14px] text-slate2">Pre tieto filtre nemáme žiadny záznam.</p>
+        </div>
+        <div id="viac-zi-obal" class="hidden px-4 py-5 text-center border-t border-line">
+          <button id="viac-zi" class="text-[14px] font-semibold text-accent hover:text-accentDark">
+            Zobraziť ďalších 200
+          </button>
+          <div id="viac-zi-stav" class="text-[12px] text-slate2 mt-1"></div>
         </div>
       </div>
       <p class="mt-4 text-[12px] leading-relaxed text-slate2 max-w-3xl">
@@ -677,12 +683,6 @@ tailwind.config = { theme: { extend: {
               Export CSV
             </button>
           </div>
-        <div id="viac-zi-obal" class="hidden px-4 py-5 text-center border-t border-line">
-          <button id="viac-zi" class="text-[14px] font-semibold text-accent hover:text-accentDark">
-            Zobraziť ďalších 200
-          </button>
-          <div id="viac-zi-stav" class="text-[12px] text-slate2 mt-1"></div>
-        </div>
         </div>
 
         <div class="bg-white border border-line rounded-lg overflow-hidden">
@@ -1486,7 +1486,8 @@ async function sExportom(tlacidloId, praca) {
   b.textContent = 'Pripravujem…';
   try {
     await praca();
-    b.textContent = povodne;
+    b.textContent = 'Stiahnuté \u2713';
+    setTimeout(() => { b.textContent = povodne; }, 1500);
   } catch (e) {
     console.error(e);
     // Chyba exportu sa NESMIE stratit v konzole. Zakaznik, ktoremu sa
