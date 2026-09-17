@@ -293,6 +293,17 @@ tailwind.config = { theme: { extend: {
                         px-3 py-2 text-[14px] placeholder:text-white/40
                         focus:outline-none focus:border-white/60">
         </div>
+        <div class="mt-3">
+          <label for="o-moje-ico" class="block text-[12px] text-white/60 mb-1">
+            Vaše IČO (voliteľné) — podľa vašej vlastnej histórie zákaziek vám
+            zoradíme príležitosti nižšie tak, aby tie najbližšie k vášmu odboru
+            a cenovej hladine boli hore
+          </label>
+          <input id="o-moje-ico" type="text" inputmode="numeric" placeholder="12345678"
+                 class="w-full sm:max-w-xs border border-white/20 bg-white/10 text-white rounded-md
+                        px-3 py-2 text-[14px] placeholder:text-white/40
+                        focus:outline-none focus:border-white/60">
+        </div>
         <p id="o-hlaska" class="hidden mt-4 text-[13px] text-white/80"></p>
       </div>
     </div>
@@ -1601,7 +1612,15 @@ function onboarding(supabase) {
 // ── ODBER TÝŽDENNÉHO E-MAILU ────────────────────────────────────────────
 // Zbiera sa len zaujem, nic sa neposiela. Kto si to zapne, je zaroven
 // zoznam ludi, ktorych ma zmysel zavolat a spytat sa na cenu.
-async function nastavOdber(supabase, sektory, email) {
+// Osem cislic, nic viac — rovnaky format ako pri registracii firmy (pole
+// #ico). Chybny vstup sa nezapise (ticho, ako pri webhooku) — radsej ziadna
+// personalizacia nez zly lookup v `dodavatelia`.
+function platneIco(v) {
+  const t = String(v ?? '').trim();
+  return /^\d{8}$/.test(t) ? t : '';
+}
+
+async function nastavOdber(supabase, sektory, email, onZmena) {
   naplnSelect('o-sektor', sektory, 'všetky sektory');
   naplnSelect('o-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
 
@@ -1615,7 +1634,7 @@ async function nastavOdber(supabase, sektory, email) {
 
   // Uz zapnuty odber sa nacita a panel sa prepne do stavu "mate zapnuty".
   const { data: existujuci } = await supabase.from('odber')
-    .select('chce_email, sektor, kraj, frekvencia, webhook_url').limit(1).maybeSingle();
+    .select('chce_email, sektor, kraj, frekvencia, webhook_url, moje_ico').limit(1).maybeSingle();
 
   // Oba stavy nastavuje kod, nie znackovanie. Keby text tlacidla zavisel
   // od HTML, po prvom prekresleni by sa rozisiel so skutocnym stavom.
@@ -1628,6 +1647,7 @@ async function nastavOdber(supabase, sektory, email) {
     el('o-kraj').value = o?.kraj ?? '';
     el('o-frekvencia').value = o?.frekvencia ?? 'tyzdenne';
     el('o-webhook').value = o?.webhook_url ?? '';
+    el('o-moje-ico').value = o?.moje_ico ?? '';
     btn.textContent = 'Uložiť zmenu';
     ukazHlasku('Zapísali sme si to. Meniť to môžete kedykoľvek.');
 
@@ -1653,6 +1673,9 @@ async function nastavOdber(supabase, sektory, email) {
 
   if (existujuci?.chce_email) stavZapnute(existujuci);
   else stavVypnute();
+  // Relevancia (#7) sa nastavuje aj bez zapnuteho e-mailoveho odberu —
+  // firma mohla predtym iba ulozit sektor/kraj/ICO a e-mail vypnut.
+  if (typeof onZmena === 'function') await onZmena(existujuci ?? null);
 
   btn.addEventListener('click', async () => {
     btn.disabled = true;
@@ -1672,6 +1695,7 @@ async function nastavOdber(supabase, sektory, email) {
       // Prazdne pole musi zapisat null, nie "" — inak by platny_webhook()
       // v posli_email.py videl neprazdny (ale neplatny) retazec.
       webhook_url: el('o-webhook').value.trim() || null,
+      moje_ico: platneIco(el('o-moje-ico').value) || null,
       email: email ?? user?.email ?? null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' });
@@ -1682,12 +1706,15 @@ async function nastavOdber(supabase, sektory, email) {
       ukazHlasku('Nepodarilo sa uložiť: ' + error.message);
       return;
     }
-    stavZapnute({
+    const ulozeny = {
       sektor: el('o-sektor').value,
       kraj: el('o-kraj').value,
       frekvencia: el('o-frekvencia').value,
       webhook_url: el('o-webhook').value.trim() || null,
-    });
+      moje_ico: platneIco(el('o-moje-ico').value) || null,
+    };
+    stavZapnute(ulozeny);
+    if (typeof onZmena === 'function') await onZmena(ulozeny);
   });
 
   ukaz('odber-panel');
@@ -1727,6 +1754,65 @@ async function dashboard(supabase) {
   // bez akejkolvek zmienky. Export si teraz taha vlastne data — viz
   // stahniVsetko() vyssie.
   const posledne = { zmluvy: [], dotacie: [], ziadatelia: [], dodavatelia: [] };
+
+  // ── OSOBNA RELEVANCIA (#7, 17.9.2026) ──────────────────────────────────
+  // "Sila signalu" (skore) je globalna a rovnaka pre vsetkych — meria, ako
+  // silny je predikcny signal v ramci sektora, nie ci je zakazka relevantna
+  // PRE TUTO firmu. Toto je navyse osobny bonus z vlastneho nastavenia
+  // odberu (sektor/kraj) a z vlastnej histerie firmy (moje_ico -> profil v
+  // uz existujucej tabulke `dodavatelia`, ziadna nova agregacia).
+  //
+  // ZAMERNE LEN DOPLNA PORADIE, nie novy stlpec ani zalozka (rozhodnutie
+  // 17.9.2026 s Marekom) — bonusy su male oproti rozsahu skore (1-99), takze
+  // re-usporiadaju zoznam, neprevracaju ho. Zakaznik bez ulozenych
+  // preferencii (dnes vacsina) dostane presne to iste poradie ako doteraz.
+  let mojOdber = null;
+  let mojProfil = null;
+
+  function bodRelevancie(r) {
+    let b = num(r.skore) || 0;
+    if (mojOdber?.sektor && r.sector === mojOdber.sektor) b += 15;
+    if (mojOdber?.kraj && r.kraj === mojOdber.kraj) b += 10;
+    if (mojProfil?.hlavny_sektor && r.sector === mojProfil.hlavny_sektor) b += 20;
+    const vlastnaCena = num(mojProfil?.priemerna_zmluva_eur);
+    const cena = num(r.price_total);
+    if (vlastnaCena > 0 && cena > 0) {
+      b += 15 / (1 + Math.abs(Math.log10(cena / vlastnaCena)));
+    }
+    return b;
+  }
+
+  // Aplikuje sa len na predvolene triedenie "podla sily signalu" — zakaznik,
+  // ktory si vedome zvolil "najblizsi tender"/"hodnota"/"koniec zmluvy",
+  // dostane presne to, o co poziadal, bez osobneho zasahu.
+  function zoradPodlaRelevancie() {
+    if (!mojOdber || el('f-radenie').value !== 'signal' || !posledne.zmluvy.length) return;
+    if (!(mojOdber.sektor || mojOdber.kraj || mojProfil)) return;
+    posledne.zmluvy = posledne.zmluvy
+      .map((r, i) => ({ r, i, b: bodRelevancie(r) }))
+      .sort((a, b) => (b.b - a.b) || (a.i - b.i))
+      .map(x => x.r);
+  }
+
+  // Vola sa raz po nacitani odberu (nastavOdber, na konci dashboard()) a
+  // znova po kazdom ulozeni zmeny — vratane pridania/zmeny ICO. Dobehne teda
+  // AZ PO prvom vykresleni prilezitosti (viz komentar pri jej volani nizsie:
+  // "Panel odberu az na konci"), preto po prvom nacitani este raz precesli
+  // uz zobrazeny zoznam a prekresli ho.
+  async function nastavRelevanciu(o) {
+    mojOdber = o || null;
+    mojProfil = null;
+    if (mojOdber?.moje_ico) {
+      const { data } = await supabase.from('dodavatelia')
+        .select('hlavny_sektor, priemerna_zmluva_eur')
+        .eq('supplier_cin', mojOdber.moje_ico).maybeSingle();
+      mojProfil = data || null;
+    }
+    zoradPodlaRelevancie();
+    if (posledne.zmluvy.length) {
+      el('riadky').innerHTML = posledne.zmluvy.map(x => riadok(x, posledne.benchmark)).join('');
+    }
+  }
 
   const STLPCE_Z = 'contract_id, skore, subject, sector, authority_name, ' +
                    'price_total, cena_neuvedena, effective_to, odhad_vyhlasenia, ' +
@@ -1832,6 +1918,7 @@ async function dashboard(supabase) {
       if (!bq.error) benchmark = new Map((bq.data ?? []).map(x => [x.contract_id, x]));
     }
     posledne.benchmark = benchmark;
+    zoradPodlaRelevancie();
 
     el('riadky').innerHTML = posledne.zmluvy.map(x => riadok(x, benchmark)).join('');
     el('prazdny-filter').classList.toggle('hidden', posledne.zmluvy.length > 0);
@@ -2332,7 +2419,7 @@ async function dashboard(supabase) {
   // zobrazenie prilezitosti — tie su jadro produktu.
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    await nastavOdber(supabase, sektory, user?.email);
+    await nastavOdber(supabase, sektory, user?.email, nastavRelevanciu);
   } catch (e) {
     console.error('Odber sa nepodarilo nastavit:', e);
   }
