@@ -612,6 +612,15 @@ tailwind.config = { theme: { extend: {
           Centrálneho registra zmlúv za obdobie, ktoré máme stiahnuté.
         </p>
 
+        <!-- Sledovanie konkretnych ICO (konkurencia/partneri). Panel je
+             skryty, kym firma nesleduje aspon jednu. -->
+        <div id="sledovane-firmy" class="hidden bg-white border border-line rounded-lg p-4 mb-5">
+          <h3 class="text-[12px] font-semibold text-slate2 uppercase tracking-wide mb-3">
+            Sledované firmy
+          </h3>
+          <div id="sledovane-firmy-zoznam" class="flex flex-wrap gap-2"></div>
+        </div>
+
         <div class="bg-white border border-line rounded-lg p-4 mb-5">
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
@@ -662,6 +671,7 @@ tailwind.config = { theme: { extend: {
                   <th class="px-4 py-3 text-right whitespace-nowrap">Úradov</th>
                   <th class="px-4 py-3 text-right whitespace-nowrap">Priemerná zmluva</th>
                   <th class="px-4 py-3 whitespace-nowrap">Aktivita</th>
+                  <th class="px-4 py-3 whitespace-nowrap"></th>
                 </tr>
               </thead>
               <tbody id="riadky-f"></tbody>
@@ -1220,8 +1230,9 @@ function riadokZiadatela(r) {
 }
 
 
-function riadokDodavatela(r) {
+function riadokDodavatela(r, sledovane) {
   const sektor = POPIS_SEKTORA[r.hlavny_sektor] ?? r.hlavny_sektor;
+  const jeSledovana = !!(sledovane && r.supplier_cin && sledovane.has(r.supplier_cin));
   const od = (r.prva_zmluva ?? '').slice(0, 4);
   const do_ = (r.posledna_zmluva ?? '').slice(0, 4);
 
@@ -1248,6 +1259,15 @@ function riadokDodavatela(r) {
       <td data-popis="Úradov" class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${cislo(r.uradov)}</td>
       <td data-popis="Priemerná zmluva" class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${suma(r.priemerna_zmluva_eur)}</td>
       <td data-popis="Aktivita" class="px-4 py-4 align-top text-[14px] whitespace-nowrap">${aktivita}</td>
+      <td class="px-4 py-4 align-top text-right whitespace-nowrap">
+        ${r.supplier_cin ? `
+        <button type="button" data-sleduj="${bezpecne(r.supplier_cin)}" data-nazov="${bezpecne(r.dodavatel)}"
+                class="text-[12px] font-semibold px-2.5 py-1 rounded-md border transition
+                       ${jeSledovana ? 'bg-accent/10 border-accent text-accentDark'
+                                     : 'border-line text-slate2 hover:border-accent hover:text-accent'}">
+          ${jeSledovana ? '★ Sledujem' : '☆ Sledovať'}
+        </button>` : ''}
+      </td>
     </tr>`;
 }
 
@@ -1551,12 +1571,16 @@ async function nastavOdber(supabase, sektory, email) {
 // ── DASHBOARD ───────────────────────────────────────────────────────────
 async function dashboard(supabase) {
   const [{ data: org }, { data: sub }] = await Promise.all([
-    supabase.from('organizations').select('nazov').limit(1).maybeSingle(),
+    supabase.from('organizations').select('id, nazov').limit(1).maybeSingle(),
     supabase.from('subscriptions').select('stav, trial_konci, plan').limit(1).maybeSingle()
   ]);
 
   el('nazov-firmy').textContent = org?.nazov ?? '';
   const jePro = odznakPredplatneho(sub);
+  const orgId = org?.id ?? null;
+  // Sledovanie konkretnych ICO konkurencie. Nacitane raz pri starte, pouziva
+  // ho tlacidlo v tabulke Dodavatelia aj panel nad nou.
+  const sledovaneIco = new Map();
 
   skry('nacitavam');
   ukaz('app');
@@ -1805,6 +1829,72 @@ async function dashboard(supabase) {
     nastavViac('ziadatelia', 'viac-zi-obal', 'viac-zi-stav', c, posledne.ziadatelia.length);
   }
 
+  // ── SLEDOVANIE KONKRETNYCH ICO ──────────────────────────────────────
+  // Watchlist je definicia filtra (kraj/sektor), sledovanie ICO je iny typ
+  // objektu — konkretna firma, nie rozsah. Preto vlastna tabulka
+  // `sledovane_ico` (migracia 18) a vlastna sada funkcii tu.
+  async function nacitajSledovane() {
+    if (!orgId) return;
+    const { data, error } = await supabase.from('sledovane_ico')
+      .select('ico, nazov').eq('org_id', orgId);
+    if (error) { console.error(error); return; }
+    sledovaneIco.clear();
+    for (const r of (data ?? [])) sledovaneIco.set(r.ico, r.nazov);
+  }
+
+  async function vykresliSledovaneFirmy() {
+    const obal = el('sledovane-firmy');
+    const zoznamEl = el('sledovane-firmy-zoznam');
+    if (!obal || !zoznamEl) return;
+    if (sledovaneIco.size === 0) {
+      obal.classList.add('hidden');
+      zoznamEl.innerHTML = '';
+      return;
+    }
+    const icos = [...sledovaneIco.keys()];
+    // Cerstve udaje z uz existujuceho profilu (dodavatelia), nie kopia
+    // toho, co bolo v case pridania — inak by panel ukazoval stare cislo.
+    const { data } = await supabase.from('dodavatelia')
+      .select('supplier_cin, dodavatel, posledna_zmluva')
+      .in('supplier_cin', icos);
+    const podla = new Map((data ?? []).map(d => [d.supplier_cin, d]));
+    zoznamEl.innerHTML = icos.map(ico => {
+      const d = podla.get(ico);
+      const nazov = d?.dodavatel ?? sledovaneIco.get(ico) ?? ico;
+      const posledna = d?.posledna_zmluva
+        ? `naposledy ${bezpecne(d.posledna_zmluva)}`
+        : 'zatiaľ bez zmluvy v stiahnutom období';
+      return `<span class="inline-flex items-center gap-2 text-[13px] bg-[#F3F0E6]
+                          border border-line rounded-full pl-3 pr-1.5 py-1">
+                <span class="font-medium">${bezpecne(nazov)}</span>
+                <span class="text-slate2">· ${posledna}</span>
+                <button type="button" data-odsledovat="${bezpecne(ico)}"
+                        class="text-slate2 hover:text-red-600 rounded-full w-5 h-5
+                               flex items-center justify-center" title="Prestať sledovať">×</button>
+              </span>`;
+    }).join('');
+    obal.classList.remove('hidden');
+  }
+
+  async function prepniSledovanie(ico, nazov) {
+    if (!orgId || !ico) return;
+    if (sledovaneIco.has(ico)) {
+      const { error } = await supabase.from('sledovane_ico')
+        .delete().eq('org_id', orgId).eq('ico', ico);
+      if (error) { ukazHlasku('Nepodarilo sa odstrániť sledovanie: ' + error.message); return; }
+      sledovaneIco.delete(ico);
+    } else {
+      const { error } = await supabase.from('sledovane_ico')
+        .insert({ org_id: orgId, ico, nazov: nazov || null });
+      if (error) { ukazHlasku('Nepodarilo sa uložiť sledovanie: ' + error.message); return; }
+      sledovaneIco.set(ico, nazov || null);
+    }
+    if (posledne.dodavatelia.length) {
+      el('riadky-f').innerHTML = posledne.dodavatelia.map(r => riadokDodavatela(r, sledovaneIco)).join('');
+    }
+    await vykresliSledovaneFirmy();
+  }
+
   function filtreDodavatelov(q) {
     const sektor = el('s-sektor').value;
     const text = ocisti(el('s-text').value);
@@ -1829,7 +1919,7 @@ async function dashboard(supabase) {
       return;
     }
     posledne.dodavatelia = data ?? [];
-    el('riadky-f').innerHTML = posledne.dodavatelia.map(riadokDodavatela).join('');
+    el('riadky-f').innerHTML = posledne.dodavatelia.map(r => riadokDodavatela(r, sledovaneIco)).join('');
     el('prazdny-dod').classList.toggle('hidden', posledne.dodavatelia.length > 0);
 
     const c = count ?? posledne.dodavatelia.length;
@@ -1976,6 +2066,19 @@ async function dashboard(supabase) {
   // ako pokazeny produkt.
   if (jePro) {
     ukaz('dod-obsah');
+    await nacitajSledovane();
+    await vykresliSledovaneFirmy();
+    el('riadky-f').addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-sleduj]');
+      if (btn) prepniSledovanie(btn.dataset.sleduj, btn.dataset.nazov);
+    });
+    const sledovaneZoznamEl = el('sledovane-firmy-zoznam');
+    if (sledovaneZoznamEl) {
+      sledovaneZoznamEl.addEventListener('click', (e) => {
+        const x = e.target.closest('[data-odsledovat]');
+        if (x) prepniSledovanie(x.dataset.odsledovat, null);
+      });
+    }
     const prekresliF = pozdrz(odznova('dodavatelia', nacitajDodavatelov));
     for (const id of ['s-sektor', 's-radenie']) {
       el(id).addEventListener('change', odznova('dodavatelia', nacitajDodavatelov));
