@@ -10,13 +10,13 @@
 <meta property="og:type" content="website">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
   theme: { extend: {
-    fontFamily: { sans: ['Inter','system-ui','-apple-system','Segoe UI','sans-serif'] },
-    colors: { ink:'#0f1a2b', slate2:'#5a6472', line:'#e4e8ee', accent:'#1a56c4', accentDark:'#123f94' }
+    fontFamily: { sans: ['IBM Plex Sans','system-ui','-apple-system','Segoe UI','sans-serif'], serif: ['Instrument Serif','Georgia','serif'], mono: ['IBM Plex Mono','SFMono-Regular','Menlo','monospace'] },
+    colors: { ink:'#0B1220', slate2:'#6B6558', line:'#E4DFD2', accent:'#B25313', accentDark:'#8A3F0D', amber:'#E8A33D', paper:'#F7F3EA' }
   }}
 }
 </script>
@@ -25,7 +25,7 @@ tailwind.config = {
   .wrap { max-width: 1080px; margin: 0 auto; padding-left: 1.25rem; padding-right: 1.25rem; }
 </style>
 </head>
-<body class="font-sans text-ink bg-white antialiased">
+<body class="font-sans text-ink bg-paper antialiased">
 
 <!-- ══════════════ PREPÍNAČ PUBLIKA ══════════════
      Portál má dve publiká na opačných stranách toho istého trhu: firmu,
@@ -41,7 +41,7 @@ tailwind.config = {
      figuruje len v dátach ako zoznam. Prepínač, ktorý vedie na prázdnu
      stránku, je to isté ako tlačidlo „Zapnúť e-mail", ktorý nechodí.
      Pridať sa dá jedným <a> nižšie, keď preň bude obsah. -->
-<div class="border-b border-line bg-[#fafbfc]">
+<div class="border-b border-line bg-[#F3F0E6]">
   <div class="wrap flex items-center gap-3 h-11 overflow-x-auto">
     <span class="hidden sm:inline text-[12px] text-slate2 whitespace-nowrap shrink-0">Hľadám:</span>
     <nav class="flex items-center gap-1.5">
@@ -59,7 +59,16 @@ tailwind.config = {
 <!-- ══════════════ NAV ══════════════ -->
 <header class="border-b border-line sticky top-0 bg-white/95 backdrop-blur z-40">
   <div class="wrap flex items-center justify-between h-16">
-    <a href="#" class="font-bold text-[17px] tracking-tight">PredTendrom<span class="text-accent">.sk</span></a>
+    <a href="#" class="flex items-center gap-2">
+      <svg width="20" height="20" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+      <span class="font-serif italic text-[19px] text-ink">predtendrom</span>
+    </a>
     <!-- Menu az od lg, nie od md. Pri 768 az 1023 px sa styri polozky
          s odstupom gap-8 nezmestili vedla loga a tlacidiel a lamali sa
          na dva riadky. Taku sirku ma okno na zdielanej obrazovke pri
@@ -83,49 +92,89 @@ tailwind.config = {
   </div>
 </header>
 
-<!-- ══════════════ HERO ══════════════ -->
-<section class="wrap pt-20 pb-16 md:pt-28 md:pb-20">
-  <div class="max-w-3xl">
-    <div class="inline-flex items-center gap-2 text-[13px] font-medium text-accent bg-accent/8 border border-accent/20 rounded-full px-3 py-1 mb-7">
-      <span class="w-1.5 h-1.5 rounded-full bg-accent"></span>
-      Teraz zadarmo &middot; dáta z Centrálneho registra zmlúv
+<!-- ══════════════ HERO ══════════════
+     Tmavý "monitoring" panel — vedomá odlišnosť od bieleho SaaS vzoru
+     (badge + dve tlačidlá vedľa seba + fajočky), ktorý pôsobí takmer
+     identicky ako jeden z konkurentov (zistené 17.9.2026 porovnaním
+     screenshotov). Živý feed vpravo je zámerne označený ako ilustračný —
+     čísla vľavo dole sa naďalej ťahajú z `verejne_pocty` (žiadne natvrdo
+     zapísané číslo v tejto sekcii, presne z dôvodu, prečo to robí aj
+     sekcia ČÍSLA nižšie). -->
+<section class="bg-ink">
+  <div class="wrap py-16 md:py-24 grid lg:grid-cols-2 gap-12 lg:gap-10 items-center">
+
+    <div>
+      <div class="flex items-center gap-2 text-[12px] font-medium tracking-wide text-amber uppercase mb-6">
+        <span class="w-2 h-2 rounded-full bg-amber"></span>
+        Živý monitoring &middot; Centrálny register zmlúv
+      </div>
+
+      <h1 class="font-serif text-[34px] leading-[1.18] md:text-[50px] md:leading-[1.14] text-paper">
+        Zákazka nevznikne v deň, keď ju vyhlásia.<br class="hidden md:block">
+        <em class="italic text-amber">Vznikne o pol roka skôr.</em>
+      </h1>
+
+      <p class="mt-7 text-[17px] md:text-[18px] leading-relaxed text-[#ADA795] max-w-lg">
+        Sledujeme končiace zmluvy, podpísané dotácie a obce, ktoré si práve
+        najali projektanta — tri stopy, ktoré predchádzajú každému tendru
+        o mesiace. Kým ho niekto vyhlási vo vestníku, vy už viete, že príde.
+      </p>
+
+      <div class="mt-9 flex flex-wrap items-center gap-6">
+        <a href="./prihlasenie.html" class="inline-flex justify-center items-center bg-amber text-ink font-semibold px-6 py-3.5 rounded-md hover:bg-[#F3B65C] transition">
+          Vytvoriť prístup zadarmo
+        </a>
+        <a href="#vrstvy" class="text-[15px] text-[#D8D3C4] underline underline-offset-4 hover:text-amber transition">
+          Čo presne uvidím &rarr;
+        </a>
+      </div>
+
+      <p class="mt-6 text-[12px] tracking-wide text-[#6E6858] font-mono uppercase">
+        Bez platobnej karty &middot; bez skúšobnej lehoty &middot; aktualizované denne
+      </p>
     </div>
 
-    <h1 class="text-[34px] leading-[1.15] md:text-[54px] md:leading-[1.08] font-bold tracking-tight">
-      O tendri sa dozviete 14 dní pred termínom.<br class="hidden md:block">
-      <span class="text-slate2">Ten, kto ho vyhrá, to vedel pol roka.</span>
-    </h1>
-
-    <p class="mt-7 text-[17px] md:text-[19px] leading-relaxed text-slate2 max-w-2xl">
-      Nie ste horší. Len sa to dozvedáte neskoro. Kým vy v piatok večer lovíte
-      chýbajúce čestné vyhlásenie, konkurencia mala ponuku rozpracovanú od jari.
-    </p>
-
-    <p class="mt-5 text-[17px] md:text-[19px] leading-relaxed text-ink max-w-2xl">
-      Verejná zákazka nevzniká v deň, keď ju úrad vyhlási. Vzniká vtedy, keď
-      niekomu končí zmluva, alebo keď obec dostane peniaze. Oboje je zapísané
-      vo verejnom registri — <strong class="font-semibold">mesiace pred tendrom</strong>.
-      My to čítame denne a pošleme vám to.
-    </p>
-
-    <div class="mt-10 flex flex-col sm:flex-row gap-3">
-      <a href="./prihlasenie.html" class="inline-flex justify-center items-center bg-accent text-white font-semibold px-6 py-3.5 rounded-md hover:bg-accentDark transition">
-        Vytvoriť prístup zadarmo
-      </a>
-      <a href="#vrstvy" class="inline-flex justify-center items-center border border-line font-semibold px-6 py-3.5 rounded-md hover:border-ink transition">
-        Čo presne uvidím
-      </a>
+    <div class="bg-[#111A2C] border border-white/10 rounded-xl p-6">
+      <div class="flex items-center justify-between pb-4">
+        <span class="text-[12px] tracking-wide text-[#8B8574] font-mono uppercase">Príklad feedu</span>
+        <span class="text-[11px] text-[#4FD1C5] font-mono flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#4FD1C5]"></span> naživo
+        </span>
+      </div>
+      <div class="divide-y divide-white/5">
+        <div class="flex items-center gap-3 py-3">
+          <span class="w-2 h-2 rounded-full bg-amber shrink-0"></span>
+          <span class="font-mono text-[12px] text-[#ADA795] w-24 shrink-0">pred 14 dňami</span>
+          <span class="text-[13px] text-paper flex-1">Mesto Sereď &mdash; zmluva na upratovanie končí o 3 mesiace</span>
+          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Trnavský kraj</span>
+        </div>
+        <div class="flex items-center gap-3 py-3">
+          <span class="w-2 h-2 rounded-full bg-[#4FD1C5] shrink-0"></span>
+          <span class="font-mono text-[12px] text-[#ADA795] w-24 shrink-0">pred 2 dňami</span>
+          <span class="text-[13px] text-paper flex-1">Obec Kysucké Nové Mesto &mdash; podpísala dotáciu na materskú školu</span>
+          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Žilinský kraj</span>
+        </div>
+        <div class="flex items-center gap-3 py-3">
+          <span class="w-2 h-2 rounded-full bg-amber shrink-0"></span>
+          <span class="font-mono text-[12px] text-[#ADA795] w-24 shrink-0">pred 9 dňami</span>
+          <span class="text-[13px] text-paper flex-1">Mesto Levice &mdash; zmluva na stravovanie končí o 5 mesiacov</span>
+          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Nitriansky kraj</span>
+        </div>
+        <div class="flex items-center gap-3 py-3">
+          <span class="w-2 h-2 rounded-full bg-[#4FD1C5] shrink-0"></span>
+          <span class="font-mono text-[12px] text-[#ADA795] w-24 shrink-0">pred 21 dňami</span>
+          <span class="text-[13px] text-paper flex-1">Obec Raslavice &mdash; najala projektanta na žiadosť o dotáciu</span>
+          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Prešovský kraj</span>
+        </div>
+      </div>
+      <div class="pt-3 font-mono text-[10px] text-[#55503F]">Ilustračný príklad, nie živé dáta</div>
     </div>
 
-    <p class="mt-4 text-[13px] text-slate2">
-      Bez platobnej karty a bez skúšobnej lehoty. Po registrácii uvidíte
-      celú databázu okamžite.
-    </p>
   </div>
 </section>
 
 <!-- ══════════════ ČÍSLA ══════════════ -->
-<section class="border-y border-line bg-[#fafbfc]">
+<section class="border-y border-line bg-[#F3F0E6]">
   <div class="wrap py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
     <!-- Tieto dve cisla boli napisane natvrdo a uz sa rozisli so
          skutocnostou: "227 731" bolo zastarane a "4 200" nezodpovedalo
@@ -133,19 +182,19 @@ tailwind.config = {
          ktoru pipeline prepise po kazdom behu. Kym sa nenacitaju, je tu
          pomlcka — radsej nic nez vymyslene cislo. -->
     <div>
-      <div id="p-zmluv" class="text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
+      <div id="p-zmluv" class="font-mono text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
       <div class="text-[13px] text-slate2 mt-1 leading-snug">zmlúv úradov v databáze</div>
     </div>
     <div>
-      <div id="p-prilezitosti" class="text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
+      <div id="p-prilezitosti" class="font-mono text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
       <div class="text-[13px] text-slate2 mt-1 leading-snug">sledovaných príležitostí práve teraz</div>
     </div>
     <div>
-      <div class="text-[28px] font-bold tracking-tight">8 krajov</div>
+      <div class="font-mono text-[28px] font-bold tracking-tight">8 krajov</div>
       <div class="text-[13px] text-slate2 mt-1 leading-snug">filtrujete si svoj región a sektor</div>
     </div>
     <div>
-      <div class="text-[28px] font-bold tracking-tight">0 &euro;</div>
+      <div class="font-mono text-[28px] font-bold tracking-tight">0 &euro;</div>
       <div class="text-[13px] text-slate2 mt-1 leading-snug">počas otvoreného obdobia, celý portál</div>
     </div>
   </div>
@@ -153,7 +202,7 @@ tailwind.config = {
 
 <!-- ══════════════ DVE VRSTVY ══════════════ -->
 <section id="vrstvy" class="wrap py-20 md:py-28">
-  <h2 class="text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
+  <h2 class="font-serif text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
     Tri signály, ktoré prichádzajú pred tendrom
   </h2>
   <p class="mt-4 text-[17px] text-slate2 max-w-2xl">
@@ -253,9 +302,9 @@ tailwind.config = {
 </section>
 
 <!-- ══════════════ PROTI KOMU IDETE ══════════════ -->
-<section id="konkurencia" class="border-y border-line bg-[#fafbfc]">
+<section id="konkurencia" class="border-y border-line bg-[#F3F0E6]">
   <div class="wrap py-20 md:py-28">
-    <h2 class="text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
+    <h2 class="font-serif text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
       Vedieť o zákazke je polovica. Druhá je vedieť, proti komu idete.
     </h2>
     <p class="mt-5 text-[17px] leading-relaxed text-slate2 max-w-2xl">
@@ -298,7 +347,7 @@ tailwind.config = {
                  text-accent bg-accent/8 border border-accent/20 rounded-full px-3 py-1">
       Otvorené obdobie
     </span>
-    <h2 class="mt-6 text-[28px] md:text-[38px] font-bold tracking-tight leading-tight">
+    <h2 class="font-serif mt-6 text-[28px] md:text-[38px] font-bold tracking-tight leading-tight">
       Teraz je to celé zadarmo. A ešte nevieme, čo to bude stáť.
     </h2>
     <p class="mt-5 text-[17px] leading-relaxed text-slate2">
@@ -331,7 +380,7 @@ tailwind.config = {
       </p>
     </div>
 
-    <div class="border border-line rounded-lg p-8 bg-[#fafbfc]">
+    <div class="border border-line rounded-lg p-8 bg-[#F3F0E6]">
       <h3 class="text-[19px] font-semibold">Čo bude niekedy platené</h3>
       <p class="mt-5 text-[15px] leading-relaxed text-slate2">
         Týždenný e-mail. Len to, čo je nové od minule, filtrované na váš
@@ -422,7 +471,7 @@ tailwind.config = {
 <!-- ══════════════ PRE KOHO ══════════════ -->
 <section id="komu" class="bg-ink text-white">
   <div class="wrap py-20 md:py-28">
-    <h2 class="text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
+    <h2 class="font-serif text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
       Najlepšie to funguje na opakovaných službách
     </h2>
     <p class="mt-5 text-[16px] leading-relaxed text-white/70 max-w-2xl">
@@ -469,7 +518,7 @@ tailwind.config = {
 
 <!-- ══════════════ ČO NEROBÍME ══════════════ -->
 <section id="hranice" class="wrap py-20 md:py-24">
-  <h2 class="text-[28px] md:text-[36px] font-bold tracking-tight max-w-2xl leading-tight">
+  <h2 class="font-serif text-[28px] md:text-[36px] font-bold tracking-tight max-w-2xl leading-tight">
     Čo za vás neurobíme
   </h2>
   <p class="mt-4 text-[17px] text-slate2 max-w-2xl">
@@ -525,10 +574,10 @@ tailwind.config = {
 </section>
 
 <!-- ══════════════ CTA ══════════════ -->
-<section id="ukazka" class="border-t border-line bg-[#fafbfc]">
+<section id="ukazka" class="border-t border-line bg-[#F3F0E6]">
   <div class="wrap py-20 md:py-28">
     <div class="max-w-2xl mx-auto text-center">
-      <h2 class="text-[28px] md:text-[40px] font-bold tracking-tight leading-tight">
+      <h2 class="font-serif text-[28px] md:text-[40px] font-bold tracking-tight leading-tight">
         Pozrite sa, čo vám uniká
       </h2>
       <p class="mt-5 text-[17px] leading-relaxed text-slate2">
@@ -572,7 +621,7 @@ tailwind.config = {
      tu dole: navstevnik tejto stranky je dodavatel a nechcem ho na zaciatku
      zmiest tym, ze mu ponukam nieco pre obce. Kto je starosta, doscrolluje
      alebo pride priamo na /obce.html. -->
-<section class="border-t border-line bg-[#fafbfc]">
+<section class="border-t border-line bg-[#F3F0E6]">
   <div class="wrap py-12">
     <div class="md:flex md:items-center md:justify-between gap-8">
       <div class="max-w-[560px]">
