@@ -88,6 +88,18 @@ tailwind.config = { theme: { extend: {
     margin-bottom: 0.15rem;
   }
 }
+
+/* ── NAZNAK, ZE SA DAJU ODSCROLOVAT DALSIE ZALOZKY ────────────────────────
+   Overene na 375 px (audit 17.9.2026): z 5 zalozok vidno len 2, kontajner
+   sa da odscrolovat prstom, ale nic to nehovori - ziadna sipka, bodka ani
+   ciastocne viditelny dalsi tab. Trieda sa pripina/odopina z JS presne
+   vtedy, ked je realne co odscrolovat (viz osviezScrollTabov nizsie) -
+   natrvalo pritomny fade by orezaval aj posledny tab na sirokej obrazovke,
+   kde uz nie je co skryvat. */
+#zalozky.ma-viac-tabov {
+  mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+}
 </style>
 </head>
 <body class="font-sans text-ink bg-[#F3F0E6] min-h-screen">
@@ -696,7 +708,7 @@ tailwind.config = { theme: { extend: {
                   <th class="px-4 py-3 text-right whitespace-nowrap">Úradov</th>
                   <th class="px-4 py-3 text-right whitespace-nowrap">Priemerná zmluva</th>
                   <th class="px-4 py-3 whitespace-nowrap">Aktivita</th>
-                  <th class="px-4 py-3 whitespace-nowrap"></th>
+                  <th class="px-4 py-3 whitespace-nowrap sticky right-0 bg-[#F3F0E6]"></th>
                 </tr>
               </thead>
               <tbody id="riadky-f"></tbody>
@@ -1118,7 +1130,9 @@ function ktoToMa(r) {
 
   return `<div class="text-[12px] mt-1">
             <span class="text-slate2">teraz:</span>
-            <span class="font-medium">${bezpecne(r.supplier_name)}</span>
+            <button type="button" data-preklik-dodavatel="${bezpecne(r.supplier_name)}"
+                    class="font-medium text-accent hover:text-accentDark hover:underline"
+                    title="Zobraziť profil tohto dodávateľa v záložke Dodávatelia">${bezpecne(r.supplier_name)}</button>
             ${casti.length ? `<span class="text-slate2"> · ${bezpecne(casti.join(' · '))}</span>` : ''}
           </div>`;
 }
@@ -1422,7 +1436,7 @@ function riadokDodavatela(r, sledovane) {
       <td data-popis="Úradov" class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${cislo(r.uradov)}</td>
       <td data-popis="Priemerná zmluva" class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${suma(r.priemerna_zmluva_eur)}</td>
       <td data-popis="Aktivita" class="px-4 py-4 align-top text-[14px] whitespace-nowrap">${aktivita}</td>
-      <td class="px-4 py-4 align-top text-right whitespace-nowrap">
+      <td class="px-4 py-4 align-top text-right whitespace-nowrap sticky right-0 bg-white">
         ${r.supplier_cin ? `
         <button type="button" data-sleduj="${bezpecne(r.supplier_cin)}" data-nazov="${bezpecne(r.dodavatel)}"
                 class="text-[12px] font-semibold px-2.5 py-1 rounded-md border transition
@@ -1553,7 +1567,23 @@ function nastavZalozky(prednastavena) {
   }
   ukaz('zalozky');
   prepni(prednastavena);
+  osviezScrollTabov();
 }
+
+/** Zapne/vypne fade na prave odsadeny okraj zalozok - len ked sa da
+ *  realne odscrolovat dalej (viz CSS komentar pri .ma-viac-tabov). */
+function osviezScrollTabov() {
+  const el = document.getElementById('zalozky');
+  if (!el) return;
+  const preteka = el.scrollWidth > el.clientWidth + 1;
+  const naKonci = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1;
+  el.classList.toggle('ma-viac-tabov', preteka && !naKonci);
+}
+window.addEventListener('resize', osviezScrollTabov);
+document.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('zalozky');
+  if (el) el.addEventListener('scroll', osviezScrollTabov);
+});
 
 function odznakPredplatneho(sub) {
   // Otvorene obdobie: cely portal je zadarmo pre kazdeho prihlaseneho.
@@ -2367,6 +2397,21 @@ async function dashboard(supabase) {
   }
   el('f-text').addEventListener('input', prekresliZ);
   napojViac('viac-z', 'zmluvy', nacitajZmluvy);
+
+  // Audit 17.9.2026, quick win #5: preklik z mena dodavatela (riadok
+  // Konciacich zmluv, ktoToMa()) rovno na jeho profil v zalozke
+  // Dodavatelia - predtym bolo meno len plain text, zakaznik musel
+  // zalozku prepnut a meno rucne znova napisat do hladania. Delegovane
+  // na cely tbody, rovnaky vzor ako uz existujuce "☆ Sledovat" nizsie.
+  el('riadky').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-preklik-dodavatel]');
+    if (!btn) return;
+    document.querySelector('[data-zalozka="dodavatelia"]')?.click();
+    if (jePro) {
+      el('s-text').value = btn.dataset.preklikDodavatel;
+      odznova('dodavatelia', nacitajDodavatelov)();
+    }
+  });
 
   const prekresliZi = pozdrz(odznova('ziadatelia', nacitajZiadatelov));
   el('zi-kraj').addEventListener('change', odznova('ziadatelia', nacitajZiadatelov));
