@@ -36,7 +36,8 @@ create table if not exists public.sanca_na_vyhru (
     top_dodavatel_pravnicky         text,
     podiel_top_dodavatela_pravnicky numeric,
     riziko                          text,
-    last_seen_at                    date
+    last_seen_at                    date,
+    refreshed_at                    timestamptz not null default now()
 );
 
 alter table public.sanca_na_vyhru enable row level security;
