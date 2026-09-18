@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cenník — PredTendrom.sk</title>
+<meta name="description" content="Tri úrovne pre firmy, ktoré dodávajú štátu a obciam: Start, Growth a Team. Teraz je celý portál zadarmo — toto je plánovaný cenník po otvorenom období.">
+<meta property="og:title" content="Cenník — PredTendrom.sk">
+<meta property="og:description" content="Start, Growth, Team. Teraz zadarmo — toto je plánovaná cena, keď sa otvorené obdobie skončí.">
+<meta property="og:type" content="website">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: { extend: {
+    fontFamily: { sans: ['IBM Plex Sans','system-ui','-apple-system','Segoe UI','sans-serif'], serif: ['Instrument Serif','Georgia','serif'], mono: ['IBM Plex Mono','SFMono-Regular','Menlo','monospace'] },
+    colors: { ink:'#0B1220', slate2:'#6B6558', line:'#E4DFD2', accent:'#B25313', accentDark:'#8A3F0D', amber:'#E8A33D', paper:'#F7F3EA' }
+  }}
+}
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-left: 1.25rem; padding-right: 1.25rem; }
+</style>
+</head>
+<body class="font-sans text-ink bg-paper antialiased">
+
+<!-- ══════════════ PREPÍNAČ PUBLIKA ═════════════
+     Rovnaky pruh ako na index.html/obce.html — cennik je sucast "firma"
+     strany produktu, takze "zakazky pre moju firmu" je tu aktivne. -->
+<div class="border-b border-line bg-[#F3F0E6]">
+  <div class="wrap flex items-center gap-3 h-11 overflow-x-auto">
+    <span class="hidden sm:inline text-[12px] text-slate2 whitespace-nowrap shrink-0">Hľadám:</span>
+    <nav class="flex items-center gap-1.5">
+      <a href="./index.html" aria-current="page"
+         class="text-[13px] font-semibold px-3 py-1.5 rounded-full whitespace-nowrap
+                bg-ink text-white"><span class="sm:hidden">Pre firmu</span><span class="hidden sm:inline">zákazky pre moju firmu</span></a>
+      <a href="./obce.html"
+         class="text-[13px] font-medium px-3 py-1.5 rounded-full whitespace-nowrap
+                text-slate2 hover:text-ink hover:bg-white border border-transparent
+                hover:border-line transition"><span class="sm:hidden">Pre obec</span><span class="hidden sm:inline">peniaze pre moju obec</span></a>
+    </nav>
+  </div>
+</div>
+
+<!-- ══════════════ NAV ══════════════ -->
+<header class="border-b border-line sticky top-0 bg-white/95 backdrop-blur z-40">
+  <div class="wrap flex items-center justify-between h-16">
+    <a href="./index.html" class="flex items-center gap-2">
+      <svg width="20" height="20" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+      <span class="font-serif italic text-[19px] text-ink">predtendrom</span>
+    </a>
+    <nav class="hidden lg:flex items-center gap-8 text-[14px] text-slate2">
+      <a href="./index.html#vrstvy" class="hover:text-ink transition">Čo sledujeme</a>
+      <a href="./index.html#konkurencia" class="hover:text-ink transition">Konkurencia</a>
+      <a href="./cennik.html" aria-current="page" class="text-ink font-semibold">Cenník</a>
+      <a href="./index.html#hranice" class="hover:text-ink transition">Čo nerobíme</a>
+    </nav>
+    <div class="flex items-center gap-4">
+      <a href="./prihlasenie.html"
+         class="hidden sm:inline text-[14px] text-slate2 hover:text-ink transition whitespace-nowrap">Prihlásiť sa</a>
+      <a href="./prihlasenie.html" class="text-[14px] font-semibold bg-ink text-white px-4 py-2 rounded-md hover:bg-accent transition whitespace-nowrap">
+        Vyskúšať zadarmo
+      </a>
+    </div>
+  </div>
+</header>
+
+<!-- ══════════════ HERO CENNÍKA ══════════════
+     Ciastocne prekryv s #cena sekciou na index.html (ktora ostava — je to
+     "preco je to teraz zadarmo" honest framing), ale tu je konkretny
+     cennik s cislami, na ktory index.html odkazuje. -->
+<section class="wrap py-16 md:py-20">
+  <div class="max-w-2xl">
+    <span class="inline-block text-[12px] font-semibold uppercase tracking-wider
+                 text-accent bg-accent/8 border border-accent/20 rounded-full px-3 py-1">
+      Plánovaný cenník
+    </span>
+    <h1 class="font-serif mt-6 text-[32px] md:text-[44px] font-bold tracking-tight leading-tight">
+      Toto je cena, ku ktorej smerujeme. Dnes je všetko zadarmo.
+    </h1>
+    <p class="mt-5 text-[17px] leading-relaxed text-slate2">
+      Portál beží v otvorenom období — každý prihlásený používateľ má
+      dnes prístup ku všetkému, čo je nižšie v úrovni Growth aj Team.
+      Tento cenník je plán na obdobie, keď sa otvorené obdobie skončí,
+      nie účet, ktorý vám príde tento mesiac.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════ TRI ÚROVNE ══════════════ -->
+<section class="wrap pb-16 md:pb-24">
+  <div class="grid md:grid-cols-3 gap-6 items-stretch">
+
+    <!-- START -->
+    <div class="border border-line rounded-lg p-7 flex flex-col bg-white">
+      <h2 class="text-[19px] font-semibold">Start</h2>
+      <p class="mt-1 text-[13px] text-slate2">Pre mikro a malé firmy s jedným obchodníkom.</p>
+      <div class="mt-5 flex items-baseline gap-1.5">
+        <span class="font-serif text-[40px] font-bold tracking-tight">34&nbsp;€</span>
+        <span class="text-[14px] text-slate2">/ mesiac</span>
+      </div>
+      <p class="mt-1 text-[12px] text-slate2">alebo ~340&nbsp;€/rok</p>
+      <ul class="mt-6 space-y-3 text-[14px] text-slate2 flex-1">
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>1 kraj alebo 1–2 sektory podľa výberu</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Týždenný e-mailový prehľad</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Končiace zmluvy, dotácie aj obce, čo si najali projektanta</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Cenový benchmark sektora</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Export do CSV</li>
+      </ul>
+      <a href="./prihlasenie.html"
+         class="mt-7 inline-flex justify-center items-center border-2 border-ink text-ink font-semibold px-5 py-3 rounded-md hover:bg-ink hover:text-white transition text-[14px]">
+        Začať teraz zadarmo
+      </a>
+    </div>
+
+    <!-- GROWTH (zvyraznene) -->
+    <div class="border-2 border-ink rounded-lg p-7 flex flex-col bg-white relative">
+      <span class="absolute -top-3 left-7 bg-ink text-white text-[11px] font-semibold uppercase tracking-wide px-2.5 py-1 rounded">
+        Najobľúbenejšia voľba
+      </span>
+      <h2 class="text-[19px] font-semibold">Growth</h2>
+      <p class="mt-1 text-[13px] text-slate2">Pre firmy so 6–50 zamestnancami a vlastným obchodom.</p>
+      <div class="mt-5 flex items-baseline gap-1.5">
+        <span class="font-serif text-[40px] font-bold tracking-tight">89&nbsp;€</span>
+        <span class="text-[14px] text-slate2">/ mesiac</span>
+      </div>
+      <p class="mt-1 text-[12px] text-slate2">alebo ~890&nbsp;€/rok</p>
+      <ul class="mt-6 space-y-3 text-[14px] text-slate2 flex-1">
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Celé Slovensko, všetky sektory</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Denný e-mailový prehľad</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Slack/Teams webhook</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Sledovanie neobmedzeného počtu firiem podľa IČO</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Prioritizácia príležitostí podľa vášho IČO a histórie</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Šanca na výhru — kto na tejto zákazke historicky vyhráva</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Trhový podiel a odhad veľkosti trhu podľa sektora</li>
+        <li class="flex gap-2.5 text-ink font-medium"><span class="text-accent font-bold">&#10003;</span>Všetko zo Start</li>
+      </ul>
+      <a href="./prihlasenie.html"
+         class="mt-7 inline-flex justify-center items-center bg-ink text-white font-semibold px-5 py-3 rounded-md hover:bg-accent transition text-[14px]">
+        Začať teraz zadarmo
+      </a>
+    </div>
+
+    <!-- TEAM -->
+    <div class="border border-line rounded-lg p-7 flex flex-col bg-white">
+      <h2 class="text-[19px] font-semibold">Team</h2>
+      <p class="mt-1 text-[13px] text-slate2">Pre firmy s obchodným tímom alebo viacerými pobočkami.</p>
+      <div class="mt-5 flex items-baseline gap-1.5">
+        <span class="font-serif text-[40px] font-bold tracking-tight">249&nbsp;€</span>
+        <span class="text-[14px] text-slate2">/ mesiac</span>
+      </div>
+      <p class="mt-1 text-[12px] text-slate2">alebo ~2&nbsp;490&nbsp;€/rok</p>
+      <ul class="mt-6 space-y-3 text-[14px] text-slate2 flex-1">
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Viacero používateľov v jednej organizácii</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Zdieľaný zoznam sledovaných firiem naprieč tímom</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Pozvánka kolegov e-mailom, bez zdieľania hesla či účtu</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Prioritná podpora</li>
+        <li class="flex gap-2.5 text-ink font-medium"><span class="text-accent font-bold">&#10003;</span>Všetko z Growth</li>
+      </ul>
+      <a href="mailto:info@predtendrom.sk?subject=Z%C3%A1ujem%20o%20Team"
+         class="mt-7 inline-flex justify-center items-center border-2 border-ink text-ink font-semibold px-5 py-3 rounded-md hover:bg-ink hover:text-white transition text-[14px]">
+        Napísať o Team úrovni
+      </a>
+    </div>
+
+  </div>
+
+  <p class="mt-10 text-[14px] leading-relaxed text-slate2 max-w-3xl">
+    Ceny sú orientačné a môžu sa do skončenia otvoreného obdobia ešte
+    upraviť podľa toho, čo nám poviete, že vám prinášajC. Ak vám dnes
+    niečo z tohto zoznamu chýba alebo prebýva, napíšte na
+    <a class="text-accent hover:underline" href="mailto:info@predtendrom.sk">info@predtendrom.sk</a>
+    — to je presne ten druh spätnej väzby, vďaka ktorej cenník dolaďujeme.
+  </p>
+</section>
+
+<!-- ══════════════ POROVNANIE S TRHOM ══════════════ -->
+<section class="border-t border-line bg-[#F3F0E6]">
+  <div class="wrap py-16 md:py-20">
+    <h2 class="font-serif text-[24px] md:text-[28px] font-bold tracking-tight">Prečo tieto čísla</h2>
+    <p class="mt-4 text-[15px] leading-relaxed text-slate2 max-w-2xl">
+      Ostatní na trhu monitorujú tendre, ktoré sú už vyhlásené alebo
+      tesne pred vyhlásením. PredTendrom hľadá signál mesiace až roky
+      vopred — z končiacich zmluvy, podpísaných dotácií a obcí, ktoré si
+      práve najali projektanta. To je dôvod, prečo je cena nad UVOstat
+      aj TenderRadar, ale citeľne pod Transpera.
+    </p>
+    <div class="mt-8 overflow-x-auto">
+      <table class="w-full text-[14px] border-collapse min-w-[560px]">
+        <thead>
+          <tr class="text-left text-slate2 border-b border-line">
+            <th class="py-2 pr-4 font-medium">Konkurent</th>
+            <th class="py-2 pr-4 font-medium">Cena</th>
+            <th class="py-2 font-medium">Predstih</th>
+          </tr>
+        </thead>
+        <tbody class="text-ink">
+          <tr class="border-b border-line/60">
+            <td class="py-2.5 pr-4">UVOstat.sk</td>
+            <td class="py-2.5 pr-4">20–80 €/rok</td>
+            <td class="py-2.5">Vyhlásené obstarávania</td>
+          </tr>
+          <tr class="border-b border-line/60">
+            <td class="py-2.5 pr-4">TenderRadar.sk</td>
+            <td class="py-2.5 pr-4">19,90 €/mes.</td>
+            <td class="py-2.5">Vyhlásené tendre</td>
+          </tr>
+          <tr class="border-b border-line/60">
+            <td class="py-2.5 pr-4 font-semibold">PredTendrom.sk</td>
+            <td class="py-2.5 pr-4 font-semibold">34–249 €/mes.</td>
+            <td class="py-2.5 font-semibold">3 mesiace až 2,5 roka vopred</td>
+          </tr>
+          <tr>
+            <td class="py-2.5 pr-4">Transpera.sk</td>
+            <td class="py-2.5 pr-4">640–1&nbsp;992 €/rok</td>
+            <td class="py-2.5">Priemerne 8 dní vopred</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-4 text-[12px] text-slate2">Ceny konkurencie overené v septembri 2026, verejné cenníky.</p>
+  </div>
+</section>
+
+<!-- ═════════════ FOUNDER ══════════════ -->
+<section class="bg-paper border-t border-line">
+  <div class="wrap py-16 md:py-20">
+    <div class="flex flex-col sm:flex-row items-center sm:items-center gap-8">
+      <div class="w-[140px] h-[140px] rounded-full shrink-0 overflow-hidden border-[3px] border-ink relative">
+        <img src="./marek-zakladatel.jpg" alt="Marek Takáč, zakladateľ PredTendrom.sk"
+             class="w-full h-full object-cover" style="object-position: 50% 20%; filter: grayscale(1) contrast(1.06) brightness(1.03);">
+        <div class="absolute inset-0 bg-amber" style="mix-blend-mode: multiply; opacity: 0.16;"></div>
+      </div>
+      <div class="text-center sm:text-left max-w-[640px]">
+        <p class="text-[12px] font-mono uppercase tracking-wider text-accent">Zakladateľ</p>
+        <h2 class="mt-1 font-serif text-[28px] text-ink">Marek Takáč</h2>
+        <p class="mt-2 text-[15px] leading-relaxed text-slate2">
+          Staviam PredTendrom.sk ako nástroj, ktorý by som ako dodávateľ sám
+          potreboval &mdash; nie ďalší dashboard, ale skutočný predstih pred tendrom.
+        </p>
+        <div class="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-3">
+          <a href="tel:+421905438454"
+             class="inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            0905 438 454
+          </a>
+          <a href="mailto:info@predtendrom.sk"
+             class="inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
+            info@predtendrom.sk
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="border-t border-line">
+  <div class="wrap py-14">
+    <div class="grid md:grid-cols-3 gap-10">
+      <div>
+        <div class="flex items-center gap-2">
+          <svg width="17" height="17" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+            <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+            <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+            <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+            <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+            <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+          </svg>
+          <span class="font-serif italic text-[16px] text-ink">predtendrom</span>
+        </div>
+        <p class="mt-3 text-[13px] leading-relaxed text-slate2">
+          LoveHome s.r.o.<br>
+          Černyševského 40, 851 01 Bratislava<br>
+          IČO: 47586362<br>
+          info@predtendrom.sk
+        </p>
+      </div>
+
+      <div class="md:col-span-2">
+        <h3 class="text-[14px] font-semibold">O tomto cenníku</h3>
+        <p class="mt-3 text-[13px] leading-relaxed text-slate2">
+          Ceny vyššie sú plán, nie aktívny paywall — portál je stále v
+          otvorenom období a všetko funguje zadarmo pre každého prihláseného
+          používateľa. Keď sa to zmení, dostanete o tom vedieť najmenej
+          mesiac vopred, s presnými podmienkami prechodu.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-12 pt-6 border-t border-line flex flex-col sm:flex-row justify-between gap-3 text-[12px] text-slate2">
+      <span>&copy; <span id="rok"></span> LoveHome s.r.o. &middot; <a href="./index.html" class="underline hover:text-ink">Späť na PredTendrom.sk</a> &middot; <a href="./zdroje.html" class="underline hover:text-ink">Zdroje dát a podmienky</a></span>
+      <span>Nie sme štátny orgán ani s ním prepojení.</span>
+    </div>
+  </div>
+</footer>
+
+<script src="./config.js"></script>
+<script>
+document.getElementById('rok').textContent = new Date().getFullYear();
+</script>
+
+</body>
+</html>

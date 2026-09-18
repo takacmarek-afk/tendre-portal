@@ -77,6 +77,7 @@ tailwind.config = {
       <a href="#vrstvy" class="hover:text-ink transition">Čo sledujeme</a>
       <a href="#konkurencia" class="hover:text-ink transition">Konkurencia</a>
       <a href="#cena" class="hover:text-ink transition">Koľko to stojí</a>
+      <a href="./cennik.html" class="hover:text-ink transition">Cenník</a>
       <a href="#hranice" class="hover:text-ink transition">Čo nerobíme</a>
     </nav>
     <div class="flex items-center gap-4">
@@ -353,13 +354,13 @@ tailwind.config = {
       Otvorené obdobie
     </span>
     <h2 class="font-serif mt-6 text-[28px] md:text-[38px] font-bold tracking-tight leading-tight">
-      Teraz je to celé zadarmo. A ešte nevieme, čo to bude stáť.
+      Teraz je to celé zadarmo. Vieme už ale povedať, kam to smeruje.
     </h2>
     <p class="mt-5 text-[17px] leading-relaxed text-slate2">
-      Nemáme cenník, pretože sme si ho nevymysleli. Portál je nový a nemáme
-      jediného platiaceho zákazníka, podľa ktorého by sme vedeli, čo tá
-      informácia naozaj stojí. Kým to nezistíme, je prístup bezplatný
-      a bez obmedzenia.
+      Zverejnili sme <a href="./cennik.html" class="text-accent hover:underline font-medium">cenník</a>,
+      ku ktorému sa chystáme prejsť, až portál dokáže, že stojí za peniaze.
+      Kým sa tak nestane, zostáva prístup &mdash; Start, Growth aj Team &mdash;
+      bezplatný a bez obmedzenia.
     </p>
   </div>
 
@@ -388,24 +389,24 @@ tailwind.config = {
     </div>
 
     <div class="border border-line rounded-lg p-8 bg-[#F3F0E6]">
-      <h3 class="text-[19px] font-semibold">Čo bude niekedy platené</h3>
+      <h3 class="text-[19px] font-semibold">Čo patrí k vyšším úrovniam</h3>
       <p class="mt-5 text-[15px] leading-relaxed text-slate2">
-        Týždenný e-mail. Len to, čo je nové od minule, filtrované na váš
-        sektor a kraj, s krátkym vysvetlením, čo z tej dotácie
-        pravdepodobne bude za zákazku.
+        Týždenný e-mail posielame zadarmo každému, kto si zapne odber. Len
+        to, čo je nové od minule, filtrované na váš sektor a kraj, s
+        krátkym vysvetlením, čo z tej dotácie pravdepodobne bude za
+        zákazku.
       </p>
       <p class="mt-4 text-[15px] leading-relaxed text-slate2">
         Dôvod je jednoduchý: v malej firme nie je „pozerať tendrový portál"
         nikoho úlohou. Kým sa treba prihlásiť, nestane sa to.
       </p>
-      <!-- Povodne tu bolo "Zatial ho posielame tiez zadarmo". To nebola
-           pravda: odber sa uklada, ale ziadny e-mail zatial neodchadza.
-           Slubit na predajnom hovore e-mail, ktory nepride, je horsie nez
-           ho neponuknut vobec. -->
+      <!-- Denny digest a webhook su v cenniku vyhradene pre Growth/Team
+           (pozri 25_odber_pro_gating.sql). Pocas otvoreneho obdobia
+           (je_zadarmo() = true) ich ale ma odomknute kazdy. -->
       <p class="mt-5 text-[15px] leading-relaxed text-ink font-medium">
-        Ešte ho neposielame. Zbierame záujem, aby sme vedeli, pre koho
-        ho písať. Keď prvý vyjde, dostanete ho zadarmo a o cene povieme
-        mesiac vopred.
+        Denný digest a webhook upozornenia patria v <a href="./cennik.html" class="text-accent hover:underline">cenníku</a>
+        k úrovniam Growth a Team. Počas otvoreného obdobia si ich ale
+        môže zapnúť ktokoľvek.
       </p>
       <!-- ══ UKÁŽKA E-MAILU ══
            Kto si niečo zapína, má vidieť, čo mu príde. Štruktúra je presne
@@ -465,6 +466,14 @@ tailwind.config = {
         Chcem ho dostávať
       </a>
     </div>
+  </div>
+
+  <div class="mt-10">
+    <a href="./cennik.html"
+       class="inline-block bg-ink text-white font-semibold px-5 py-3
+              rounded-md hover:bg-accent transition text-[15px]">
+      Pozrieť celý cenník &rarr;
+    </a>
   </div>
 
   <p class="mt-8 text-[14px] leading-relaxed text-slate2 max-w-3xl">
