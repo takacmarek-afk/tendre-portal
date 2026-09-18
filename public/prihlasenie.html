@@ -37,12 +37,24 @@ tailwind.config = { theme: { extend: {
   <div class="bg-white border border-line rounded-lg p-7">
 
     <div id="formular">
+      <!-- Zobrazene len ked adresa nesie platny ?pozvanka=<token> — viz
+           nacitajPozvanku() nizsie. Bez tohto by pozvany kolega videl
+           rovnaky vseobecny formular ako kazdy iny navstevnik a netusil
+           by, ze token uz cestu vedno "urcil" jeho e-mail. -->
+      <div id="pozvanka-banner" class="hidden mb-5 bg-ink text-white rounded-lg px-4 py-3">
+        <p class="text-[13px] leading-relaxed">
+          Boli ste pozvaní do organizácie
+          <strong id="pozvanka-nazov"></strong> na PredTendrom.sk.
+          Prihláste sa e-mailom nižšie a pripojíte sa k tímu.
+        </p>
+      </div>
+
       <h1 class="text-[19px] font-semibold">Prihlásenie a registrácia</h1>
       <!-- Tu stalo "vytvori sa automaticky aj s trojdnovou skuskou", kym
            uvodna stranka o dve kliknutia vedla slubuje "bez skusobnej
            lehoty". Navstevnik vidi obe za sebou. Skusobna lehota uz
            neplati — pocas otvoreneho obdobia je pristup bez obmedzenia. -->
-      <p class="mt-2 text-[14px] leading-relaxed text-slate2">
+      <p id="uvod-text" class="mt-2 text-[14px] leading-relaxed text-slate2">
         Zadajte e-mail a pošleme vám odkaz na prihlásenie. Žiadne heslo si
         pamätať nemusíte. Ak u nás ešte účet nemáte, vytvorí sa automaticky
         a celý portál uvidíte hneď — počas otvoreného obdobia bezplatne
@@ -121,6 +133,12 @@ if (zAdresy) {
   history.replaceState({}, document.title, location.pathname);
 }
 
+// Token z pozvanky do timu (viz app.html a supabase/26_team_pozvanky.sql).
+// Zamerne v QUERY retazci, nie v hash-i — flowType je "implicit", takze
+// prihlasovacie udaje po kliku na odkaz z e-mailu pristanu v HASH-i, a
+// query cast adresy tym ostava nedotknuta. Token teda prezije popri nich.
+const TOKEN_POZVANKY = new URLSearchParams(location.search).get('pozvanka');
+
 if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
   ukazChybu('Aplikácia nie je nastavená: v súbore config.js chýba anon kľúč.');
   tlacidlo.disabled = true;
@@ -128,7 +146,34 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   const { data: { session } } = await supabase.auth.getSession();
-  if (session) location.replace('./app.html');
+  if (session) {
+    location.replace('./app.html' +
+      (TOKEN_POZVANKY ? '?pozvanka=' + encodeURIComponent(TOKEN_POZVANKY) : ''));
+  }
+
+  // Pozvany kolega este nema session — over token a ak je platny, uprav
+  // formular tak, aby bolo jasne, do coho sa hlasi, a zamkni e-mail na
+  // ten, na ktory bola pozvanka poslana (zvraty inej adresy by skoncili
+  // chybou UZ_MAS_FIRMU/nezhodou v prijmi_pozvanku()).
+  if (TOKEN_POZVANKY) {
+    const { data: p } = await supabase.rpc('nazov_pozvanky', { p_token: TOKEN_POZVANKY });
+    if (p?.ok) {
+      document.getElementById('pozvanka-nazov').textContent = p.nazov || 'vášho tímu';
+      document.getElementById('pozvanka-banner').classList.remove('hidden');
+      document.getElementById('uvod-text').textContent =
+        'Zadajte rovnaký e-mail, na ktorý prišla pozvánka, a pošleme vám ' +
+        'odkaz na prihlásenie. Žiadne heslo si pamätať nemusíte.';
+      const eml = document.getElementById('email');
+      if (p.email) {
+        eml.value = p.email;
+        eml.readOnly = true;
+        eml.classList.add('bg-slate2/10');
+      }
+    }
+    // Neplatny/vyprsany token sa tu ticho ignoruje — pouzivatel sa
+    // proste prihlasi bezne, ako keby ziadny odkaz na pozvanku nemal.
+    // Samotne prijatie (prijmi_pozvanku) aj tak overi platnost znova.
+  }
 
   document.getElementById('login').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -137,9 +182,11 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
     tlacidlo.textContent = 'Odosielam...';
 
     const email = document.getElementById('email').value.trim();
+    const cielovaAdresa = new URL('./app.html', location.href);
+    if (TOKEN_POZVANKY) cielovaAdresa.searchParams.set('pozvanka', TOKEN_POZVANKY);
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: new URL('./app.html', location.href).href }
+      options: { emailRedirectTo: cielovaAdresa.href }
     });
 
     if (error) {
