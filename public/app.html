@@ -1982,6 +1982,14 @@ function datumKratky(iso) {
 async function nastavTeam(supabase, rola) {
   const jeOwner = rola === 'owner';
 
+  // Zakladateľ (Marek) má v auth.users svoj osobný gmail — v zozname členov
+  // sa ale nemá ukazovať verejne kolegom, ktorých pozve. Namiesto e-mailu sa
+  // pre tento jeden konkrétny účet zobrazí meno, s odkazom na firemnú
+  // schránku (rovnaká adresa ako všade inde na webe, viď index.html).
+  const SKRYTE_EMAILY = {
+    'takac.marek@gmail.com': { meno: 'Marek Takáč', email: 'info@predtendrom.sk' },
+  };
+
   async function nacitajClenov() {
     const { data, error } = await supabase.rpc('moji_kolegovia');
     if (error) {
@@ -1990,12 +1998,18 @@ async function nastavTeam(supabase, rola) {
       return;
     }
     const zoznam = data ?? [];
-    el('team-clenovia').innerHTML = (zoznam.map(c => `
+    el('team-clenovia').innerHTML = (zoznam.map(c => {
+      const skryty = SKRYTE_EMAILY[(c.email || '').toLowerCase()];
+      const riadokEmail = skryty
+        ? `<a href="mailto:${skryty.email}" class="hover:underline">${bezpecne(skryty.meno)}</a>`
+        : bezpecne(c.email);
+      return `
       <div class="py-2.5">
-        <p class="text-[14px] text-ink">${bezpecne(c.email)}</p>
+        <p class="text-[14px] text-ink">${riadokEmail}</p>
         <p class="text-[12px] text-slate2">${c.rola === 'owner' ? 'vlastník' : 'člen'} · od ${datumKratky(c.created_at)}</p>
       </div>
-    `).join('')) || '<p class="text-[13px] text-slate2 py-2">Zatiaľ len vy.</p>';
+    `;
+    }).join('')) || '<p class="text-[13px] text-slate2 py-2">Zatiaľ len vy.</p>';
   }
 
   await nacitajClenov();
