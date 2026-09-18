@@ -199,12 +199,37 @@ tailwind.config = { theme: { extend: {
       <div class="flex items-center gap-4">
         <span id="odznak-plan" class="text-[12px] font-semibold px-2.5 py-1 rounded hidden sm:inline"></span>
         <span id="odznak-trial" class="text-[13px] font-medium px-3 py-1 rounded-full"></span>
+        <button id="btn-predplatne" class="hidden text-[13px] text-slate2 hover:text-ink">Predplatné</button>
         <a href="./zdroje.html" class="text-[13px] text-slate2 hover:text-ink hidden sm:inline"
            title="Zdroje dát, oznámenie o úpravách a podmienky použitia">Zdroje dát</a>
         <button id="odhlasit" class="text-[13px] text-slate2 hover:text-ink">Odhlásiť</button>
       </div>
     </div>
   </header>
+
+  <!-- Modal: rucne zaplatenie/predlzenie predplatneho cez TrustPay/finby.
+       Funguje nezavisle od otvoreneho obdobia - slot na testovanie platby
+       teraz, aj buduce ostre pouzitie po jeho skonceni. -->
+  <div id="modal-predplatne" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
+    <div class="bg-white rounded-lg border border-line w-full max-w-[420px] p-6">
+      <div class="flex items-center justify-between mb-1">
+        <h2 class="text-[17px] font-semibold">Predplatné</h2>
+        <button id="modal-predplatne-zavriet" class="text-slate2 hover:text-ink text-[20px] leading-none">&times;</button>
+      </div>
+      <p class="text-[13px] leading-relaxed text-slate2 mb-4">
+        Počas otvoreného obdobia je celý portál zadarmo pre každého. Toto
+        slúži na vyskúšanie platby vopred (testovacie prostredie u finby,
+        žiadne skutočné peniaze).
+      </p>
+      <div id="modal-predplatne-plany" class="space-y-2 mb-4"></div>
+      <p id="modal-predplatne-chyba" class="hidden text-[13px] text-red-700 mb-3"></p>
+      <button id="modal-predplatne-zaplatit"
+              class="w-full bg-accent text-white font-semibold px-5 py-3 rounded-md
+                     hover:bg-accentDark transition disabled:opacity-50">
+        Zaplatiť
+      </button>
+    </div>
+  </div>
 
   <main class="max-w-[1280px] mx-auto px-5 py-8">
 
@@ -1668,6 +1693,76 @@ document.addEventListener('DOMContentLoaded', () => {
   if (el) el.addEventListener('scroll', osviezScrollTabov);
 });
 
+// ── PREDPLATNE (TrustPay/finby) ──────────────────────────────────────────
+const PREDPLATNE_PLANY = [
+  { plan: 'start',  obdobie: 'mesiac', label: 'Start',  cena: '34 € / mesiac' },
+  { plan: 'start',  obdobie: 'rok',    label: 'Start',  cena: '340 € / rok' },
+  { plan: 'growth', obdobie: 'mesiac', label: 'Growth', cena: '89 € / mesiac' },
+  { plan: 'growth', obdobie: 'rok',    label: 'Growth', cena: '890 € / rok' },
+];
+
+const PREDPLATNE_CHYBY = {
+  NEPRIHLASENY: 'Musíte byť prihlásený.',
+  BEZ_OPRAVNENIA: 'Platbu môže spustiť len vlastník alebo admin firmy.',
+  NEZNAMY_PLAN: 'Neznámy plán.',
+  PLATOBNA_BRANA_NENASTAVENA: 'Platobná brána zatiaľ nie je nastavená. Skúste to prosím neskôr.',
+  FINBY_AUTH_ZLYHALA: 'Platobná brána momentálne neodpovedá. Skúste to prosím o chvíľu.',
+  FINBY_PLATBA_ZLYHALA: 'Platobná brána momentálne neodpovedá. Skúste to prosím o chvíľu.',
+  FINBY_BEZ_GATEWAY_URL: 'Platobná brána vrátila neočakávanú odpoveď. Skúste to prosím o chvíľu.',
+};
+
+function otvorPredplatneModal(supabase) {
+  const zoznam = el('modal-predplatne-plany');
+  zoznam.innerHTML = PREDPLATNE_PLANY.map((p, i) => `
+    <label class="flex items-center justify-between gap-3 border border-line rounded-md px-3 py-2.5
+                   text-[14px] cursor-pointer has-[:checked]:border-ink has-[:checked]:bg-[#F3F0E6]">
+      <span class="flex items-center gap-2">
+        <input type="radio" name="predplatne-volba" value="${p.plan}:${p.obdobie}" ${i === 0 ? 'checked' : ''}>
+        ${p.label}
+      </span>
+      <span class="text-slate2">${p.cena}</span>
+    </label>`).join('');
+
+  el('modal-predplatne-chyba').classList.add('hidden');
+  const btn = el('modal-predplatne-zaplatit');
+  btn.disabled = false;
+  btn.textContent = 'Zaplatiť';
+  ukaz('modal-predplatne');
+  el('modal-predplatne').classList.add('flex');
+
+  el('modal-predplatne-zavriet').onclick = () => {
+    el('modal-predplatne').classList.add('hidden');
+    el('modal-predplatne').classList.remove('flex');
+  };
+
+  btn.onclick = async () => {
+    const zvolene = document.querySelector('input[name="predplatne-volba"]:checked')?.value;
+    if (!zvolene) return;
+    const [plan, obdobie] = zvolene.split(':');
+    const chyba = el('modal-predplatne-chyba');
+    chyba.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Presmerúvam na platbu…';
+    try {
+      const { data, error } = await supabase.functions.invoke('trustpay-initiate', { body: { plan, obdobie } });
+      if (error || !data?.ok) {
+        const kod = data?.kod;
+        chyba.textContent = PREDPLATNE_CHYBY[kod] || 'Platbu sa nepodarilo spustiť. Skúste to prosím znova.';
+        chyba.classList.remove('hidden');
+        btn.disabled = false;
+        btn.textContent = 'Zaplatiť';
+        return;
+      }
+      location.href = data.gatewayUrl;
+    } catch {
+      chyba.textContent = 'Platbu sa nepodarilo spustiť. Skontrolujte pripojenie a skúste to znova.';
+      chyba.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Zaplatiť';
+    }
+  };
+}
+
 function odznakPredplatneho(sub) {
   // Otvorene obdobie: cely portal je zadarmo pre kazdeho prihlaseneho.
   // O pristupe rozhoduje vylucne funkcia public.je_zadarmo() v databaze,
@@ -2038,6 +2133,14 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   el('nazov-firmy').textContent = org?.nazov ?? '';
   const jePro = odznakPredplatneho(sub);
   const orgId = org?.id ?? null;
+
+  // Zaplatit/predlzit vie spustit len vlastnik alebo admin firmy - rovnaka
+  // podmienka, aku si sama overi aj zaloz_platbu() v databaze (29_platby.sql).
+  if (rola === 'owner' || rola === 'admin') {
+    const btnPredplatne = el('btn-predplatne');
+    btnPredplatne.classList.remove('hidden');
+    btnPredplatne.addEventListener('click', () => otvorPredplatneModal(supabase));
+  }
 
   // Vysledok prijatia pozvanky (viz start()). Ziadny trvaly zapis, len
   // jednorazova hlaska pre TOTO nacitanie stranky.

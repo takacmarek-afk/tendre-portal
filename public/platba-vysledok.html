@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Výsledok platby — PredTendrom.sk</title>
+<meta name="robots" content="noindex">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink: '#14171F', slate2: '#5B6472', line: '#E4E1D6',
+          accent: '#C77B34', accentDark: '#A6621F',
+        },
+        fontFamily: { serif: ['Georgia', 'serif'] },
+      }
+    }
+  };
+</script>
+</head>
+<body class="bg-[#FBFAF6] text-ink min-h-screen flex items-center justify-center px-4">
+
+<div class="w-full max-w-[460px]">
+  <div class="text-center mb-8">
+    <div class="flex items-center justify-center gap-2">
+      <svg width="24" height="24" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+      <span class="font-serif italic text-[22px] text-ink">predtendrom</span>
+    </div>
+  </div>
+
+  <div id="karta" class="bg-white border border-line rounded-lg p-7 text-center">
+    <div id="ikona" class="w-12 h-12 rounded-full text-[22px] flex items-center justify-center mx-auto mb-5"></div>
+    <h1 id="nadpis" class="text-[19px] font-semibold"></h1>
+    <p id="text" class="mt-3 text-[14px] leading-relaxed text-slate2"></p>
+    <a href="./app.html"
+       class="inline-block mt-6 bg-accent text-white font-semibold px-6 py-3 rounded-md
+              hover:bg-accentDark transition">
+      Späť do aplikácie
+    </a>
+  </div>
+</div>
+
+<script>
+  // Ziadne volanie Supabase tu nie je potrebne - skutocne spracovanie
+  // (aktivacia predplatneho) robi trustpay-notify webhook asynchronne,
+  // nezavisle od toho, ci sa zakaznik vobec vrati na tuto stranku. Tato
+  // stranka len precita, s akym vysledkom ho finby presmeroval spat
+  // (parameter `stav` v CallbackUrls, viz trustpay-initiate).
+  const params = new URLSearchParams(location.search);
+  const stav = params.get('stav');
+
+  const VARIANTY = {
+    uspech: {
+      ikona: '&#10003;', ikonaTrieda: 'bg-green-100 text-green-700',
+      nadpis: 'Platba prijatá',
+      text: 'Ďakujeme. Predplatné sa aktivuje do pár okamihov — ak sa tak nestane hneď, skúste stránku aplikácie znova načítať.',
+    },
+    zrusene: {
+      ikona: '&times;', ikonaTrieda: 'bg-slate-100 text-slate2',
+      nadpis: 'Platba zrušená',
+      text: 'Platbu ste zrušili. Nič sa neúčtovalo. Predplatné môžete kedykoľvek spustiť znova z aplikácie.',
+    },
+    chyba: {
+      ikona: '&#9888;', ikonaTrieda: 'bg-red-100 text-red-700',
+      nadpis: 'Platba sa nepodarila',
+      text: 'Pri spracovaní platby nastala chyba a nič sa neúčtovalo. Skúste to prosím znova, prípadne napíšte na info@predtendrom.sk.',
+    },
+  };
+
+  const v = VARIANTY[stav] ?? VARIANTY.chyba;
+  document.getElementById('ikona').innerHTML = v.ikona;
+  document.getElementById('ikona').className += ' ' + v.ikonaTrieda;
+  document.getElementById('nadpis').textContent = v.nadpis;
+  document.getElementById('text').textContent = v.text;
+  document.title = v.nadpis + ' — PredTendrom.sk';
+</script>
+
+</body>
+</html>
