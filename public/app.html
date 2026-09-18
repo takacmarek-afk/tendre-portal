@@ -439,6 +439,20 @@ tailwind.config = { theme: { extend: {
               </span>
             </label>
           </div>
+          <!-- Audit 18.9.2026, stredna polozka: prepojenie sledovanych firiem
+               (zalozka Dodavatelia, tabulka sledovane_ico) s hlavnym feedom.
+               Pro-only, zhodne s tym, ze sledovanie samo je Pro funkcia —
+               skryte cele (nie len disabled), kym jePro nie je true (viz
+               dashboard() nizsie). -->
+          <div class="flex items-end hidden" id="f-len-sledovane-obal">
+            <label class="flex items-start gap-2 text-[13px] text-ink cursor-pointer">
+              <input id="f-len-sledovane" type="checkbox"
+                     class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
+              <span>Len sledované firmy
+                <span class="block text-[11px] text-slate2">zmluvy firiem zo záložky Dodávatelia</span>
+              </span>
+            </label>
+          </div>
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
           <span id="pocet" class="text-[13px] text-slate2"></span>
@@ -2178,6 +2192,14 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // ho tlacidlo v tabulke Dodavatelia aj panel nad nou.
   const sledovaneIco = new Map();
 
+  // Audit 18.9.2026: filter "Len sledovane firmy" v Konciacich zmluvach.
+  // null = filter vypnuty (bezny stav). Pole = obmedzit na tieto contract_id
+  // (prazdne pole = nasilu ziadny vysledok, ked firma nesleduje nikoho, ale
+  // filter ma zapnuty). Nastavuje ho osviezSledovaneIdy() pred kazdym pouzitim
+  // filtreZmluv() — je to async dopyt do sanca_na_vyhru, takze nemoze byt
+  // priamo vnutri synchronnej filtreZmluv().
+  let sledovaneIdsAktivne = null;
+
   skry('nacitavam');
   ukaz('app');
 
@@ -2295,10 +2317,29 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       q = q.gte('odhad_vyhlasenia', oDni(hranice[0]))
            .lt('odhad_vyhlasenia', oDni(hranice[1]));
     }
+    if (sledovaneIdsAktivne !== null) {
+      q = sledovaneIdsAktivne.length
+        ? q.in('contract_id', sledovaneIdsAktivne)
+        : q.eq('contract_id', -1); // ziadne sledovane firmy -> nasilu prazdny vysledok
+    }
     return q;
   }
 
+  // `opportunities` nema stlpec supplier_cin (len supplier_name) — IC firmy,
+  // ktora ma zmluvu prave teraz, sa da precitat len z uz existujucej Pro
+  // tabulky `sanca_na_vyhru` (migracia 24), ktoru pipeline plni pre kazdu
+  // prilezitost. Preto dvojkrokovy dopyt namiesto priameho .in() na opportunities.
+  async function osviezSledovaneIdy() {
+    const box = el('f-len-sledovane');
+    if (!box || !box.checked) { sledovaneIdsAktivne = null; return; }
+    if (sledovaneIco.size === 0) { sledovaneIdsAktivne = []; return; }
+    const { data, error } = await supabase.from('sanca_na_vyhru')
+      .select('contract_id').in('supplier_cin', [...sledovaneIco.keys()]);
+    sledovaneIdsAktivne = error ? [] : [...new Set((data ?? []).map(x => x.contract_id))];
+  }
+
   async function nacitajZmluvy() {
+    await osviezSledovaneIdy();
     let q = filtreZmluv(
       supabase.from('opportunities').select(STLPCE_Z, { count: 'exact' }));
 
@@ -2766,7 +2807,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
   // Filtre
   const prekresliZ = pozdrz(odznova('zmluvy', nacitajZmluvy));
-  for (const id of ['f-kraj', 'f-sektor', 'f-skore', 'f-radenie', 'f-jeCas', 'f-predstih']) {
+  for (const id of ['f-kraj', 'f-sektor', 'f-skore', 'f-radenie', 'f-jeCas', 'f-predstih', 'f-len-sledovane']) {
     el(id).addEventListener('change', odznova('zmluvy', nacitajZmluvy));
   }
   el('f-text').addEventListener('input', prekresliZ);
@@ -2809,6 +2850,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     // Zrusenie filtrov vracia PREDVOLENY stav, nie prazdny. Predvolene je
     // toto zapnute, takze sa to po resete musi zapnut spat.
     el('f-jeCas').checked = true;
+    el('f-len-sledovane').checked = false;
     nacitajZmluvy();
   }
   el('f-reset').addEventListener('click', reset);
@@ -2822,6 +2864,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   napojViac('viac-d', 'dotacie', nacitajDotacie);
 
   el('export-z').addEventListener('click', () => sExportom('export-z', async () => {
+    await osviezSledovaneIdy();
     const riadky = await stahniVsetko(() => {
       let q = filtreZmluv(supabase.from('opportunities').select('*'));
       if (el('f-jeCas').checked) q = q.gte('dni_do_konca', DNI_TENDER_UZ_BEZI);
@@ -2842,6 +2885,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // ako pokazeny produkt.
   if (jePro) {
     ukaz('dod-obsah');
+    ukaz('f-len-sledovane-obal');
     await nacitajSledovane();
     await vykresliSledovaneFirmy();
     await nacitajCenySektora();
