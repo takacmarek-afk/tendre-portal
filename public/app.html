@@ -1898,7 +1898,11 @@ async function nastavOdber(supabase, sektory, email, onZmena) {
     el('o-webhook').value = o?.webhook_url ?? '';
     el('o-moje-ico').value = o?.moje_ico ?? '';
     btn.textContent = 'Uložiť zmenu';
-    ukazHlasku('Zapísali sme si to. Meniť to môžete kedykoľvek.');
+    // Hláška "Zapísali sme si to" sem predtým patrila, ale volala sa aj
+    // pri prvom nacitani uz existujuceho odberu (nizsie), teda aj vtedy,
+    // ked pouzivatel v tejto navsteve nic neulozil — posobilo to, ze
+    // system si "zapamatal" napr. IČO, ktore nikdy nebolo vyplnene.
+    // Zobrazit ju smie len skutocna akcia ulozenia (viz btn click nizsie).
 
     // Popis filtrov do zhrnutia. Prazdna hodnota znamena "vsetko", takze
     // ju treba pomenovat — "Zapnuty pre , " by vyzeralo ako chyba.
@@ -1963,6 +1967,7 @@ async function nastavOdber(supabase, sektory, email, onZmena) {
       moje_ico: platneIco(el('o-moje-ico').value) || null,
     };
     stavZapnute(ulozeny);
+    ukazHlasku('Zapísali sme si to. Meniť to môžete kedykoľvek.');
     if (typeof onZmena === 'function') await onZmena(ulozeny);
   });
 

@@ -80,14 +80,16 @@ tailwind.config = {
       <a href="./cennik.html" class="hover:text-ink transition">Cenník</a>
       <a href="#hranice" class="hover:text-ink transition">Čo nerobíme</a>
     </nav>
-    <div class="flex items-center gap-4">
-      <!-- Na telefone skryte. Oba odkazy vedu na tu istu stranku, takze
-           na 375 px to bola len tlacenica, v ktorej sa "Prihlásiť sa"
-           zalomilo na dva riadky a tlacilo sa na logo. -->
+    <div class="flex items-center gap-2 sm:gap-4">
+      <!-- Predtym uplne skryte na telefone (pod sm) — vracajuci sa
+           pouzivatel na mobile nemal ziadny viditelny sposob, ako sa
+           prihlasit. Teraz viditelne aj na mobile, len uzsie (mensi
+           font, mensi padding na CTA), aby sa pri 375 px nic nezalamalo. -->
       <a href="./prihlasenie.html"
-         class="hidden sm:inline text-[14px] text-slate2 hover:text-ink transition whitespace-nowrap">Prihlásiť sa</a>
-      <a href="./prihlasenie.html" class="text-[14px] font-semibold bg-ink text-white px-4 py-2 rounded-md hover:bg-accent transition whitespace-nowrap">
-        Vyskúšať zadarmo
+         class="text-[13px] sm:text-[14px] text-slate2 hover:text-ink transition whitespace-nowrap">Prihlásiť sa</a>
+      <a href="./prihlasenie.html" class="text-[13px] sm:text-[14px] font-semibold bg-ink text-white px-3 sm:px-4 py-2 rounded-md hover:bg-accent transition whitespace-nowrap">
+        <span class="sm:hidden">Skúsiť zadarmo</span>
+        <span class="hidden sm:inline">Vyskúšať zadarmo</span>
       </a>
     </div>
   </div>
@@ -143,8 +145,8 @@ tailwind.config = {
     <div class="bg-[#111A2C] border border-white/10 rounded-xl p-6">
       <div class="flex items-center justify-between pb-4">
         <span class="text-[12px] tracking-wide text-[#8B8574] font-mono uppercase">Príklad feedu</span>
-        <span class="text-[11px] text-[#4FD1C5] font-mono flex items-center gap-1.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-[#4FD1C5]"></span> naživo
+        <span class="text-[11px] text-[#8B8574] font-mono flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#8B8574]"></span> príklad
         </span>
       </div>
       <div class="divide-y divide-white/5">
@@ -305,6 +307,63 @@ tailwind.config = {
     v minulosti vyhralo. Filtrujete podľa kraja, mesta a sektora, takže
     nemusíte prechádzať zákazky z celého Slovenska.
   </p>
+</section>
+
+<!-- ══════════════ POROVNANIE S TRHOM ══════════════
+     Presunute sem z cennik.html (audit 18.9.2026) — najsilnejsi predajny
+     argument na celom webe bol schovany az na tretom kliku, na podstranke
+     cennika. Ostava aj tam (kto ide priamo na cennik, nech to vidi znova). -->
+<section class="border-y border-line bg-[#F3F0E6]">
+  <div class="wrap py-20 md:py-28">
+    <h2 class="font-serif text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
+      Prečo tieto čísla
+    </h2>
+    <p class="mt-5 text-[17px] leading-relaxed text-slate2 max-w-2xl">
+      Ostatní na trhu monitorujú tendre, ktoré sú už vyhlásené alebo tesne
+      pred vyhlásením — za ceny od pár eur mesačne po stovky eur ročne.
+      PredTendrom hľadá signál mesiace až roky vopred — z končiacich
+      zmlúv, podpísaných dotácií a obcí, ktoré si práve najali projektanta.
+      Preto sa naša cena pohybuje v strede tohto rozpätia, s výrazne
+      dlhším predstihom.
+    </p>
+    <div class="mt-8 overflow-x-auto">
+      <table class="w-full text-[14px] border-collapse min-w-[560px]">
+        <thead>
+          <tr class="text-left text-slate2 border-b border-line">
+            <th class="py-2 pr-4 font-medium">Typ nástroja na trhu</th>
+            <th class="py-2 pr-4 font-medium">Cena</th>
+            <th class="py-2 font-medium">Predstih</th>
+          </tr>
+        </thead>
+        <tbody class="text-ink">
+          <tr class="border-b border-line/60">
+            <td class="py-2.5 pr-4">Jednoduché registre obstarávaní</td>
+            <td class="py-2.5 pr-4">20–80 €/rok</td>
+            <td class="py-2.5">Vyhlásené obstarávania</td>
+          </tr>
+          <tr class="border-b border-line/60">
+            <td class="py-2.5 pr-4">Mesačné sledovanie tendrov</td>
+            <td class="py-2.5 pr-4">~20 €/mes.</td>
+            <td class="py-2.5">Vyhlásené tendre</td>
+          </tr>
+          <tr class="border-b border-line/60">
+            <td class="py-2.5 pr-4 font-semibold">PredTendrom.sk</td>
+            <td class="py-2.5 pr-4 font-semibold">34–249 €/mes.</td>
+            <td class="py-2.5 font-semibold">3 mesiace až 2,5 roka vopred</td>
+          </tr>
+          <tr>
+            <td class="py-2.5 pr-4">Prémiový AI monitoring</td>
+            <td class="py-2.5 pr-4">640–1&nbsp;992 €/rok</td>
+            <td class="py-2.5">Priemerne 8 dní vopred</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mt-4 text-[12px] text-slate2">Ceny porovnateľných nástrojov na trhu overené v septembri 2026, verejné cenníky.</p>
+    <a href="./cennik.html" class="mt-6 inline-flex items-center gap-1.5 text-[14px] font-semibold text-accent hover:text-accentDark transition">
+      Pozrieť celý cenník &rarr;
+    </a>
+  </div>
 </section>
 
 <!-- ══════════════ PROTI KOMU IDETE ══════════════ -->
@@ -598,8 +657,8 @@ tailwind.config = {
       </h2>
       <p class="mt-5 text-[17px] leading-relaxed text-slate2">
         Zaregistrujte sa a hneď uvidíte celú databázu — končiace zmluvy aj
-        dotácie, ktoré obce už dostali. Tri dni zadarmo, platobnú kartu
-        nepotrebujeme.
+        dotácie, ktoré obce už dostali. Bez skúšobnej lehoty, bez platobnej
+        karty.
       </p>
 
       <a href="./prihlasenie.html"

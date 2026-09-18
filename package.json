@@ -1,0 +1,11 @@
+{
+  "name": "tendre-portal",
+  "private": true,
+  "description": "Build skript pre staticky Tailwind CSS (nahrada cdn.tailwindcss.com). Ziadny server, ziadny inak build krok — CF Pages servíruje public/ tak, ako je.",
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.main.js -i src/main.css -o public/style.css --minify && tailwindcss -c tailwind.config.platba.js -i src/platba.css -o public/style-platba.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3"
+  }
+}

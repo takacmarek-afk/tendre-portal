@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stránka nenájdená — PredTendrom.sk</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = { theme: { extend: {
+  fontFamily: { sans: ['IBM Plex Sans','system-ui','sans-serif'], serif: ['Instrument Serif','Georgia','serif'], mono: ['IBM Plex Mono','SFMono-Regular','Menlo','monospace'] },
+  colors: { ink:'#0B1220', slate2:'#6B6558', line:'#E4DFD2', accent:'#B25313', accentDark:'#8A3F0D', amber:'#E8A33D', paper:'#F7F3EA' }
+}}}
+</script>
+</head>
+<body class="font-sans text-ink bg-[#F3F0E6] min-h-screen flex items-center justify-center p-5">
+
+<div class="w-full max-w-[460px] text-center">
+
+  <a href="./index.html" class="flex items-center justify-center gap-2">
+    <svg width="24" height="24" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+      <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+      <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+      <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+      <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+      <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+    </svg>
+    <span class="font-serif italic text-[22px] text-ink">predtendrom</span>
+  </a>
+
+  <div class="mt-10 bg-white border border-line rounded-lg p-9">
+    <div class="font-serif italic text-[64px] leading-none text-accent">404</div>
+    <h1 class="mt-4 text-[20px] font-semibold">Túto stránku sme nenašli</h1>
+    <p class="mt-3 text-[15px] leading-relaxed text-slate2">
+      Odkaz je asi starý, alebo je v adrese preklep. Register zmlúv sa
+      mení každý deň &mdash; táto stránka jediná nie.
+    </p>
+
+    <div class="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
+      <a href="./index.html"
+         class="inline-flex justify-center items-center bg-ink text-white font-semibold text-[14px] px-5 py-3 rounded-md hover:bg-accent transition whitespace-nowrap">
+        Späť na hlavnú stránku
+      </a>
+      <a href="./cennik.html"
+         class="inline-flex justify-center items-center border border-line text-ink font-semibold text-[14px] px-5 py-3 rounded-md hover:border-accent transition whitespace-nowrap">
+        Cenník
+      </a>
+    </div>
+
+    <p class="mt-7 text-[13px] text-slate2">
+      Ak ste sem prišli cez odkaz, ktorý mal fungovať, napíšte nám na
+      <a href="mailto:info@predtendrom.sk" class="text-accent hover:underline">info@predtendrom.sk</a>.
+    </p>
+  </div>
+
+</div>
+
+</body>
+</html>
