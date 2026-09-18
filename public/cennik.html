@@ -305,6 +305,28 @@ tailwind.config = {
 
 <script src="./config.js"></script>
 <script>
+// ── Návštevnosť ──────────────────────────────────────────────────────────
+// Vlastná mini-analytika namiesto Plausible (supabase/27_navstevnost.sql).
+// Jeden POST bez cookies a bez identifikátora návštevníka — len cesta a
+// odkiaľ prišiel. Zámerne tichý fallback: chyba tu nesmie nič pokaziť.
+(function(){
+  try {
+    var cfg = window.CONFIG || {};
+    if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
+    fetch(cfg.SUPABASE_URL + '/rest/v1/navstevy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': cfg.SUPABASE_ANON_KEY,
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({ cesta: location.pathname, referrer: document.referrer || null }),
+      keepalive: true
+    }).catch(function(){});
+  } catch (e) {}
+})();
+</script>
+<script>
 document.getElementById('rok').textContent = new Date().getFullYear();
 </script>
 

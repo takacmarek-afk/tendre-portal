@@ -892,6 +892,35 @@ tailwind.config = { theme: { extend: {
       </div>
     </div>
 
+    <!-- ── ŠTATISTIKY ──────────────────────────────────────────
+         Vlastna mini-analytika namiesto Plausible (supabase/27_navstevnost.sql).
+         Zalozka aj tlacidlo existuju len v DOM-e, ked ju pridal
+         nastavStatistiky() nizsie — vid ten komentar preco (zobrazenie
+         len pre admina, nie pre kazdeho vlastnika firmy). -->
+    <div id="statistiky" class="hidden max-w-2xl">
+      <div class="bg-white border border-line rounded-lg p-6 mb-5">
+        <h2 class="text-[17px] font-semibold">Návštevnosť</h2>
+        <p class="mt-2 text-[14px] leading-relaxed text-slate2">
+          Posledných 30 dní. Bez cookies, bez sledovania jednotlivých
+          návštevníkov — len počet návštev na stránku a odkiaľ prišli.
+        </p>
+        <p class="mt-4 text-[14px] text-ink">
+          Spolu: <strong id="stat-celkom">—</strong> návštev
+        </p>
+        <div id="stat-spolu" class="mt-4 divide-y divide-line"></div>
+      </div>
+
+      <div class="bg-white border border-line rounded-lg p-6 mb-5">
+        <h2 class="text-[17px] font-semibold">Najnavštevovanejšie stránky</h2>
+        <div id="stat-stranky" class="mt-4 divide-y divide-line"></div>
+      </div>
+
+      <div class="bg-white border border-line rounded-lg p-6 mb-5">
+        <h2 class="text-[17px] font-semibold">Odkiaľ prichádzajú</h2>
+        <div id="stat-referreri" class="mt-4 divide-y divide-line"></div>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -1941,6 +1970,64 @@ async function nastavTeam(supabase, rola) {
   });
 }
 
+// ── ŠTATISTIKY (vlastná mini-analytika, supabase/27_navstevnost.sql) ──────
+// Instance-wide admin (je_admin() = pevný e-mail zakladateľa), NIE rola
+// 'owner' — to je organizačný koncept a vlastník bežnej firmy tieto dáta
+// vidieť nemá (boli by to dáta o *jeho* návštevnosti webu PredTendrom.sk,
+// nie o jeho vlastnej firme). Preto sa tu tlačidlo aj panel do DOM-u
+// pridávajú len vtedy, keď RPC je_admin() vráti true — kým sa to
+// nepotvrdí, v stránke fyzicky neexistujú (nielen "hidden").
+async function nastavStatistiky(supabase) {
+  const { data: jeAdmin, error } = await supabase.rpc('je_admin');
+  if (error || !jeAdmin) return;
+
+  // Tlacidlo pridavame az TERAZ, pred nastavZalozky() na konci dashboard() —
+  // ta si '.zal' tlacidla vyhlada az vo chvili, kedy sa spusti, takze
+  // poradie volani (nie poradie v DOM-e) je to, na com zalezi.
+  const btn = document.createElement('button');
+  btn.dataset.zalozka = 'statistiky';
+  btn.className = 'zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap';
+  btn.textContent = 'Štatistiky';
+  el('zalozky').appendChild(btn);
+
+  function riadok(text, pocet) {
+    return `
+      <div class="py-2 flex items-center justify-between gap-3">
+        <p class="text-[14px] text-ink truncate">${bezpecne(text)}</p>
+        <p class="text-[13px] text-slate2 whitespace-nowrap">${cislo(pocet)}</p>
+      </div>`;
+  }
+
+  const [stranky, referreri, denne] = await Promise.all([
+    supabase.rpc('navstevnost_stranky', { p_dni: 30 }),
+    supabase.rpc('navstevnost_referreri', { p_dni: 30 }),
+    supabase.rpc('navstevnost_denne', { p_dni: 30 }),
+  ]);
+
+  if (stranky.error || referreri.error || denne.error) {
+    el('stat-spolu').innerHTML =
+      '<p class="text-[13px] text-red-700 py-2">Štatistiky sa nepodarilo načítať.</p>';
+    return;
+  }
+
+  const dni = denne.data ?? [];
+  const celkom = dni.reduce((s, d) => s + Number(d.navstev), 0);
+  el('stat-celkom').textContent = cislo(celkom);
+  el('stat-spolu').innerHTML = dni.length
+    ? dni.slice(0, 10).map(d => riadok(datumKratky(d.den), d.navstev)).join('')
+    : '<p class="text-[13px] text-slate2 py-2">Zatiaľ žiadne návštevy.</p>';
+
+  const s = stranky.data ?? [];
+  el('stat-stranky').innerHTML = s.length
+    ? s.map(r => riadok(r.cesta, r.navstev)).join('')
+    : '<p class="text-[13px] text-slate2 py-2">Zatiaľ žiadne návštevy.</p>';
+
+  const r = referreri.data ?? [];
+  el('stat-referreri').innerHTML = r.length
+    ? r.map(x => riadok(x.referrer, x.navstev)).join('')
+    : '<p class="text-[13px] text-slate2 py-2">Zatiaľ žiadne návštevy.</p>';
+}
+
 // ── DASHBOARD ───────────────────────────────────────────────────────────
 async function dashboard(supabase, rola, spravaPozvanky) {
   const [{ data: org }, { data: sub }] = await Promise.all([
@@ -2690,6 +2777,15 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     await nastavTeam(supabase, rola);
   } catch (e) {
     console.error('Tím sa nepodarilo nacitat:', e);
+  }
+
+  // Az po Time a pred nastavZalozky() — tlacidlo Statistiky (ak vobec
+  // pribudne, viz komentar pri funkcii) musi v DOM-e existovat skor, nez
+  // nastavZalozky() vyhlada vsetky '.zal' tlacidla.
+  try {
+    await nastavStatistiky(supabase);
+  } catch (e) {
+    console.error('Štatistiky sa nepodarilo nacitat:', e);
   }
 
   nastavZalozky(mameZmluvy ? 'obsah' : 'dotacie');

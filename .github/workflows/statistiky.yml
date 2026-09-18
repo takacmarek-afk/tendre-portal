@@ -1,0 +1,76 @@
+name: Statistiky
+
+# ══════════════════════════════════════════════════════════════════════════
+#  STAV: PRIPRAVENE, ESTE NEZAPNUTE NAOSTRO — pred prvym ostrym behom over
+#  workflow_dispatch s nasucho=true, ci sa navstevnost spravne nacita a
+#  HTML vyzera dobre (pozri log kroku), potom teda odkomentuj `schedule:`.
+#
+#  CO TOTO ROBI
+#  Verejne stranky (index/cennik/obce/prihlasenie/zdroje.html) pri kazdom
+#  nacitani zapisu jeden riadok do public.navstevy (supabase/27_navstevnost.sql).
+#  Tento beh raz do tyzdna precita poslednych 7 dni a posle zhrnutie
+#  (pipeline/posli_statistiky.py) cez Resend — vzdy len zakladatelovi,
+#  nie je to konfigurovatelny odber.
+#
+#  PRED PRVYM SPUSTENIM NAOSTRO
+#  1. RESEND_API_KEY uz je v Secrets (pouziva ho aj Email a Pozvanky).
+#  2. Test: workflow_dispatch s nasucho=true — over v logu pocet navstev
+#     a nahlad HTML.
+#  3. Az potom odkomentuj `schedule:` nizsie.
+# ══════════════════════════════════════════════════════════════════════════
+
+on:
+  workflow_dispatch:
+    inputs:
+      nasucho:
+        description: "Nasucho — nic neposielat, len vypisat (nechaj true, kym si neistý)"
+        type: boolean
+        default: true
+
+  # Raz do tyzdna, pondelok rano — prehlad za poslednych 7 dni. Nie je to
+  # casovo kriticke ako pozvanky ani osobne relevantne ako tyzdenny email
+  # dodavatelom, staci raz tyzdenne.
+  # schedule:
+  #   - cron: "10 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: statistiky
+  cancel-in-progress: false
+
+jobs:
+  posli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Poslat tyzdenny prehlad navstevnosti
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          # Rovnaky dovod ako v email.yml/pozvanky.yml: vstup ide cez
+          # premennu prostredia, nie priamo interpolovany do shell prikazu.
+          EVENT: ${{ github.event_name }}
+          NASUCHO: ${{ inputs.nasucho }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$NASUCHO" = "true" ]; then
+            ARGS+=(--nasucho)
+          fi
+          echo "Spustam: python posli_statistiky.py ${ARGS[*]-}"
+          python posli_statistiky.py "${ARGS[@]}"
