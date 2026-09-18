@@ -362,13 +362,64 @@ def pre_obec(sb, o, dnes):
     }
 
 
-def pripraveny_na_dalsi(o: dict) -> bool:
+def _nacitaj_pro_org(sb) -> "set | None":
+    """Mnozina org_id s Pro pristupom, nacitana naraz (nie RPC na kazdeho
+    odberatela zvlast). Rovnaka logika ako public.ma_pro_pre_org() /
+    public.ma_pro() v 08_zadarmo.sql a 25_odber_pro_gating.sql — service_role
+    v pipeline nema auth.uid(), preto sa pocita tu, nie cez RLS.
+
+    Navratova hodnota None = "vsetci maju Pro" (otvorene obdobie,
+    je_zadarmo() vracia true) — zjednodusenie volania na strane volajuceho.
+    """
+    try:
+        zadarmo = sb.rpc("je_zadarmo", {}).execute().data
+    except Exception as e:
+        log.warning("je_zadarmo() sa nedalo zistit (%s), predpokladam False.", e)
+        zadarmo = False
+    if zadarmo:
+        return None
+    try:
+        subs = sb.table("subscriptions").select(
+            "org_id, plan, stav, trial_konci").execute().data or []
+    except Exception as e:
+        log.warning("Tabulka subscriptions sa necitala: %s", e)
+        return set()
+    teraz = datetime.now(timezone.utc)
+    pro = set()
+    for s in subs:
+        if s.get("plan") not in ("trial", "pro"):
+            continue
+        aktivne = s.get("stav") == "aktivne"
+        if not aktivne and s.get("stav") == "trial":
+            tc = s.get("trial_konci")
+            if tc:
+                try:
+                    tc_dt = datetime.fromisoformat(str(tc).replace("Z", "+00:00"))
+                    aktivne = tc_dt > teraz
+                except ValueError:
+                    aktivne = False
+        if aktivne and s.get("org_id"):
+            pro.add(s["org_id"])
+    return pro
+
+
+def pripraveny_na_dalsi(o: dict, ma_pro: bool = True) -> bool:
     """Tyzdenny odberatel je na rade najskor MIN_DNI_TYZDENNE dni po
     predoslom maile. Denny odberatel (alebo ten bez zaznamu frekvencie —
     povodni odberatelia pred migraciou 20 default na 'tyzdenne' v databaze,
     toto je len poistka, ked by stlpec chybal) je na rade vzdy.
+
+    `ma_pro`: denny digest je od migracie 25 vyhoda Growth planu (17.9.2026).
+    RLS to zabrani nastavit nanovo bez Pro, ale stary riadok organizacie,
+    ktora medzitym prisla o Pro, by service_role kluc (ten RLS obchadza)
+    inak poslal dalej — preto sa tu 'denne' bez Pro ticho spravi ako
+    'tyzdenne', rovnaky degradacny vzor ako inde v projekte (napr. chybajuce
+    moje_ico), nie tvrde zablokovanie odberu.
     """
-    if (o.get("frekvencia") or "tyzdenne") != "tyzdenne":
+    frekvencia = o.get("frekvencia") or "tyzdenne"
+    if frekvencia == "denne" and not ma_pro:
+        frekvencia = "tyzdenne"
+    if frekvencia != "tyzdenne":
         return True
     posledny = o.get("posledny_email")
     if not posledny:
@@ -480,6 +531,10 @@ def main():
 
     sb = create_client(url, servis)
     dnes = date.today()
+    pro_org = _nacitaj_pro_org(sb)  # None = vsetci (otvorene obdobie)
+
+    def _ma_pro(org_id) -> bool:
+        return pro_org is None or (org_id in pro_org)
 
     odberatelia = []
     try:
@@ -519,7 +574,8 @@ def main():
             preskocene += 1
             continue
 
-        if o["_typ"] == "dodavatel" and not pripraveny_na_dalsi(o):
+        if (o["_typ"] == "dodavatel"
+                and not pripraveny_na_dalsi(o, _ma_pro(o.get("org_id")))):
             preskocene += 1
             continue
 
@@ -533,7 +589,8 @@ def main():
 
         # Doplnkovy kanal, len dodavatelia (stlpec je na `odber`, nie
         # `odber_obce`), nezavisly od uspechu e-mailu nizsie.
-        if o["_typ"] == "dodavatel" and platny_webhook(o.get("webhook_url")):
+        if (o["_typ"] == "dodavatel" and platny_webhook(o.get("webhook_url"))
+                and _ma_pro(o.get("org_id"))):
             posli_webhook(o["webhook_url"], obsah, args.nasucho)
 
         html = _obal(obsah["titulok"], obsah["uvod"], obsah["bloky"],

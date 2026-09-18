@@ -316,3 +316,79 @@ assert len(vysledok3["bloky"]) == 5  # len tolko IT/Bratislavsky zakaziek existu
 assert all(int(b["titul"].split()[1]) < 100 for b in vysledok3["bloky"])
 
 print("VSETKY TESTY PRESLI (relevancia)")
+
+
+# ── DENNY DIGEST / WEBHOOK = GROWTH-ONLY (#augustovy audit, 17.9.2026) ──────
+# pripraveny_na_dalsi() ma teraz druhy parameter ma_pro: bez Pro sa 'denne'
+# ticho spravi ako 'tyzdenne' (service_role kluc v pipeline obchadza RLS,
+# takze stary riadok s frekvencia='denne' by inak poslal dalej aj bez Pro).
+
+# 20) denny odberatel BEZ Pro, mail pred chvilou -> NIE je na rade
+#     (degradovane na tyzdenne, MIN_DNI_TYZDENNE este neuplynulo).
+o = {"frekvencia": "denne", "posledny_email": pred(0.01)}
+print(f"20) denny bez Pro, mail pred chvilou -> {pe.pripraveny_na_dalsi(o, False)}")
+assert pe.pripraveny_na_dalsi(o, False) is False
+
+# 21) denny odberatel BEZ Pro, mail pred 6 dnami -> uz je na rade
+#     (degradovane na tyzdenne, MIN_DNI_TYZDENNE=6 uplynulo).
+o = {"frekvencia": "denne", "posledny_email": pred(6)}
+print(f"21) denny bez Pro, mail pred 6 dnami -> {pe.pripraveny_na_dalsi(o, False)}")
+assert pe.pripraveny_na_dalsi(o, False) is True
+
+# 22) denny odberatel S Pro (default, regresia) -> vzdy na rade, ako predtym.
+o = {"frekvencia": "denne", "posledny_email": pred(0.01)}
+print(f"22) denny s Pro (default) -> {pe.pripraveny_na_dalsi(o)}")
+assert pe.pripraveny_na_dalsi(o) is True
+assert pe.pripraveny_na_dalsi(o, True) is True
+
+print("VSETKY TESTY PRESLI (Growth gating: pripraveny_na_dalsi)")
+
+
+# ── _nacitaj_pro_org() ───────────────────────────────────────────────────────
+
+class _FalosnaRpc:
+    def __init__(self, data):
+        self._data = data
+
+    def execute(self):
+        return _FalosnaOdpoved(self._data)
+
+
+class _FalosnySbPro(_FalosnySb):
+    def __init__(self, tabulky, zadarmo):
+        super().__init__(tabulky)
+        self._zadarmo = zadarmo
+
+    def rpc(self, nazov, params=None):
+        assert nazov == "je_zadarmo"
+        return _FalosnaRpc(self._zadarmo)
+
+
+# 23) je_zadarmo() -> true: _nacitaj_pro_org vrati None ("vsetci maju Pro"),
+#     subscriptions sa vobec necita.
+sb_zadarmo = _FalosnySbPro({}, True)
+vysledok = pe._nacitaj_pro_org(sb_zadarmo)
+print(f"23) je_zadarmo=True -> _nacitaj_pro_org() = {vysledok}")
+assert vysledok is None
+
+# 24) je_zadarmo() -> false: len org s (plan in trial/pro) A (stav aktivne,
+#     alebo stav trial s trial_konci v buducnosti) su v mnozine.
+sb_platene = _FalosnySbPro({
+    "subscriptions": [
+        {"org_id": "org-aktivny-pro", "plan": "pro", "stav": "aktivne",
+         "trial_konci": None},
+        {"org_id": "org-trial-plati", "plan": "trial", "stav": "trial",
+         "trial_konci": pred(-5)},   # v buducnosti (zaporny "pred" = o 5 dni neskor)
+        {"org_id": "org-trial-vyprsal", "plan": "trial", "stav": "trial",
+         "trial_konci": pred(5)},    # uz vyprsal
+        {"org_id": "org-start", "plan": None, "stav": "aktivne",
+         "trial_konci": None},       # ziadny plan -> nie Pro, aj ked "aktivne"
+        {"org_id": "org-zrusene", "plan": "pro", "stav": "zrusene",
+         "trial_konci": None},
+    ],
+}, False)
+vysledok = pe._nacitaj_pro_org(sb_platene)
+print(f"24) je_zadarmo=False -> Pro org = {sorted(vysledok)}")
+assert vysledok == {"org-aktivny-pro", "org-trial-plati"}
+
+print("VSETKY TESTY PRESLI (Growth gating: _nacitaj_pro_org)")
