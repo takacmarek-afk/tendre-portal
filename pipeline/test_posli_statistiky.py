@@ -74,12 +74,55 @@ print("VSETKY TESTY PRESLI (priprav_zhrnutie)")
 # 5) CTA odkaz musi viest na app.html (inak by _obal() vyhodil vynimku),
 #    a pocty musia byt v HTML.
 html = ps._statistiky_html(12, [("/index.html", 7)], [("(priamo / bez odkazu)", 5)])
-print(f"5) cta v odkaze -> {'app.html' in html}, pocty -> {'12 návštev' in html}")
+print(f"5) cta v odkaze -> {'app.html' in html}, pocty -> {'12 unikátnych návštev' in html}")
 assert "https://predtendrom.sk/app.html" in html
-assert "12 návštev" in html
+assert "12 unikátnych návštev" in html
 assert "/index.html" in html
 
 print("VSETKY TESTY PRESLI (_statistiky_html)")
+
+
+# ── priprav_zhrnutie() — dedup podla session_id (30_navstevnost_unique.sql) ──
+
+# 5b) Jedna osoba (rovnake session_id) prekliknuta cez 3 stranky sa v
+#     celkovom counte pocita raz, ale v top_stranky sa ta istá session
+#     zaráta do kazdej navstivenej stranky zvlast (to je "navstevnost tejto
+#     stranky", nie "celkovy pocet ludi").
+navstevy5b = [
+    {"cesta": "/index.html", "referrer": None, "session_id": "s1"},
+    {"cesta": "/cennik.html", "referrer": None, "session_id": "s1"},
+    {"cesta": "/obce.html", "referrer": None, "session_id": "s1"},
+]
+celkom5b, top_s5b, _ = ps.priprav_zhrnutie(navstevy5b)
+print(f"5b) jedna session cez 3 stranky -> celkom={celkom5b}, top_stranky={top_s5b}")
+assert celkom5b == 1
+assert sorted(top_s5b) == sorted([("/index.html", 1), ("/cennik.html", 1), ("/obce.html", 1)])
+
+# 5c) Rovnaka session, rovnaka stranka viackrat (napr. refresh) sa v
+#     top_stranky pre tu stranku pocita tiez len raz.
+navstevy5c = [
+    {"cesta": "/index.html", "referrer": None, "session_id": "s1"},
+    {"cesta": "/index.html", "referrer": None, "session_id": "s1"},
+    {"cesta": "/index.html", "referrer": None, "session_id": "s2"},
+]
+celkom5c, top_s5c, _ = ps.priprav_zhrnutie(navstevy5c)
+print(f"5c) opakovane navstevy tej istej stranky -> celkom={celkom5c}, top_stranky={top_s5c}")
+assert celkom5c == 2
+assert top_s5c == [("/index.html", 2)]
+
+# 5d) Riadky bez session_id (stare data spred migracie) sa pocitaju kazdy
+#     zvlast — rovnake spravanie ako predtym (spatna kompatibilita s
+#     testom 1 vyssie, ktory tiez nepouziva session_id).
+navstevy5d = [
+    {"cesta": "/a", "referrer": None},
+    {"cesta": "/a", "referrer": None},
+]
+celkom5d, top_s5d, _ = ps.priprav_zhrnutie(navstevy5d)
+print(f"5d) bez session_id -> celkom={celkom5d}, top_stranky={top_s5d}")
+assert celkom5d == 2
+assert top_s5d == [("/a", 2)]
+
+print("VSETKY TESTY PRESLI (priprav_zhrnutie — dedup)")
 
 
 # ── main(): cely beh nad falosnou databazou ──────────────────────────────

@@ -62,13 +62,45 @@ def _priamo(referrer):
     return r if r else "(priamo / bez odkazu)"
 
 
+def _kluc_sid(n, i):
+    """Kluc na rozlisenie unikatnej navstevy. Riadky so session_id (nove
+    dáta, supabase/30_navstevnost_unique.sql) sa dedupuju podla neho — jedna
+    osoba prekliknuta cez viac stranok v jednej navsteve sa pocita raz.
+    Riadky bez neho (stare data spred migracie, alebo zlyhanie
+    sessionStorage v prehliadaci) sa pocitaju kazdy zvlast, rovnaky fallback
+    ako SQL count(distinct coalesce(session_id, id::text)) v RPC funkciach."""
+    sid = n.get("session_id")
+    return sid if sid else f"__bez_sid__{i}"
+
+
 def priprav_zhrnutie(navstevy):
-    """navstevy: zoznam riadkov {cesta, referrer, created_at}. Vracia
-    (celkom, top_stranky, top_referreri) — top_* su zoznamy (nazov, pocet)
-    zoradene zostupne."""
-    celkom = len(navstevy)
-    podla_stranky = Counter(n["cesta"] for n in navstevy if n.get("cesta"))
-    podla_referrera = Counter(_priamo(n.get("referrer")) for n in navstevy)
+    """navstevy: zoznam riadkov {cesta, referrer, created_at, session_id}.
+    Vracia (celkom, top_stranky, top_referreri) — vsetko su UNIKATNE
+    navstevy (dedup podla session_id v ramci kazdej skupiny), nie surovy
+    pocet pageview riadkov. top_* su zoznamy (nazov, pocet) zoradene
+    zostupne."""
+    videne_celkom = set()
+    podla_stranky = Counter()
+    videne_stranky = set()
+    podla_referrera = Counter()
+    videne_referrera = set()
+
+    for i, n in enumerate(navstevy):
+        sid = _kluc_sid(n, i)
+        if sid not in videne_celkom:
+            videne_celkom.add(sid)
+
+        cesta = n.get("cesta")
+        if cesta and (cesta, sid) not in videne_stranky:
+            videne_stranky.add((cesta, sid))
+            podla_stranky[cesta] += 1
+
+        referrer = _priamo(n.get("referrer"))
+        if (referrer, sid) not in videne_referrera:
+            videne_referrera.add((referrer, sid))
+            podla_referrera[referrer] += 1
+
+    celkom = len(videne_celkom)
     top_stranky = podla_stranky.most_common(TOP_STRANOK)
     top_referreri = podla_referrera.most_common(TOP_REFERREROV)
     return celkom, top_stranky, top_referreri
@@ -78,7 +110,7 @@ def _statistiky_html(celkom, top_stranky, top_referreri):
     bloky = [{
         "titul": f"Posledných {DNI_SPAT} dní",
         "popis": "",
-        "zvyraznene": f"{celkom} návštev",
+        "zvyraznene": f"{celkom} unikátnych návštev",
     }]
     for cesta, pocet in top_stranky:
         bloky.append({"titul": cesta, "popis": "", "zvyraznene": f"{pocet} návštev"})
@@ -93,8 +125,9 @@ def _statistiky_html(celkom, top_stranky, top_referreri):
     return _obal(
         titulok="Týždenný prehľad návštevnosti",
         uvod=(f"Za posledných {DNI_SPAT} dní zaznamenal PredTendrom.sk "
-              f"{celkom} návštev. Bez cookies, bez sledovania jednotlivých "
-              f"návštevníkov — len počet a odkiaľ prišli."),
+              f"{celkom} unikátnych návštev (jedna osoba prekliknutá cez "
+              f"viac stránok sa počíta raz). Bez cookies, bez sledovania "
+              f"jednotlivých návštevníkov naprieč viacerými návštevami."),
         bloky=bloky,
         cta_text="Otvoriť plné štatistiky",
         cta_url=ODKAZ_APP,
@@ -125,7 +158,7 @@ def main():
 
     try:
         navstevy = (sb.table("navstevy")
-                      .select("cesta, referrer, created_at")
+                      .select("cesta, referrer, created_at, session_id")
                       .gte("created_at", od)
                       .execute().data or [])
     except Exception as e:
@@ -133,7 +166,7 @@ def main():
         return 1
 
     celkom, top_stranky, top_referreri = priprav_zhrnutie(navstevy)
-    log.info("Navstev za poslednych %s dni: %s%s",
+    log.info("Unikatnych navstev za poslednych %s dni: %s%s",
              DNI_SPAT, celkom, "  [NASUCHO]" if args.nasucho else "")
 
     if celkom == 0:
@@ -141,7 +174,7 @@ def main():
         return 0
 
     html = _statistiky_html(celkom, top_stranky, top_referreri)
-    predmet = f"Návštevnosť PredTendrom.sk — {celkom} návštev za týždeň"
+    predmet = f"Návštevnosť PredTendrom.sk — {celkom} unikátnych návštev za týždeň"
 
     if posli(kluc, PRIJEMCA, predmet, html, args.nasucho):
         log.info("Hotovo: prehlad poslany na %s.", PRIJEMCA)

@@ -7,23 +7,60 @@
 <script src="./config.js"></script>
 <script>
 // ── Návštevnosť ──────────────────────────────────────────────────────────
-// Vlastná mini-analytika namiesto Plausible (supabase/27_navstevnost.sql).
-// Jeden POST bez cookies a bez identifikátora návštevníka — len cesta a
-// odkiaľ prišiel. Zámerne tichý fallback: chyba tu nesmie nič pokaziť.
+// Vlastná mini-analytika namiesto Plausible (supabase/27_navstevnost.sql,
+// 30_navstevnost_unique.sql). session_id je náhodné ID v sessionStorage
+// (nie cookie, mizne so zatvorením karty) — slúži len na to, aby jedna
+// návšteva prekliknutá cez viac stránok nevyzerala ako viac unikátnych
+// návštev. Admin (Marek) sa do štatistík nepočíta, ak je v tomto
+// prehliadači prihlásený do appky — over cez je_admin(). Zámerne tichý
+// fallback všade: chyba analytiky tu nesmie nič pokaziť.
 (function(){
   try {
     var cfg = window.CONFIG || {};
     if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
-    fetch(cfg.SUPABASE_URL + '/rest/v1/navstevy', {
+
+    var sid = null;
+    try {
+      sid = sessionStorage.getItem('ptid');
+      if (!sid) {
+        sid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now() + '-' + Math.random());
+        sessionStorage.setItem('ptid', sid);
+      }
+    } catch (e) { sid = null; }
+
+    function posliNavstevu() {
+      fetch(cfg.SUPABASE_URL + '/rest/v1/navstevy', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': cfg.SUPABASE_ANON_KEY,
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({ cesta: location.pathname, referrer: document.referrer || null, session_id: sid }),
+        keepalive: true
+      }).catch(function(){});
+    }
+
+    var projectRef = (cfg.SUPABASE_URL.match(/https:\/\/([a-z0-9]+)\.supabase\.co/) || [])[1];
+    var token = null;
+    try {
+      var raw = projectRef && localStorage.getItem('sb-' + projectRef + '-auth-token');
+      if (raw) token = JSON.parse(raw).access_token;
+    } catch (e) { token = null; }
+
+    if (!token) { posliNavstevu(); return; }
+
+    fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/je_admin', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'apikey': cfg.SUPABASE_ANON_KEY,
-        'Prefer': 'return=minimal'
+        'Authorization': 'Bearer ' + token
       },
-      body: JSON.stringify({ cesta: location.pathname, referrer: document.referrer || null }),
-      keepalive: true
-    }).catch(function(){});
+      body: '{}'
+    }).then(function(r){ return r.json(); }).then(function(jeAdmin){
+      if (jeAdmin !== true) posliNavstevu();
+    }).catch(function(){ posliNavstevu(); });
   } catch (e) {}
 })();
 </script>
