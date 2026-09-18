@@ -110,14 +110,19 @@ tailwind.config = {
       </div>
 
       <h1 class="font-serif text-[34px] leading-[1.18] md:text-[50px] md:leading-[1.14] text-paper">
-        Zákazka nevznikne v deň, keď ju vyhlásia.<br class="hidden md:block">
-        <em class="italic text-amber">Vznikne o pol roka skôr.</em>
+        O tendri viete až vo Vestníku.<br class="hidden md:block">
+        <em class="italic text-amber">My vám ho ukážeme až 2 roky skôr.</em>
       </h1>
 
+      <!-- "228 000+" je overena hodnota verejne_pocty.zmluv (17.9.2026:
+           228 848), zaokruhlena nadol na tisicky — floor+"+" ostava pravdive
+           aj ked cislo medzitym narastie. #hero-zmluv sa nizsie v zobrazPocty()
+           dotiahne na presnu zivu hodnotu, rovnaky zdroj ako #p-zmluv. -->
       <p class="mt-7 text-[17px] md:text-[18px] leading-relaxed text-[#ADA795] max-w-lg">
-        Sledujeme končiace zmluvy, podpísané dotácie a obce, ktoré si práve
-        najali projektanta — tri stopy, ktoré predchádzajú každému tendru
-        o mesiace. Kým ho niekto vyhlási vo vestníku, vy už viete, že príde.
+        PredTendrom sleduje <span id="hero-zmluv" class="font-mono text-paper">228&nbsp;000+</span>
+        zmlúv v štáte a obciach a nájde tender skôr, ako ho niekto vyhlási —
+        z končiacich zmlúv, podpísaných dotácií a obcí, ktoré si práve najali
+        projektanta. Zadarmo počas otvoreného obdobia.
       </p>
 
       <div class="mt-9 flex flex-wrap items-center gap-6">
@@ -776,6 +781,19 @@ document.getElementById('rok').textContent = new Date().getFullYear();
     };
 
     nastav('p-zmluv', p.zmluv);
+
+    // Hero podnadpis (#hero-zmluv): rovnaky zdroj ako p-zmluv vyssie, len
+    // zaokruhleny nadol na tisicky s "+" — text vety to vyzaduje ("228 000+
+    // zmlúv"), presne cislo by tam pôsobilo cudzo aj by sa menilo pri kazdom
+    // nacitani. Bez zivych dat necha staticky, uz overeny odhad v HTML
+    // (rovnaky "nerob nic pri zlyhani" princip ako inde v tejto funkcii).
+    if (Number.isFinite(p.zmluv) && p.zmluv > 0) {
+      const heroUzol = document.getElementById('hero-zmluv');
+      if (heroUzol) {
+        const tisicky = Math.floor(p.zmluv / 1000) * 1000;
+        heroUzol.textContent = medzery(tisicky) + '+';
+      }
+    }
     // "Prilezitosti" na uvodnej stranke znamena OBE vrstvy — konciace
     // zmluvy aj dotacie. Presne to su zaznamy, ktore zakaznik po prihlaseni
     // uvidi, takze cislo musi sediet so suctom oboch zaloziek v aplikacii.
