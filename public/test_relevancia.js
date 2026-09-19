@@ -50,7 +50,11 @@ const supabase = {
 const posledne = { zmluvy: [], benchmark: null };
 
 function riadok(x) { return String(x.contract_id); }
-const sandbox = { el, supabase, posledne, Math, console, riadok };
+// stavPrilezitosti (CRM stav, #stav_prilezitosti) je mimo vyrezaneho bloku
+// (deklarovana skor v dashboard()) — nastavRelevanciu() ju len presmeruje
+// do riadok() (mockovaneho vyssie), takze tu staci prazdny mock.
+let stavPrilezitosti = null;
+const sandbox = { el, supabase, posledne, Math, console, riadok, stavPrilezitosti };
 vm.createContext(sandbox);
 vm.runInContext(
   bezpecneFn + '\n' + numFn + '\n' + platneIcoFn + '\n' + relevanciaBlok + '\n' + sancaBlok,

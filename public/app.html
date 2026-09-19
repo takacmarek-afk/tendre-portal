@@ -111,7 +111,7 @@ tailwind.config = { theme: { extend: {
 <!-- ══ CHYBA ═════════════════════════════════════════════════ -->
 <div id="chyba-app" class="hidden min-h-screen flex items-center justify-center p-5">
   <div class="w-full max-w-[520px] bg-white border border-line rounded-lg p-8">
-    <h1 class="text-[18px] font-semibold">Aplikáciu sa nepodarilo načítať</h1>
+    <h1 class="text-[18px] font-serif font-semibold">Aplikáciu sa nepodarilo načítať</h1>
     <p class="mt-3 text-[14px] leading-relaxed text-slate2">
       Nastala neočakávaná chyba. Skúste stránku obnoviť. Ak potrvá,
       pošlite nám prosím text nižšie.
@@ -141,7 +141,7 @@ tailwind.config = { theme: { extend: {
       </div>
     </div>
     <div class="bg-white border border-line rounded-lg p-7">
-      <h1 class="text-[19px] font-semibold">Ešte jedna vec</h1>
+      <h1 class="text-[19px] font-serif font-semibold">Ešte jedna vec</h1>
       <p class="mt-2 text-[14px] leading-relaxed text-slate2">
         Zadajte firmu, pod ktorou budete portál používať. Prístup je počas
         otvoreného obdobia bezplatný a bez skúšobnej lehoty, kartu
@@ -213,7 +213,7 @@ tailwind.config = { theme: { extend: {
   <div id="modal-predplatne" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
     <div class="bg-white rounded-lg border border-line w-full max-w-[420px] p-6">
       <div class="flex items-center justify-between mb-1">
-        <h2 class="text-[17px] font-semibold">Predplatné</h2>
+        <h2 class="text-[17px] font-serif font-semibold">Predplatné</h2>
         <button id="modal-predplatne-zavriet" class="text-slate2 hover:text-ink text-[20px] leading-none">&times;</button>
       </div>
       <p class="text-[13px] leading-relaxed text-slate2 mb-4">
@@ -231,6 +231,35 @@ tailwind.config = { theme: { extend: {
     </div>
   </div>
 
+  <!-- ── PROFIL DODÁVATEĽA ─────────────────────────────────────────────────
+       Audit 18.9.: "Profil dodávateľa nie je profil" — klik na meno firmy
+       v zálozke Dodavatelia doteraz nerobil nic. Modal ukazuje CELU historiu
+       zmluv tej konkretnej firmy (surove z `contracts`, nie agregat), zoradenu
+       najnovsie-prve, plus jednoduchy rocny trend nad tym istym zoznamom —
+       ziadna nova SQL, `contracts` uz ma RLS pre kazdeho prihlaseneho
+       s aktivnym pristupom (nie len Pro). -->
+  <div id="modal-profil" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
+    <div class="bg-white rounded-lg border border-line w-full max-w-[640px] max-h-[85vh] flex flex-col">
+      <div class="flex items-start justify-between gap-3 px-6 pt-6 pb-1">
+        <div>
+          <h2 id="modal-profil-nazov" class="text-[17px] font-serif font-semibold leading-snug"></h2>
+          <p id="modal-profil-ico" class="text-[12px] text-slate2 mt-0.5"></p>
+        </div>
+        <button id="modal-profil-zavriet" class="text-slate2 hover:text-ink text-[20px] leading-none">&times;</button>
+      </div>
+      <p id="modal-profil-suhrn" class="text-[13px] text-slate2 px-6 py-2"></p>
+      <div id="modal-profil-trend" class="px-6 pb-3 flex items-end gap-1 h-[44px]"></div>
+      <div class="overflow-y-auto px-6 pb-6 flex-1 border-t border-line">
+        <table class="w-full text-[13px]">
+          <tbody id="modal-profil-riadky"></tbody>
+        </table>
+        <p id="modal-profil-prazdny" class="hidden text-[13px] text-slate2 py-4 text-center">
+          Túto firmu v histórii zmlúv nemáme.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <main class="max-w-[1280px] mx-auto px-5 py-8">
 
     <!-- Vysledok prijatia pozvanky do timu (viz start() a spravaPozvanky).
@@ -244,7 +273,7 @@ tailwind.config = { theme: { extend: {
     <div id="prazdny" class="hidden bg-white border border-line rounded-lg p-10 text-center">
       <div class="w-12 h-12 rounded-full bg-slate2/10 text-slate2 text-[20px]
                   flex items-center justify-center mx-auto mb-5">&#8987;</div>
-      <h2 id="prazdny-h" class="text-[18px] font-semibold">Databáza sa ešte napĺňa</h2>
+      <h2 id="prazdny-h" class="text-[18px] font-serif font-semibold">Databáza sa ešte napĺňa</h2>
       <p id="prazdny-p" class="mt-3 text-[14px] leading-relaxed text-slate2 max-w-md mx-auto">
         Sťahujeme históriu zmlúv z Centrálneho registra. Prvé príležitosti sa
         tu objavia hneď, ako bude prvý beh hotový.
@@ -306,7 +335,7 @@ tailwind.config = { theme: { extend: {
       <div id="odber-detail" class="bg-ink text-white rounded-lg p-6">
         <div class="flex flex-col lg:flex-row lg:items-center gap-5">
           <div class="flex-1">
-            <h2 class="text-[17px] font-semibold">Nech vám to chodí samo</h2>
+            <h2 class="text-[17px] font-serif font-semibold">Nech vám to chodí samo</h2>
             <!-- Text musi sediet so skutocnostou: odber sa zatial len
                  zapisuje, nic sa neposiela. Povodne tu stalo "Raz tyzdenne
                  e-mail...", co znelo ako bezici sluzba. -->
@@ -694,7 +723,7 @@ tailwind.config = { theme: { extend: {
       <!-- Zamknuty panel je pocas otvoreneho obdobia nepouzity. Zostava
            v kode, aby sa dal jednym riadkom vratit, ked sa Pro zapne. -->
       <div id="dod-zamknute" class="hidden bg-white border border-line rounded-lg p-10 max-w-2xl">
-        <h2 class="text-[19px] font-semibold">Profily dodávateľov</h2>
+        <h2 class="text-[19px] font-serif font-semibold">Profily dodávateľov</h2>
         <p class="mt-3 text-[14px] leading-relaxed text-slate2">
           Táto časť je momentálne nedostupná. Napíšte nám na
           <a class="text-accent hover:underline"
@@ -898,7 +927,7 @@ tailwind.config = { theme: { extend: {
          owner — RPC pozvi_clena() to aj tak overi, toto je len UI. -->
     <div id="team" class="hidden max-w-2xl">
       <div class="bg-white border border-line rounded-lg p-6 mb-5">
-        <h2 class="text-[17px] font-semibold">Členovia tímu</h2>
+        <h2 class="text-[17px] font-serif font-semibold">Členovia tímu</h2>
         <p class="mt-2 text-[14px] leading-relaxed text-slate2">
           Každý, koho pozvete, uvidí po prihlásení presne to isté, čo vy —
           spoločné sledované firmy aj nastavenia odberu.
@@ -909,7 +938,7 @@ tailwind.config = { theme: { extend: {
       <!-- Len pre ownera. Clenovia formular nevidia, ale zoznam kolegov
            vyssie ano — spolocny pohlad na firmu je cely zmysel Timu. -->
       <div id="team-pozvat-panel" class="hidden bg-white border border-line rounded-lg p-6 mb-5">
-        <h2 class="text-[17px] font-semibold">Pozvať kolegu</h2>
+        <h2 class="text-[17px] font-serif font-semibold">Pozvať kolegu</h2>
         <form id="form-pozvat" class="mt-3 flex flex-col sm:flex-row gap-2">
           <input id="pozvat-email" type="email" required placeholder="kolega@vasafirma.sk"
                  class="flex-1 border border-line rounded-md px-3.5 py-2.5 text-[15px]
@@ -938,7 +967,7 @@ tailwind.config = { theme: { extend: {
          len pre admina, nie pre kazdeho vlastnika firmy). -->
     <div id="statistiky" class="hidden max-w-2xl">
       <div class="bg-white border border-line rounded-lg p-6 mb-5">
-        <h2 class="text-[17px] font-semibold">Návštevnosť</h2>
+        <h2 class="text-[17px] font-serif font-semibold">Návštevnosť</h2>
         <p class="mt-2 text-[14px] leading-relaxed text-slate2">
           Posledných 30 dní, unikátne návštevy (jedna osoba prekliknutá cez
           viac stránok sa počíta raz). Bez cookies, bez sledovania
@@ -952,12 +981,12 @@ tailwind.config = { theme: { extend: {
       </div>
 
       <div class="bg-white border border-line rounded-lg p-6 mb-5">
-        <h2 class="text-[17px] font-semibold">Najnavštevovanejšie stránky</h2>
+        <h2 class="text-[17px] font-serif font-semibold">Najnavštevovanejšie stránky</h2>
         <div id="stat-stranky" class="mt-4 divide-y divide-line"></div>
       </div>
 
       <div class="bg-white border border-line rounded-lg p-6 mb-5">
-        <h2 class="text-[17px] font-semibold">Odkiaľ prichádzajú</h2>
+        <h2 class="text-[17px] font-serif font-semibold">Odkiaľ prichádzajú</h2>
         <div id="stat-referreri" class="mt-4 divide-y divide-line"></div>
       </div>
     </div>
@@ -1314,7 +1343,48 @@ function typickyCyklus(r) {
           </div>`;
 }
 
-function riadok(r, benchmark, sanca, mojIco) {
+// ── CRM STAV PRÍLEŽITOSTI (audit 18.9., stredná položka) ─────────────────
+// Per-organizácia, per-zmluva/dotácia stav (moj_stav_prilezitosti,
+// migrácia 32) — bez toho by si obchodný tím viedol vlastný excel vedľa
+// appky, presne ako to pomenoval audit. Backend je Pro-gated (ma_pro()),
+// preto sa select vôbec nevykresľuje mimo Pro (viď volania nižšie).
+const POPIS_STAV_CRM = {
+  '': 'bez stavu',
+  sledujeme: 'Sledujeme',
+  ponuka: 'Pripravujeme ponuku',
+  nezaujima: 'Nezaujíma nás',
+};
+
+// FARBA STAVU len jemný vizuálny signál na plnom zozname — "nezaujíma nás"
+// stlmene, "ponuka" zvýraznené, "sledujeme"/prázdne neutrálne. Nie je to
+// nová dátová vrstva, len trieda na <select>.
+function farbaStavCrm(stav) {
+  if (stav === 'ponuka') return 'border-accent text-accentDark bg-accent/5';
+  if (stav === 'nezaujima') return 'border-line text-slate2 bg-[#F3F0E6]';
+  if (stav === 'sledujeme') return 'border-line text-ink bg-white';
+  return 'border-line text-slate2 bg-white';
+}
+
+// `stavMap` je Map<"zmluva:123", "ponuka"> naplnená nacitajStavPrilezitosti()
+// nižšie — prázdna/null znamená "bez Pro" alebo "ešte nenačítané", vtedy sa
+// select vôbec nekreslí (volajúci to rozhoduje, viď riadok()/riadokDotacie()).
+function crmStavSelect(typ, contractId, stavMap) {
+  if (contractId == null) return '';
+  const kluc = `${typ}:${contractId}`;
+  const aktualny = stavMap?.get(kluc) ?? '';
+  const options = Object.entries(POPIS_STAV_CRM)
+    .map(([v, t]) => `<option value="${v}" ${v === aktualny ? 'selected' : ''}>${bezpecne(t)}</option>`)
+    .join('');
+  return `
+    <select data-crm-stav="${typ}" data-crm-id="${contractId}"
+            class="mt-2 text-[11px] font-medium rounded px-1.5 py-1 border
+                   focus:outline-none focus:border-accent ${farbaStavCrm(aktualny)}"
+            title="Váš vlastný stav tejto príležitosti — vidíte len vy vo vašej firme.">
+      ${options}
+    </select>`;
+}
+
+function riadok(r, benchmark, sanca, mojIco, stavMap) {
   const sektor = POPIS_SEKTORA[r.sector];
   const kde = [r.mesto, r.kraj].filter(Boolean).join(', ');
   const b = benchmark?.get(r.contract_id);
@@ -1350,6 +1420,7 @@ function riadok(r, benchmark, sanca, mojIco) {
         ${sancaNaVyhru(r, sanca, mojIco)}
         ${porovnanieCeny(b)}
         ${odkazCrz(r)}
+        ${stavMap ? crmStavSelect('zmluva', r.contract_id, stavMap) : ''}
       </td>
       <td data-popis="Obstarávateľ" data-blok class="px-4 py-4 align-top text-[14px] text-slate2">
         ${bezpecne(r.authority_name)}
@@ -1437,7 +1508,7 @@ function poznamkaDodatky(r) {
                `k tejto zmluve je v CRZ ${n} dodatkov`}, suma sa mohla zmeniť</div>`;
 }
 
-function riadokDotacie(r) {
+function riadokDotacie(r, stavMap) {
   const sektor = POPIS_SEKTORA[r.sektor_odhad];
   const kde = [r.mesto, r.kraj].filter(Boolean).join(', ');
   const odPodpisu = -dniOdDnes(r.podpisane);
@@ -1457,6 +1528,7 @@ function riadokDotacie(r) {
         ${poznamkaDodatky(r)}
         ${kde ? `<div class="text-[12px] text-slate2 mt-1">${bezpecne(kde)}</div>` : ''}
         ${r.podpisane ? `<div class="text-[11px] text-slate2 mt-1">podpísaná ${bezpecne(r.podpisane)}</div>` : ''}
+        ${stavMap ? crmStavSelect('dotacia', r.contract_id, stavMap) : ''}
       </td>
       <td data-popis="Na čo" data-blok class="px-4 py-4 align-top max-w-[380px]">
         <div class="text-[14px] leading-snug" title="${bezpecne(r.ucel)}"
@@ -1550,7 +1622,11 @@ function riadokDodavatela(r, sledovane) {
   return `
     <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
       <td data-hlavny class="px-4 py-4 align-top max-w-[340px]">
-        <div class="text-[14px] font-medium leading-snug">${bezpecne(r.dodavatel)}</div>
+        ${r.supplier_cin ? `
+        <button type="button" data-profil="${bezpecne(r.supplier_cin)}" data-profil-nazov="${bezpecne(r.dodavatel)}"
+                class="text-[14px] font-medium leading-snug text-left hover:text-accent hover:underline underline-offset-2">
+          ${bezpecne(r.dodavatel)}
+        </button>` : `<div class="text-[14px] font-medium leading-snug">${bezpecne(r.dodavatel)}</div>`}
         <div class="text-[12px] text-slate2 mt-1">
           IČO ${bezpecne(r.supplier_cin)}${sektor ? ' · ' + bezpecne(sektor) : ''}
         </div>
@@ -1779,6 +1855,87 @@ function otvorPredplatneModal(supabase) {
   };
 }
 
+// ── PROFIL DODÁVATEĽA (audit 18.9., stredná položka) ─────────────────────
+// "Profil dodávateľa nie je profil" — klik na meno v Dodávateľoch doteraz
+// nerobil nič. Toto je frontend-only nad uz existujucou `contracts`
+// (surove zmluvy z CRZ, ziadna nova SQL) — cela historia tejto KONKRETNEJ
+// firmy, nie globalny cenovy benchmark sektora, ktory uz appka ma inde.
+const PROFIL_LIMIT = 300; // poistka - aj najvacsi dodavatel v datach ma radovo stovky zmluv, nie tisice
+
+function suplTyzdenTrend(riadky) {
+  // Pocet zmluv za rok, z effective_to (koniec zmluvy) — rovnaky udaj,
+  // aky uz appka pouziva na "Aktivita" v riadku tabulky.
+  const podlaRoka = new Map();
+  for (const r of riadky) {
+    const rok = (r.effective_to || r.signed_on || '').slice(0, 4);
+    if (!rok) continue;
+    podlaRoka.set(rok, (podlaRoka.get(rok) || 0) + 1);
+  }
+  const roky = [...podlaRoka.keys()].sort();
+  if (roky.length < 2) return '';
+  const max = Math.max(...podlaRoka.values());
+  return roky.map(rok => {
+    const n = podlaRoka.get(rok);
+    const vyska = Math.max(4, Math.round((n / max) * 36));
+    return `<div class="flex flex-col items-center justify-end h-full" title="${rok}: ${n} zmlúv">
+              <div class="w-5 bg-accent/70 rounded-t" style="height:${vyska}px"></div>
+              <div class="text-[10px] text-slate2 mt-1">${rok.slice(2)}</div>
+            </div>`;
+  }).join('');
+}
+
+function riadokProfil(r) {
+  const kde = r.authority_name || '—';
+  const obdobie = [r.effective_from, r.effective_to].filter(Boolean).join(' – ') || (r.signed_on || '—');
+  return `
+    <tr class="border-b border-line last:border-0">
+      <td class="py-2.5 pr-3 align-top">
+        <div class="font-medium leading-snug">${bezpecne(r.subject) || '—'}</div>
+        <div class="text-[12px] text-slate2 mt-0.5">${bezpecne(kde)}</div>
+      </td>
+      <td class="py-2.5 pr-3 align-top text-right font-medium whitespace-nowrap">${suma(r.price_total)}</td>
+      <td class="py-2.5 align-top text-right text-slate2 whitespace-nowrap">${bezpecne(obdobie)}</td>
+    </tr>`;
+}
+
+async function otvorProfilDodavatela(supabase, ico, nazov) {
+  el('modal-profil-nazov').textContent = nazov || '(bez názvu)';
+  el('modal-profil-ico').textContent = `IČO ${ico}`;
+  el('modal-profil-suhrn').textContent = 'Načítavam…';
+  el('modal-profil-trend').innerHTML = '';
+  el('modal-profil-riadky').innerHTML = '';
+  el('modal-profil-prazdny').classList.add('hidden');
+  ukaz('modal-profil');
+  el('modal-profil').classList.add('flex');
+  el('modal-profil-zavriet').onclick = () => {
+    el('modal-profil').classList.add('hidden');
+    el('modal-profil').classList.remove('flex');
+  };
+
+  const { data, error } = await supabase.from('contracts')
+    .select('id, subject, authority_name, price_total, effective_from, effective_to, signed_on')
+    .eq('supplier_cin', ico)
+    .order('effective_to', { ascending: false, nullsFirst: false })
+    .limit(PROFIL_LIMIT);
+
+  if (error) {
+    el('modal-profil-suhrn').textContent = 'História sa nepodarila načítať.';
+    return;
+  }
+  const riadky = data ?? [];
+  if (!riadky.length) {
+    el('modal-profil-suhrn').textContent = '';
+    el('modal-profil-prazdny').classList.remove('hidden');
+    return;
+  }
+  const objem = riadky.reduce((s, r) => s + (Number(r.price_total) || 0), 0);
+  el('modal-profil-suhrn').textContent = riadky.length >= PROFIL_LIMIT
+    ? `Prvých ${cislo(PROFIL_LIMIT)} zmlúv (najnovšie), spolu aspoň ${suma(objem)}`
+    : `${cislo(riadky.length)} ${riadky.length === 1 ? 'zmluva' : riadky.length < 5 ? 'zmluvy' : 'zmlúv'} v histórii, spolu ${suma(objem)}`;
+  el('modal-profil-trend').innerHTML = suplTyzdenTrend(riadky);
+  el('modal-profil-riadky').innerHTML = riadky.map(riadokProfil).join('');
+}
+
 function odznakPredplatneho(sub) {
   // Otvorene obdobie: cely portal je zadarmo pre kazdeho prihlaseneho.
   // O pristupe rozhoduje vylucne funkcia public.je_zadarmo() v databaze,
@@ -1815,7 +1972,7 @@ function obrazovkaTrialVycerpany(supabase) {
       <div class="bg-white border border-line rounded-lg p-7 text-center">
         <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 text-[22px]
                     flex items-center justify-center mx-auto mb-5">&#9203;</div>
-        <h1 class="text-[19px] font-semibold">Táto firma už prístup má</h1>
+        <h1 class="text-[19px] font-serif font-semibold">Táto firma už prístup má</h1>
         <p class="mt-3 text-[14px] leading-relaxed text-slate2">
           Podľa IČO, ktoré ste zadali, je vaša firma u nás už zaregistrovaná.
           Prístup je jeden na firmu.
@@ -2192,6 +2349,44 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // ho tlacidlo v tabulke Dodavatelia aj panel nad nou.
   const sledovaneIco = new Map();
 
+  // CRM stav prilezitosti (#stav_prilezitosti, audit 18.9. stredna polozka).
+  // Map<"zmluva:123"|"dotacia:456", "sledujeme"|"ponuka"|"nezaujima">.
+  // null (nie prazdna Map) = este sa nenacitalo ALEBO nie je Pro — riadok()/
+  // riadokDotacie() podla toho vobec nevykresli select (viz volania nizsie).
+  let stavPrilezitosti = null;
+
+  async function nacitajStavPrilezitosti() {
+    const { data, error } = await supabase.from('moj_stav_prilezitosti')
+      .select('typ, contract_id, stav');
+    if (error) { stavPrilezitosti = new Map(); return; }
+    stavPrilezitosti = new Map((data ?? []).map(x => [`${x.typ}:${x.contract_id}`, x.stav]));
+  }
+
+  // RPC nastav_stav_prilezitosti()/zmaz_stav_prilezitosti() (migracia 32).
+  // Optimisticky update lokalnej mapy PRED odpovedou servera — vyberom v
+  // <select> uz zakaznik povedal, co chce vidiet, cakat na round-trip by
+  // len sposobilo vizualne "poskakovanie" selectu spat na stary stav.
+  // Pri chybe (napr. vypadok siete) sa mapa vrati na povodnu hodnotu a
+  // dotknuty riadok sa prekresli, aby select znova ukazoval pravdu.
+  async function nastavCrmStav(typ, contractId, novyStav) {
+    if (!stavPrilezitosti) return;
+    const kluc = `${typ}:${contractId}`;
+    const povodny = stavPrilezitosti.get(kluc) ?? '';
+    if (novyStav === povodny) return;
+    if (novyStav) stavPrilezitosti.set(kluc, novyStav);
+    else stavPrilezitosti.delete(kluc);
+
+    const { error } = novyStav
+      ? await supabase.rpc('nastav_stav_prilezitosti',
+          { p_typ: typ, p_contract_id: contractId, p_stav: novyStav })
+      : await supabase.rpc('zmaz_stav_prilezitosti', { p_typ: typ, p_contract_id: contractId });
+
+    if (error) {
+      if (povodny) stavPrilezitosti.set(kluc, povodny); else stavPrilezitosti.delete(kluc);
+      if (typ === 'zmluva') nacitajZmluvy(); else nacitajDotacie();
+    }
+  }
+
   // Audit 18.9.2026: filter "Len sledovane firmy" v Konciacich zmluvach.
   // null = filter vypnuty (bezny stav). Pole = obmedzit na tieto contract_id
   // (prazdne pole = nasilu ziadny vysledok, ked firma nesleduje nikoho, ale
@@ -2276,7 +2471,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     zoradPodlaRelevancie();
     if (posledne.zmluvy.length) {
       el('riadky').innerHTML = posledne.zmluvy.map(
-        x => riadok(x, posledne.benchmark, posledne.sanca, mojOdber?.moje_ico)).join('');
+        x => riadok(x, posledne.benchmark, posledne.sanca, mojOdber?.moje_ico, stavPrilezitosti)).join('');
     }
   }
 
@@ -2419,7 +2614,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     zoradPodlaRelevancie();
 
     el('riadky').innerHTML = posledne.zmluvy.map(
-      x => riadok(x, benchmark, sanca, mojOdber?.moje_ico)).join('');
+      x => riadok(x, benchmark, sanca, mojOdber?.moje_ico, stavPrilezitosti)).join('');
     el('prazdny-filter').classList.toggle('hidden', posledne.zmluvy.length > 0);
 
     const c = count ?? posledne.zmluvy.length;
@@ -2485,7 +2680,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       return;
     }
     posledne.dotacie = data ?? [];
-    el('riadky-d').innerHTML = posledne.dotacie.map(riadokDotacie).join('');
+    el('riadky-d').innerHTML = posledne.dotacie.map(x => riadokDotacie(x, stavPrilezitosti)).join('');
     el('prazdny-dot').classList.toggle('hidden', posledne.dotacie.length > 0);
 
     const POPIS_D = {
@@ -2828,6 +3023,19 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     }
   });
 
+  // CRM stav (#stav_prilezitosti) — delegovane 'change' na oba zoznamy,
+  // rovnaky vzor delegovania ako klik vyssie. Select sa vykresluje len ked
+  // je stavPrilezitosti nacitana (Pro), takze tento listener je pri Starte
+  // neskodny no-op (data-crm-stav sa v DOM vobec nenachadza).
+  el('riadky').addEventListener('change', (e) => {
+    const sel = e.target.closest('[data-crm-stav]');
+    if (sel) nastavCrmStav(sel.dataset.crmStav, Number(sel.dataset.crmId), sel.value);
+  });
+  el('riadky-d').addEventListener('change', (e) => {
+    const sel = e.target.closest('[data-crm-stav]');
+    if (sel) nastavCrmStav(sel.dataset.crmStav, Number(sel.dataset.crmId), sel.value);
+  });
+
   const prekresliZi = pozdrz(odznova('ziadatelia', nacitajZiadatelov));
   el('zi-kraj').addEventListener('change', odznova('ziadatelia', nacitajZiadatelov));
   el('zi-text').addEventListener('input', prekresliZi);
@@ -2886,6 +3094,9 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   if (jePro) {
     ukaz('dod-obsah');
     ukaz('f-len-sledovane-obal');
+    // CRM stav (zmluvy/dotacie) je tiez Pro — nacitat pred prvym
+    // vykreslenim oboch zoznamov nizsie (Promise.all na konci dashboard()).
+    await nacitajStavPrilezitosti();
     await nacitajSledovane();
     await vykresliSledovaneFirmy();
     await nacitajCenySektora();
@@ -2894,6 +3105,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     el('riadky-f').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-sleduj]');
       if (btn) prepniSledovanie(btn.dataset.sleduj, btn.dataset.nazov);
+      const profilBtn = e.target.closest('[data-profil]');
+      if (profilBtn) otvorProfilDodavatela(supabase, profilBtn.dataset.profil, profilBtn.dataset.profilNazov);
     });
     const sledovaneZoznamEl = el('sledovane-firmy-zoznam');
     if (sledovaneZoznamEl) {
