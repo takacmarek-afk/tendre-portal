@@ -10,3 +10,4 @@ desktop.ini
 
 # Tailwind build (npm install tailwindcss, viz package.json/README nizsie)
 node_modules/
+*.bundle
