@@ -119,7 +119,14 @@ Deno.serve(async (req) => {
           // preto sa posiela ako retazec vyrobeny z toFixed(2).
           Amount: { Amount: Number(platba.suma).toFixed(2), Currency: platba.mena },
           Localization: "SK",
-          References: { MerchantReference: platba.reference },
+          // finby povoluje MerchantReference max. 35 znakov, ale nas
+          // `platby.reference` je uuid (36 znakov aj s pomlckami:
+          // "Reference has maximum length of 35 characters"). Pomlcky sa
+          // pred odoslanim odstrania (32 znakov, pod limitom) - Postgres
+          // typ uuid prijme retazec aj bez pomlciek pri spatnom parsovani
+          // v spracuj_platbu_trustpay() cez notifikaciu, takze parovanie
+          // platby po zaplateni funguje bez zmeny v SQL.
+          References: { MerchantReference: platba.reference.replace(/-/g, "") },
           CardTransaction: { PaymentType: "Purchase" },
         },
         CallbackUrls: {
