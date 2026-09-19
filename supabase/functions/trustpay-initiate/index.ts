@@ -113,7 +113,11 @@ Deno.serve(async (req) => {
         PaymentMethod: "Card",
         MerchantIdentification: { ProjectId: TRUSTPAY_PROJECT_ID },
         PaymentInformation: {
-          Amount: { Amount: Number(platba.suma), Currency: platba.mena },
+          // finby vyzaduje Amount presne na dve desatinne miesta. JSON cislo
+          // to nevie zarucit (34 by sa poslalo ako "34", nie "34.00" - presne
+          // takto zlyhavalo s "Amount must have exactly two decimal places"),
+          // preto sa posiela ako retazec vyrobeny z toFixed(2).
+          Amount: { Amount: Number(platba.suma).toFixed(2), Currency: platba.mena },
           Localization: "SK",
           References: { MerchantReference: platba.reference },
           CardTransaction: { PaymentType: "Purchase" },
