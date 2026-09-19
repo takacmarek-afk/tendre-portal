@@ -5,9 +5,23 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PredTendrom.sk — vieme o zákazke skôr, než sa vyhlási</title>
 <meta name="description" content="Sledujeme končiace zmluvy úradov a dotácie, ktoré obce už dostali. Vidíte tender mesiace pred tým, než sa vyhlási. Dáta z Centrálneho registra zmlúv.">
+<link rel="canonical" href="https://predtendrom.sk/">
 <meta property="og:title" content="Vieme o zákazke skôr, než sa vyhlási">
 <meta property="og:description" content="Končiace zmluvy úradov a dotácie obcí. Tender vidíte mesiace pred vyhlásením.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://predtendrom.sk/">
+<meta property="og:locale" content="sk_SK">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Vieme o zákazke skôr, než sa vyhlási">
+<meta name="twitter:description" content="Končiace zmluvy úradov a dotácie obcí. Tender vidíte mesiace pred vyhlásením.">
+<!-- Chýba og:image — na webe nie je hotový branded share-card obrázok
+     (1200×630) a nechcel som ho narýchlo vygenerovať bez fontov Instrument
+     Serif/IBM Plex Sans, ktoré z tohto prostredia neboli dostupné (Google
+     Fonts mimo allowlistu). Bez neho sa odkaz na LinkedIn/Slacku zdieľa
+     len s textom, bez obrázka — pozri report, položka SEO. -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Organization","name":"PredTendrom.sk","url":"https://predtendrom.sk/","email":"info@predtendrom.sk","telephone":"+421905438454","founder":{"@type":"Person","name":"Marek Takáč"},"parentOrganization":{"@type":"Organization","name":"LoveHome s.r.o.","taxID":"47586362"}}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -27,34 +41,14 @@ tailwind.config = {
 </head>
 <body class="font-sans text-ink bg-paper antialiased">
 
-<!-- ══════════════ PREPÍNAČ PUBLIKA ══════════════
-     Portál má dve publiká na opačných stranách toho istého trhu: firmu,
-     ktorá hľadá zákazky, a obec, ktorá hľadá peniaze. Bez tohto pruhu sa
-     dalo na obecnú časť dostať len odkazom až dole pod obsahom.
-
-     Je to samostatný pruh NAD hlavičkou, nie ďalšia položka v nej.
-     V hlavičke je už logo, štyri odkazy a dve tlačidlá — pri 768 až 1023 px
-     sa to raz lámalo a nechcem to tam vracať.
-
-     TRETIA ZÁLOŽKA (sprostredkovateľ/agentúra) tu zámerne NIE JE. Firma
-     má celý produkt, obec má stránku, sprostredkovateľ nemá zatiaľ nič —
-     figuruje len v dátach ako zoznam. Prepínač, ktorý vedie na prázdnu
-     stránku, je to isté ako tlačidlo „Zapnúť e-mail", ktorý nechodí.
-     Pridať sa dá jedným <a> nižšie, keď preň bude obsah. -->
-<div class="border-b border-line bg-[#F3F0E6]">
-  <div class="wrap flex items-center gap-3 h-11 overflow-x-auto">
-    <span class="hidden sm:inline text-[12px] text-slate2 whitespace-nowrap shrink-0">Hľadám:</span>
-    <nav class="flex items-center gap-1.5">
-      <a href="./index.html" aria-current="page"
-         class="text-[13px] font-semibold px-3 py-1.5 rounded-full whitespace-nowrap
-                bg-ink text-white"><span class="sm:hidden">Pre firmu</span><span class="hidden sm:inline">zákazky pre moju firmu</span></a>
-      <a href="./obce.html"
-         class="text-[13px] font-medium px-3 py-1.5 rounded-full whitespace-nowrap
-                text-slate2 hover:text-ink hover:bg-white border border-transparent
-                hover:border-line transition"><span class="sm:hidden">Pre obec</span><span class="hidden sm:inline">peniaze pre moju obec</span></a>
-    </nav>
-  </div>
-</div>
+<!-- ══════════════ PREPÍNAČ PUBLIKA — ODSTRÁNENÝ (audit 19.9.2026) ══════════════
+     Pôvodne samostatný pruh NAD hlavičkou, s prepínačom firma/obec ako
+     prvou vecou, čo návštevník uvidel — pred logom, pred headlinom.
+     Externý audit: 95 % návštevníkov je dodávateľ, nie obec, a táto voľba
+     hneď na štarte je zbytočná kognitívna záťaž presne vo chvíli, keď má
+     človek rozhodnúť, či vôbec ostane na stránke. Krížový odkaz pre obec
+     nezmizol, len sa vrátil tam, kde bol predtým, než tento pruh pribudol:
+     sekcia „PRE OBCE A MESTÁ" nižšie na stránke. -->
 
 <!-- ══════════════ NAV ══════════════ -->
 <header class="border-b border-line sticky top-0 bg-white/95 backdrop-blur z-40">

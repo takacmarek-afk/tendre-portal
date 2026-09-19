@@ -69,7 +69,15 @@ def _suma(x):
     # POZOR: naivny .replace('.', ',') na uz zlozenom retazci pokazi aj
     # bodku v skratke "mil." (vysledok "mil," namiesto "mil.") — desatinnu
     # ciarku treba vyrobit len z cisla, PRED spojenim s jednotkou/skratkou.
-    if x is None:
+    #
+    # `x <= 0` je zamerne rovnaka podmienka ako `eur()` v public/obce.html
+    # (odkial tato tabulka data preberala pred timto auditom 19.9.2026):
+    # 0 v `median_ceny`/`median_suma` v praxi neznamena zdarma, ale
+    # neuvedenu cenu. Predtym tato funkcia brala ako neuvedenu len `None`,
+    # takze rovnaky zaznam vedel na hlavnej obce.html ukazat "—" a na
+    # generovanej krajskej podstranke "0 €" — nasiel sa napr. pri
+    # "Diervilla, spol. s r.o." na /obce/kraj-kosicky.html.
+    if x is None or float(x) <= 0:
         return "—"
     x = float(x)
     if x >= 1_000_000:

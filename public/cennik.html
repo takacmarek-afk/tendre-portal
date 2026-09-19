@@ -5,9 +5,15 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cenník — PredTendrom.sk</title>
 <meta name="description" content="Tri úrovne pre firmy, ktoré dodávajú štátu a obciam: Start, Growth a Team. Teraz je celý portál zadarmo — toto je plánovaný cenník po otvorenom období.">
+<link rel="canonical" href="https://predtendrom.sk/cennik.html">
 <meta property="og:title" content="Cenník — PredTendrom.sk">
 <meta property="og:description" content="Start, Growth, Team. Teraz zadarmo — toto je plánovaná cena, keď sa otvorené obdobie skončí.">
 <meta property="og:type" content="website">
+<meta property="og:url" content="https://predtendrom.sk/cennik.html">
+<meta property="og:locale" content="sk_SK">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Cenník — PredTendrom.sk">
+<meta name="twitter:description" content="Start, Growth, Team. Teraz zadarmo — toto je plánovaná cena, keď sa otvorené obdobie skončí.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -27,23 +33,11 @@ tailwind.config = {
 </head>
 <body class="font-sans text-ink bg-paper antialiased">
 
-<!-- ══════════════ PREPÍNAČ PUBLIKA ═════════════
-     Rovnaky pruh ako na index.html/obce.html — cennik je sucast "firma"
-     strany produktu, takze "zakazky pre moju firmu" je tu aktivne. -->
-<div class="border-b border-line bg-[#F3F0E6]">
-  <div class="wrap flex items-center gap-3 h-11 overflow-x-auto">
-    <span class="hidden sm:inline text-[12px] text-slate2 whitespace-nowrap shrink-0">Hľadám:</span>
-    <nav class="flex items-center gap-1.5">
-      <a href="./index.html" aria-current="page"
-         class="text-[13px] font-semibold px-3 py-1.5 rounded-full whitespace-nowrap
-                bg-ink text-white"><span class="sm:hidden">Pre firmu</span><span class="hidden sm:inline">zákazky pre moju firmu</span></a>
-      <a href="./obce.html"
-         class="text-[13px] font-medium px-3 py-1.5 rounded-full whitespace-nowrap
-                text-slate2 hover:text-ink hover:bg-white border border-transparent
-                hover:border-line transition"><span class="sm:hidden">Pre obec</span><span class="hidden sm:inline">peniaze pre moju obec</span></a>
-    </nav>
-  </div>
-</div>
+<!-- ══════════════ PREPÍNAČ PUBLIKA — ODSTRÁNENÝ (audit 19.9.2026) ══════════════
+     Rovnaké zdôvodnenie ako na index.html: prepínač firma/obec hneď nad
+     hlavičkou pôsobil ako súčasť vyhľadávania a väčšine návštevníkov (firmy)
+     len pridával rozhodovanie navyše skôr, než uvideli čo i len nadpis.
+     Odkaz pre obec je teraz v pätičke nižšie. -->
 
 <!-- ══════════════ NAV ══════════════ -->
 <header class="border-b border-line sticky top-0 bg-white/95 backdrop-blur z-40">
@@ -303,7 +297,7 @@ tailwind.config = {
     </div>
 
     <div class="mt-12 pt-6 border-t border-line flex flex-col sm:flex-row justify-between gap-3 text-[12px] text-slate2">
-      <span>&copy; <span id="rok"></span> LoveHome s.r.o. &middot; <a href="./index.html" class="underline hover:text-ink">Späť na PredTendrom.sk</a> &middot; <a href="./zdroje.html" class="underline hover:text-ink">Zdroje dát a podmienky</a></span>
+      <span>&copy; <span id="rok"></span> LoveHome s.r.o. &middot; <a href="./index.html" class="underline hover:text-ink">Späť na PredTendrom.sk</a> &middot; <a href="./zdroje.html" class="underline hover:text-ink">Zdroje dát a podmienky</a> &middot; <a href="./obce.html" class="underline hover:text-ink">Ste obec alebo mesto?</a></span>
       <span>Nie sme štátny orgán ani s ním prepojení.</span>
     </div>
   </div>

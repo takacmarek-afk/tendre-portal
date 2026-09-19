@@ -250,7 +250,13 @@ tailwind.config = { theme: { extend: {
       <p id="modal-profil-suhrn" class="text-[13px] text-slate2 px-6 py-2"></p>
       <div id="modal-profil-trend" class="px-6 pb-3 flex items-end gap-1 h-[44px]"></div>
       <div class="overflow-y-auto px-6 pb-6 flex-1 border-t border-line">
-        <table class="w-full text-[13px]">
+        <!-- table-layout:fixed + w-[58%] na 1. stĺpec — audit 19.9.2026:
+             pri dlhších názvoch zmlúv (napr. "Dodatok č. 8 k zmluve o
+             službách vo verejnom záujme vo vnútroštátnej...") si predmet
+             bez pevnej šírky vynútil celú tabuľku širšiu než modal a cena
+             s dátumom "vypadli" mimo viditeľnú oblasť — vodorovný scroll
+             bol jediný spôsob, ako ich vidieť, a nebol nijako naznačený. -->
+        <table class="w-full text-[13px]" style="table-layout:fixed">
           <tbody id="modal-profil-riadky"></tbody>
         </table>
         <p id="modal-profil-prazdny" class="hidden text-[13px] text-slate2 py-4 text-center">
@@ -1355,6 +1361,20 @@ const POPIS_STAV_CRM = {
   nezaujima: 'Nezaujíma nás',
 };
 
+// FARBA SILY SIGNÁLU — audit 19.9.2026: "sila signálu" je jediné číslo,
+// podľa ktorého sa má dať tabuľka rýchlo preletieť očami, a dovtedy bolo
+// vykreslené rovnakým čiernym tučným písmom ako čokoľvek iné na riadku —
+// žiadna skratka, treba si prečítať každé číslo zvlášť. Prahy (80/50) sú
+// zámerne hrubé a len vizuálne, nie nová dátová vrstva ani zmena poradia
+// (to už rieši `zoradPodlaRelevancie`) — len farba toho istého čísla.
+function farbaSkore(skore) {
+  const s = Number(skore);
+  if (!Number.isFinite(s)) return 'text-slate2';
+  if (s >= 80) return 'text-accentDark';
+  if (s >= 50) return 'text-ink';
+  return 'text-slate2';
+}
+
 // FARBA STAVU len jemný vizuálny signál na plnom zozname — "nezaujíma nás"
 // stlmene, "ponuka" zvýraznené, "sledujeme"/prázdne neutrálne. Nie je to
 // nová dátová vrstva, len trieda na <select>.
@@ -1404,7 +1424,7 @@ function riadok(r, benchmark, sanca, mojIco, stavMap) {
   return `
     <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
       <td data-popis="Sila signálu" class="px-4 py-4 align-top">
-        <span class="text-[18px] font-bold">${r.skore ?? '—'}</span>
+        <span class="text-[18px] font-bold ${farbaSkore(r.skore)}">${r.skore ?? '—'}</span>
         <div class="text-[10px] text-slate2 leading-tight mt-0.5">
           ${sektor ? 'v sektore' : ''}
         </div>
@@ -1889,12 +1909,12 @@ function riadokProfil(r) {
   const obdobie = [r.effective_from, r.effective_to].filter(Boolean).join(' – ') || (r.signed_on || '—');
   return `
     <tr class="border-b border-line last:border-0">
-      <td class="py-2.5 pr-3 align-top">
-        <div class="font-medium leading-snug">${bezpecne(r.subject) || '—'}</div>
-        <div class="text-[12px] text-slate2 mt-0.5">${bezpecne(kde)}</div>
+      <td class="py-2.5 pr-3 align-top w-[58%]">
+        <div class="font-medium leading-snug break-words">${bezpecne(r.subject) || '—'}</div>
+        <div class="text-[12px] text-slate2 mt-0.5 break-words">${bezpecne(kde)}</div>
       </td>
-      <td class="py-2.5 pr-3 align-top text-right font-medium whitespace-nowrap">${suma(r.price_total)}</td>
-      <td class="py-2.5 align-top text-right text-slate2 whitespace-nowrap">${bezpecne(obdobie)}</td>
+      <td class="py-2.5 pr-3 align-top text-right font-medium whitespace-nowrap w-[22%]">${suma(r.price_total)}</td>
+      <td class="py-2.5 align-top text-right text-slate2 whitespace-nowrap w-[20%]">${bezpecne(obdobie)}</td>
     </tr>`;
 }
 
@@ -1929,9 +1949,15 @@ async function otvorProfilDodavatela(supabase, ico, nazov) {
     return;
   }
   const objem = riadky.reduce((s, r) => s + (Number(r.price_total) || 0), 0);
+  // Tento súhrn ide priamo na surovú tabuľku `contracts` podľa supplier_cin
+  // (žiadny dedup dodatkov ani duplicitných zverejnení z CRZ) — preto tu
+  // zámerne píšeme "záznamov v CRZ", nie "zmlúv v histórii": to druhé by
+  // pri firme s dodatkami tvrdilo iné číslo než stĺpec ZMLÚV v zozname
+  // Dodávatelia (ten je z agregátu, kde sa dodatky/duplicity zlučujú).
+  // Audit 19.9.2026 to reálne odhalil (32 vs. 27 pri tej istej firme).
   el('modal-profil-suhrn').textContent = riadky.length >= PROFIL_LIMIT
-    ? `Prvých ${cislo(PROFIL_LIMIT)} zmlúv (najnovšie), spolu aspoň ${suma(objem)}`
-    : `${cislo(riadky.length)} ${riadky.length === 1 ? 'zmluva' : riadky.length < 5 ? 'zmluvy' : 'zmlúv'} v histórii, spolu ${suma(objem)}`;
+    ? `Prvých ${cislo(PROFIL_LIMIT)} záznamov v CRZ (najnovšie), spolu aspoň ${suma(objem)}`
+    : `${cislo(riadky.length)} ${riadky.length === 1 ? 'záznam' : riadky.length < 5 ? 'záznamy' : 'záznamov'} v CRZ, spolu ${suma(objem)} · môže sa mierne líšiť od súčtu v zozname Dodávatelia (tam sú dodatky a duplicitné zverejnenia zlúčené, tu vidíte každý záznam registra zvlášť)`;
   el('modal-profil-trend').innerHTML = suplTyzdenTrend(riadky);
   el('modal-profil-riadky').innerHTML = riadky.map(riadokProfil).join('');
 }
