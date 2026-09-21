@@ -20,6 +20,19 @@ name: RUZ financny kontext
 #  najprv tie bez zaznamu, potom najstarsie skontrolovane. Opakovanymi
 #  behmi (rucne, potom podla schedule) sa postupne pokryje cela zakladna
 #  (~2000+ dodavatelov) a drzi sa aktualna (RUZ zavierky sa menia rocne).
+#
+#  RETAZENIE BEHOV (22. vlna, 21.9.2026): kazdy beh ma svoj vlastny 40-min
+#  casovy rozpocet (RUZ_TIME_BUDGET_MIN v obohat_financie.py) a job timeout
+#  60 min — nestihne cela zakladna naraz (GitHub navyse ma tvrdy strop 360
+#  min na jeden job, co by aj tak nestacilo). Preto posledny krok nizsie po
+#  ostrom (nie --nasucho) rucnom behu automaticky spusti dalsi beh sam
+#  seba cez `gh workflow run`, ak obohat_financie.py nahlasi, ze este
+#  zostavaju nespracovane ICO. Kazdy jednotlivy beh je nezavisly a
+#  bezpecny (concurrency skupina nizsie zarucuje, ze nikdy nepobezia dva
+#  naraz); retazenie sa samo zastavi, ked dojdu kandidati, alebo ak
+#  jeden beh nespracoval ani jedno ICO (poistka proti nekonecnej slucke
+#  pri chybe). `--nasucho` sa nikdy neretazi (nic by sa nezapisalo, takze
+#  by chain bezal navzdy).
 # ══════════════════════════════════════════════════════════════════════════
 
 on:
@@ -46,6 +59,10 @@ on:
 
 permissions:
   contents: read
+  # actions: write je potrebne LEN pre retazenie behov nizsie (gh workflow
+  # run na seba sameho po ostrom behu s este nespracovanymi ICO). Nedava
+  # to ziadny pristup k obsahu repozitara navyse.
+  actions: write
 
 concurrency:
   group: ruz-financie
@@ -68,6 +85,7 @@ jobs:
       - run: pip install -r pipeline/requirements.txt
 
       - name: Obohatit dodavatelov o RUZ financny kontext
+        id: obohat
         working-directory: pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -89,3 +107,26 @@ jobs:
           fi
           echo "Spustam: python obohat_financie.py ${ARGS[*]}"
           python obohat_financie.py "${ARGS[@]}"
+
+      - name: Spustit dalsi beh, ak zostavaju dalsie ICO (retazenie behov)
+        # Len po rucnom ostrom (nie --nasucho) behu, len ak sa v tomto behu
+        # skutocne nieco spracovalo (poistka proti nekonecnej slucke pri
+        # chybe), a len ak obohat_financie.py nahlasil, ze este zostavaju
+        # nespracovane ICO. Pozri poznamku o retazeni na zaciatku suboru.
+        if: |
+          steps.obohat.outputs.zostava == 'true' &&
+          steps.obohat.outputs.spracovanych != '0' &&
+          github.event_name == 'workflow_dispatch' &&
+          inputs.nasucho != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT_LIMIT: ${{ inputs.limit }}
+          NEXT_FORCE: ${{ inputs.force }}
+        run: |
+          set -euo pipefail
+          echo "Zostavaju dalsie ICO (spracovanych v tomto behu: ${{ steps.obohat.outputs.spracovanych }}), spustam dalsi beh."
+          sleep 10
+          gh workflow run ruz-financie.yml --repo "${{ github.repository }}" --ref main \
+            -f limit="${NEXT_LIMIT:-150}" \
+            -f force="${NEXT_FORCE:-false}" \
+            -f nasucho=false

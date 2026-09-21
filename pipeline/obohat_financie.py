@@ -197,6 +197,24 @@ def main():
 
     log.info("Hotovo: spracovanych %s (so zaznamom %s, bez zaznamu %s), zlyhanych %s",
               spracovanych, so_zaznamom, bez_zaznamu, zlyhanych)
+
+    # Signalizacia pre GitHub Actions (retazenie behov, viz workflow):
+    # su este dalsie ICO na spracovanie po tomto behu? Zmysluplne len pre
+    # ostry beh — v --nasucho sa nic do ruz_zaklad.checked_at nezapisuje,
+    # takze rovnaky dopyt by vratil ten isty zoznam donekonecna a chain by
+    # sa nikdy nezastavil.
+    zostava = False
+    if not args.nasucho:
+        try:
+            zostava = bool(_nacitaj_kandidatov(sb, limit=1, force=args.force))
+        except Exception as e:
+            log.warning("Nepodarilo sa overit, ci zostavaju dalsie ICO: %s", e)
+    vystup = os.getenv("GITHUB_OUTPUT")
+    if vystup:
+        with open(vystup, "a", encoding="utf-8") as f:
+            f.write(f"zostava={'true' if zostava else 'false'}\n")
+            f.write(f"spracovanych={spracovanych}\n")
+
     return 0
 
 
