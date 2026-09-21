@@ -40,6 +40,15 @@ tailwind.config = {
 <style>
   html { scroll-behavior: smooth; }
   .wrap { max-width: 1080px; margin: 0 auto; padding-left: 1.25rem; padding-right: 1.25rem; }
+  /* Naznak, ze porovnavacia tabulka sa da odscrolovat doprava (rovnaky
+     vzor ako .ma-viac-tabov v app.html, audit 17.9.2026) — na uzkej
+     obrazovke ma tabulka min-w-[560px] a nic inak nehovori, ze je co
+     odscrolovat. Trieda sa pripina/odopina z JS len ked je realne co
+     skryvat, aby na sirokej obrazovke fade nic neorezaval. */
+  .ma-co-scrollovat {
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+  }
 </style>
 </head>
 <body class="font-sans text-ink bg-paper antialiased">
@@ -336,7 +345,7 @@ tailwind.config = {
       Preto sa naša cena pohybuje v strede tohto rozpätia, s výrazne
       dlhším predstihom.
     </p>
-    <div class="mt-8 overflow-x-auto">
+    <div id="porovnanie-scroll" class="mt-8 overflow-x-auto">
       <table class="w-full text-[14px] border-collapse min-w-[560px]">
         <thead>
           <tr class="text-left text-slate2 border-b border-line">
@@ -945,6 +954,24 @@ document.getElementById('rok').textContent = new Date().getFullYear();
     // ticho — pomlcka zostava
   }
 })();
+</script>
+
+<script>
+// Naznak, ze porovnavacia tabulka ("Preco tieto cisla") sa da odscrolovat
+// doprava — rovnaky vzor a dovod ako osviezScrollTabov() v app.html.
+function osviezScrollPorovnania() {
+  const el = document.getElementById('porovnanie-scroll');
+  if (!el) return;
+  const preteka = el.scrollWidth > el.clientWidth + 1;
+  const naKonci = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1;
+  el.classList.toggle('ma-co-scrollovat', preteka && !naKonci);
+}
+window.addEventListener('resize', osviezScrollPorovnania);
+document.addEventListener('DOMContentLoaded', () => {
+  osviezScrollPorovnania();
+  const el = document.getElementById('porovnanie-scroll');
+  if (el) el.addEventListener('scroll', osviezScrollPorovnania);
+});
 </script>
 
 </body>
