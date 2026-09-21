@@ -248,6 +248,11 @@ tailwind.config = { theme: { extend: {
       </div>
       <p id="modal-profil-suhrn" class="text-[13px] text-slate2 px-6 py-2"></p>
       <div id="modal-profil-trend" class="px-6 pb-3 flex items-end gap-1 h-[44px]"></div>
+      <!-- Financny kontext + NACE (RUZ, registeruz.sk) — Team-only, 22. vlna
+           21.9.2026 (supabase/35_ruz_financie.sql, ma_team()). Hidden cele,
+           kym ma_team() nie je true — rovnaky vzor ako f-len-sledovane-obal
+           vyssie (Pro-only checkbox), nie ziadny "odomknite" teaser. -->
+      <div id="modal-profil-financie" class="hidden px-6 pb-3"></div>
       <div class="overflow-y-auto px-6 pb-6 flex-1 border-t border-line">
         <!-- table-layout:fixed + w-[58%] na 1. stĺpec — audit 19.9.2026:
              pri dlhších názvoch zmlúv (napr. "Dodatok č. 8 k zmluve o
@@ -1917,19 +1922,100 @@ function riadokProfil(r) {
     </tr>`;
 }
 
-async function otvorProfilDodavatela(supabase, ico, nazov) {
+// Financny kontext + NACE (RUZ, registeruz.sk) v profile dodavatela —
+// Team-only (22. vlna, 21.9.2026). Vlastne zdroje dat: ruz_zaklad,
+// ruz_financie (supabase/35_ruz_financie.sql), obohacovane samostatnym
+// skriptom pipeline/obohat_financie.py, nie dennym prepoctom.
+function riadokRuzFinancie(r) {
+  const obdobie = r.rok ?? '—';
+  return `
+    <tr class="border-b border-line last:border-0">
+      <td class="py-1.5 pr-3 text-slate2">${bezpecne(String(obdobie))}</td>
+      <td class="py-1.5 pr-3 text-right">${r.obrat != null ? suma(r.obrat) : '—'}</td>
+      <td class="py-1.5 text-right ${Number(r.vysledok_hospodarenia) < 0 ? 'text-red-700' : ''}">${r.vysledok_hospodarenia != null ? suma(r.vysledok_hospodarenia) : '—'}</td>
+    </tr>`;
+}
+
+async function nacitajRuzFinancie(supabase, ico) {
+  const cieloveEl = el('modal-profil-financie');
+  cieloveEl.classList.remove('hidden');
+  cieloveEl.innerHTML = '<p class="text-[12px] text-slate2">Načítavam finančný kontext…</p>';
+
+  const [{ data: zaklad }, { data: roky, error }] = await Promise.all([
+    supabase.from('ruz_zaklad').select('ma_zaznam, nace_kod, nace_nazov').eq('supplier_cin', ico).maybeSingle(),
+    supabase.from('ruz_financie').select('rok, obrat, vysledok_hospodarenia')
+      .eq('supplier_cin', ico).order('rok', { ascending: false }).limit(5),
+  ]);
+
+  // Ziadny zaznam v ruz_zaklad = firma este nebola obohatena (skript
+  // beži postupne po davkach, viz obohat_financie.py) — nie to iste ako
+  // "RUZ o nej nic nevie" (ma_zaznam=false), preto sa nepletie hlaska.
+  if (error || !zaklad) {
+    cieloveEl.innerHTML = '';
+    cieloveEl.classList.add('hidden');
+    return;
+  }
+
+  const sektor = zaklad.nace_kod
+    ? `${bezpecne(zaklad.nace_nazov || '')} (NACE ${bezpecne(zaklad.nace_kod)})`
+    : null;
+
+  if (!zaklad.ma_zaznam || !(roky ?? []).length) {
+    // Transparentny stav "nedostupne", nie ticha nula — RUZ prieskum
+    // 21.9.2026: rady tisic firiem na Slovensku vykazy neodovzdava vobec
+    // alebo nepravidelne.
+    cieloveEl.innerHTML = `
+      <div class="rounded-md border border-line bg-slate-50 px-3 py-2.5 text-[12px] text-slate2">
+        <span class="font-medium text-ink">Finančný kontext (RÚZ):</span>
+        účtovné závierky pre túto firmu nie sú vo verejnom registri dostupné.
+        ${sektor ? `<br>Sektor: ${sektor}` : ''}
+      </div>`;
+    return;
+  }
+
+  cieloveEl.innerHTML = `
+    <div class="rounded-md border border-line px-3 py-2.5">
+      <div class="flex items-center justify-between gap-2 mb-1.5">
+        <span class="text-[12px] font-medium text-ink">Finančný kontext (RÚZ)</span>
+        ${sektor ? `<span class="text-[11px] text-slate2">${sektor}</span>` : ''}
+      </div>
+      <table class="w-full text-[12px]">
+        <thead>
+          <tr class="text-slate2 text-left">
+            <th class="font-normal pb-1">Rok</th>
+            <th class="font-normal pb-1 text-right">Obrat</th>
+            <th class="font-normal pb-1 text-right">Výsledok hospodárenia</th>
+          </tr>
+        </thead>
+        <tbody>${roky.map(riadokRuzFinancie).join('')}</tbody>
+      </table>
+      <p class="text-[11px] text-slate2 mt-1.5">
+        Zdroj: Register účtovných závierok (registeruz.sk), obrat = čistý
+        obrat alebo výnosy z hospodárskej činnosti podľa typu závierky.
+      </p>
+    </div>`;
+}
+
+async function otvorProfilDodavatela(supabase, ico, nazov, jeTeam) {
   el('modal-profil-nazov').textContent = nazov || '(bez názvu)';
   el('modal-profil-ico').textContent = `IČO ${ico}`;
   el('modal-profil-suhrn').textContent = 'Načítavam…';
   el('modal-profil-trend').innerHTML = '';
   el('modal-profil-riadky').innerHTML = '';
   el('modal-profil-prazdny').classList.add('hidden');
+  el('modal-profil-financie').innerHTML = '';
+  el('modal-profil-financie').classList.add('hidden');
   ukaz('modal-profil');
   el('modal-profil').classList.add('flex');
   el('modal-profil-zavriet').onclick = () => {
     el('modal-profil').classList.add('hidden');
     el('modal-profil').classList.remove('flex');
   };
+
+  // Nezavisle od histórie zmlúv nižšie (iný zdroj dát, iná tabuľka) — beží
+  // súbežne, nie sekvenčne. Bez jeTeam ostáva sekcia skrytá (nastavené
+  // vyššie), žiadny "odomknite" teaser.
+  if (jeTeam) nacitajRuzFinancie(supabase, ico);
 
   const { data, error } = await supabase.from('contracts')
     .select('id, subject, authority_name, price_total, effective_from, effective_to, signed_on')
@@ -2383,6 +2469,11 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
   el('nazov-firmy').textContent = org?.nazov ?? '';
   const jePro = odznakPredplatneho(sub);
+  // Team-only podmnozina jePro — financny kontext dodavatela (RUZ). Zrkadli
+  // presne ma_team() v databaze (supabase/35_ruz_financie.sql): 'trial' dava
+  // Pro uroven, nie Team (viz komentar pri odznakPredplatneho vyssie), preto
+  // tu NIE JE v zozname, na rozdiel od proPlany tam.
+  const jeTeam = jePro && ['team', 'admin'].includes(sub?.plan);
   const orgId = org?.id ?? null;
 
   // Zaplatit/predlzit vie spustit len vlastnik alebo admin firmy - rovnaka
@@ -3165,7 +3256,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       const btn = e.target.closest('[data-sleduj]');
       if (btn) prepniSledovanie(btn.dataset.sleduj, btn.dataset.nazov);
       const profilBtn = e.target.closest('[data-profil]');
-      if (profilBtn) otvorProfilDodavatela(supabase, profilBtn.dataset.profil, profilBtn.dataset.profilNazov);
+      if (profilBtn) otvorProfilDodavatela(supabase, profilBtn.dataset.profil, profilBtn.dataset.profilNazov, jeTeam);
     });
     const sledovaneZoznamEl = el('sledovane-firmy-zoznam');
     if (sledovaneZoznamEl) {
