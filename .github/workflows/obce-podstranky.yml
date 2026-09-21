@@ -1,9 +1,10 @@
 name: Obce podstranky
 
 # ══════════════════════════════════════════════════════════════════════════
-#  STAV: PRIPRAVENE, ESTE NEZAPNUTE NAOSTRO — pred odkomentovanim `schedule:`
-#  spusti raz rucne cez workflow_dispatch a over v Actions logu aj priamo
-#  na GitHube, ze vygenerovane /obce/kraj-*.html vyzeraju spravne.
+#  STAV: OVERENE A ZAPNUTE NAOSTRO (19.9.2026) — rucny workflow_dispatch
+#  beh #1 prebehol uspesne (10 vygenerovanych suborov, zhodne s uz zivymi
+#  strankami, spravne rozpoznane "ziadna zmena" a bez commitu). `schedule:`
+#  teraz zapnuty.
 #
 #  CO TOTO ROBI
 #  pipeline/generuj_obce_podstranky.py precita verejne anon-citatelne
@@ -13,13 +14,6 @@ name: Obce podstranky
 #  je staticky (Cloudflare Pages, ziadny build), "vygenerovat" tu
 #  doslovne znamena zapisat .html subory do repozitara — preto tento
 #  beh, na rozdiel od pipeline.yml, potrebuje `contents: write`.
-#
-#  PRED PRVYM SPUSTENIM NAOSTRO
-#  1. SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY uz su v Secrets (rovnake
-#     ako pouziva pipeline.yml).
-#  2. Test: workflow_dispatch — over v logu pocet vygenerovanych suborov
-#     a pozri si vysledny commit/diff priamo na GitHube.
-#  3. Az potom odkomentuj `schedule:` nizsie.
 # ══════════════════════════════════════════════════════════════════════════
 
 on:
@@ -29,8 +23,8 @@ on:
   # novych dotacnych zmluv v CRZ (dennemu cronu pipeline.yml). Iny den
   # v tyzdni nez pozvanky/statistiky, aby vsetky tri nebezali v tu istu
   # chvilu.
-  # schedule:
-  #   - cron: "20 6 * * 3"
+  schedule:
+    - cron: "20 6 * * 3"
 
 permissions:
   contents: write
@@ -74,4 +68,3 @@ jobs:
             git commit -m "Automaticky vygenerovane: SEO podstranky obce/kraj"
             git push
           fi
-
