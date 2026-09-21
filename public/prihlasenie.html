@@ -198,6 +198,15 @@ if (zAdresy) {
 // query cast adresy tym ostava nedotknuta. Token teda prezije popri nich.
 const TOKEN_POZVANKY = new URLSearchParams(location.search).get('pozvanka');
 
+// Kam po prihlaseni ist, ak nie do app.html (napr. trh.html pre obce a
+// poradcov — vlna 16). Whitelist na holy nazov "xyz.html" bez lomiek ci
+// protokolu — je to redirect ciel poskladany z URL, takym sa neveri naslepo
+// (open redirect). Neplatna/chybajuca hodnota ticho spadne na app.html.
+const DALEJ_PARAM = new URLSearchParams(location.search).get('dalej');
+const CIELOVA_STRANKA = (DALEJ_PARAM && /^[a-z0-9_-]+\.html$/i.test(DALEJ_PARAM))
+  ? './' + DALEJ_PARAM
+  : './app.html';
+
 if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
   ukazChybu('Aplikácia nie je nastavená: v súbore config.js chýba anon kľúč.');
   tlacidlo.disabled = true;
@@ -206,7 +215,7 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
 
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
-    location.replace('./app.html' +
+    location.replace(CIELOVA_STRANKA +
       (TOKEN_POZVANKY ? '?pozvanka=' + encodeURIComponent(TOKEN_POZVANKY) : ''));
   }
 
@@ -241,7 +250,7 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
     tlacidlo.textContent = 'Odosielam...';
 
     const email = document.getElementById('email').value.trim();
-    const cielovaAdresa = new URL('./app.html', location.href);
+    const cielovaAdresa = new URL(CIELOVA_STRANKA, location.href);
     if (TOKEN_POZVANKY) cielovaAdresa.searchParams.set('pozvanka', TOKEN_POZVANKY);
     const { error } = await supabase.auth.signInWithOtp({
       email,
