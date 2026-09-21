@@ -1,0 +1,91 @@
+name: RUZ financny kontext
+
+# ══════════════════════════════════════════════════════════════════════════
+#  STAV: PRIPRAVENE, ESTE NEZAPNUTE NAOSTRO — pred prvym ostrym behom over
+#  workflow_dispatch s nasucho=true (over v logu, ze ICO sa najdu a data z
+#  registeruz.sk davaju zmysel), potom nasucho=false na malej davke
+#  (napr. limit=20) a over v Supabase tabulky ruz_zaklad/ruz_financie.
+#  Az potom odkomentuj `schedule:` nizsie.
+#
+#  CO TOTO ROBI
+#  Pre ICO z tabulky `dodavatelia` (uz len pravnicke osoby, viz
+#  pipeline/config.py PRAVNE_FORMY) dotiahne z Registra uctovnych
+#  zavierok (registeruz.sk, verejne API, CC0) obrat, vysledok
+#  hospodarenia za poslednych par rokov a NACE sektor. Zapisuje do
+#  ruz_zaklad / ruz_financie (supabase/35_ruz_financie.sql), Team-only
+#  gate cez ma_team(). Samostatny beh od hlavnej pipeline (pipeline.yml)
+#  — zlyhanie RUZ API nema strhnut denny prepocet zmluv/prilezitosti.
+#
+#  DAVKOVANIE: jeden beh spracuje najviac `limit` ICO (default 150),
+#  najprv tie bez zaznamu, potom najstarsie skontrolovane. Opakovanymi
+#  behmi (rucne, potom podla schedule) sa postupne pokryje cela zakladna
+#  (~2000+ dodavatelov) a drzi sa aktualna (RUZ zavierky sa menia rocne).
+# ══════════════════════════════════════════════════════════════════════════
+
+on:
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "Kolko ICO spracovat v tomto behu"
+        type: string
+        default: "150"
+      force:
+        description: "Skontrolovat aj cerstvo skontrolovane ICO"
+        type: boolean
+        default: false
+      nasucho:
+        description: "Nasucho — nic nezapisat, len vypisat (nechaj true, kym si neistý)"
+        type: boolean
+        default: true
+
+  # Raz denne, mimo hlavneho pipeline behu (05:10 UTC, viz pipeline.yml).
+  # RUZ zavierky sa menia rocne, ale denna davka postupne pokryje/obnovi
+  # celu zakladnu bez toho, aby jeden beh musel spracovat vsetko naraz.
+  # schedule:
+  #   - cron: "40 4 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ruz-financie
+  cancel-in-progress: false
+
+jobs:
+  obohat:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Obohatit dodavatelov o RUZ financny kontext
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Rovnaky dovod ako v pozvanky.yml/email.yml: vstupy idu cez
+          # premenne prostredia, nie priamo interpolovane do shell prikazu.
+          EVENT: ${{ github.event_name }}
+          LIMIT: ${{ inputs.limit }}
+          FORCE: ${{ inputs.force }}
+          NASUCHO: ${{ inputs.nasucho }}
+        run: |
+          set -euo pipefail
+          ARGS=(--limit "${LIMIT:-150}")
+          if [ "$FORCE" = "true" ]; then
+            ARGS+=(--force)
+          fi
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$NASUCHO" = "true" ]; then
+            ARGS+=(--nasucho)
+          fi
+          echo "Spustam: python obohat_financie.py ${ARGS[*]}"
+          python obohat_financie.py "${ARGS[@]}"
