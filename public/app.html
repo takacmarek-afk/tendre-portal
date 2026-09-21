@@ -217,9 +217,8 @@ tailwind.config = { theme: { extend: {
         <button id="modal-predplatne-zavriet" class="text-slate2 hover:text-ink text-[20px] leading-none">&times;</button>
       </div>
       <p class="text-[13px] leading-relaxed text-slate2 mb-4">
-        Počas otvoreného obdobia je celý portál zadarmo pre každého. Toto
-        slúži na vyskúšanie platby vopred (testovacie prostredie u finby,
-        žiadne skutočné peniaze).
+        Vyberte si úroveň a zaplaťte kartou cez TrustPay/finby. Predplatné
+        sa aktivuje hneď po potvrdení platby.
       </p>
       <div id="modal-predplatne-plany" class="space-y-2 mb-4"></div>
       <p id="modal-predplatne-chyba" class="hidden text-[13px] text-red-700 mb-3"></p>
@@ -1963,21 +1962,44 @@ async function otvorProfilDodavatela(supabase, ico, nazov) {
 }
 
 function odznakPredplatneho(sub) {
-  // Otvorene obdobie: cely portal je zadarmo pre kazdeho prihlaseneho.
-  // O pristupe rozhoduje vylucne funkcia public.je_zadarmo() v databaze,
-  // toto je len jej zobrazenie. Nikdy to nerozhoduj tu.
+  // Otvorene obdobie skoncilo 21.9.2026 (je_zadarmo() prepnute na false).
+  // Odzrkadluje realnu logiku ma_aktivny_pristup()/ma_pro() z databazy
+  // (08_zadarmo.sql, opravene pre growth/team/admin v 31_oprava_ma_pro_planov.sql)
+  // - klient si to len ZOBRAZUJE, o skutocnom pristupe k datam vzdy
+  // rozhoduje RLS na serveri. POZOR: server (ma_pro) pocita medzi Pro-urovne
+  // 'trial', 'pro', 'growth', 'team', 'admin' - NIE 'start' (Dodavatelia/
+  // cenovy benchmark su tam explicitne Growth+, viz komentar pri jePro
+  // nizsie v dashboard()). Ak sa cennik.html niekedy rozide s tymto zoznamom,
+  // tento badge aj realny pristup sa riadia TÝMTO zoznamom, nie cennikom.
+  const PLANY = { start: 'Start', growth: 'Growth', team: 'Team', pro: 'Pro', admin: 'Admin' };
+  const proPlany = ['trial', 'pro', 'growth', 'team', 'admin'];
+  const trialKonci = sub?.trial_konci ? new Date(sub.trial_konci) : null;
+  const trialAktivny = sub?.stav === 'trial' && trialKonci && trialKonci > new Date();
+  const aktivny = sub?.stav === 'aktivne' || trialAktivny;
+  const jePro = aktivny && proPlany.includes(sub?.plan);
+
   const o = el('odznak-trial');
-  o.textContent = 'Zadarmo';
-  o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-green-100 text-green-800';
-
   const p = el('odznak-plan');
-  p.textContent = 'OTVORENÉ OBDOBIE';
-  p.className = 'text-[12px] font-semibold px-2.5 py-1 rounded hidden sm:inline ' +
-                'bg-ink text-white';
 
-  // Vsetko je odomknute. Ked sa `je_zadarmo()` prepne na false, RLS zacne
-  // Pro tabulky odmietat a staci sem vratit povodnu podmienku na plan.
-  return true;
+  if (!sub || !aktivny) {
+    o.textContent = 'Predplatné neaktívne';
+    o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-red-100 text-red-800';
+    p.textContent = '';
+    p.className = 'hidden';
+  } else if (trialAktivny) {
+    const dniOstava = Math.max(1, Math.ceil((trialKonci - new Date()) / 86400000));
+    o.textContent = `Skúška — ${dniOstava} ${dniOstava === 1 ? 'deň' : dniOstava < 5 ? 'dni' : 'dní'}`;
+    o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-amber-100 text-amber-800';
+    p.textContent = (PLANY[sub.plan] || sub.plan || '').toUpperCase();
+    p.className = 'text-[12px] font-semibold px-2.5 py-1 rounded hidden sm:inline bg-ink text-white';
+  } else {
+    o.textContent = 'Aktívne';
+    o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-green-100 text-green-800';
+    p.textContent = (PLANY[sub.plan] || sub.plan || '').toUpperCase();
+    p.className = 'text-[12px] font-semibold px-2.5 py-1 rounded hidden sm:inline bg-ink text-white';
+  }
+
+  return jePro;
 }
 
 function obrazovkaTrialVycerpany(supabase) {
@@ -2293,6 +2315,17 @@ async function nastavTeam(supabase, rola) {
 async function nastavStatistiky(supabase) {
   const { data: jeAdmin, error } = await supabase.rpc('je_admin');
   if (error || !jeAdmin) return;
+
+  // Trvalé označenie tohto prehliadača/zariadenia ako "adminovo" — nezávisí
+  // od toho, či je práve prihlásený (na rozdiel od predošlej kontroly
+  // v tracking snippete na verejných stránkach, ktorá fungovala len keď
+  // mal Marek v tej chvíli platnú session). Odteraz, keď sa raz v tomto
+  // prehliadači prihlási sem do app.html, jeho návštevy verejných stránok
+  // (index/cennik/obce/prihlasenie/zdroje) sa už nikdy nezapočítajú do
+  // navstevy — aj keď bude odhlásený alebo bez session tokenu. Žiadna
+  // expirácia zámerne: má to platiť "navždy na tomto zariadení", nie na
+  // dobu session tokenu.
+  try { localStorage.setItem('pt_admin_zariadenie', '1'); } catch (e) {}
 
   // Tlacidlo pridavame az TERAZ, pred nastavZalozky() na konci dashboard() —
   // ta si '.zal' tlacidla vyhlada az vo chvili, kedy sa spusti, takze

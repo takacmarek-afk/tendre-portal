@@ -122,12 +122,12 @@ tailwind.config = {
         PredTendrom sleduje <span id="hero-zmluv" class="font-mono text-paper">228&nbsp;000+</span>
         zmlúv v štáte a obciach a nájde tender skôr, ako ho niekto vyhlási —
         z končiacich zmlúv, podpísaných dotácií a obcí, ktoré si práve najali
-        projektanta. Zadarmo počas otvoreného obdobia.
+        projektanta.
       </p>
 
       <div class="mt-9 flex flex-wrap items-center gap-6">
         <a href="./prihlasenie.html" class="inline-flex justify-center items-center bg-amber text-ink font-semibold px-6 py-3.5 rounded-md hover:bg-[#F3B65C] transition">
-          Vytvoriť prístup zadarmo
+          Vyskúšať 3 dni zadarmo
         </a>
         <a href="#vrstvy" class="text-[15px] text-[#D8D3C4] underline underline-offset-4 hover:text-amber transition">
           Čo presne uvidím &rarr;
@@ -135,7 +135,7 @@ tailwind.config = {
       </div>
 
       <p class="mt-6 text-[12px] tracking-wide text-[#6E6858] font-mono uppercase">
-        Bez platobnej karty &middot; bez skúšobnej lehoty &middot; aktualizované denne
+        Bez platobnej karty &middot; 3 dni zadarmo &middot; aktualizované denne
       </p>
     </div>
 
@@ -420,22 +420,21 @@ tailwind.config = {
   <div class="max-w-3xl">
     <span class="inline-block text-[12px] font-semibold uppercase tracking-wider
                  text-accent bg-accent/8 border border-accent/20 rounded-full px-3 py-1">
-      Otvorené obdobie
+      Cenník
     </span>
     <h2 class="font-serif mt-6 text-[28px] md:text-[38px] font-bold tracking-tight leading-tight">
-      Teraz je to celé zadarmo. Vieme už ale povedať, kam to smeruje.
+      Tri úrovne, podľa veľkosti vášho obchodu.
     </h2>
     <p class="mt-5 text-[17px] leading-relaxed text-slate2">
-      Zverejnili sme <a href="./cennik.html" class="text-accent hover:underline font-medium">cenník</a>,
-      ku ktorému sa chystáme prejsť, až portál dokáže, že stojí za peniaze.
-      Kým sa tak nestane, zostáva prístup &mdash; Start, Growth aj Team &mdash;
-      bezplatný a bez obmedzenia.
+      Start, Growth aj Team &mdash; presný rozsah každej úrovne je na stránke
+      <a href="./cennik.html" class="text-accent hover:underline font-medium">cenníka</a>.
+      Každý nový účet začína 3-dňovou skúškou zadarmo, bez platobnej karty.
     </p>
   </div>
 
   <div class="mt-12 grid md:grid-cols-2 gap-6 max-w-4xl">
     <div class="border-2 border-ink rounded-lg p-8">
-      <h3 class="text-[19px] font-semibold">Čo máte zadarmo</h3>
+      <h3 class="text-[19px] font-semibold">Čo uvidíte hneď</h3>
       <ul class="mt-5 space-y-3 text-[15px] text-slate2">
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
           Končiace zmluvy s odhadom termínu obstarávania</li>
@@ -445,8 +444,6 @@ tailwind.config = {
           Filtre na kraj, mesto, sektor a silu signálu</li>
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
           Kto zákazku má teraz a odkedy</li>
-        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
-          Profily dodávateľov a cenový benchmark sektora</li>
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
           Export do CSV</li>
       </ul>
@@ -469,13 +466,10 @@ tailwind.config = {
         Dôvod je jednoduchý: v malej firme nie je „pozerať tendrový portál"
         nikoho úlohou. Kým sa treba prihlásiť, nestane sa to.
       </p>
-      <!-- Denny digest a webhook su v cenniku vyhradene pre Growth/Team
-           (pozri 25_odber_pro_gating.sql). Pocas otvoreneho obdobia
-           (je_zadarmo() = true) ich ale ma odomknute kazdy. -->
       <p class="mt-5 text-[15px] leading-relaxed text-ink font-medium">
-        Denný digest a webhook upozornenia patria v <a href="./cennik.html" class="text-accent hover:underline">cenníku</a>
-        k úrovniam Growth a Team. Počas otvoreného obdobia si ich ale
-        môže zapnúť ktokoľvek.
+        Profily dodávateľov, cenový benchmark sektora, denný digest a
+        Slack/Teams webhook patria v <a href="./cennik.html" class="text-accent hover:underline">cenníku</a>
+        k úrovniam Growth a Team.
       </p>
       <!-- ══ UKÁŽKA E-MAILU ══
            Kto si niečo zapína, má vidieť, čo mu príde. Štruktúra je presne
@@ -667,20 +661,20 @@ tailwind.config = {
       </h2>
       <p class="mt-5 text-[17px] leading-relaxed text-slate2">
         Zaregistrujte sa a hneď uvidíte celú databázu — končiace zmluvy aj
-        dotácie, ktoré obce už dostali. Bez skúšobnej lehoty, bez platobnej
+        dotácie, ktoré obce už dostali. 3 dni zadarmo, bez platobnej
         karty.
       </p>
 
       <a href="./prihlasenie.html"
          class="inline-flex justify-center items-center mt-9 bg-accent text-white
                 font-semibold text-[16px] px-8 py-4 rounded-md hover:bg-accentDark transition">
-        Vytvoriť prístup zadarmo
+        Vyskúšať 3 dni zadarmo
       </a>
 
       <ul class="mt-10 grid sm:grid-cols-3 gap-5 text-left">
         <li class="flex gap-3 text-[15px] text-slate2">
           <span class="text-accent font-bold mt-px">&#10003;</span>
-          Bez karty a bez záväzku
+          Bez karty počas skúšky
         </li>
         <li class="flex gap-3 text-[15px] text-slate2">
           <span class="text-accent font-bold mt-px">&#10003;</span>
@@ -835,6 +829,12 @@ tailwind.config = {
     var cfg = window.CONFIG || {};
     if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
 
+    // Trvalé vylúčenie admina na úrovni zariadenia (nastavuje app.html po
+    // potvrdení je_admin() = true, bez expirácie) — funguje aj keď je
+    // Marek na tejto stránke odhlásený alebo bez platnej session, na
+    // rozdiel od kontroly nižšie, ktorá potrebuje aktívny token PRÁVE TERAZ.
+    try { if (localStorage.getItem('pt_admin_zariadenie') === '1') return; } catch (e) {}
+
     var sid = null;
     try {
       sid = sessionStorage.getItem('ptid');
@@ -875,7 +875,13 @@ tailwind.config = {
       },
       body: '{}'
     }).then(function(r){ return r.json(); }).then(function(jeAdmin){
-      if (jeAdmin !== true) posliNavstevu();
+      if (jeAdmin === true) {
+        // Zariadenie ešte nemalo nastavený trvalý príznak (napr. staršia
+        // session) — doplníme ho teraz, nabudúce sa už RPC volať nemusí.
+        try { localStorage.setItem('pt_admin_zariadenie', '1'); } catch (e) {}
+      } else {
+        posliNavstevu();
+      }
     }).catch(function(){ posliNavstevu(); });
   } catch (e) {}
 })();

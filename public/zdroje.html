@@ -160,6 +160,12 @@ tailwind.config = { theme: { extend: {
     var cfg = window.CONFIG || {};
     if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
 
+    // Trvalé vylúčenie admina na úrovni zariadenia (nastavuje app.html po
+    // potvrdení je_admin() = true, bez expirácie) — funguje aj keď je
+    // Marek na tejto stránke odhlásený alebo bez platnej session, na
+    // rozdiel od kontroly nižšie, ktorá potrebuje aktívny token PRÁVE TERAZ.
+    try { if (localStorage.getItem('pt_admin_zariadenie') === '1') return; } catch (e) {}
+
     var sid = null;
     try {
       sid = sessionStorage.getItem('ptid');
@@ -200,7 +206,13 @@ tailwind.config = { theme: { extend: {
       },
       body: '{}'
     }).then(function(r){ return r.json(); }).then(function(jeAdmin){
-      if (jeAdmin !== true) posliNavstevu();
+      if (jeAdmin === true) {
+        // Zariadenie ešte nemalo nastavený trvalý príznak (napr. staršia
+        // session) — doplníme ho teraz, nabudúce sa už RPC volať nemusí.
+        try { localStorage.setItem('pt_admin_zariadenie', '1'); } catch (e) {}
+      } else {
+        posliNavstevu();
+      }
     }).catch(function(){ posliNavstevu(); });
   } catch (e) {}
 })();
