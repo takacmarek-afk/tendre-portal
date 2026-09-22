@@ -571,7 +571,7 @@ async function nacitajVyzvy() {
   try {
     const dnes = new Date().toISOString().slice(0, 10);
     const data = await citaj('vyzvy',
-      'select=nazov,poskytovatel,url,zdroj,uzavretie,popis' +
+      'select=nazov,poskytovatel,url,zdroj,uzavretie,popis,spoluucast_text' +
       `&or=(uzavretie.is.null,uzavretie.gte.${dnes})` +
       '&order=uzavretie.asc&limit=25');
     if (!data.length) return;          // sekcia zostane skryta, to je v poriadku
@@ -580,6 +580,11 @@ async function nacitajVyzvy() {
       <div class="border border-line rounded-lg p-4">
         <div class="text-[15px] font-medium leading-snug">${bezpecne(v.nazov)}</div>
         ${v.popis ? `<p class="mt-1.5 text-[13px] leading-relaxed text-slate2">${bezpecne(v.popis).slice(0, 240)}</p>` : ''}
+        ${v.spoluucast_text ? `
+          <div class="mt-2 inline-flex items-start gap-1.5 text-[12px] text-accentDark bg-accent/10 rounded-md px-2.5 py-1.5 max-w-full">
+            <span class="font-semibold whitespace-nowrap">Spoluúčasť:</span>
+            <span>${bezpecne(v.spoluucast_text)}</span>
+          </div>` : ''}
         <div class="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12px] text-slate2">
           ${v.poskytovatel ? `<span>${bezpecne(v.poskytovatel)}</span>` : ''}
           ${v.uzavretie ? `<span class="font-semibold text-ink">uzávierka ${bezpecne(v.uzavretie)}</span>` : ''}

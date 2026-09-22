@@ -1,6 +1,6 @@
 """Pokus o automaticky zber OTVORENYCH VYZIEV pre obce.
 
-Zamerne sa to vola "pokus". Stav overeny 16. 9. 2026:
+Zamerne sa to vola "pokus". Stav overeny 16. 9. 2026, doplneny 22. 9. 2026:
 
   opendata.itms2014.sk  — vracia HTTP 403 na KAZDEJ ceste, aj na Swagger.
                           Moze to byt blokovanie konkretnej IP, takze
@@ -10,8 +10,20 @@ Zamerne sa to vola "pokus". Stav overeny 16. 9. 2026:
                           tam nie su samostatny typ obsahu. Su to bezne
                           clanky, takze z toho ide zmes clankov a vyziev
                           a treba to filtrovat podla textu.
+  envirofond.sk         — WordPress REST API, overene naziv 22. 9. 2026 cez
+                          Browser pane (fetch /wp-json/wp/v2/posts vratil
+                          HTTP 200, realne aktualne clanky vratane "Vyzva
+                          MoF - 8/2026" a pod.). Rovnaky filter ako pri
+                          eurofondy.gov.sk — clanky, nie strukturovany typ.
   data.gov.sk           — CKAN API, standardne a strojove. Katalog datasetov,
                           nie zoznam vyziev, ale da sa tam najst odkaz.
+  eeagrants.sk          — PRESKUMANE 22. 9. 2026, NEPOUZITE: domena presmeruje
+                          cely web na eeagrants.org (Drupal, ina platforma),
+                          sekcia "Vyzvy" tam priamo pise "pripravujeme...
+                          uz coskoro" (t.j. zatial prazdna), a /jsonapi/ na
+                          eeagrants.sk vracia 404 (JSON:API tam nie je
+                          zapnute). Ziadny spolahlivy strojovy zdroj k
+                          22. 9. 2026 — nepridavat bez opatovneho overenia.
 
 PRAVIDLO PRE CELY MODUL: kazdy zdroj je vo vlastnom try. Ked zlyha, zapise
 sa warning a ide sa dalej. Ziadny zdroj nesmie zhodit beh — vrstva aktivnych
@@ -19,6 +31,14 @@ programov z CRZ funguje aj bez vyziev a je to ta, na ktoru sa da spolahnut.
 
 CO SEM NEPATRI: obchadzanie blokovania. Ked zdroj vrati 403, je to odpoved,
 nie prekazka. Nezkusame ine IP, proxy ani archivy.
+
+FINANCNA SPOLUUCAST (pridane 22. 9. 2026, Marekova poziadavka): NIKDY sa
+nepocita ani neodhaduje. `_najdi_spoluucast()` len hlada v REALNOM texte
+zdroja (nazov + popis clanku) vetu o spoluucasti/spolufinancovani s
+percentom v okoli — ked ju najde, ulozi PRESNE TU VETU (doslovny vytah).
+Ked ju nenajde (velka vacsina pripadov — clanky su zvycajne administrativne
+oznamy, nie plne podmienky vyzvy), pole zostava prazdne a UI nic nezobrazi.
+Ziadne "zvycajne okolo X %" ani ine hadanie.
 """
 import logging
 import re
@@ -46,13 +66,42 @@ _PRE_OBCE = re.compile(
     r"|z[aá]kladn\w*\s+[sš]kol|matersk\w*\s+[sš]kol|obecn\w*",
     re.IGNORECASE)
 
+# Veta o spoluucasti/spolufinancovani s percentom v okoli — hlada sa
+# DOSLOVNY text zdroja, nic sa nepocita ani neodhaduje (viz komentar v
+# hlave suboru). Okno ±100 znakov okolo zhody sa oreze na najblizsie
+# hranice viet, aby vysledok davala zmysel citany samostatne.
+_SPOLUUCAST_SLOVO = re.compile(
+    r"spolu[uú]čas\w*|spolufinancovan\w*|vlastn\w{0,3}\s+zdroj\w*",
+    re.IGNORECASE)
+_MA_PERCENTO = re.compile(r"\d{1,3}(?:[.,]\d+)?\s?%")
+
+
+def _najdi_spoluucast(*texty):
+    """Vrati kratku VETU o spoluucasti, ak JEDNA VETA doslovne obsahuje aj
+    slovo o spoluucasti/spolufinancovani AJ cislo v percentach — inak None.
+
+    Zamerne na urovni VETY, nie okolitych znakov: skorsia verzia hladala
+    percento v okne ±100 znakov okolo slova, co vedelo omylom spojit dve
+    nesuvisiace vety (napr. "Miera nezamestnanosti je 12 %. Vyzva podporuje
+    spolufinancovanie..." — nesuvisiace cislo, chybne priradenie). Vyzaduje
+    sa teda oboje v tej istej vete, nie len v blizkosti. Nikdy nic nepocita
+    ani neodhaduje, len cituje presne tu jednu vetu zo zdroja."""
+    spojene = " ".join(t for t in texty if t)
+    if not spojene:
+        return None
+    for veta in re.split(r"(?<=[.!?])\s+", spojene):
+        if _SPOLUUCAST_SLOVO.search(veta) and _MA_PERCENTO.search(veta):
+            veta = veta.strip()
+            return (veta[:300] + "…") if len(veta) > 300 else veta
+    return None
+
 
 def _prazdny():
     return []
 
 
 def _riadok(nazov, poskytovatel, url, zdroj, uzavretie=None, popis=None,
-            pre_obce=None):
+            pre_obce=None, spoluucast_text=None):
     """Jeden normalizovany zaznam. Vsetky zdroje musia vratit tento tvar."""
     return {
         "nazov": (nazov or "").strip()[:400] or None,
@@ -62,6 +111,7 @@ def _riadok(nazov, poskytovatel, url, zdroj, uzavretie=None, popis=None,
         "uzavretie": uzavretie,
         "popis": (popis or "").strip()[:800] or None,
         "pre_obce": pre_obce,
+        "spoluucast_text": (spoluucast_text or "").strip()[:320] or None,
     }
 
 
@@ -131,27 +181,38 @@ def z_eurofondy(session) -> list:
     Je to hrubsie nez skutocne API, ale je to VEREJNE DOKUMENTOVANE
     rozhranie, ktore ten web sam vystavuje — nie zoskrabavanie HTML.
     """
-    url = "https://eurofondy.gov.sk/wp-json/wp/v2/posts"
+    return _z_wordpress(session, "https://eurofondy.gov.sk", "eurofondy.gov.sk",
+                        "Eurofondy")
+
+
+# ── SPOLOCNY KOD PRE WORDPRESS ZDROJE (eurofondy.gov.sk, envirofond.sk) ────
+
+def _z_wordpress(session, zaklad, zdroj_nazov, log_prefix) -> list:
+    """Standardne WordPress REST API (wp-json/wp/v2/posts). Vyzvy nie su
+    samostatny typ obsahu ani na jednej z dvoch stranok, kde to skusame,
+    takze filtrujem bezne clanky podla nazvu — rovnaky pristup, len iny
+    zdroj, preto spolocna funkcia."""
+    url = f"{zaklad}/wp-json/wp/v2/posts"
     try:
         r = session.get(url, params={"per_page": 100, "orderby": "date",
                                      "order": "desc"},
                         timeout=CASOVY_LIMIT)
     except requests.RequestException as e:
-        log.warning("Eurofondy: siet zlyhala (%s)", type(e).__name__)
+        log.warning("%s: siet zlyhala (%s)", log_prefix, type(e).__name__)
         return _prazdny()
 
     if r.status_code != 200:
-        log.warning("Eurofondy: HTTP %s", r.status_code)
+        log.warning("%s: HTTP %s", log_prefix, r.status_code)
         return _prazdny()
 
     try:
         clanky = r.json()
     except ValueError:
-        log.warning("Eurofondy: odpoved nie je JSON")
+        log.warning("%s: odpoved nie je JSON", log_prefix)
         return _prazdny()
 
     if not isinstance(clanky, list):
-        log.warning("Eurofondy: neocakavany tvar odpovede")
+        log.warning("%s: neocakavany tvar odpovede", log_prefix)
         return _prazdny()
 
     out = []
@@ -171,17 +232,30 @@ def z_eurofondy(session) -> list:
             nazov=nazov,
             poskytovatel=None,          # v clanku to strukturovane nie je
             url=c.get("link"),
-            zdroj="eurofondy.gov.sk",
+            zdroj=zdroj_nazov,
             uzavretie=None,
             popis=popis,
             pre_obce=bool(_PRE_OBCE.search(nazov + " " + popis)),
+            spoluucast_text=_najdi_spoluucast(nazov, popis),
         ))
         if len(out) >= MAX_Z_ZDROJA:
             break
 
-    log.info("Eurofondy: %s zaznamov s vyzvou v nazve (z %s clankov)",
-             len(out), len(clanky))
+    log.info("%s: %s zaznamov s vyzvou v nazve (z %s clankov)",
+             log_prefix, len(out), len(clanky))
     return out
+
+
+# ── ZDROJ: envirofond.sk, WordPress REST API ───────────────────────────────
+
+def z_envirofond(session) -> list:
+    """WordPress REST API na envirofond.sk. Overene nazivo 22. 9. 2026
+    (Browser pane, fetch /wp-json/wp/v2/posts -> HTTP 200, realne aktualne
+    clanky). Rovnaky filter/tvar ako eurofondy.gov.sk — clanky, nie
+    strukturovany typ obsahu, preto rovnake obmedzenia (bez uzavretie,
+    bez poskytovatela)."""
+    return _z_wordpress(session, "https://envirofond.sk", "envirofond.sk",
+                        "Envirofond")
 
 
 # ── ZDROJ 3: data.gov.sk, CKAN ─────────────────────────────────────────────
@@ -248,6 +322,7 @@ def stiahni(dnes: date = None) -> list:
     vsetko = []
     for meno, fn in (("ITMS2014+", z_itms),
                      ("eurofondy.gov.sk", z_eurofondy),
+                     ("envirofond.sk", z_envirofond),
                      ("data.gov.sk", z_datagov)):
         try:
             vsetko.extend(fn(session))
