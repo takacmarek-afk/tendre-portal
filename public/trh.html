@@ -49,8 +49,8 @@ tailwind.config = { theme: { extend: {
     <h1 class="text-[24px] font-bold tracking-tight">Vitajte na trhu dopytov</h1>
     <p class="mt-2 text-[14px] leading-relaxed text-slate2 max-w-[560px]">
       Obce tu vypisujú, s čím potrebujú pomôcť (dotácia, zmluva, iné), a poradcovia
-      na to reagujú priamo. Založte si jeden z dvoch typov účtu — kedykoľvek neskôr
-      ho môžete upraviť napísaním na info@predtendrom.sk.
+      na to reagujú priamo. Založte si jeden z dvoch typov účtu — kontaktné údaje
+      si kedykoľvek neskôr upravíte priamo tu, vo svojom účte.
     </p>
 
     <div class="mt-6 grid sm:grid-cols-2 gap-4">
@@ -164,6 +164,26 @@ tailwind.config = { theme: { extend: {
     <p class="text-[12px] font-semibold text-accent bg-accent/10 rounded-full px-3 py-1 inline-block">Účet obce</p>
     <h1 id="obec-nazov" class="mt-3 text-[24px] font-bold tracking-tight"></h1>
     <p id="obec-podnadpis" class="mt-1 text-[13px] text-slate2"></p>
+    <button id="btn-uprava-obec" class="mt-2 text-[13px] font-semibold text-accent hover:underline">Upraviť kontaktný e-mail</button>
+
+    <form id="form-uprava-obec" class="hidden mt-3 space-y-3 border border-line rounded-lg bg-white p-5 max-w-[420px]">
+      <div>
+        <label class="block text-[13px] font-semibold mb-1.5" for="uo-email">Kontaktný e-mail</label>
+        <input id="uo-email" type="email" placeholder="starosta@obec.sk"
+               class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                      focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+        <p class="mt-1.5 text-[12px] text-slate2">Kraj a IČO tu meniť nejde — pri zmene napíšte na info@predtendrom.sk.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button type="submit" id="uo-btn"
+                class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md text-[14px]
+                       hover:bg-accentDark transition disabled:opacity-50">
+          Uložiť
+        </button>
+        <button type="button" id="uo-zrusit" class="text-[13px] text-slate2 hover:text-ink">Zrušiť</button>
+      </div>
+      <p id="uo-chyba" class="hidden text-[13px] text-red-700"></p>
+    </form>
 
     <div class="mt-6 flex items-center justify-between">
       <h2 class="text-[17px] font-semibold">Vaše dopyty</h2>
@@ -212,6 +232,41 @@ tailwind.config = { theme: { extend: {
     <p class="text-[12px] font-semibold text-accent bg-accent/10 rounded-full px-3 py-1 inline-block">Profil poradcu</p>
     <h1 id="poradca-nazov" class="mt-3 text-[24px] font-bold tracking-tight"></h1>
     <p id="poradca-podnadpis" class="mt-1 text-[13px] text-slate2"></p>
+    <button id="btn-uprava-poradca" class="mt-2 text-[13px] font-semibold text-accent hover:underline">Upraviť profil</button>
+
+    <form id="form-uprava-poradca" class="hidden mt-3 space-y-3 border border-line rounded-lg bg-white p-5 max-w-[480px]">
+      <div>
+        <label class="block text-[13px] font-semibold mb-1.5" for="up-email">Kontaktný e-mail</label>
+        <input id="up-email" type="email" required placeholder="info@poradca.sk"
+               class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                      focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+      </div>
+      <div>
+        <label class="block text-[13px] font-semibold mb-1.5" for="up-telefon">Telefón (nepovinné)</label>
+        <input id="up-telefon" type="text" placeholder="+421 900 000 000"
+               class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                      focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+      </div>
+      <div>
+        <label class="block text-[13px] font-semibold mb-1.5" for="up-popis">Krátky popis (nepovinné)</label>
+        <textarea id="up-popis" rows="3" placeholder="S čím obciam pomáhate, prípadne skúsenosti"
+                  class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                         focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"></textarea>
+      </div>
+      <div>
+        <label class="block text-[13px] font-semibold mb-1.5">Kraje pôsobenia</label>
+        <div id="up-kraje" class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[14px]"></div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button type="submit" id="up-btn"
+                class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md text-[14px]
+                       hover:bg-accentDark transition disabled:opacity-50">
+          Uložiť
+        </button>
+        <button type="button" id="up-zrusit" class="text-[13px] text-slate2 hover:text-ink">Zrušiť</button>
+      </div>
+      <p id="up-chyba" class="hidden text-[13px] text-red-700"></p>
+    </form>
 
     <div class="mt-6 flex items-center justify-between flex-wrap gap-3">
       <h2 class="text-[17px] font-semibold">Otvorené dopyty od obcí</h2>
@@ -286,10 +341,11 @@ function naplnKrajSelect() {
     sel.appendChild(o);
   }
 }
-function naplnKrajeCheckboxy() {
-  el('pr-kraje').innerHTML = KRAJE.map((k, i) => `
+function naplnKrajeCheckboxy(containerId, trieda, vybrane) {
+  const vybr = new Set(vybrane ?? []);
+  el(containerId).innerHTML = KRAJE.map((k) => `
     <label class="flex items-center gap-1.5">
-      <input type="checkbox" value="${bezpecne(k)}" class="pr-kraj rounded border-line">
+      <input type="checkbox" value="${bezpecne(k)}" class="${trieda} rounded border-line" ${vybr.has(k) ? 'checked' : ''}>
       ${bezpecne(k)}
     </label>`).join('');
 }
@@ -442,6 +498,35 @@ async function ukazObecDashboard(obecId) {
   el('obec-nazov').textContent = obec.nazov;
   el('obec-podnadpis').textContent = [obec.kraj, obec.kontakt_email].filter(Boolean).join(' · ');
 
+  el('uo-email').value = obec.kontakt_email ?? '';
+  el('btn-uprava-obec').onclick = () => el('form-uprava-obec').classList.toggle('hidden');
+  el('uo-zrusit').onclick = () => el('form-uprava-obec').classList.add('hidden');
+
+  el('form-uprava-obec').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = el('uo-btn');
+    const chyba = el('uo-chyba');
+    chyba.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Ukladám…';
+
+    const { error: chybaRpc } = await supabase.rpc('uprav_kontakt_obce', {
+      p_kontakt_email: el('uo-email').value.trim() || null,
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Uložiť';
+
+    if (chybaRpc) {
+      chyba.textContent = chybaRpc.message || 'Nepodarilo sa uložiť zmenu.';
+      chyba.classList.remove('hidden');
+      return;
+    }
+
+    el('form-uprava-obec').classList.add('hidden');
+    await ukazObecDashboard(obecId);
+  };
+
   el('btn-novy-dopyt').onclick = () => {
     el('form-novy-dopyt').classList.toggle('hidden');
   };
@@ -582,7 +667,7 @@ async function nacitajDopytyPrePoradcu(poradcaId) {
 
 async function ukazPoradcaDashboard(poradcaId) {
   const { data: poradca, error } = await supabase.from('poradcovia_profily')
-    .select('nazov,kraje_posobenia,kontakt_email').eq('id', poradcaId).single();
+    .select('nazov,kraje_posobenia,kontakt_email,kontakt_telefon,popis').eq('id', poradcaId).single();
 
   if (error || !poradca) { ukazChybu('Nepodarilo sa načítať váš profil poradcu.'); return; }
 
@@ -594,6 +679,43 @@ async function ukazPoradcaDashboard(poradcaId) {
 
   poslKrajePosobenia = poradca.kraje_posobenia ?? [];
   el('filter-moje-kraje').onchange = vykresliZoznamDopytov;
+
+  el('up-email').value = poradca.kontakt_email ?? '';
+  el('up-telefon').value = poradca.kontakt_telefon ?? '';
+  el('up-popis').value = poradca.popis ?? '';
+  naplnKrajeCheckboxy('up-kraje', 'up-kraj', poradca.kraje_posobenia);
+  el('btn-uprava-poradca').onclick = () => el('form-uprava-poradca').classList.toggle('hidden');
+  el('up-zrusit').onclick = () => el('form-uprava-poradca').classList.add('hidden');
+
+  el('form-uprava-poradca').onsubmit = async (e) => {
+    e.preventDefault();
+    const btn = el('up-btn');
+    const chyba = el('up-chyba');
+    chyba.classList.add('hidden');
+    btn.disabled = true;
+    btn.textContent = 'Ukladám…';
+
+    const krajeVybrane = [...document.querySelectorAll('.up-kraj:checked')].map(c => c.value);
+
+    const { error: chybaRpc } = await supabase.rpc('uprav_kontakt_poradcu', {
+      p_kontakt_email: el('up-email').value.trim(),
+      p_kontakt_telefon: el('up-telefon').value.trim() || null,
+      p_popis: el('up-popis').value.trim() || null,
+      p_kraje: krajeVybrane,
+    });
+
+    btn.disabled = false;
+    btn.textContent = 'Uložiť';
+
+    if (chybaRpc) {
+      chyba.textContent = chybaRpc.message || 'Nepodarilo sa uložiť zmenu.';
+      chyba.classList.remove('hidden');
+      return;
+    }
+
+    el('form-uprava-poradca').classList.add('hidden');
+    await ukazPoradcaDashboard(poradcaId);
+  };
 
   await nacitajDopytyPrePoradcu(poradcaId);
   ukazLen('sekcia-poradca');
@@ -635,7 +757,7 @@ async function start() {
 
   supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   naplnKrajSelect();
-  naplnKrajeCheckboxy();
+  naplnKrajeCheckboxy('pr-kraje', 'pr-kraj');
 
   let { data: { session } } = await supabase.auth.getSession();
   if (!session) session = await pockajNaSpracovanieOdkazu(supabase);
