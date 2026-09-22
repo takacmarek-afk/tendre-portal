@@ -68,15 +68,45 @@ def _posledny_den_mesiaca(rok_mesiac):
     return f"{rok_mesiac}-{calendar.monthrange(rok, mesiac)[1]:02d}"
 
 
+_STRANKA_DB = 1000
+
+
+def _nacitaj_vsetko(dotaz_fn, stranka=_STRANKA_DB):
+    """Nacita VSETKY riadky opakovanym .range() (stránkovanie).
+
+    Objavene 22.9.2026: Supabase/PostgREST v predvolenom nastaveni obmedzi
+    jeden .select().execute() bez .range()/.limit() na max-rows (tu 1000).
+    `_nacitaj_kandidatov` nizsie to pri 2149 riadkoch v `dodavatelia` a
+    ziadnom .range() nikdy nezistil - videla sa len prvych 1000 (zoradenych
+    podla objem_eur), zvysnych 1149 firiem nebolo mozne NIKDY vybrat ako
+    kandidatov, aj ked retazenie behov (.github/workflows/ruz-financie.yml)
+    spravne bezalo dalej. `dotaz_fn(start, end)` vrati uz vykonany
+    .execute() pre dany .range(start, end).
+    """
+    vysledok = []
+    zaciatok = 0
+    while True:
+        davka = dotaz_fn(zaciatok, zaciatok + stranka - 1).data or []
+        vysledok.extend(davka)
+        if len(davka) < stranka:
+            break
+        zaciatok += stranka
+    return vysledok
+
+
 def _nacitaj_kandidatov(sb, limit, force):
     """ICO z `dodavatelia`, zoradene: bez zaznamu v ruz_zaklad prve, potom
     najstarsie checked_at. Ak force=True, poradie podla checked_at
     (najstarsie/nikdy prve) bez ohladu na PRESKOC_DNI."""
-    dodavatelia = (sb.table("dodavatelia").select("supplier_cin, objem_eur")
-                     .order("objem_eur", desc=True).execute().data or [])
+    dodavatelia = _nacitaj_vsetko(
+        lambda od, do: sb.table("dodavatelia").select("supplier_cin, objem_eur")
+                         .order("objem_eur", desc=True).range(od, do).execute()
+    )
     stav = {r["supplier_cin"]: r.get("checked_at")
-            for r in (sb.table("ruz_zaklad").select("supplier_cin, checked_at")
-                        .execute().data or [])}
+            for r in _nacitaj_vsetko(
+                lambda od, do: sb.table("ruz_zaklad")
+                                 .select("supplier_cin, checked_at").range(od, do).execute()
+            )}
 
     teraz = datetime.now(timezone.utc)
 

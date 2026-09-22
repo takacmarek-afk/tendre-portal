@@ -171,6 +171,21 @@ vysledok = ruz.dekoduj_vykaz(prazdny_vykaz, MUJ_SABLONA)
 assert vysledok is None
 print("OK")
 
+hlavicka("Vykaz s 'obsah' bez kluca 'tabulky' -> None, nie KeyError (22.9.2026)")
+# Realny pripad z produkcie: aspon 5 ICO malo vykaz, kde "obsah" existoval,
+# ale bez "tabulky" vobec - povodny kod pristupoval vykaz["obsah"]["tabulky"]
+# natvrdo a spadol na KeyError('tabulky'), co vyhodilo cele ICO z behu.
+vykaz_bez_tabuliek = {"id": 1, "idSablony": 687, "obsah": {"nieco_ine": []}}
+vysledok = ruz.dekoduj_vykaz(vykaz_bez_tabuliek, MUJ_SABLONA)
+assert vysledok is None
+print("OK")
+
+hlavicka("Vykaz uplne bez kluca 'obsah' -> None, nie KeyError")
+vykaz_bez_obsahu = {"id": 2, "idSablony": 687}
+vysledok = ruz.dekoduj_vykaz(vykaz_bez_obsahu, MUJ_SABLONA)
+assert vysledok is None
+print("OK")
+
 hlavicka("vyber_najnovsie_zavierky_po_rokoch: duplicity v ramci roka")
 zavierky = [
     {"id": 100, "obdobieDo": "2024-12"},

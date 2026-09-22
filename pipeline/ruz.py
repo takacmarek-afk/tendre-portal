@@ -209,11 +209,21 @@ def dekoduj_vykaz(vykaz, sablona):
     alebo None, ak sablona/tabulka nie je znama.
     """
     tab_sablona = next(
-        (t for t in sablona["tabulky"] if t["nazov"]["sk"] == NAZOV_TABULKY_VYKAZ),
+        (t for t in sablona.get("tabulky", []) if t["nazov"]["sk"] == NAZOV_TABULKY_VYKAZ),
         None,
     )
+    # .get(...) na oboch urovniach, nie ["obsah"]["tabulky"] natvrdo: 22.9.2026
+    # sa objavilo aspon 5 ICO, kde "obsah" existoval, ale bez kluca "tabulky"
+    # (zjavne dalsi tvar odpovede RUZ API, mimo pôvodne overenych LoveHome/
+    # Novogal/Slovnaft). Predtym to spadlo na KeyError('tabulky'), co vyhodilo
+    # CELE ICO (aj ostatne roky/vykazy) cez vynimku, ktora unikala z cyklu v
+    # financie_pre_ico - firma tak nikdy nedostala zaznam v ruz_zaklad a bola
+    # dokola prioritne skusana (a padala) v kazdom dalsom behu. Spravne
+    # spravanie: tento jeden vykaz je "data nedostupne", skusa sa dalsi
+    # idUctovnychVykazov v poradi (viz volajuci cyklus).
+    obsah = vykaz.get("obsah") or {}
     tab_data = next(
-        (t for t in vykaz["obsah"]["tabulky"] if t["nazov"]["sk"] == NAZOV_TABULKY_VYKAZ),
+        (t for t in obsah.get("tabulky", []) if t["nazov"]["sk"] == NAZOV_TABULKY_VYKAZ),
         None,
     )
     if tab_sablona is None or tab_data is None:
