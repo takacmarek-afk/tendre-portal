@@ -934,7 +934,10 @@ tailwind.config = { theme: { extend: {
          Owner pozyva kolegov e-mailom (magic-link, rovnaky flow ako pri
          beznom prihlaseni — viz supabase/26_team_pozvanky.sql). Zoznam
          clenov vidi kazdy v organizacii, pozvat/zrusit pozvanku vie len
-         owner — RPC pozvi_clena() to aj tak overi, toto je len UI. -->
+         owner A ZAROVEN len na urovni Team (cennik.html: "Viacero
+         pouzivatelov"/"Pozvanka kolegov" su vyslovne Team, nie Growth) —
+         RPC pozvi_clena() (41_team_je_naozaj_team.sql, ma_team()) to aj
+         tak overi, toto je len UI. -->
     <div id="team" class="hidden max-w-2xl">
       <div class="bg-white border border-line rounded-lg p-6 mb-5">
         <h2 class="text-[17px] font-serif font-semibold">Členovia tímu</h2>
@@ -945,8 +948,20 @@ tailwind.config = { theme: { extend: {
         <div id="team-clenovia" class="mt-4 divide-y divide-line"></div>
       </div>
 
-      <!-- Len pre ownera. Clenovia formular nevidia, ale zoznam kolegov
-           vyssie ano — spolocny pohlad na firmu je cely zmysel Timu. -->
+      <!-- OPRAVA 22.9.2026 (zivy audit): zobrazi sa ownerovi bez Team
+           namiesto formulara nizsie — pozyvanie je Team-exclusive. -->
+      <div id="team-pozvat-zamknute" class="hidden bg-white border border-line rounded-lg p-6 mb-5">
+        <h2 class="text-[17px] font-serif font-semibold">Pozvať kolegu</h2>
+        <p class="mt-2 text-[14px] leading-relaxed text-slate2">
+          Pozývanie kolegov do spoločnej organizácie je súčasťou úrovne Team.
+          Napíšte nám na
+          <a class="text-accent hover:underline" href="mailto:info@predtendrom.sk?subject=Z%C3%A1ujem%20o%20Team">info@predtendrom.sk</a>.
+        </p>
+      </div>
+
+      <!-- Len pre ownera na urovni Team. Clenovia formular nevidia, ale
+           zoznam kolegov vyssie ano — spolocny pohlad na firmu je cely
+           zmysel Timu. -->
       <div id="team-pozvat-panel" class="hidden bg-white border border-line rounded-lg p-6 mb-5">
         <h2 class="text-[17px] font-serif font-semibold">Pozvať kolegu</h2>
         <form id="form-pozvat" class="mt-3 flex flex-col sm:flex-row gap-2">
@@ -2304,7 +2319,7 @@ function datumKratky(iso) {
   return new Date(iso).toLocaleDateString('sk-SK');
 }
 
-async function nastavTeam(supabase, rola) {
+async function nastavTeam(supabase, rola, jeTeam) {
   const jeOwner = rola === 'owner';
 
   // Zakladateľ (Marek) má v auth.users svoj osobný gmail — v zozname členov
@@ -2343,6 +2358,13 @@ async function nastavTeam(supabase, rola) {
   // zoznam kolegov vyssie vidia vzdy, to je cely zmysel Timu.
   if (!jeOwner) return;
 
+  // OPRAVA 22.9.2026 (zivy audit): pozyvanie je Team-exclusive (cennik.html).
+  // Owner bez Team vidi namiesto formulara upsell hlasku.
+  if (!jeTeam) {
+    ukaz('team-pozvat-zamknute');
+    return;
+  }
+
   ukaz('team-pozvat-panel');
 
   async function nacitajCakajuce() {
@@ -2369,14 +2391,15 @@ async function nastavTeam(supabase, rola) {
     hlaska.className = 'mt-3 text-[13px] ' + (jeChyba ? 'text-red-700' : 'text-slate2');
   }
 
-  // Kody z pozvi_clena() (supabase/26_team_pozvanky.sql) — VYZADUJE_PRO by
-  // pocas otvoreneho obdobia nemal nikdy nastat (ma_pro() vracia true pre
-  // vsetkych), ale hlasku pre neho mame pre pripad, ze sa obdobie ukonci.
+  // Kody z pozvi_clena() (supabase/41_team_je_naozaj_team.sql) —
+  // VYZADUJE_TEAM by tu nemal nikdy nastat (formular je za `if (!jeTeam)
+  // return` vyssie), ale hlasku mame pre pripad rozladenia klienta so
+  // serverom (napr. otvorena karta cez zmenu plánu).
   const SPRAVY_POZVANIA = {
     NEPLATNY_EMAIL: 'Táto e-mailová adresa nevyzerá platne.',
     BEZ_FIRMY: 'Váš účet nie je priradený k žiadnej firme.',
     LEN_OWNER: 'Pozvať kolegu môže len vlastník organizácie.',
-    VYZADUJE_PRO: 'Pozývanie kolegov si vyžaduje vyššiu úroveň.',
+    VYZADUJE_TEAM: 'Pozývanie kolegov je súčasťou úrovne Team.',
     UZ_CLEN: 'Táto osoba je už členom vášho tímu.',
   };
 
@@ -3336,7 +3359,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   }
 
   try {
-    await nastavTeam(supabase, rola);
+    await nastavTeam(supabase, rola, jeTeam);
   } catch (e) {
     console.error('Tím sa nepodarilo nacitat:', e);
   }
