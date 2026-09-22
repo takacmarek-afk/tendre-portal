@@ -50,10 +50,10 @@
 
 <script>
   // Ziadne volanie Supabase tu nie je potrebne - skutocne spracovanie
-  // (aktivacia predplatneho) robi trustpay-notify webhook asynchronne,
-  // nezavisle od toho, ci sa zakaznik vobec vrati na tuto stranku. Tato
-  // stranka len precita, s akym vysledkom ho finby presmeroval spat
-  // (parameter `stav` v CallbackUrls, viz trustpay-initiate).
+  // (aktivacia predplatneho) robi stripe-webhook asynchronne, nezavisle od
+  // toho, ci sa zakaznik vobec vrati na tuto stranku. Tato stranka len
+  // precita, s akym vysledkom ho Stripe Checkout presmeroval spat
+  // (parameter `stav` v success_url/cancel_url, viz stripe-checkout).
   const params = new URLSearchParams(location.search);
   const stav = params.get('stav');
 

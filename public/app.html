@@ -207,7 +207,7 @@ tailwind.config = { theme: { extend: {
     </div>
   </header>
 
-  <!-- Modal: rucne zaplatenie/predlzenie predplatneho cez TrustPay/finby.
+  <!-- Modal: rucne zaplatenie/predlzenie predplatneho cez Stripe.
        Funguje nezavisle od otvoreneho obdobia - slot na testovanie platby
        teraz, aj buduce ostre pouzitie po jeho skonceni. -->
   <div id="modal-predplatne" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
@@ -217,7 +217,7 @@ tailwind.config = { theme: { extend: {
         <button id="modal-predplatne-zavriet" class="text-slate2 hover:text-ink text-[20px] leading-none">&times;</button>
       </div>
       <p class="text-[13px] leading-relaxed text-slate2 mb-4">
-        Vyberte si úroveň a zaplaťte kartou cez TrustPay/finby. Predplatné
+        Vyberte si úroveň a zaplaťte kartou cez Stripe. Predplatné
         sa aktivuje hneď po potvrdení platby.
       </p>
       <div id="modal-predplatne-plany" class="space-y-2 mb-4"></div>
@@ -1804,7 +1804,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (el) el.addEventListener('scroll', osviezScrollTabov);
 });
 
-// ── PREDPLATNE (TrustPay/finby) ──────────────────────────────────────────
+// ── PREDPLATNE (Stripe) ───────────────────────────────────────────────────
+// Do 22.9.2026 tu bola platobna brana TrustPay/finby - nahradene Stripe-om
+// kvoli nakladom (finby ma pri nizkom objeme transakcii pevny minimalny
+// mesacny poplatok 12 EUR, Stripe ziadny - detaily v 30_stripe_platby.sql).
 const PREDPLATNE_PLANY = [
   { plan: 'start',  obdobie: 'mesiac', label: 'Start',  cena: '34 € / mesiac' },
   { plan: 'start',  obdobie: 'rok',    label: 'Start',  cena: '340 € / rok' },
@@ -1817,9 +1820,8 @@ const PREDPLATNE_CHYBY = {
   BEZ_OPRAVNENIA: 'Platbu môže spustiť len vlastník alebo admin firmy.',
   NEZNAMY_PLAN: 'Neznámy plán.',
   PLATOBNA_BRANA_NENASTAVENA: 'Platobná brána zatiaľ nie je nastavená. Skúste to prosím neskôr.',
-  FINBY_AUTH_ZLYHALA: 'Platobná brána momentálne neodpovedá. Skúste to prosím o chvíľu.',
-  FINBY_PLATBA_ZLYHALA: 'Platobná brána momentálne neodpovedá. Skúste to prosím o chvíľu.',
-  FINBY_BEZ_GATEWAY_URL: 'Platobná brána vrátila neočakávanú odpoveď. Skúste to prosím o chvíľu.',
+  STRIPE_PLATBA_ZLYHALA: 'Platobná brána momentálne neodpovedá. Skúste to prosím o chvíľu.',
+  STRIPE_BEZ_GATEWAY_URL: 'Platobná brána vrátila neočakávanú odpoveď. Skúste to prosím o chvíľu.',
 };
 
 function otvorPredplatneModal(supabase) {
@@ -1855,7 +1857,7 @@ function otvorPredplatneModal(supabase) {
     btn.disabled = true;
     btn.textContent = 'Presmerúvam na platbu…';
     try {
-      const { data, error } = await supabase.functions.invoke('trustpay-initiate', { body: { plan, obdobie } });
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', { body: { plan, obdobie } });
       if (error || !data?.ok) {
         const kod = data?.kod;
         chyba.textContent = PREDPLATNE_CHYBY[kod] || 'Platbu sa nepodarilo spustiť. Skúste to prosím znova.';
