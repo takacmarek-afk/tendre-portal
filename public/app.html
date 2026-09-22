@@ -498,7 +498,7 @@ tailwind.config = { theme: { extend: {
           <div class="flex items-center gap-3">
             <button id="f-reset" class="text-[13px] text-slate2 hover:text-ink">Zrušiť filtre</button>
             <button id="export-z" class="text-[13px] font-semibold text-accent hover:text-accentDark">
-              Export CSV
+              Export Excel
             </button>
           </div>
         </div>
@@ -614,7 +614,7 @@ tailwind.config = { theme: { extend: {
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
           <span id="pocet-dot" class="text-[13px] text-slate2"></span>
           <button id="export-d" class="text-[13px] font-semibold text-accent hover:text-accentDark">
-            Export CSV
+            Export Excel
           </button>
         </div>
       </div>
@@ -690,7 +690,7 @@ tailwind.config = { theme: { extend: {
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
           <span id="pocet-zia" class="text-[13px] text-slate2"></span>
-          <button id="export-zi" class="text-[13px] font-semibold text-accent">Export CSV</button>
+          <button id="export-zi" class="text-[13px] font-semibold text-accent">Export Excel</button>
         </div>
       </div>
 
@@ -784,7 +784,7 @@ tailwind.config = { theme: { extend: {
           <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
             <span id="pocet-dod" class="text-[13px] text-slate2"></span>
             <button id="export-f" class="text-[13px] font-semibold text-accent hover:text-accentDark">
-              Export CSV
+              Export Excel
             </button>
           </div>
         </div>
@@ -1006,6 +1006,7 @@ tailwind.config = { theme: { extend: {
 
 <script type="module">
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import * as XLSX from 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm';
 
 // ─────────────────────────────────────────────────────────────────────────
 //  PORADIE V TOMTO SUBORE JE ZAMERNE
@@ -1737,39 +1738,33 @@ async function sExportom(tlacidloId, praca) {
   }
 }
 
-function exportCsv(nazov, riadky) {
+function exportExcel(nazov, riadky) {
   if (!riadky?.length) return;
   const hlavicky = Object.keys(riadky[0]);
-  const bunka = (v) => {
-    const s = v === null || v === undefined ? '' : String(v);
-    return /[";\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
-  };
 
   // Vyvezeny subor je dalsia rozmnozenina odvodeneho produktu, takze podla
   // bodu 4.3 a 4.9 podmienok pouzivania datasetu musi nest oznacenie zdroja,
-  // oznamenie o upravach a datum. Preto tie tri riadky nad hlavickou.
+  // oznamenie o upravach a datum. Preto tie riadky nad hlavickou tabulky —
+  // rovnaky text ako predtym pri CSV exporte, len teraz ako riadky listu.
   const dnes = new Date().toISOString().slice(0, 10);
-  const hlavicka = [
-    `# PredTendrom.sk — export ${dnes}`,
-    '# Zdroj údajov: Služby Slovensko.Digital, s.r.o. a Centrálny register zmlúv',
-    '# Odvodený produkt. Sektor, mesto, kraj, sila signálu a cenové porovnanie',
-    '# sú naše výpočty, nie údaje zo zdroja. Pôvodné údaje zostávajú nezmenené.',
-    `# Podmienky: https://ekosystem.slovensko.digital/podmienky | Dátum spracovania: ${dnes}`,
-    '# Údaje majú len informatívny charakter a nie sú právne záväzné.',
-    '',
-  ].join('\r\n');
+  const list = XLSX.utils.aoa_to_sheet([
+    [`PredTendrom.sk — export ${dnes}`],
+    ['Zdroj údajov: Služby Slovensko.Digital, s.r.o. a Centrálny register zmlúv'],
+    ['Odvodený produkt. Sektor, mesto, kraj, sila signálu a cenové porovnanie'],
+    ['sú naše výpočty, nie údaje zo zdroja. Pôvodné údaje zostávajú nezmenené.'],
+    [`Podmienky: https://ekosystem.slovensko.digital/podmienky | Dátum spracovania: ${dnes}`],
+    ['Údaje majú len informatívny charakter a nie sú právne záväzné.'],
+    [],
+    hlavicky,
+    ...riadky.map(r => hlavicky.map(h => r[h] ?? '')),
+  ]);
 
-  // Bodkociarka a BOM: Excel v slovenskom prostredi inak rozsype diakritiku
-  // aj stlpce do jedneho.
-  const csv = '\ufeff' + hlavicka + [hlavicky.join(';')]
-    .concat(riadky.map(r => hlavicky.map(h => bunka(r[h])).join(';')))
-    .join('\r\n');
-
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  a.download = `${nazov}-${dnes}.csv`;
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const zosit = XLSX.utils.book_new();
+  // Nazov listu v Exceli smie mat najviac 31 znakov a nesmie obsahovat
+  // \ / ? * [ ] : — inak XLSX.utils.book_append_sheet zhodi vynimku.
+  const nazovListu = (nazov.replace(/[\\/?*[\]:]/g, ' ').trim() || 'List1').slice(0, 31);
+  XLSX.utils.book_append_sheet(zosit, list, nazovListu);
+  XLSX.writeFile(zosit, `${nazov}-${dnes}.xlsx`);
 }
 
 // ── ZALOZKY ─────────────────────────────────────────────────────────────
@@ -3194,7 +3189,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const riadky = await stahniVsetko(() => filtreZiadatelov(
       supabase.from('obce_ziadatelia').select('*'))
       .order('najate', { ascending: false, nullsFirst: false }));
-    exportCsv('obce-ziadaju-o-dotaciu', dopelnOdkaz(riadky));
+    exportExcel('obce-ziadaju-o-dotaciu', dopelnOdkaz(riadky));
   }));
 
   function reset() {
@@ -3228,14 +3223,14 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       if (el('f-jeCas').checked) q = q.gte('dni_do_konca', DNI_TENDER_UZ_BEZI);
       return q.order('skore', { ascending: false, nullsFirst: false });
     });
-    exportCsv('konciace-zmluvy', dopelnOdkaz(riadky));
+    exportExcel('konciace-zmluvy', dopelnOdkaz(riadky));
   }));
 
   el('export-d').addEventListener('click', () => sExportom('export-d', async () => {
     const riadky = await stahniVsetko(() => filtreDotacii(
       supabase.from('subsidies').select('*'))
       .order('suma', { ascending: false, nullsFirst: false }));
-    exportCsv('dotacie', dopelnOdkaz(riadky));
+    exportExcel('dotacie', dopelnOdkaz(riadky));
   }));
 
   // Dodavatelia su Pro. Pri Starte tabulku vobec nedotahujeme — RLS by ju
@@ -3277,7 +3272,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
         const riadky = await stahniVsetko(() => filtreDodavatelov(
           supabase.from('dodavatelia').select('*'))
           .order('objem_eur', { ascending: false, nullsFirst: false }));
-        exportCsv('dodavatelia', riadky);
+        exportExcel('dodavatelia', riadky);
       }));
     await nacitajDodavatelov();
   } else {
