@@ -1,11 +1,12 @@
 name: RUZ financny kontext
 
 # ══════════════════════════════════════════════════════════════════════════
-#  STAV: PRIPRAVENE, ESTE NEZAPNUTE NAOSTRO — pred prvym ostrym behom over
-#  workflow_dispatch s nasucho=true (over v logu, ze ICO sa najdu a data z
-#  registeruz.sk davaju zmysel), potom nasucho=false na malej davke
-#  (napr. limit=20) a over v Supabase tabulky ruz_zaklad/ruz_financie.
-#  Az potom odkomentuj `schedule:` nizsie.
+#  STAV: NAOSTRO, schedule zapnuty (22.9.2026) — pred zapnutim overene
+#  viacerymi ostrymi rucnymi behmi (workflow_dispatch, nasucho=false) v
+#  tejto session, vratane opravy strankovania (1000-row cap) a
+#  KeyError('tabulky') v pipeline/ruz.py a pipeline/obohat_financie.py
+#  (commit ac88a15). Vysledky overene priamo v Supabase tabulkach
+#  ruz_zaklad/ruz_financie, nie len z hlasenia "success".
 #
 #  CO TOTO ROBI
 #  Pre ICO z tabulky `dodavatelia` (uz len pravnicke osoby, viz
@@ -54,8 +55,8 @@ on:
   # Raz denne, mimo hlavneho pipeline behu (05:10 UTC, viz pipeline.yml).
   # RUZ zavierky sa menia rocne, ale denna davka postupne pokryje/obnovi
   # celu zakladnu bez toho, aby jeden beh musel spracovat vsetko naraz.
-  # schedule:
-  #   - cron: "40 4 * * *"
+  schedule:
+    - cron: "40 4 * * *"
 
 permissions:
   contents: read
