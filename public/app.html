@@ -218,7 +218,11 @@ tailwind.config = { theme: { extend: {
       </div>
       <p class="text-[13px] leading-relaxed text-slate2 mb-4">
         Vyberte si úroveň a zaplaťte kartou cez Stripe. Predplatné
-        sa aktivuje hneď po potvrdení platby.
+        sa aktivuje hneď po potvrdení platby. Potrebujete Team úroveň
+        (viac používateľov, financie dodávateľa)? Napíšte nám na
+        <a class="text-accent hover:underline" href="mailto:info@predtendrom.sk?subject=Z%C3%A1ujem%20o%20Team">info@predtendrom.sk</a>
+        — plné porovnanie všetkých úrovní je na
+        <a class="text-accent hover:underline" href="./cennik.html" target="_blank" rel="noopener">cenníku</a>.
       </p>
       <div id="modal-predplatne-plany" class="space-y-2 mb-4"></div>
       <p id="modal-predplatne-chyba" class="hidden text-[13px] text-red-700 mb-3"></p>
@@ -1837,6 +1841,15 @@ const PREDPLATNE_PLANY = [
   { plan: 'growth', obdobie: 'rok',    label: 'Growth', cena: '890 € / rok' },
 ];
 
+// OPRAVA 22.9.2026 (zivy audit): modal doteraz ukazoval len ceny, ziadne
+// funkcie — kto sem prisiel priamo z appky (nie z cennik.html) nemal ako
+// zistit rozdiel medzi Start a Growth. Skratene z cennik.html bullet
+// zoznamov, jeden riadok na plan.
+const PREDPLATNE_POPIS = {
+  start:  '1 kraj alebo 1–2 sektory, týždenný e-mail, cenový benchmark, export do Excelu.',
+  growth: 'Celé Slovensko, všetky sektory, denný e-mail, Slack/Teams, neobmedzené sledovanie firiem podľa IČO.',
+};
+
 const PREDPLATNE_CHYBY = {
   NEPRIHLASENY: 'Musíte byť prihlásený.',
   BEZ_OPRAVNENIA: 'Platbu môže spustiť len vlastník alebo admin firmy.',
@@ -1849,13 +1862,16 @@ const PREDPLATNE_CHYBY = {
 function otvorPredplatneModal(supabase) {
   const zoznam = el('modal-predplatne-plany');
   zoznam.innerHTML = PREDPLATNE_PLANY.map((p, i) => `
-    <label class="flex items-center justify-between gap-3 border border-line rounded-md px-3 py-2.5
+    <label class="flex items-start justify-between gap-3 border border-line rounded-md px-3 py-2.5
                    text-[14px] cursor-pointer has-[:checked]:border-ink has-[:checked]:bg-[#F3F0E6]">
-      <span class="flex items-center gap-2">
-        <input type="radio" name="predplatne-volba" value="${p.plan}:${p.obdobie}" ${i === 0 ? 'checked' : ''}>
-        ${p.label}
+      <span class="flex items-start gap-2">
+        <input type="radio" name="predplatne-volba" value="${p.plan}:${p.obdobie}" ${i === 0 ? 'checked' : ''} class="mt-0.5">
+        <span>
+          <span class="block">${p.label}</span>
+          <span class="block text-[12px] text-slate2 mt-0.5">${PREDPLATNE_POPIS[p.plan] || ''}</span>
+        </span>
       </span>
-      <span class="text-slate2">${p.cena}</span>
+      <span class="text-slate2 whitespace-nowrap">${p.cena}</span>
     </label>`).join('');
 
   el('modal-predplatne-chyba').classList.add('hidden');
