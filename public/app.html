@@ -1628,7 +1628,7 @@ function riadokZiadatela(r) {
 }
 
 
-function riadokDodavatela(r, sledovane) {
+function riadokDodavatela(r, sledovane, jePro) {
   const sektor = POPIS_SEKTORA[r.hlavny_sektor] ?? r.hlavny_sektor;
   const jeSledovana = !!(sledovane && r.supplier_cin && sledovane.has(r.supplier_cin));
   const od = (r.prva_zmluva ?? '').slice(0, 4);
@@ -1662,13 +1662,20 @@ function riadokDodavatela(r, sledovane) {
       <td data-popis="Priemerná zmluva" class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${suma(r.priemerna_zmluva_eur)}</td>
       <td data-popis="Aktivita" class="px-4 py-4 align-top text-[14px] whitespace-nowrap">${aktivita}</td>
       <td class="px-4 py-4 align-top text-right whitespace-nowrap sticky right-0 bg-white">
-        ${r.supplier_cin ? `
+        ${r.supplier_cin && jePro ? `
         <button type="button" data-sleduj="${bezpecne(r.supplier_cin)}" data-nazov="${bezpecne(r.dodavatel)}"
                 class="text-[12px] font-semibold px-2.5 py-1 rounded-md border transition
                        ${jeSledovana ? 'bg-accent/10 border-accent text-accentDark'
                                      : 'border-line text-slate2 hover:border-accent hover:text-accent'}">
           ${jeSledovana ? '★ Sledujem' : '☆ Sledovať'}
-        </button>` : ''}
+        </button>`
+        : r.supplier_cin
+          // Sledovanie firiem je Growth+ (audit 22.9.2026: zalozka Dodavatelia
+          // samotna je odteraz Start+, ale sledovanie ostava vyslovne Growth
+          // podla cennik.html) — tlacidlo, ktore by aj tak zlyhalo na RLS,
+          // nahradzame ticho tymto oznacenim, nie mrtvym/rozbitym tlacidlom.
+          ? `<span class="text-[11px] text-slate2" title="Sledovanie firiem je súčasťou úrovne Growth a vyššie.">Sledovanie od Growth</span>`
+          : ''}
       </td>
     </tr>`;
 }
@@ -2049,11 +2056,22 @@ function odznakPredplatneho(sub) {
   // Odzrkadluje realnu logiku ma_aktivny_pristup()/ma_pro() z databazy
   // (08_zadarmo.sql, opravene pre growth/team/admin v 31_oprava_ma_pro_planov.sql)
   // - klient si to len ZOBRAZUJE, o skutocnom pristupe k datam vzdy
-  // rozhoduje RLS na serveri. POZOR: server (ma_pro) pocita medzi Pro-urovne
-  // 'trial', 'pro', 'growth', 'team', 'admin' - NIE 'start' (Dodavatelia/
-  // cenovy benchmark su tam explicitne Growth+, viz komentar pri jePro
-  // nizsie v dashboard()). Ak sa cennik.html niekedy rozide s tymto zoznamom,
-  // tento badge aj realny pristup sa riadia TÝMTO zoznamom, nie cennikom.
+  // rozhoduje RLS na serveri.
+  //
+  // OPRAVA 22.9.2026 (zivy audit): predtym tu bol len jePro (Growth+), takze
+  // Dodavatelia/cenovy benchmark boli cele skryte aj pre Start, hoci cennik.html
+  // Start vyslovne sluby "Cenovy benchmark sektora" (supabase/40_start_dostava_
+  // benchmark.sql presunul dodavatelia/ceny_sektor/ceny_prilezitosti z ma_pro()
+  // na ma_aktivny_pristup()). Preto teraz vraciame OBE hodnoty:
+  //   aktivny - akykolvek plan (vratane 'start') s aktivnym predplatnym alebo
+  //             platnym trialom. Pouzi na vsetko, co ma dostat aj Start
+  //             (zalozka Dodavatelia, cenovy benchmark).
+  //   jePro   - 'trial'/'pro'/'growth'/'team'/'admin' - teda Growth a vyssie,
+  //             NIE 'start'. Pouzi len na to, co cennik.html slubuje vyslovne
+  //             od Growth vyssie: sledovanie firiem, CRM stav, denny digest/
+  //             webhook, sanca na vyhru, trhovy podiel, prioritizacia podla
+  //             vlastneho ICO. Ak sa cennik.html niekedy rozide s tymto
+  //             rozdelenim, realny pristup sa riadi TÝMTO zoznamom, nie cennikom.
   const PLANY = { start: 'Start', growth: 'Growth', team: 'Team', pro: 'Pro', admin: 'Admin' };
   const proPlany = ['trial', 'pro', 'growth', 'team', 'admin'];
   const trialKonci = sub?.trial_konci ? new Date(sub.trial_konci) : null;
@@ -2082,7 +2100,7 @@ function odznakPredplatneho(sub) {
     p.className = 'text-[12px] font-semibold px-2.5 py-1 rounded hidden sm:inline bg-ink text-white';
   }
 
-  return jePro;
+  return { jePro, aktivny };
 }
 
 function obrazovkaTrialVycerpany(supabase) {
@@ -2465,7 +2483,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   ]);
 
   el('nazov-firmy').textContent = org?.nazov ?? '';
-  const jePro = odznakPredplatneho(sub);
+  const { jePro, aktivny } = odznakPredplatneho(sub);
   // Team-only podmnozina jePro — financny kontext dodavatela (RUZ). Zrkadli
   // presne ma_team() v databaze (supabase/35_ruz_financie.sql): 'trial' dava
   // Pro uroven, nie Team (viz komentar pri odznakPredplatneho vyssie), preto
@@ -2609,7 +2627,12 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   async function nastavRelevanciu(o) {
     mojOdber = o || null;
     mojProfil = null;
-    if (mojOdber?.moje_ico) {
+    // OPRAVA 22.9.2026 (zivy audit): "Prioritizacia prilezitosti podla
+    // vlastneho ICO a historie" je v cenniku vyslovne len Growth+. Zakladny
+    // sektor/kraj boost v bodRelevancie() zostava zadarmo pre kohokolvek so
+    // zapnutym odberom (to nie je v cenniku samostatne spoplatnene) — gatuje
+    // sa len vyhladanie vlastneho profilu podla ICO, ktore tento bonus tvori.
+    if (jePro && mojOdber?.moje_ico) {
       const { data } = await supabase.from('dodavatelia')
         .select('hlavny_sektor, priemerna_zmluva_eur')
         .eq('supplier_cin', mojOdber.moje_ico).maybeSingle();
@@ -2733,11 +2756,13 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     }
     posledne.zmluvy = data ?? [];
 
-    // Benchmark je v samostatnej Pro tabulke. Start ju precitat NEMOZE —
-    // RLS vrati prazdno, nie chybu, takze sa jednoducho nezobrazi.
+    // OPRAVA 22.9.2026 (zivy audit): cenovy benchmark (ceny_prilezitosti) je
+    // odteraz Start+ (aktivny), rovnako ako RLS (40_start_dostava_benchmark.sql)
+    // a zalozka Dodavatelia vyssie — cennik.html ho Start vyslovne sluby.
+    // Sanca na vyhru ostava Growth+ (jePro), nezmenene.
     let benchmark = null;
     let sanca = null;
-    if (jePro && posledne.zmluvy.length) {
+    if (aktivny && posledne.zmluvy.length) {
       const ids = posledne.zmluvy.map(x => x.contract_id).filter(x => x != null);
       const bq = await supabase.from('ceny_prilezitosti')
         .select('contract_id, porovnavacia_cena, zaklad, median_cena, odchylka_pct, ' +
@@ -2745,11 +2770,11 @@ async function dashboard(supabase, rola, spravaPozvanky) {
         .in('contract_id', ids);
       if (!bq.error) benchmark = new Map((bq.data ?? []).map(x => [x.contract_id, x]));
 
-      // Sanca na vyhru (#13): rovnaky vzor ako benchmark vyssie, ale
-      // vypytana LEN ked ma zakaznik ulozene vlastne ICO — bez neho je
-      // porovnanie s top_dodavatel_cin/supplier_cin bezpredmetne a dopyt
+      // Sanca na vyhru (#13): rovnaky vzor ako benchmark vyssie, ale Growth+
+      // (jePro) a vypytana LEN ked ma zakaznik ulozene vlastne ICO — bez neho
+      // je porovnanie s top_dodavatel_cin/supplier_cin bezpredmetne a dopyt
       // navyse by len zbytocne zatazil DB.
-      if (mojOdber?.moje_ico) {
+      if (jePro && mojOdber?.moje_ico) {
         const sq = await supabase.from('sanca_na_vyhru')
           .select('contract_id, supplier_cin, top_dodavatel_cin, top_dodavatel_pravnicky')
           .in('contract_id', ids);
@@ -2944,7 +2969,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       sledovaneIco.set(ico, nazov || null);
     }
     if (posledne.dodavatelia.length) {
-      el('riadky-f').innerHTML = posledne.dodavatelia.map(r => riadokDodavatela(r, sledovaneIco)).join('');
+      el('riadky-f').innerHTML = posledne.dodavatelia.map(r => riadokDodavatela(r, sledovaneIco, jePro)).join('');
     }
     await vykresliSledovaneFirmy();
   }
@@ -3235,38 +3260,47 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     exportExcel('dotacie', dopelnOdkaz(riadky));
   }));
 
-  // Dodavatelia su Pro. Pri Starte tabulku vobec nedotahujeme — RLS by ju
-  // aj tak vratila prazdnu, ale prazdna tabulka bez vysvetlenia vypada
-  // ako pokazeny produkt.
-  if (jePro) {
+  // OPRAVA 22.9.2026 (zivy audit): zalozka Dodavatelia (vratane cenoveho
+  // benchmarku) je odteraz Start+ (aktivny), nie len Growth+ (jePro) —
+  // presne ako cennik.html Start vyslovne sluby "Cenovy benchmark sektora"
+  // (RLS oprava supabase/40_start_dostava_benchmark.sql). Sledovanie firiem,
+  // CRM stav, sanca na vyhru a trhovy podiel OSTAVAJU Growth+ (jePro) —
+  // tie su v cenniku vyslovne len v stlpci Growth. Pri neaktivnom predplatnom
+  // (ani Start) tabulku vobec nedotahujeme — RLS by ju aj tak vratila
+  // prazdnu, ale prazdna tabulka bez vysvetlenia vypada ako pokazeny produkt.
+  if (aktivny) {
     ukaz('dod-obsah');
-    ukaz('f-len-sledovane-obal');
-    // CRM stav (zmluvy/dotacie) je tiez Pro — nacitat pred prvym
-    // vykreslenim oboch zoznamov nizsie (Promise.all na konci dashboard()).
-    await nacitajStavPrilezitosti();
-    await nacitajSledovane();
-    await vykresliSledovaneFirmy();
     await nacitajCenySektora();
-    await nacitajTamSektora();
-    await nacitajTrhovyPodiel();
+    if (jePro) {
+      ukaz('f-len-sledovane-obal');
+      // CRM stav (zmluvy/dotacie) je Growth+ — nacitat pred prvym
+      // vykreslenim oboch zoznamov nizsie (Promise.all na konci dashboard()).
+      await nacitajStavPrilezitosti();
+      await nacitajSledovane();
+      await vykresliSledovaneFirmy();
+      await nacitajTamSektora();
+      await nacitajTrhovyPodiel();
+    }
     el('riadky-f').addEventListener('click', (e) => {
       const btn = e.target.closest('[data-sleduj]');
-      if (btn) prepniSledovanie(btn.dataset.sleduj, btn.dataset.nazov);
+      if (btn && jePro) prepniSledovanie(btn.dataset.sleduj, btn.dataset.nazov);
       const profilBtn = e.target.closest('[data-profil]');
       if (profilBtn) otvorProfilDodavatela(supabase, profilBtn.dataset.profil, profilBtn.dataset.profilNazov, jeTeam);
     });
-    const sledovaneZoznamEl = el('sledovane-firmy-zoznam');
-    if (sledovaneZoznamEl) {
-      sledovaneZoznamEl.addEventListener('click', (e) => {
-        const x = e.target.closest('[data-odsledovat]');
-        if (x) prepniSledovanie(x.dataset.odsledovat, null);
-      });
+    if (jePro) {
+      const sledovaneZoznamEl = el('sledovane-firmy-zoznam');
+      if (sledovaneZoznamEl) {
+        sledovaneZoznamEl.addEventListener('click', (e) => {
+          const x = e.target.closest('[data-odsledovat]');
+          if (x) prepniSledovanie(x.dataset.odsledovat, null);
+        });
+      }
     }
     const prekresliF = pozdrz(odznova('dodavatelia', nacitajDodavatelov));
     for (const id of ['s-sektor', 's-radenie']) {
       el(id).addEventListener('change', odznova('dodavatelia', nacitajDodavatelov));
     }
-    el('s-sektor').addEventListener('change', nacitajTrhovyPodiel);
+    if (jePro) el('s-sektor').addEventListener('change', nacitajTrhovyPodiel);
     el('s-text').addEventListener('input', prekresliF);
     napojViac('viac-f', 'dodavatelia', nacitajDodavatelov);
     el('export-f').addEventListener('click',
@@ -3279,7 +3313,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     await nacitajDodavatelov();
   } else {
     ukaz('dod-zamknute');
-    el('pocet-f').textContent = '(Pro)';
+    el('pocet-f').textContent = '(vyžaduje aktívne predplatné)';
   }
 
   await Promise.all([
