@@ -11,3 +11,7 @@ desktop.ini
 # Tailwind build (npm install tailwindcss, viz package.json/README nizsie)
 node_modules/
 *.bundle
+
+# Pracovny priecinok Claude session (podklady na Projects docs a pod.),
+# do repozitara nepatri.
+.scratch/
