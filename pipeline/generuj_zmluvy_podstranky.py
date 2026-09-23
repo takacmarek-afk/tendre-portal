@@ -110,6 +110,7 @@ HLAVICKA = """<!doctype html>
 <html lang="sk">
 <head>
 <meta charset="utf-8">
+<script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{titul}</title>
 <meta name="description" content="{popis}">

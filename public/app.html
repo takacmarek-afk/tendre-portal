@@ -2,6 +2,7 @@
 <html lang="sk">
 <head>
 <meta charset="utf-8">
+<script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PredTendrom.sk</title>
 <script src="./config.js"></script>
@@ -2317,6 +2318,13 @@ async function nastavOdber(supabase, sektory, email, onZmena) {
       webhook_url: el('o-webhook').value.trim() || null,
       moje_ico: platneIco(el('o-moje-ico').value) || null,
     };
+    // GA4 konverzia "aktivovany_pouzivatel" — len pri PRVOM zapnuti e-mailoveho
+    // odberu (marketingova strategia, cast 4: hlavny aktivacny krok), nie pri
+    // kazdej nasledujucej uprave uz aktivneho odberu — inak by konverzny pocet
+    // v GA4 neznamenal pocet ludi, ale pocet klikov na Ulozit.
+    if (!existujuci?.chce_email && typeof window.ptOznamAktivaciu === 'function') {
+      window.ptOznamAktivaciu();
+    }
     stavZapnute(ulozeny);
     ukazHlasku('Zapísali sme si to. Meniť to môžete kedykoľvek.');
     if (typeof onZmena === 'function') await onZmena(ulozeny);
