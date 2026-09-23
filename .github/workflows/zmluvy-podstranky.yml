@@ -1,0 +1,68 @@
+name: Zmluvy podstranky
+
+# ══════════════════════════════════════════════════════════════════════════
+#  STAV: PRIPRAVENE, NEOVERENE (23.9.2026) — len rucny workflow_dispatch.
+#  `schedule:` je zamerne ZAKOMENTOVANY, kym Marek sam raz nerozbehne
+#  workflow_dispatch a neskontroluje vysledok (rovnaka disciplina ako pri
+#  obce-podstranky.yml pred 19.9.2026).
+#
+#  CO TOTO ROBI
+#  pipeline/generuj_zmluvy_podstranky.py precita `opportunities` (cez
+#  service_role, ktory RLS obchadza), spocita agregat per sektor+kraj pre
+#  3 MVP sektory (upratovanie, stravovanie, ostraha), zapise ho do verejnej
+#  tabulky `zmluvy_seo_agregat` (supabase/44_zmluvy_seo_agregat.sql — musi
+#  byt v Supabase spustena PRED prvym behom tohto workflow) a vygeneruje
+#  staticke public/konciace-zmluvy/<sektor>/<kraj>.html (24 stranok),
+#  public/sitemap-zmluvy.xml a doplni druhy Sitemap: riadok do robots.txt.
+#  Ziadne riadkove data (meno dodavatela, podiel, historia) sa nikam
+#  nezapisuju — viz docstring v generuj_zmluvy_podstranky.py.
+# ══════════════════════════════════════════════════════════════════════════
+
+on:
+  workflow_dispatch: {}
+
+  # schedule:
+  #   - cron: "35 6 * * 3"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: zmluvy-podstranky
+  cancel-in-progress: false
+
+jobs:
+  generuj:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Vygenerovat SEO podstranky /konciace-zmluvy/<sektor>/<kraj>.html
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python generuj_zmluvy_podstranky.py
+
+      - name: Commitnut zmeny, ak nejake su
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/konciace-zmluvy/ public/sitemap-zmluvy.xml public/robots.txt
+          if git diff --cached --quiet; then
+            echo "Ziadna zmena vo vygenerovanych strankach, nic sa necommitne."
+          else
+            git commit -m "Automaticky vygenerovane: SEO podstranky konciace-zmluvy"
+            git push
+          fi

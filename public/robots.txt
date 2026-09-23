@@ -2,3 +2,5 @@ User-agent: *
 Allow: /
 
 Sitemap: https://predtendrom.sk/sitemap.xml
+
+Sitemap: https://predtendrom.sk/sitemap-zmluvy.xml
