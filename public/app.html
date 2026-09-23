@@ -203,6 +203,11 @@ tailwind.config = { theme: { extend: {
         <button id="btn-predplatne" class="hidden text-[13px] text-slate2 hover:text-ink">Predplatné</button>
         <a href="./zdroje.html" class="text-[13px] text-slate2 hover:text-ink hidden sm:inline"
            title="Zdroje dát, oznámenie o úpravách a podmienky použitia">Zdroje dát</a>
+        <!-- Krizova propagacia bezplatneho nastroja pre obce medzi platiacimi
+             zakaznikmi — audit 23.9.2026: predtym appka o obce.html vobec
+             nevedela. target=_blank, aby neopustili rozrobenu appku. -->
+        <a href="./obce.html" target="_blank" rel="noopener" class="text-[13px] text-slate2 hover:text-ink hidden sm:inline"
+           title="Bezplatný prehľad dotácií pre obce a mestá — pošlite ho starostovi, ktorého poznáte">Pre obce</a>
         <button id="odhlasit" class="text-[13px] text-slate2 hover:text-ink">Odhlásiť</button>
       </div>
     </div>
