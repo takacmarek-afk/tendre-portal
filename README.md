@@ -1,43 +1,27 @@
 # tendre-portal
 
-## Tailwind: z CDN na staticky build (rozrobene, nedokoncene)
+## Tailwind: staticky CSS (od vlny 34, 24. 9. 2026)
 
-Web dnes bezi na `<script src="https://cdn.tailwindcss.com">` v kazdom
-HTML subore (kompiluje sa za behu v prehliadaci — pomalsie, konzola hlasi
-"cdn.tailwindcss.com should not be used in production"). Nahrada za
-staticky, vopred vybuildeny CSS subor je pripravena (`package.json`,
-`tailwind.config.main.js`, `tailwind.config.platba.js`, `src/*.css`), ale
-NEBOLA este dokoncena — sandbox, v ktorom bezi Claude, nema pristup k
-registru npmjs.org (organizacne nastavenie siete), takze `npm install`
-tu nejde spustit.
+Stranky uz nepouzivaju `cdn.tailwindcss.com` (kompilacia za behu v
+prehliadaci). Styly su vopred vybuildene v `public/style.css` (vsetky stranky
+aj generovane podstranky v `public/obce/` a `public/konciace-zmluvy/`) a
+`public/style-platba.css` (len `platba-vysledok.html`, ma vlastnu paletu).
+`<link rel="stylesheet" href="/style.css">` je na konci `<head>`, tam kde
+predtym CDN vkladal svoj `<style>` — vlastne `<style>` bloky stranok maju teda
+rovnaku (nizsiu) prioritu ako predtym.
 
-**Dokoncenie (raz, v beznom terminali s internetom):**
+Verzia Tailwindu je pevne 3.4.17 (rovnaka, akú servíroval CDN).
+
+**Po kazdej zmene Tailwind tried** v `public/**/*.html`, `public/*.js` alebo
+v sablonach `pipeline/generuj_*.py` treba znova vybuildit a commitnut CSS:
 
 ```
 npm install
 npm run build:css
 ```
 
-To vygeneruje `public/style.css` (vsetky stranky okrem platba-vysledok.html)
-a `public/style-platba.css` (len tá). Potom v kazdom `public/*.html`
-treba nahradit blok
+Inak sa nova trieda neprejavi (uz to nie je live JIT z CDN). Zoznam
+skenovanych suborov je v `tailwind.config.main.js` → `content`.
 
-```html
-<script src="https://cdn.tailwindcss.com"></script>
-<script>
-tailwind.config = { ... }
-</script>
-```
-
-za
-
-```html
-<link rel="stylesheet" href="./style.css">
-```
-
-(`./style-platba.css` len v `platba-vysledok.html`). Zaroven odstranit
-Google Fonts `<link>` z tejto zmeny netreba — tie ostavaju.
-
-**Po kazdej buducej zmene Tailwind tried v HTML** treba znova spustit
-`npm run build:css` a commitnut novy `public/style*.css` — inak sa nova
-trieda v CSS neobjavi (uz to nie je live JIT z CDN).
+Pozn.: `amber` je v konfigu prepisany na jednu farbu (#E8A33D), preto triedy
+ako `bg-amber-50` / `text-amber-900` negeneruju nic — tak to bolo aj s CDN.

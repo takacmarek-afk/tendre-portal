@@ -1,8 +1,8 @@
 // Zdielany config pre vsetky stranky OKREM platba-vysledok.html (ta ma
 // vlastnu, uzsiu paletu — viz tailwind.config.platba.js). Farby a fonty
 // su presnou kopiou inline <script>tailwind.config = {...}</script>
-// bloku, ktory dnes maju app.html, cennik.html, index.html, obce.html,
-// prihlasenie.html, zdroje.html a 404.html.
+// bloku, ktory mali app.html, cennik.html, index.html, obce.html,
+// prihlasenie.html, zdroje.html, servis.html, trh.html a 404.html.
 module.exports = {
   content: [
     "./public/app.html",
@@ -12,6 +12,14 @@ module.exports = {
     "./public/prihlasenie.html",
     "./public/zdroje.html",
     "./public/404.html",
+    "./public/servis.html",
+    "./public/trh.html",
+    "./public/*.js",
+    // Generovane podstranky (pipeline ich prepisuje) — triedy pochadzaju
+    // zo sablon v generuj_*.py, preto skenujeme aj tie.
+    "./public/obce/**/*.html",
+    "./public/konciace-zmluvy/**/*.html",
+    "./pipeline/generuj_*.py",
   ],
   theme: {
     extend: {
