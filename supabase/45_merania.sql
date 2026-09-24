@@ -178,3 +178,10 @@ revoke all on function public.merania_suhlas(int)   from public;
 grant execute on function public.merania_zdroje(int)   to authenticated;
 grant execute on function public.merania_rebricek(int) to authenticated;
 grant execute on function public.merania_suhlas(int)   to authenticated;
+
+-- Supabase dáva funkciám v schéme public execute aj priamo roli anon (default
+-- privileges), takže "revoke ... from public" nestačí. Dáta by aj tak nevrátili
+-- (je_admin() je pre anon false), ale anon ich nemá čo volať vôbec.
+revoke all on function public.merania_zdroje(int)   from anon;
+revoke all on function public.merania_rebricek(int) from anon;
+revoke all on function public.merania_suhlas(int)   from anon;
