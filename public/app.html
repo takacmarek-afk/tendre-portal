@@ -1030,9 +1030,11 @@ tailwind.config = { theme: { extend: {
       <div class="bg-white border border-line rounded-lg p-6 mb-5">
         <h2 class="text-[17px] font-serif font-semibold">Rebríček: od návštevy po platbu</h2>
         <p class="mt-2 text-[14px] leading-relaxed text-slate2">
-          Posledných 30 dní. Každý krok je z vlastnej databázy (nie z Google
-          Analytics), takže čísla platia pre všetkých návštevníkov bez ohľadu
-          na súhlas s cookies. Percento je voči predošlému kroku.
+          Posledných 30 dní<span id="stat-rebricek-od"></span>. Každý krok je z vlastnej
+          databázy (nie z Google Analytics), takže čísla platia pre všetkých
+          návštevníkov bez ohľadu na súhlas s cookies. Vaše vlastné návštevy,
+          registrácia, odber a testovacie platby sa nerátajú. Percento je voči
+          predošlému kroku.
         </p>
         <div id="stat-rebricek" class="mt-4 divide-y divide-line"></div>
       </div>
@@ -2573,9 +2575,17 @@ async function nastavStatistiky(supabase) {
     el('stat-rebricek').innerHTML = nedostupne;
   } else {
     let predosly = null;
+    const od = rebricek.data?.[0]?.od ? new Date(rebricek.data[0].od) : null;
+    if (od && Date.now() - od.getTime() < 29.5 * 864e5) {
+      el('stat-rebricek-od').textContent =
+        ` (merania bežia od ${od.toLocaleDateString('sk-SK', { day: 'numeric', month: 'numeric', year: 'numeric' })})`;
+    }
     el('stat-rebricek').innerHTML = (rebricek.data ?? []).map(k => {
       const pocet = Number(k.pocet);
-      const pct = (predosly && predosly > 0) ? ` · ${Math.round(pocet / predosly * 100)} %` : '';
+      // Nad 100 % môže vzniknúť, keď človek preskočí krok (napr. registrácia
+      // cez odkaz z e-mailu bez kliku na webe) — vtedy percento nič nehovorí.
+      const podiel = (predosly && predosly > 0) ? Math.round(pocet / predosly * 100) : null;
+      const pct = (podiel !== null && podiel <= 100) ? ` · ${podiel} %` : '';
       const suma = (k.suma != null && Number(k.suma) > 0)
         ? ` · ${Number(k.suma).toLocaleString('sk-SK', { maximumFractionDigits: 2 })} €` : '';
       predosly = pocet;
