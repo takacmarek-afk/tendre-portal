@@ -53,6 +53,42 @@
   });
   gtag("js", new Date());
 
+  // ---- 1b. Zdroj navstevy (UTM) - prvy dotyk v ramci jednej karty ---------
+  // Appky Facebook/Instagram casto neposielaju referrer, preto si zdroj
+  // zapamatame z URL (utm_*, pripadne fbclid/gclid) do sessionStorage a
+  // posielame ho s kazdou navstevou aj udalostou v tejto karte. Ziadna
+  // cookie, ziadny identifikator cloveka - len "odkial prisla tato karta".
+  var UTM_KLUC = "pt_utm";
+  (function () {
+    try {
+      var q = new URLSearchParams(window.location.search);
+      var zdroj = q.get("utm_source");
+      var u = null;
+      if (zdroj) {
+        u = { s: zdroj, m: q.get("utm_medium"), c: q.get("utm_campaign") };
+      } else if (q.get("fbclid")) {
+        u = { s: "facebook", m: "social", c: null };
+      } else if (q.get("gclid")) {
+        u = { s: "google", m: "cpc", c: null };
+      }
+      if (u && !window.sessionStorage.getItem(UTM_KLUC)) {
+        window.sessionStorage.setItem(UTM_KLUC, JSON.stringify({
+          s: String(u.s).slice(0, 100),
+          m: u.m ? String(u.m).slice(0, 100) : null,
+          c: u.c ? String(u.c).slice(0, 150) : null,
+        }));
+      }
+    } catch (e) {}
+  })();
+
+  window.ptUtm = function () {
+    try {
+      return JSON.parse(window.sessionStorage.getItem(UTM_KLUC) || "null") || {};
+    } catch (e) {
+      return {};
+    }
+  };
+
   // ---- 2. Ak uz mame ulozenu volbu, aplikujeme ju hned --------------------
   function nacitajVolbu() {
     try {
@@ -143,12 +179,14 @@
     btnOdmietnut.addEventListener("click", function () {
       ulozVolbu("denied");
       aktualizujConsent(false);
+      window.ptUdalost("suhlas_odmietnuty");
       skry();
     });
 
     btnPrijat.addEventListener("click", function () {
       ulozVolbu("granted");
       aktualizujConsent(true);
+      window.ptUdalost("suhlas_prijaty");
       skry();
     });
 
@@ -171,4 +209,95 @@
   window.ptOznamAktivaciu = function () {
     gtag("event", "aktivovany_pouzivatel");
   };
+
+  // ---- 6. Udalosti: GA4 (ak je suhlas) + vlastne pocitadlo bez cookies ---
+  // window.ptUdalost(nazov, parametre)
+  //   - gtag('event', ...) ide do GA4 cez znacku Google v GTM; bez suhlasu
+  //     ju Consent Mode posle len ako anonymny ping bez cookies.
+  //   - Zaroven jeden riadok do public.udalosti (supabase/45_merania.sql):
+  //     nazov + cesta + session_id karty + UTM. Nazvy su v databaze
+  //     obmedzene zoznamom (check constraint) - novy nazov treba pridat aj
+  //     tam, inak sa riadok ticho neulozi.
+  //   - Admin zariadenie (pt_admin_zariadenie) sa nepocita, rovnako ako
+  //     v tracking snippete navstev.
+  function idKarty() {
+    try {
+      var sid = window.sessionStorage.getItem("ptid");
+      if (!sid) {
+        sid = (window.crypto && window.crypto.randomUUID) ? window.crypto.randomUUID() : (Date.now() + "-" + Math.random());
+        window.sessionStorage.setItem("ptid", sid);
+      }
+      return sid;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  window.ptUdalost = function (nazov, parametre) {
+    try { gtag("event", nazov, parametre || {}); } catch (e) {}
+    try {
+      try { if (window.localStorage.getItem("pt_admin_zariadenie") === "1") return; } catch (e) {}
+      var cfg = window.CONFIG || {};
+      if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
+      var u = window.ptUtm();
+      fetch(cfg.SUPABASE_URL + "/rest/v1/udalosti", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": cfg.SUPABASE_ANON_KEY,
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          nazov: nazov,
+          cesta: window.location.pathname.slice(0, 300),
+          session_id: idKarty(),
+          utm_source: u.s || null,
+          utm_medium: u.m || null,
+          utm_campaign: u.c || null
+        }),
+        keepalive: true
+      }).catch(function () {});
+    } catch (e) {}
+  };
+
+  // Ceny podla cennik.html - na hodnotu konverzie v GA4 (begin_checkout,
+  // purchase). Presne sumy su v databaze (platby), toto je len pre GA4.
+  var CENY = {
+    "start:mesiac": 34, "start:rok": 340,
+    "growth:mesiac": 89, "growth:rok": 890,
+    "team:mesiac": 249, "team:rok": 2490
+  };
+  window.ptZaciatokPlatby = function (plan, obdobie) {
+    var hodnota = CENY[plan + ":" + obdobie] || 0;
+    try {
+      window.sessionStorage.setItem("pt_checkout", JSON.stringify({ plan: plan, obdobie: obdobie, hodnota: hodnota }));
+    } catch (e) {}
+    window.ptUdalost("begin_checkout", {
+      currency: "EUR", value: hodnota,
+      items: [{ item_id: plan, item_name: plan + " (" + obdobie + ")", price: hodnota, quantity: 1 }]
+    });
+  };
+  window.ptPlatbaUspesna = function () {
+    var k = {};
+    try { k = JSON.parse(window.sessionStorage.getItem("pt_checkout") || "null") || {}; } catch (e) {}
+    try { window.sessionStorage.removeItem("pt_checkout"); } catch (e) {}
+    window.ptUdalost("purchase", {
+      currency: "EUR", value: k.hodnota || 0,
+      transaction_id: "pt-" + Date.now(),
+      items: k.plan ? [{ item_id: k.plan, item_name: k.plan + " (" + k.obdobie + ")", price: k.hodnota || 0, quantity: 1 }] : []
+    });
+  };
+
+  // Klik na akykolvek odkaz na prihlasenie (Vyskusat zadarmo, Prihlasit sa,
+  // CTA v cenniku) - jedno spolocne pocuvanie namiesto uprav kazdeho tlacidla.
+  document.addEventListener("click", function (ev) {
+    try {
+      var a = ev.target && ev.target.closest ? ev.target.closest("a[href]") : null;
+      if (!a) return;
+      var href = a.getAttribute("href") || "";
+      if (/(^|\/)prihlasenie(\.html)?(\?|#|$)/.test(href) && window.location.pathname.indexOf("prihlasenie") === -1) {
+        window.ptUdalost("klik_vyskusat", { umiestnenie: (a.textContent || "").trim().slice(0, 40) });
+      }
+    } catch (e) {}
+  }, true);
 })();

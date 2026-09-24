@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <script src="/consent-analytics.js"></script>
+<script src="./config.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Výsledok platby — PredTendrom.sk</title>
 <meta name="robots" content="noindex">
@@ -82,6 +83,10 @@
   document.getElementById('nadpis').textContent = v.nadpis;
   document.getElementById('text').textContent = v.text;
   document.title = v.nadpis + ' — PredTendrom.sk';
+
+  // Meranie: dokoncena platba (GA4 purchase + vlastne pocitadlo, 45_merania.sql).
+  // Skutocne sumy su v tabulke platby - toto je len signal pre GA4 a rebricek.
+  if (stav === 'uspech' && window.ptPlatbaUspesna) window.ptPlatbaUspesna();
 </script>
 
 </body>

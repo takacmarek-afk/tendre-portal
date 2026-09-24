@@ -1024,6 +1024,36 @@ tailwind.config = { theme: { extend: {
         <h2 class="text-[17px] font-serif font-semibold">Odkiaľ prichádzajú</h2>
         <div id="stat-referreri" class="mt-4 divide-y divide-line"></div>
       </div>
+
+      <!-- Merania (supabase/45_merania.sql) - vsetko bez cookies, z vlastnej
+           databazy, takze nezavisi od toho, kto prijal cookie banner. -->
+      <div class="bg-white border border-line rounded-lg p-6 mb-5">
+        <h2 class="text-[17px] font-serif font-semibold">Rebríček: od návštevy po platbu</h2>
+        <p class="mt-2 text-[14px] leading-relaxed text-slate2">
+          Posledných 30 dní. Každý krok je z vlastnej databázy (nie z Google
+          Analytics), takže čísla platia pre všetkých návštevníkov bez ohľadu
+          na súhlas s cookies. Percento je voči predošlému kroku.
+        </p>
+        <div id="stat-rebricek" class="mt-4 divide-y divide-line"></div>
+      </div>
+
+      <div class="bg-white border border-line rounded-lg p-6 mb-5">
+        <h2 class="text-[17px] font-serif font-semibold">Zdroje návštev (kampane)</h2>
+        <p class="mt-2 text-[14px] leading-relaxed text-slate2">
+          Podľa UTM parametrov v odkaze (napr. tlačidlo na Facebook stránke),
+          inak podľa webu, z ktorého návštevník prišiel.
+        </p>
+        <div id="stat-zdroje" class="mt-4 divide-y divide-line"></div>
+      </div>
+
+      <div class="bg-white border border-line rounded-lg p-6 mb-5">
+        <h2 class="text-[17px] font-serif font-semibold">Súhlas s cookies</h2>
+        <p class="mt-2 text-[14px] leading-relaxed text-slate2">
+          Koľko návštev zvolilo v lište Prijať a koľko Iba nevyhnutné.
+          Z toho vidno, akú časť návštevníkov vôbec vidí Google Analytics.
+        </p>
+        <div id="stat-suhlas" class="mt-4 divide-y divide-line"></div>
+      </div>
     </div>
 
   </main>
@@ -1901,6 +1931,8 @@ function otvorPredplatneModal(supabase) {
     btn.disabled = true;
     btn.textContent = 'Presmerúvam na platbu…';
     try {
+      // Meranie: zaciatok platby (GA4 begin_checkout + vlastne pocitadlo, 45_merania.sql).
+      if (window.ptZaciatokPlatby) window.ptZaciatokPlatby(plan, obdobie);
       const { data, error } = await supabase.functions.invoke('stripe-checkout', { body: { plan, obdobie } });
       if (error || !data?.ok) {
         const kod = data?.kod;
@@ -2525,6 +2557,57 @@ async function nastavStatistiky(supabase) {
   el('stat-referreri').innerHTML = r.length
     ? r.map(x => riadok(x.referrer, x.navstev)).join('')
     : '<p class="text-[13px] text-slate2 py-2">Zatiaľ žiadne návštevy.</p>';
+
+  // ── Merania (supabase/45_merania.sql) ──
+  // Kazdy panel zvlast: ak by migracia 45 este nebola spustena, zobrazi sa
+  // hlaska len v tychto troch paneloch a navstevnost vyssie ostane funkcna.
+  const [rebricek, zdroje, suhlas] = await Promise.all([
+    supabase.rpc('merania_rebricek', { p_dni: 30 }),
+    supabase.rpc('merania_zdroje', { p_dni: 30 }),
+    supabase.rpc('merania_suhlas', { p_dni: 30 }),
+  ]);
+  const nedostupne = '<p class="text-[13px] text-slate2 py-2">Zatiaľ nedostupné (chýba migrácia 45_merania.sql).</p>';
+  const prazdne = '<p class="text-[13px] text-slate2 py-2">Zatiaľ žiadne dáta.</p>';
+
+  if (rebricek.error) {
+    el('stat-rebricek').innerHTML = nedostupne;
+  } else {
+    let predosly = null;
+    el('stat-rebricek').innerHTML = (rebricek.data ?? []).map(k => {
+      const pocet = Number(k.pocet);
+      const pct = (predosly && predosly > 0) ? ` · ${Math.round(pocet / predosly * 100)} %` : '';
+      const suma = (k.suma != null && Number(k.suma) > 0)
+        ? ` · ${Number(k.suma).toLocaleString('sk-SK', { maximumFractionDigits: 2 })} €` : '';
+      predosly = pocet;
+      return `
+        <div class="py-2 flex items-center justify-between gap-3">
+          <p class="text-[14px] text-ink truncate">${bezpecne(k.krok)}</p>
+          <p class="text-[13px] text-slate2 whitespace-nowrap">${cislo(pocet)}${pct}${suma}</p>
+        </div>`;
+    }).join('') || prazdne;
+  }
+
+  if (zdroje.error) {
+    el('stat-zdroje').innerHTML = nedostupne;
+  } else {
+    const z = zdroje.data ?? [];
+    el('stat-zdroje').innerHTML = z.length
+      ? z.map(x => riadok(
+          [x.zdroj, x.medium !== '—' ? x.medium : null, x.kampan !== '—' ? x.kampan : null]
+            .filter(Boolean).join(' / '),
+          x.navstev)).join('')
+      : prazdne;
+  }
+
+  if (suhlas.error) {
+    el('stat-suhlas').innerHTML = nedostupne;
+  } else {
+    const sh = suhlas.data ?? [];
+    const spolu = sh.reduce((a, x) => a + Number(x.pocet), 0);
+    el('stat-suhlas').innerHTML = sh.length
+      ? sh.map(x => riadok(`${x.volba} (${Math.round(Number(x.pocet) / spolu * 100)} %)`, x.pocet)).join('')
+      : prazdne;
+  }
 }
 
 // ── DASHBOARD ───────────────────────────────────────────────────────────

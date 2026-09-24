@@ -56,7 +56,7 @@
           'apikey': cfg.SUPABASE_ANON_KEY,
           'Prefer': 'return=minimal'
         },
-        body: JSON.stringify({ cesta: location.pathname, referrer: document.referrer || null, session_id: sid }),
+        body: JSON.stringify((function(){ var u = (window.ptUtm && window.ptUtm()) || {}; return { cesta: location.pathname, referrer: document.referrer || null, session_id: sid, utm_source: u.s || null, utm_medium: u.m || null, utm_campaign: u.c || null }; })()),
         keepalive: true
       }).catch(function(){});
     }
@@ -289,6 +289,10 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
       tlacidlo.textContent = 'Poslať odkaz na prihlásenie';
       return;
     }
+
+    // Meranie (supabase/45_merania.sql): uspesne odoslany prihlasovaci e-mail.
+    // Bez e-mailovej adresy - len to, ze sa to stalo.
+    if (window.ptUdalost) window.ptUdalost('odoslany_prihlasovaci_email');
 
     document.getElementById('poslane-na').textContent = email;
     formular.classList.add('hidden');

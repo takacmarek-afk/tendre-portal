@@ -15,3 +15,8 @@ node_modules/
 # Pracovny priecinok Claude session (podklady na Projects docs a pod.),
 # do repozitara nepatri.
 .scratch/
+
+# Dorucovacie skripty pre jednotlive vlny (predtendrom-vlnaXX.ps1) - patria
+# do Marekovho priecinka, nie do repozitara. Starsie uz commitnute skripty
+# ostavaju v repe zamerne (ich odstranenie by ich zmazalo aj z disku).
+predtendrom-*.ps1
