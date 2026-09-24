@@ -94,6 +94,17 @@ tailwind.config = {
       <a href="./obce.html" class="pl-6 border-l border-line text-accent font-medium hover:text-accentDark transition whitespace-nowrap">Pre obce a mestá &rarr;</a>
     </nav>
     <div class="flex items-center gap-2 sm:gap-4">
+      <!-- Mobilne menu (audit 24.9.2026) — nav vyssie je hidden lg:flex,
+           takze pod 1024px k nemu nebola vobec ziadna cesta (ani ku
+           kotvam, ani k odkazu Pre obce). Tlacidlo aj panel testovane
+           priamo na zivej strane cez injektovany JS pred nasadenim —
+           na 375px sa nic nezalamalo (scrollWidth = viewport width). -->
+      <button id="mmenu-btn" type="button" class="lg:hidden p-1.5 -ml-1.5 text-ink"
+              aria-expanded="false" aria-controls="mmenu-panel" aria-label="Otvoriť menu">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
       <!-- Predtym uplne skryte na telefone (pod sm) — vracajuci sa
            pouzivatel na mobile nemal ziadny viditelny sposob, ako sa
            prihlasit. Teraz viditelne aj na mobile, len uzsie (mensi
@@ -106,6 +117,34 @@ tailwind.config = {
       </a>
     </div>
   </div>
+  <div id="mmenu-panel" class="hidden lg:hidden border-t border-line bg-white">
+    <nav class="wrap py-3 flex flex-col text-[15px] text-slate2">
+      <a href="#vrstvy" class="py-2.5 border-b border-line hover:text-ink">Čo sledujeme</a>
+      <a href="#konkurencia" class="py-2.5 border-b border-line hover:text-ink">Konkurencia</a>
+      <a href="#cena" class="py-2.5 border-b border-line hover:text-ink">Koľko to stojí</a>
+      <a href="./cennik.html" class="py-2.5 border-b border-line hover:text-ink">Cenník</a>
+      <a href="#hranice" class="py-2.5 hover:text-ink">Čo nerobíme</a>
+      <a href="./obce.html" class="py-2.5 mt-1 text-accent font-medium hover:text-accentDark">Pre obce a mestá &rarr;</a>
+    </nav>
+  </div>
+  <script>
+    (function () {
+      var btn = document.getElementById('mmenu-btn');
+      var panel = document.getElementById('mmenu-panel');
+      if (!btn || !panel) return;
+      btn.addEventListener('click', function () {
+        var open = panel.classList.contains('hidden');
+        panel.classList.toggle('hidden', !open);
+        btn.setAttribute('aria-expanded', String(open));
+      });
+      panel.querySelectorAll('a').forEach(function (a) {
+        a.addEventListener('click', function () {
+          panel.classList.add('hidden');
+          btn.setAttribute('aria-expanded', 'false');
+        });
+      });
+    })();
+  </script>
 </header>
 
 <!-- ══════════════ HERO ══════════════
