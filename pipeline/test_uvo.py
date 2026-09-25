@@ -291,6 +291,10 @@ class _FakeResp:
     def json(self):
         return self._d
 
+    @property
+    def content(self):
+        return json.dumps(self._d, ensure_ascii=False).encode("utf-8")
+
 
 class _FakeSess:
     """Katalóg s 3 číslami (jedno staršie ako od_rok) a jedným súborom."""
@@ -323,3 +327,15 @@ def test_zoznam_cisel_a_nasucho_beh(monkeypatch=None):
         assert uvo.main(["--nasucho", "--od-rok", "2025"]) == 0
     finally:
         uvo._session = orig
+
+
+def test_stiahni_dekoduje_utf8_aj_bez_charsetu():
+    class R:
+        content = json.dumps({"x": "zabezpečenie"}, ensure_ascii=False).encode("utf-8")
+        encoding = "ISO-8859-1"
+        def raise_for_status(self):
+            pass
+    class S:
+        def get(self, url, timeout=None):
+            return R()
+    assert uvo.stiahni(S(), "u") == {"x": "zabezpečenie"}

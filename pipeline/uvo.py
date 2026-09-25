@@ -30,6 +30,7 @@ ZDROJ
   predtendrom-uvo-vestnik-prieskum-2026-09-25.md.
 """
 import argparse
+import json
 import logging
 import os
 import re
@@ -432,8 +433,6 @@ def _bez_duplicit(riadky, kluc):
 
 def rozober_cislo(data, vestnik):
     """Celé číslo Vestníka -> (vysledky, vyzvy, statistika)."""
-    import json
-
     publikovane = datum(data.get("bulletinPublishDate"))
     vysledky, vyzvy = [], []
     st = {"oznameni": 0, "preskocenych": 0, "oprav_a_inych": 0}
@@ -510,7 +509,11 @@ def stiahni(sess, url):
         try:
             r = sess.get(url, timeout=180)
             r.raise_for_status()
-            return r.json()
+            # Katalóg posiela súbor ako `text/csv` BEZ charsetu, takže
+            # requests by ho dekódoval ako ISO-8859-1 (r.text / r.json())
+            # a z "zabezpečenie" by bolo "zabezpeÄ\x8denie" — odmerané na
+            # prvom behu v GitHub Actions 25. 9. 2026. Súbor je UTF-8.
+            return json.loads(r.content.decode("utf-8-sig"))
         except (requests.RequestException, ValueError) as e:
             if pokus == 2:
                 raise
