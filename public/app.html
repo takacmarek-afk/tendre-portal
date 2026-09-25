@@ -774,6 +774,15 @@
                           focus:outline-none focus:border-accent">
           </div>
         </div>
+        <div id="u-jeCas-obal" class="mt-3">
+          <label class="flex items-start gap-2 text-[13px] text-ink cursor-pointer">
+            <input id="u-jeCas" type="checkbox" checked
+                   class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
+            <span>Len tie, kde ešte je čas
+              <span class="block text-[11px] text-slate2">skryje zmluvy, ktoré končia do 90 dní &mdash; tam súťaž už asi beží</span>
+            </span>
+          </label>
+        </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
           <span id="pocet-uvo" class="text-[13px] text-slate2"></span>
           <button id="export-u" class="text-[13px] font-semibold text-accent">Export Excel</button>
@@ -3281,7 +3290,12 @@ async function dashboard(supabase, rola, spravaPozvanky) {
         ? `nazov.ilike.*${text}*,obstaravatel_nazov.ilike.*${text}*,vitaz_nazov.ilike.*${text}*`
         : `nazov.ilike.*${text}*,obstaravatel_nazov.ilike.*${text}*`);
     }
-    if (typ === 'koncia') q = q.gte('koniec', oDni(0)).order('koniec', { ascending: true });
+    if (typ === 'koncia') {
+      // Rovnaka hranica ako v Konciacich zmluvach (DNI_TENDER_UZ_BEZI):
+      // pri konci do 90 dni sutaz vacsinou uz bezi, predstih nedava.
+      const od = el('u-jeCas').checked ? DNI_TENDER_UZ_BEZI : 0;
+      q = q.gte('koniec', oDni(od)).order('koniec', { ascending: true });
+    }
     else if (typ === 'vysledky') q = q.order('publikovane', { ascending: false }).order('podpisane', { ascending: false, nullsFirst: false });
     else if (typ === 'vyhlasene') q = q.eq('typ', 'sutaz').gte('lehota_ponuk', new Date().toISOString()).order('lehota_ponuk', { ascending: true });
     else q = q.eq('typ', 'predbezne').order('publikovane', { ascending: false });
@@ -3307,9 +3321,23 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     el('riadky-u').innerHTML = posledne.uvo.map(r => riadokUvo(r, typ)).join('');
     el('prazdny-u').classList.toggle('hidden', posledne.uvo.length > 0);
     const c = count ?? posledne.uvo.length;
-    el('pocet-uvo').textContent = c > posledne.uvo.length
+    let text = c > posledne.uvo.length
       ? `${cislo(c)} záznamov, zobrazujeme prvých ${cislo(posledne.uvo.length)}`
       : `${cislo(c)} ${c === 1 ? 'záznam' : c < 5 ? 'záznamy' : 'záznamov'}`;
+    el('u-jeCas-obal').classList.toggle('hidden', typ !== 'koncia');
+    if (typ === 'koncia' && el('u-jeCas').checked) {
+      // Skryte riadky musia byt vidiet ako cislo (rovnaky princip ako
+      // v Konciacich zmluvach).
+      let sq = supabase.from('uvo_vysledky').select('id', { count: 'exact', head: true })
+        .gte('koniec', oDni(0)).lt('koniec', oDni(DNI_TENDER_UZ_BEZI));
+      const kraj = el('u-kraj').value, sektor = el('u-sektor').value, t = ocisti(el('u-text').value);
+      if (kraj && NUTS_KRAJA[kraj]) sq = sq.like('nuts', `${NUTS_KRAJA[kraj]}%`);
+      if (sektor) sq = sq.eq('sektor', sektor);
+      if (t) sq = sq.or(`nazov.ilike.*${t}*,obstaravatel_nazov.ilike.*${t}*,vitaz_nazov.ilike.*${t}*`);
+      const skr = await sq;
+      if (!skr.error && skr.count) text += ` · ${cislo(skr.count)} skrytých, kde súťaž už asi beží`;
+    }
+    el('pocet-uvo').textContent = text;
     nastavViac('uvo', 'viac-u-obal', 'viac-u-stav', c, posledne.uvo.length);
   }
 
@@ -3622,7 +3650,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     nacitajUvo().catch(() => { el('pocet-uvo').textContent = 'Túto vrstvu sa nepodarilo načítať.'; });
   };
   document.querySelector('[data-zalozka="sutaze"]')?.addEventListener('click', nacitajUvoRaz);
-  for (const id of ['u-typ', 'u-kraj', 'u-sektor']) {
+  for (const id of ['u-typ', 'u-kraj', 'u-sektor', 'u-jeCas']) {
     el(id).addEventListener('change', odznova('uvo', nacitajUvo));
   }
   el('u-text').addEventListener('input', pozdrz(odznova('uvo', nacitajUvo)));
