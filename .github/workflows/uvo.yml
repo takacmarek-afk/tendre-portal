@@ -1,0 +1,110 @@
+name: Vestnik UVO
+
+# ══════════════════════════════════════════════════════════════════════════
+#  CO TOTO ROBI
+#  Stiahne nove cisla Vestnika UVO z Narodneho katalogu otvorenych dat
+#  (data.slovensko.sk) a ulozi vysledky sutazi (kto vyhral, za kolko, na
+#  ako dlho) do uvo_vysledky a vyhlasene sutaze + predbezne oznamenia do
+#  uvo_vyzvy (supabase/47_uvo.sql). Parser: pipeline/uvo.py.
+#
+#  Samostatny beh od hlavnej pipeline (pipeline.yml) — ked katalog
+#  vypadne alebo UVO zmeni tvar dat, denny prepocet zmluv o tom nevie.
+#
+#  PRVE NAPLNENIE (2025 + 2026, ~450 cisel): rucne spustit s nasucho=false.
+#  Jeden beh ma casovy rozpocet (UVO_TIME_BUDGET_MIN) a po ostrom rucnom
+#  behu sa sam spusti znova, kym zostavaju nespracovane cisla (rovnaky
+#  vzor ako ruz-financie.yml).
+#
+#  NASUCHO (default pri rucnom spusteni): nic nezapise, len vypise
+#  statistiku a ukazky riadkov z prveho cisla — na overenie parsera na
+#  ostrych datach pred prvym zapisom.
+# ══════════════════════════════════════════════════════════════════════════
+
+on:
+  workflow_dispatch:
+    inputs:
+      nasucho:
+        description: "Nasucho — nic nezapisat, len vypisat statistiku"
+        type: boolean
+        default: true
+      limit:
+        description: "Kolko cisel Vestnika spracovat v jednom behu"
+        type: string
+        default: "400"
+      od_rok:
+        description: "Od ktoreho roku"
+        type: string
+        default: "2025"
+      vestnik:
+        description: "Len jedno cislo, napr. 193/2026 (prazdne = vsetky nespracovane)"
+        type: string
+        default: ""
+
+  # Denne 06:30 UTC, po hlavnej pipeline (05:10). UVO nahrava cisla do
+  # katalogu po davkach s oneskorenim par dni — denny beh ich dozbiera.
+  schedule:
+    - cron: "30 6 * * *"
+
+permissions:
+  contents: read
+  actions: write   # len pre retazenie behov nizsie (gh workflow run)
+
+concurrency:
+  group: uvo
+  cancel-in-progress: false
+
+jobs:
+  vestnik:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Spracovat Vestnik UVO
+        id: uvo
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          UVO_TIME_BUDGET_MIN: "45"
+          EVENT: ${{ github.event_name }}
+          NASUCHO: ${{ inputs.nasucho }}
+          LIMIT: ${{ inputs.limit }}
+          OD_ROK: ${{ inputs.od_rok }}
+          VESTNIK: ${{ inputs.vestnik }}
+        run: |
+          set -euo pipefail
+          ARGS=(--limit "${LIMIT:-400}" --od-rok "${OD_ROK:-2025}")
+          if [ -n "${VESTNIK:-}" ]; then
+            ARGS+=(--vestnik "$VESTNIK")
+          fi
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$NASUCHO" = "true" ]; then
+            ARGS+=(--nasucho)
+          fi
+          echo "Spustam: python uvo.py ${ARGS[*]}"
+          python uvo.py "${ARGS[@]}"
+
+      - name: Spustit dalsi beh, ak zostavaju cisla (retazenie)
+        if: |
+          steps.uvo.outputs.zostava == 'true' &&
+          steps.uvo.outputs.spracovanych != '0' &&
+          github.event_name == 'workflow_dispatch' &&
+          inputs.nasucho != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEXT_LIMIT: ${{ inputs.limit }}
+          NEXT_OD_ROK: ${{ inputs.od_rok }}
+        run: |
+          set -euo pipefail
+          sleep 10
+          gh workflow run uvo.yml --repo "${{ github.repository }}" --ref main \
+            -f nasucho=false -f limit="${NEXT_LIMIT:-400}" -f od_rok="${NEXT_OD_ROK:-2025}"
