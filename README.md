@@ -23,5 +23,5 @@ npm run build:css
 Inak sa nova trieda neprejavi (uz to nie je live JIT z CDN). Zoznam
 skenovanych suborov je v `tailwind.config.main.js` → `content`.
 
-Pozn.: `amber` je v konfigu prepisany na jednu farbu (#E8A33D), preto triedy
-ako `bg-amber-50` / `text-amber-900` negeneruju nic — tak to bolo aj s CDN.
+`amber` v konfigu = znackova farba (`bg-amber`, #E8A33D) plus standardna
+paleta `amber-50` az `amber-950` pre zlte upozornenia.

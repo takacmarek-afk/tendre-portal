@@ -3,6 +3,8 @@
 // su presnou kopiou inline <script>tailwind.config = {...}</script>
 // bloku, ktory mali app.html, cennik.html, index.html, obce.html,
 // prihlasenie.html, zdroje.html, servis.html, trh.html a 404.html.
+const colors = require('tailwindcss/colors');
+
 module.exports = {
   content: [
     "./public/app.html",
@@ -30,7 +32,11 @@ module.exports = {
       },
       colors: {
         ink: '#0B1220', slate2: '#6B6558', line: '#E4DFD2',
-        accent: '#B25313', accentDark: '#8A3F0D', amber: '#E8A33D', paper: '#F7F3EA',
+        accent: '#B25313', accentDark: '#8A3F0D', paper: '#F7F3EA',
+        // amber = znackova farba (bg-amber, text-amber) + standardna paleta
+        // amber-50…950 pre zlte upozornenia. Predtym tu bolo amber: '#E8A33D',
+        // co paletu prepisalo a bg-amber-50/text-amber-900 nerobili nic.
+        amber: { ...colors.amber, DEFAULT: '#E8A33D' },
       },
     },
   },
