@@ -129,23 +129,31 @@ def posud_email(email, obec_nazov):
     # vyzeralo ako vseobecna adresa
     vseobecna = any(t in _VSEOBECNE for t in tokeny) \
         or any(len(v) >= 5 and lokal.startswith(v) for v in _VSEOBECNE)
-    obec_v_lokal = bool(obec_k) and obec_k in _kompakt(lokal)
-    obec_v_domene = bool(obec_k) and obec_k in _kompakt(domena.rsplit(".", 1)[0])
+    # nazov obce kratsi ako 4 znaky by sa nahodne nasiel aj v cudzom texte
+    obec_ok = len(obec_k) >= 4
+    obec_v_lokal = obec_ok and obec_k in _kompakt(lokal)
+    obec_v_domene = obec_ok and obec_k in _kompakt(domena.rsplit(".", 1)[0])
     # meno.priezvisko@ (dva a viac cisto pismenovych tokenov, ziadny vseobecny,
     # ani nazov obce) = osobna adresa zamestnanca
     osobna = (len(tokeny) >= 2 and all(t.isalpha() for t in tokeny)
               and not vseobecna and not obec_v_lokal)
 
+    # Poradie pravidiel vychadza z realnych dat (25. 9. 2026, 1 019 obci):
+    # vyse tretiny adries patri externym obstaravatelom (cvo.sk, tenders.sk,
+    # mpprofit.sk, ...), ktori pisu klient@, info@, obstaravanie@ na svojej
+    # domene. Obce na hostingu (lekosonline.sk, orava.sk) maju v adrese
+    # nazov obce. Na verejnej schranke (gmail, azet) vseobecne slovo
+    # nestaci — "obstaravanie.xy@gmail.com" moze byt aj agentura.
     if osobna:
         return "na_kontrolu", "vyzera ako osobna adresa"
+    if obec_v_lokal:
+        return "ok", "nazov obce v adrese"
     if domena in _FREEMAIL:
-        if vseobecna or obec_v_lokal:
-            return "ok", "vseobecna adresa obce na verejnej schranke"
         return "na_kontrolu", "verejna schranka bez nazvu obce"
     if vseobecna and obec_v_domene:
         return "ok", "vseobecna adresa na domene obce"
     if obec_v_domene:
-        return "ok", "adresa na domene obce"
+        return "na_kontrolu", "adresa na domene obce, ale moze byt osobna"
     if vseobecna:
         return "na_kontrolu", "vseobecna adresa, ale domena nesedi s obcou"
     return "na_kontrolu", "domena nesedi s obcou (externy obstaravatel?)"
