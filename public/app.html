@@ -314,6 +314,12 @@
               class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap">
         Žiadajú o dotáciu <span id="pocet-zi" class="font-normal text-slate2"></span>
       </button>
+      <!-- Vestnik UVO (vlna 36): vysledky sutazi, konciace zmluvy zo
+           sutazi a vyhlasene sutaze. Data plni pipeline/uvo.py. -->
+      <button data-zalozka="sutaze"
+              class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap">
+        Súťaže ÚVO <span id="pocet-u" class="font-normal text-slate2"></span>
+      </button>
       <button data-zalozka="dodavatelia"
               class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap">
         Dodávatelia <span id="pocet-f" class="font-normal text-slate2"></span>
@@ -731,6 +737,75 @@
       </p>
     </div>
 
+    <!-- ── SÚŤAŽE ÚVO ───────────────────────────────────────── -->
+    <div id="sutaze" class="hidden">
+      <p class="text-[14px] leading-relaxed text-slate2 mb-3 max-w-3xl">
+        Z Vestníka verejného obstarávania: kto súťaž vyhral, za koľko a na ako
+        dlho podpísal zmluvu. Z dátumu podpisu a dĺžky zmluvy vieme, kedy
+        príde ďalšia súťaž &mdash; tu ju vidíte skôr, než ju úrad vyhlási.
+      </p>
+
+      <div class="bg-white border border-line rounded-lg p-4 mb-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label for="u-typ" class="block text-[12px] font-semibold text-slate2 mb-1">Zobraziť</label>
+            <select id="u-typ" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
+                                      focus:outline-none focus:border-accent">
+              <option value="koncia">Zmluvy zo súťaží, ktoré končia</option>
+              <option value="vysledky">Kto nedávno vyhral</option>
+              <option value="vyhlasene">Práve vyhlásené súťaže</option>
+              <option value="predbezne">Predbežné oznámenia</option>
+            </select>
+          </div>
+          <div>
+            <label for="u-kraj" class="block text-[12px] font-semibold text-slate2 mb-1">Kraj</label>
+            <select id="u-kraj" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
+                                       focus:outline-none focus:border-accent"></select>
+          </div>
+          <div>
+            <label for="u-sektor" class="block text-[12px] font-semibold text-slate2 mb-1">Sektor</label>
+            <select id="u-sektor" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
+                                         focus:outline-none focus:border-accent"></select>
+          </div>
+          <div>
+            <label for="u-text" class="block text-[12px] font-semibold text-slate2 mb-1">Hľadať</label>
+            <input id="u-text" type="search" placeholder="zákazka, obstarávateľ, firma"
+                   class="w-full border border-line rounded-md px-3 py-2 text-[14px]
+                          focus:outline-none focus:border-accent">
+          </div>
+        </div>
+        <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
+          <span id="pocet-uvo" class="text-[13px] text-slate2"></span>
+          <button id="export-u" class="text-[13px] font-semibold text-accent">Export Excel</button>
+        </div>
+      </div>
+
+      <div class="bg-white border border-line rounded-lg overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="karty-mobil w-full text-left">
+            <thead class="bg-[#F3F0E6] border-b border-line">
+              <tr id="hlavicka-u" class="text-[12px] font-semibold uppercase tracking-wider text-slate2"></tr>
+            </thead>
+            <tbody id="riadky-u"></tbody>
+          </table>
+        </div>
+        <div id="prazdny-u" class="hidden p-10 text-center">
+          <p class="text-[14px] text-slate2">Pre tieto filtre nemáme žiadny záznam.</p>
+        </div>
+        <div id="viac-u-obal" class="hidden px-4 py-5 text-center border-t border-line">
+          <button id="viac-u" class="text-[14px] font-semibold text-accent hover:text-accentDark">
+            Zobraziť ďalších 200
+          </button>
+          <div id="viac-u-stav" class="text-[12px] text-slate2 mt-1"></div>
+        </div>
+      </div>
+      <p class="mt-4 text-[12px] leading-relaxed text-slate2 max-w-3xl">
+        Zdroj: Vestník verejného obstarávania (ÚVO), otvorené dáta z
+        data.slovensko.sk, roky 2025 a 2026, dopĺňa sa denne. Koniec zmluvy
+        označený „odhad“ je dátum podpisu plus dĺžka zmluvy z oznámenia.
+      </p>
+    </div>
+
     <!-- ── DODÁVATELIA ──────────────────────────────────────── -->
     <div id="dodavatelia" class="hidden">
 
@@ -1091,7 +1166,7 @@ const LIMIT = 200;
 // zoradenia aj textu. Kazde miesto, kde sa to zabudne, ukaze zakaznikovi
 // prazdnu stranku pri neprazdnom vysledku. Rastuci limit taky stav nema —
 // najhorsie, co sa stane, je ze sa nacita o 200 riadkov viac.
-const zobrazene = { zmluvy: LIMIT, dotacie: LIMIT, ziadatelia: LIMIT, dodavatelia: LIMIT };
+const zobrazene = { zmluvy: LIMIT, dotacie: LIMIT, ziadatelia: LIMIT, dodavatelia: LIMIT, uvo: LIMIT };
 
 /**
  * Prepne tlacidlo "zobrazit dalsich" pod tabulkou.
@@ -1493,6 +1568,7 @@ function riadok(r, benchmark, sanca, mojIco, stavMap) {
         ${sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5
                      rounded bg-accent/10 text-accent">${sektor}</span>` : ''}
         ${ktoToMa(r)}
+        ${poslednaSutaz(r)}
         ${sancaNaVyhru(r, sanca, mojIco)}
         ${porovnanieCeny(b)}
         ${odkazCrz(r)}
@@ -1678,6 +1754,121 @@ function riadokZiadatela(r) {
     </tr>`;
 }
 
+
+// ── VESTNIK UVO (vlna 36) ─────────────────────────────────────────────────
+// Kraj -> NUTS 3 kod (uvo_*.nuts je miesto plnenia z formulara, BT-5071).
+const NUTS_KRAJA = {
+  'Bratislavský kraj': 'SK010', 'Trnavský kraj': 'SK021', 'Trenčiansky kraj': 'SK022',
+  'Nitriansky kraj': 'SK023', 'Žilinský kraj': 'SK031', 'Banskobystrický kraj': 'SK032',
+  'Prešovský kraj': 'SK041', 'Košický kraj': 'SK042',
+};
+const KRAJ_NUTS = Object.fromEntries(Object.entries(NUTS_KRAJA).map(([k, v]) => [v, k]));
+
+// Posledna sutaz toho isteho uradu v tom istom sektore, pre riadok
+// v Konciacich zmluvach. Kluc `${ico}|${sektor}`. Plni nacitajZmluvy().
+let UVO_POSLEDNA = new Map();
+
+function odkazUvo(url, popis = 'Zákazka na ÚVO') {
+  if (!url) return '';
+  return `<a href="${bezpecne(url)}" target="_blank" rel="noopener"
+             class="inline-block mt-2 text-[12px] text-accent hover:text-accentDark
+                    hover:underline whitespace-nowrap"
+             title="Otvorí zákazku vo vyhľadávaní ÚVO">${popis} ↗</a>`;
+}
+
+function mesiaceText(m) {
+  const n = num(m);
+  if (Number.isNaN(n) || n <= 0) return '';
+  if (n % 12 === 0) { const r = n / 12; return `${r} ${r === 1 ? 'rok' : r < 5 ? 'roky' : 'rokov'}`; }
+  return `${Math.round(n)} mes.`;
+}
+
+function poslednaSutaz(r) {
+  const u = r.authority_cin ? UVO_POSLEDNA.get(`${r.authority_cin}|${r.sector}`) : null;
+  if (!u) return '';
+  const casti = [];
+  if (u.hodnota != null) casti.push(`za ${suma(u.hodnota)}`);
+  if (u.pocet_ponuk != null) casti.push(`${u.pocet_ponuk} ${u.pocet_ponuk === 1 ? 'ponuka' : u.pocet_ponuk < 5 ? 'ponuky' : 'ponúk'}`);
+  if (u.podpisane) casti.push(`podpísané ${datumKratky(u.podpisane)}`);
+  return `<div class="text-[12px] mt-1">
+            <span class="text-slate2">posledná súťaž (ÚVO):</span>
+            <span class="font-medium">${bezpecne(u.vitaz_nazov) || '—'}</span>
+            ${casti.length ? `<span class="text-slate2"> · ${casti.join(' · ')}</span>` : ''}
+            ${u.url ? `<a href="${bezpecne(u.url)}" target="_blank" rel="noopener"
+                          class="text-accent hover:text-accentDark hover:underline whitespace-nowrap"> ↗</a>` : ''}
+          </div>`;
+}
+
+function krajZNuts(nuts) {
+  return nuts ? (KRAJ_NUTS[String(nuts).slice(0, 5)] || '') : '';
+}
+
+function riadokUvo(r, typ) {
+  const sektor = POPIS_SEKTORA[r.sektor];
+  const kraj = krajZNuts(r.nuts);
+  const nazov = r.cast_nazov && r.cast_nazov !== r.nazov
+    ? `${bezpecne(r.nazov)}<div class="text-[12px] text-slate2 mt-1">${bezpecne(r.cast_nazov)}</div>`
+    : bezpecne(r.nazov);
+  const stitok = sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5
+                     rounded bg-accent/10 text-accent">${sektor}</span>` : '';
+  const obst = `<td data-popis="Obstarávateľ" data-blok class="px-4 py-4 align-top text-[14px] text-slate2">
+        ${bezpecne(r.obstaravatel_nazov) || '—'}
+        ${kraj ? `<div class="text-[12px] mt-1">${bezpecne(kraj)}</div>` : ''}
+      </td>`;
+
+  if (typ === 'koncia' || typ === 'vysledky') {
+    const dni = dniOdDnes(r.koniec);
+    const ponuky = r.pocet_ponuk != null
+      ? ` · ${r.pocet_ponuk} ${r.pocet_ponuk === 1 ? 'ponuka' : r.pocet_ponuk < 5 ? 'ponuky' : 'ponúk'}` : '';
+    const koniec = r.koniec
+      ? `<span class="font-medium whitespace-nowrap">${datumKratky(r.koniec)}</span>
+         ${r.koniec_odhad ? '<div class="text-[11px] mt-0.5">odhad</div>' : ''}
+         ${!Number.isNaN(dni) && dni > 0 ? `<div class="text-[11px] mt-0.5">o ${cislo(dni)} dní</div>` : ''}`
+      : '<span class="text-slate2">neuvedený</span>';
+    return `
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
+      <td data-hlavny class="px-4 py-4 align-top max-w-[420px]">
+        <div class="text-[14px] font-medium leading-snug">${nazov}</div>
+        ${stitok}
+        <div class="text-[12px] mt-1"><span class="text-slate2">vyhral:</span>
+          <span class="font-medium">${bezpecne(r.vitaz_nazov) || '—'}</span>
+          ${r.vitaz_ico ? `<span class="text-slate2"> · IČO ${bezpecne(r.vitaz_ico)}</span>` : ''}
+          <span class="text-slate2">${ponuky}</span></div>
+        ${odkazUvo(r.url)}
+        ${r.crz_url ? `<a href="${bezpecne(r.crz_url)}" target="_blank" rel="noopener"
+             class="inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:underline whitespace-nowrap">Zmluva v CRZ ↗</a>` : ''}
+      </td>
+      ${obst}
+      <td data-popis="Cena" class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${r.hodnota != null ? suma(r.hodnota) : '—'}</td>
+      <td data-popis="${typ === 'koncia' ? 'Zmluva končí' : 'Podpísané'}" class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
+        ${typ === 'koncia' ? koniec : `<span class="whitespace-nowrap">${datumKratky(r.podpisane || r.publikovane)}</span>
+          ${r.trvanie_mesiace ? `<div class="text-[11px] mt-0.5">na ${mesiaceText(r.trvanie_mesiace)}</div>` : ''}`}
+      </td>
+    </tr>`;
+  }
+
+  // vyhlasene / predbezne
+  const dniL = r.lehota_ponuk ? dniOdDnes(String(r.lehota_ponuk).slice(0, 10)) : NaN;
+  return `
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
+      <td data-hlavny class="px-4 py-4 align-top max-w-[420px]">
+        <div class="text-[14px] font-medium leading-snug">${nazov}</div>
+        ${stitok}
+        ${r.trvanie_mesiace ? `<div class="text-[12px] text-slate2 mt-1">zmluva na ${mesiaceText(r.trvanie_mesiace)}</div>` : ''}
+        ${odkazUvo(r.url)}
+      </td>
+      ${obst}
+      <td data-popis="Predpokladaná hodnota" class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${r.predpokladana_hodnota != null ? suma(r.predpokladana_hodnota) : '—'}</td>
+      <td data-popis="${typ === 'vyhlasene' ? 'Lehota na ponuky' : 'Zverejnené'}" class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
+        ${typ === 'vyhlasene'
+          ? (r.lehota_ponuk
+              ? `<span class="font-medium whitespace-nowrap">${new Date(r.lehota_ponuk).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                 ${!Number.isNaN(dniL) && dniL >= 0 ? `<div class="text-[11px] mt-0.5">o ${cislo(dniL)} dní</div>` : ''}`
+              : '—')
+          : `<span class="whitespace-nowrap">${datumKratky(r.publikovane)}</span>`}
+      </td>
+    </tr>`;
+}
 
 function riadokDodavatela(r, sledovane, jePro) {
   const sektor = POPIS_SEKTORA[r.hlavny_sektor] ?? r.hlavny_sektor;
@@ -2709,6 +2900,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   naplnSelect('d-sektor', sektory, 'všetko');
   naplnSelect('s-sektor', sektory, 'všetky sektory');
   naplnSelect('zi-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
+  naplnSelect('u-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
+  naplnSelect('u-sektor', sektory, 'všetky sektory');
 
   // Posledne ZOBRAZENE data (max LIMIT riadkov). Sluzia na vykreslenie
   // a na dohladanie cenoveho benchmarku k zobrazenym riadkom.
@@ -2717,7 +2910,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // presne ten orezany zoznam, takze zakaznik dostal 200 z 3 276 riadkov
   // bez akejkolvek zmienky. Export si teraz taha vlastne data — viz
   // stahniVsetko() vyssie.
-  const posledne = { zmluvy: [], dotacie: [], ziadatelia: [], dodavatelia: [] };
+  const posledne = { zmluvy: [], dotacie: [], ziadatelia: [], dodavatelia: [], uvo: [] };
 
   // ── OSOBNA RELEVANCIA (#7, 17.9.2026) ──────────────────────────────────
   // "Sila signalu" (skore) je globalna a rovnaka pre vsetkych — meria, ako
@@ -2793,7 +2986,9 @@ async function dashboard(supabase, rola, spravaPozvanky) {
                    // stlpec vracia 400 a rozbilo by to celu zalozku.
                    // odkazCrz() ho aj tak umi zlozit z contract_id, takze
                    // odkaz funguje aj keby sa stlpec raz stratil.
-                   'dodavatel_zmluv_celkom, historicky_pocet, typicka_dlzka_dni, odkaz';
+                   'dodavatel_zmluv_celkom, historicky_pocet, typicka_dlzka_dni, odkaz, ' +
+                   // ICO uradu — na parovanie s poslednou sutazou z Vestnika UVO
+                   'authority_cin';
 
   // Filtre zo vstupov pridame na lubovolny dopyt. Je to samostatna funkcia
   // preto, lebo ich teraz potrebujem dvakrat: raz na data a raz na spocitanie
@@ -2922,6 +3117,25 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     }
     posledne.benchmark = benchmark;
     posledne.sanca = sanca;
+
+    // Posledna sutaz toho isteho uradu v tom istom sektore z Vestnika UVO
+    // (vlna 36). Chyba tabulky alebo prazdny vysledok nic nerozbije —
+    // riadok sa len nevykresli.
+    UVO_POSLEDNA = new Map();
+    const ciny = [...new Set(posledne.zmluvy.map(x => x.authority_cin).filter(Boolean))];
+    if (ciny.length) {
+      const uq = await supabase.from('uvo_vysledky')
+        .select('obstaravatel_ico, sektor, vitaz_nazov, hodnota, pocet_ponuk, podpisane, url')
+        .in('obstaravatel_ico', ciny).not('sektor', 'is', null)
+        .order('podpisane', { ascending: false, nullsFirst: false })
+        .limit(3000);
+      if (!uq.error) {
+        for (const u of uq.data ?? []) {
+          const k = `${u.obstaravatel_ico}|${u.sektor}`;
+          if (!UVO_POSLEDNA.has(k)) UVO_POSLEDNA.set(k, u);
+        }
+      }
+    }
     zoradPodlaRelevancie();
 
     el('riadky').innerHTML = posledne.zmluvy.map(
@@ -3045,6 +3259,58 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       ? `${cislo(c)} obcí, zobrazujeme prvých ${cislo(posledne.ziadatelia.length)} od najnovšie najatej`
       : `${cislo(c)} ${c === 1 ? 'obec' : c < 5 ? 'obce' : 'obcí'}`;
     nastavViac('ziadatelia', 'viac-zi-obal', 'viac-zi-stav', c, posledne.ziadatelia.length);
+  }
+
+  // ── SÚŤAŽE ÚVO (vlna 36) ────────────────────────────────────────────
+  const UVO_HLAVICKA = {
+    koncia:    ['Zákazka a víťaz', 'Obstarávateľ', 'Cena', 'Zmluva končí'],
+    vysledky:  ['Zákazka a víťaz', 'Obstarávateľ', 'Cena', 'Podpísané'],
+    vyhlasene: ['Zákazka', 'Obstarávateľ', 'Predpokladaná hodnota', 'Lehota na ponuky'],
+    predbezne: ['Zákazka', 'Obstarávateľ', 'Predpokladaná hodnota', 'Zverejnené'],
+  };
+
+  function filtreUvo(q, typ) {
+    const kraj = el('u-kraj').value;
+    const sektor = el('u-sektor').value;
+    const text = ocisti(el('u-text').value);
+    if (kraj && NUTS_KRAJA[kraj]) q = q.like('nuts', `${NUTS_KRAJA[kraj]}%`);
+    if (sektor) q = q.eq('sektor', sektor);
+    const vysl = typ === 'koncia' || typ === 'vysledky';
+    if (text) {
+      q = q.or(vysl
+        ? `nazov.ilike.*${text}*,obstaravatel_nazov.ilike.*${text}*,vitaz_nazov.ilike.*${text}*`
+        : `nazov.ilike.*${text}*,obstaravatel_nazov.ilike.*${text}*`);
+    }
+    if (typ === 'koncia') q = q.gte('koniec', oDni(0)).order('koniec', { ascending: true });
+    else if (typ === 'vysledky') q = q.order('publikovane', { ascending: false }).order('podpisane', { ascending: false, nullsFirst: false });
+    else if (typ === 'vyhlasene') q = q.eq('typ', 'sutaz').gte('lehota_ponuk', new Date().toISOString()).order('lehota_ponuk', { ascending: true });
+    else q = q.eq('typ', 'predbezne').order('publikovane', { ascending: false });
+    return q;
+  }
+
+  function tabulkaUvo(typ) {
+    return (typ === 'koncia' || typ === 'vysledky') ? 'uvo_vysledky' : 'uvo_vyzvy';
+  }
+
+  async function nacitajUvo() {
+    const typ = el('u-typ').value;
+    el('hlavicka-u').innerHTML = UVO_HLAVICKA[typ].map((h, i) =>
+      `<th class="px-4 py-3${i === 2 ? ' text-right whitespace-nowrap' : i === 3 ? ' whitespace-nowrap' : ''}">${h}</th>`).join('');
+    const { data, count, error } = await filtreUvo(
+      supabase.from(tabulkaUvo(typ)).select('*', { count: 'exact' }), typ)
+      .limit(zobrazene.uvo);
+    if (error) {
+      el('pocet-uvo').textContent = 'Túto vrstvu sa nepodarilo načítať.';
+      return;
+    }
+    posledne.uvo = data ?? [];
+    el('riadky-u').innerHTML = posledne.uvo.map(r => riadokUvo(r, typ)).join('');
+    el('prazdny-u').classList.toggle('hidden', posledne.uvo.length > 0);
+    const c = count ?? posledne.uvo.length;
+    el('pocet-uvo').textContent = c > posledne.uvo.length
+      ? `${cislo(c)} záznamov, zobrazujeme prvých ${cislo(posledne.uvo.length)}`
+      : `${cislo(c)} ${c === 1 ? 'záznam' : c < 5 ? 'záznamy' : 'záznamov'}`;
+    nastavViac('uvo', 'viac-u-obal', 'viac-u-stav', c, posledne.uvo.length);
   }
 
   // ── SLEDOVANIE KONKRETNYCH ICO ──────────────────────────────────────
@@ -3346,6 +3612,27 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const sel = e.target.closest('[data-crm-stav]');
     if (sel) nastavCrmStav(sel.dataset.crmStav, Number(sel.dataset.crmId), sel.value);
   });
+
+  // Sutaze UVO sa nacitaju az pri prvom otvoreni zalozky — su to tisicky
+  // riadkov a vacsina navstev tuto zalozku neotvori.
+  let uvoNacitane = false;
+  const nacitajUvoRaz = () => {
+    if (uvoNacitane) return;
+    uvoNacitane = true;
+    nacitajUvo().catch(() => { el('pocet-uvo').textContent = 'Túto vrstvu sa nepodarilo načítať.'; });
+  };
+  document.querySelector('[data-zalozka="sutaze"]')?.addEventListener('click', nacitajUvoRaz);
+  for (const id of ['u-typ', 'u-kraj', 'u-sektor']) {
+    el(id).addEventListener('change', odznova('uvo', nacitajUvo));
+  }
+  el('u-text').addEventListener('input', pozdrz(odznova('uvo', nacitajUvo)));
+  napojViac('viac-u', 'uvo', nacitajUvo);
+  el('export-u').addEventListener('click', () => sExportom('export-u', async () => {
+    const typ = el('u-typ').value;
+    const riadky = await stahniVsetko(() => filtreUvo(
+      supabase.from(tabulkaUvo(typ)).select('*'), typ));
+    exportExcel(`sutaze-uvo-${typ}`, riadky);
+  }));
 
   const prekresliZi = pozdrz(odznova('ziadatelia', nacitajZiadatelov));
   el('zi-kraj').addEventListener('change', odznova('ziadatelia', nacitajZiadatelov));
