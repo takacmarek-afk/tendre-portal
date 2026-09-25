@@ -30,6 +30,22 @@ def test_verejna_schranka():
     assert k.posud_email("obecdolnastreda@gmail.com", "Obec Dolná Streda")[0] == "ok"
     assert k.posud_email("ou.dolnastreda@azet.sk", "Obec Dolná Streda")[0] == "ok"
     assert k.posud_email("ferko123@gmail.com", "Obec Dolná Streda")[0] == "na_kontrolu"
+    # vseobecne slovo na gmaile nestaci — moze to byt agentura
+    assert k.posud_email("obstaravanie.sk@gmail.com", "Obec Dolná Streda")[0] == "na_kontrolu"
+
+
+def test_realne_vzory_z_vestnika():
+    # hosting obecnych webov: nazov obce v adrese
+    assert k.posud_email("kristy@lekosonline.sk", "Obec Kristy")[0] == "ok"
+    # externy obstaravatel
+    assert k.posud_email("klient@tenders.sk", "Obec Tužina")[0] == "na_kontrolu"
+    assert k.posud_email("info@cvo.sk", "Obec Tužina")[0] == "na_kontrolu"
+    # jednoslovna adresa na domene obce moze byt osobna (priezvisko)
+    assert k.posud_email("ranto@martin.sk", "Mesto Martin") == \
+        ("na_kontrolu", "adresa na domene obce, ale moze byt osobna")
+    assert k.posud_email("info@martin.sk", "Mesto Martin")[0] == "ok"
+    # prikratky nazov obce sa nesmie najst nahodou
+    assert k.posud_email("info@kolarovo.sk", "Obec Ol")[0] == "na_kontrolu"
 
 
 def test_neplatna_adresa():
