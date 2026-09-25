@@ -515,7 +515,10 @@ def stiahni(sess, url):
             # prvom behu v GitHub Actions 25. 9. 2026. Súbor je UTF-8.
             return json.loads(r.content.decode("utf-8-sig"))
         except (requests.RequestException, ValueError) as e:
-            if pokus == 2:
+            # 404 = katalóg má pri čísle neplatný odkaz na súbor (stalo sa pri
+            # ostrom behu 25. 9. 2026). Opakovanie nepomôže, vzdať hneď.
+            kod = getattr(getattr(e, "response", None), "status_code", None)
+            if pokus == 2 or kod == 404:
                 raise
             log.warning("Sťahovanie zlyhalo (%s), skúšam znova: %s", e, url)
             time.sleep(10 * (pokus + 1))
@@ -588,13 +591,21 @@ def main(argv=None):
         cisla = [c for c in cisla if c["vestnik"] not in hotove]
 
     spolu = {"cisel": 0, "vysledkov": 0, "vyziev": 0, "preskocenych": 0, "oznameni": 0,
-             "s_vitazom_ico": 0, "s_koncom": 0, "so_sektorom": 0}
+             "s_vitazom_ico": 0, "s_koncom": 0, "so_sektorom": 0, "chyb": 0}
     zostava = False
     for i, c in enumerate(cisla):
         if i >= a.limit or (time.monotonic() - start) / 60 > TIME_BUDGET_MIN:
             zostava = True
             break
-        data = stiahni(sess, c["url"])
+        try:
+            data = stiahni(sess, c["url"])
+        except (requests.RequestException, ValueError) as e:
+            # Jedno pokazené číslo nesmie zastaviť celé načítanie. Nezapíšeme
+            # ho do uvo_vestniky, takže ďalší beh ho skúsi znova (ÚVO súbor
+            # v katalógu medzičasom môže opraviť).
+            log.warning("Vestník %s sa nepodarilo stiahnuť, preskakujem: %s", c["vestnik"], e)
+            spolu["chyb"] += 1
+            continue
         vysledky, vyzvy, st = rozober_cislo(data, c["vestnik"])
         publikovany = datum(data.get("bulletinPublishDate"))
         spolu["cisel"] += 1

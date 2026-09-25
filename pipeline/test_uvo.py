@@ -339,3 +339,23 @@ def test_stiahni_dekoduje_utf8_aj_bez_charsetu():
         def get(self, url, timeout=None):
             return R()
     assert uvo.stiahni(S(), "u") == {"x": "zabezpečenie"}
+
+
+def test_pokazene_cislo_nezastavi_beh():
+    import requests as rq
+
+    class Zly(_FakeSess):
+        def get(self, url, timeout=None):
+            if url.endswith("id=1"):
+                r = rq.Response()
+                r.status_code = 404
+                r.url = url
+                raise rq.exceptions.HTTPError("404", response=r)
+            return super().get(url, timeout)
+
+    orig = uvo._session
+    uvo._session = lambda: Zly()
+    try:
+        assert uvo.main(["--nasucho", "--od-rok", "2025"]) == 0
+    finally:
+        uvo._session = orig
