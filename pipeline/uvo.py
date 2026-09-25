@@ -44,6 +44,13 @@ import requests
 from classify import klasifikuj, SEKTOR_DOTACIE
 from config import USER_AGENT
 
+# Verzia parsera. Pri zvyseni sa vsetky cisla spracovane starsou verziou
+# (uvo_vestniky.verzia_parsera < PARSER_VERZIA alebo null) beznym behom
+# spracuju znova — upsert prepise riadky novymi stlpcami.
+#   1 — prve naplnenie (vlna 35–37)
+#   2 — obstaravatel_email (BT-506), vlna 39, migracia 48
+PARSER_VERZIA = 2
+
 log = logging.getLogger("uvo")
 
 KATALOG = "https://data.slovensko.sk"
@@ -173,6 +180,12 @@ def pridaj_mesiace(d_iso, m):
     return nove.isoformat()
 
 
+def _email(v):
+    """Len platne vyzerajuca adresa, malymi pismenami; inak None."""
+    v = (v or "").strip().lower()
+    return v if re.fullmatch(r"[^@\s;,]+@[^@\s;,]+\.[a-z]{2,}", v) else None
+
+
 def zakazka_id(metadata_order):
     m = re.search(r"\(ID:\s*(\d+)\)", metadata_order or "")
     return int(m.group(1)) if m else None
@@ -295,6 +308,9 @@ def rozober(formular, vestnik, publikovane):
         "zakazka_id": zak_id,
         "obstaravatel_ico": prvy(buyer, "BT-501-Organization-Company-CIN"),
         "obstaravatel_nazov": prvy(buyer, "BT-500-Organization-Company"),
+        # Oficialny kontakt obstaravatela zverejneny vo Vestniku (BT-506).
+        # Pouziva sa na kampan pre obce (zverejneny kontakt pravnickej osoby).
+        "obstaravatel_email": _email(prvy(buyer, "BT-506-Organization-Company")),
         "nazov": prvy(vsetko, "BT-21-Procedure"),
         "url": ZAKAZKA_URL.format(zak_id) if zak_id else None,
         "publikovane": publikovane,
@@ -542,13 +558,15 @@ def uloz(sb, cislo_info, vysledky, vyzvy, st, publikovany):
         "publikovany": publikovany, "dataset_id": cislo_info["dataset_id"],
         "oznameni": st["oznameni"], "vysledkov": len(vysledky), "vyziev": len(vyzvy),
         "preskocenych": st["preskocenych"], "spracovany_at": "now()",
+        "verzia_parsera": PARSER_VERZIA,
     }, on_conflict="vestnik").execute()
 
 
 def spracovane(sb):
     out, od = set(), 0
     while True:
-        r = sb.table("uvo_vestniky").select("vestnik").range(od, od + 999).execute()
+        r = (sb.table("uvo_vestniky").select("vestnik")
+             .gte("verzia_parsera", PARSER_VERZIA).range(od, od + 999).execute())
         out.update(x["vestnik"] for x in r.data)
         if len(r.data) < 1000:
             return out

@@ -15,6 +15,10 @@ name: Vestnik UVO
 #  behu sa sam spusti znova, kym zostavaju nespracovane cisla (rovnaky
 #  vzor ako ruz-financie.yml).
 #
+#  NOVA VERZIA PARSERA (pipeline/uvo.py PARSER_VERZIA): cisla spracovane
+#  starsou verziou sa beznym behom spracuju znova. Po nasadeni novej verzie
+#  staci rucne spustit s nasucho=false — retazenie dobehne vsetky cisla.
+#
 #  NASUCHO (default pri rucnom spusteni): nic nezapise, len vypise
 #  statistiku a ukazky riadkov z prveho cisla — na overenie parsera na
 #  ostrych datach pred prvym zapisom.

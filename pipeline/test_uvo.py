@@ -19,9 +19,11 @@ def n(key, value=None, *deti):
     return u
 
 
-def org(nazov, ico, ctx=None):
+def org(nazov, ico, ctx=None, email=None):
     deti = [n("GR-Company", None, n("BT-500-Organization-Company", nazov),
               n("BT-501-Organization-Company-CIN", ico))]
+    if email:
+        deti.append(n("GR-Company-Contact", None, n("BT-506-Organization-Company", email)))
     if ctx:
         deti.insert(0, n("DL-Context-Org", ctx))
     return n("GR-Organisations_panel", None, *deti)
@@ -99,7 +101,7 @@ VYSLEDOK = {
         metadata("result"),
         n("tabs", None, n("GR-Organisations-Section", None, n("GR-Organisations", None,
           org("Úrad pre verejné obstarávanie", "31797903", "ORG-0001"),
-          org("Mesto Test", "00311111", "ORG-0002"),
+          org("Mesto Test", "00311111", "ORG-0002", email=" Podatelna@MestoTest.sk "),
           org("Čisto s.r.o.", "36283576"),                # implicitne ORG-0003
           org("Lesk a.s.", "31717802")))),                # implicitne ORG-0004
         buyer(),
@@ -359,3 +361,11 @@ def test_pokazene_cislo_nezastavi_beh():
         assert uvo.main(["--nasucho", "--od-rok", "2025"]) == 0
     finally:
         uvo._session = orig
+
+
+def test_email_obstaravatela():
+    _, riadky = uvo.rozober(VYSLEDOK, "193/2026", "2026-09-22")
+    assert riadky[0]["obstaravatel_email"] == "podatelna@mestotest.sk"
+    _, v = uvo.rozober(SUTAZ, "193/2026", "2026-09-22")
+    assert v[0]["obstaravatel_email"] is None
+    assert uvo._email("nie je email") is None

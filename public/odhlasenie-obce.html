@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Odhlásenie obce — PredTendrom.sk</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="./config.js"></script>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="font-sans text-ink bg-[#F3F0E6] min-h-screen flex items-center justify-center p-5">
+
+<!--
+  Odhlasenie obce z kampane (pipeline/kampan_obce.py, migracia 48).
+  Odkaz v e-maile nesie nahodny token (?t=...). Odhlasuje sa az po kliknuti
+  na tlacidlo — bezpecnostne skenery e-mailov odkazy otvaraju samy a obec
+  by sa inak odhlasila bez toho, aby o tom vedela.
+  Stranka zamerne nenacitava analytiku (consent-analytics.js).
+-->
+
+<div class="w-full max-w-[460px] text-center">
+
+  <a href="./index.html" class="flex items-center justify-center gap-2">
+    <svg width="24" height="24" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+      <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+      <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+      <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+      <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+      <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+    </svg>
+    <span class="font-serif italic text-[22px] text-ink">predtendrom</span>
+  </a>
+
+  <div class="mt-10 bg-white border border-line rounded-lg p-9">
+    <h1 class="mt-4 text-[20px] font-semibold" id="titul">Odhlásiť obec z e-mailov</h1>
+    <p class="mt-3 text-[15px] leading-relaxed text-slate2" id="text">
+      Po odhlásení už na adresu obce od nás nepríde žiadny e-mail.
+    </p>
+
+    <div class="mt-7 flex flex-col sm:flex-row gap-3 justify-center" id="akcie">
+      <button type="button" id="odhlasit"
+         class="inline-flex justify-center items-center bg-ink text-white font-semibold text-[14px] px-5 py-3 rounded-md hover:bg-accent transition whitespace-nowrap">
+        Odhlásiť obec
+      </button>
+    </div>
+
+    <p class="mt-7 text-[13px] text-slate2">
+      Ak odhlásenie nefunguje, stačí odpovedať na náš e-mail alebo napísať na
+      <a href="mailto:info@predtendrom.sk" class="text-accent hover:underline">info@predtendrom.sk</a>.
+    </p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var titul = document.getElementById('titul');
+  var text = document.getElementById('text');
+  var akcie = document.getElementById('akcie');
+  var tlacidlo = document.getElementById('odhlasit');
+  var token = new URLSearchParams(location.search).get('t') || '';
+  var cfg = window.CONFIG || {};
+
+  function koniec(t, p) {
+    titul.textContent = t;
+    text.textContent = p;
+    akcie.style.display = 'none';
+  }
+
+  if (!/^[0-9a-fA-F-]{36}$/.test(token)) {
+    koniec('Neplatný odkaz', 'V odkaze chýba kód na odhlásenie. Skúste ho skopírovať z e-mailu celý.');
+    return;
+  }
+
+  tlacidlo.addEventListener('click', function () {
+    tlacidlo.disabled = true;
+    tlacidlo.style.opacity = '0.5';
+    fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/kampan_obce_odhlas', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': cfg.SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + cfg.SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ p_token: token })
+    }).then(function (r) { return r.ok ? r.json() : { ok: false }; })
+      .then(function (d) {
+        if (d && d.ok) {
+          koniec('Odhlásené', (d.obec || 'Obec') + ' už od nás nedostane žiadny e-mail. Ďakujeme a prepáčte vyrušenie.');
+        } else {
+          koniec('Odkaz nepoznáme', 'Tento odkaz na odhlásenie sme nenašli. Napíšte nám prosím a odhlásime obec ručne.');
+        }
+      })
+      .catch(function () {
+        tlacidlo.disabled = false;
+        tlacidlo.style.opacity = '';
+        text.textContent = 'Nepodarilo sa spojiť so serverom. Skúste to prosím o chvíľu znova.';
+      });
+  });
+})();
+</script>
+</body>
+</html>

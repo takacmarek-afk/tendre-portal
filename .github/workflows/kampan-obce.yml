@@ -1,0 +1,117 @@
+name: Kampan pre obce
+
+# ══════════════════════════════════════════════════════════════════════════
+#  CO TOTO ROBI
+#  Kampan pre obce po volbach 2026 (Claude Doc "Kampan pre obce po volbach
+#  2026"). Len rucne spustenie — ziadny cron. Kazdy krok sa da pustit
+#  nasucho (default), ktory nic nezapise ani neposle.
+#
+#  KROKY
+#   volby     — nacita zvolenych starostov a primatorov z otvorenych dat SU SR
+#               (pipeline/volby.py). Rok 2022 = overenie formatu, 2026 po
+#               zverejneni vysledkov volieb (24. 10. 2026).
+#   kontakty  — z Vestnika UVO vyberie zverejnene uradne e-maily obci
+#               a zapise ich do kampan_obce_kontakty (pipeline/kampan_obce.py).
+#   posli     — personalizovane e-maily. Nasucho vyrobi NAHLAD vsetkych
+#               e-mailov (Artifacts -> kampan-nahlad, subor nahlad.html).
+#               S "komu" posle 3 testovacie e-maily len na tu adresu.
+#               Ostro (nasucho=false, komu prazdne): najviac "max" obci za
+#               den, len od datumu vlny a len utorok az stvrtok.
+#
+#  PRED PRVYM OSTRYM ODOSLANIM
+#   Settings -> Secrets and variables -> Actions -> New repository secret:
+#     KAMPAN_REPLY_TO  — adresa, kam maju prist odpovede obci (povinne)
+#     KAMPAN_TELEFON   — telefon do podpisu (nepovinne)
+#   RESEND_API_KEY je uz nastaveny (tyzdenny e-mail).
+# ══════════════════════════════════════════════════════════════════════════
+
+on:
+  workflow_dispatch:
+    inputs:
+      krok:
+        description: "Krok"
+        type: choice
+        options: [posli, kontakty, volby]
+        default: posli
+      nasucho:
+        description: "Nasucho — nic nezapisat ani neposlat (nechaj true, kym si neisty)"
+        type: boolean
+        default: true
+      vlna:
+        description: "Vlna (krok posli)"
+        type: choice
+        options: [vlna1, vlna2]
+        default: vlna1
+      komu:
+        description: "Test: poslat 3 e-maily len na tuto adresu (krok posli)"
+        type: string
+        default: ""
+      max:
+        description: "Najviac e-mailov za den (krok posli)"
+        type: string
+        default: "50"
+      rok:
+        description: "Rok volieb (krok volby)"
+        type: string
+        default: "2026"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: kampan-obce
+  cancel-in-progress: false
+
+jobs:
+  kampan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Spustit krok
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          KAMPAN_REPLY_TO: ${{ secrets.KAMPAN_REPLY_TO }}
+          KAMPAN_TELEFON: ${{ secrets.KAMPAN_TELEFON }}
+          KROK: ${{ inputs.krok }}
+          NASUCHO: ${{ inputs.nasucho }}
+          VLNA: ${{ inputs.vlna }}
+          KOMU: ${{ inputs.komu }}
+          MAX: ${{ inputs.max }}
+          ROK: ${{ inputs.rok }}
+        run: |
+          set -euo pipefail
+          SUCHO=()
+          if [ "$NASUCHO" = "true" ]; then SUCHO=(--nasucho); fi
+          case "$KROK" in
+            volby)
+              python volby.py --rok "${ROK:-2026}" "${SUCHO[@]}" ;;
+            kontakty)
+              python kampan_obce.py kontakty "${SUCHO[@]}" ;;
+            posli)
+              ARGS=(posli --vlna "$VLNA" --max "${MAX:-50}" --nahlad nahlad.html)
+              if [ -n "${KOMU:-}" ]; then ARGS+=(--komu "$KOMU"); fi
+              python kampan_obce.py "${ARGS[@]}" "${SUCHO[@]}" ;;
+          esac
+
+      - name: Nahlad e-mailov
+        if: inputs.krok == 'posli' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kampan-nahlad
+          path: pipeline/nahlad.html
+          if-no-files-found: ignore
+          retention-days: 14
