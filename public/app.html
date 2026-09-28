@@ -1418,7 +1418,7 @@ function porovnanieCeny(b) {
 function ktoToMa(r) {
   if (!r.supplier_name) return '';
   const casti = [];
-  if (r.dodavatel_od) casti.push(`od ${r.dodavatel_od}`);
+  if (r.dodavatel_od) casti.push(`od ${dSk(r.dodavatel_od)}`);
   const n = num(r.dodavatel_zmluv_celkom);
   if (!Number.isNaN(n) && n > 1) casti.push(`${n} zmlúv so štátom`);
   // POZOR NA POPIS: `historicky_pocet` je pocet zmluv, ktore v tomto sektore
