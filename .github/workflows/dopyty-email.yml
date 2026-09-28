@@ -1,25 +1,21 @@
 name: Dopyty email
 
 # ══════════════════════════════════════════════════════════════════════════
-#  STAV: NOVE (28.9.2026), este NEODOSKUSANE ZIVO. Riesi zistenie Mareka z
-#  toho isteho dna: vytvorenie/reakcia na dopyt (Trh dopytov, 34_obce_
-#  marketplace.sql) doteraz neposielali ziadny e-mail. Podrobnosti a dovod,
-#  preco castejsi cron a nie okamzity DB trigger, su v komentari na zaciatku
+#  STAV: ZAPNUTE NAOSTRO (28.9.2026). Riesi zistenie Mareka z toho isteho
+#  dna: vytvorenie/reakcia na dopyt (Trh dopytov, 34_obce_marketplace.sql)
+#  doteraz neposielali ziadny e-mail. Podrobnosti a dovod, preco castejsi
+#  cron a nie okamzity DB trigger, su v komentari na zaciatku
 #  supabase/54_dopyty_notifikacie.sql a pipeline/posli_dopyt_email.py.
 #
-#  PRED PRVYM NAOSTRO SPUSTENIM (rovnaky postup ako pri email.yml):
-#  1. supabase/54_dopyty_notifikacie.sql uz musi byt spustena v Supabase
-#     (nove stlpce poradcovia_notifikovani/obec_notifikovana).
-#  2. Rucne: workflow_dispatch s nasucho=true — over v logu, ze sa nic
-#     neposiela a pocty davaju zmysel.
-#  3. Rucne: workflow_dispatch s nasucho=false a komu=tvoj@email.sk — over
-#     doruceny e-mail. (Ak vtedy v databaze nie je ziadny nenotifikovany
-#     dopyt/reakcia, najprv si nejaky vytvor cez trh.html, presne ako pri
-#     povodnom testovani.)
-#  4. Az potom ODKOMENTUJ "schedule:" blok nizsie (dnes zamerne vypnuty,
-#     rovnaky opatrny postup ako mal na zaciatku email.yml) — do dalsej
-#     vlny, alebo si to viete odkomentovat aj sami priamo na GitHub-e
-#     (Settings nie su treba, staci upravit tento subor).
+#  Pred zapnutim odskusane naozaj naziva (28.9.2026, s docasnymi testovacimi
+#  zaznamami, hned potom zmazanymi): workflow_dispatch s nasucho=true (0/0,
+#  ziadna chyba), potom s nasucho=false a komu=Marekov e-mail — obe strany
+#  (poradca aj obec) dostali e-mail, log hlasi "poradcom poslanych 1
+#  (zlyhanych 0), obciam poslanych 1 (zlyhanych 0)".
+#
+#  AK BY SI NIEKEDY POTREBOVAL VYPNUT CELE POSIELANIE:
+#  Zakomentuj `schedule:` blok nizsie (rovnaky vzor ako v email.yml) — rucne
+#  spustenie cez workflow_dispatch (s nasucho=true na test) funguje aj tak.
 #
 #  Ziadne nove tajomstva — pouziva presne tie iste tri (SUPABASE_URL,
 #  SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY), co uz ma email.yml.
@@ -37,12 +33,11 @@ on:
         type: string
         default: ""
 
-  # ZAMERNE VYPNUTE, kym si to neodskusame (viz poznamka vyssie, kroky 1-3).
   # Kazdych 15 minut, cely tyzden (dopyty a reakcie nie su viazane na
   # pracovny den ako tyzdenny digest v email.yml). Nie je to okamzite, ale
   # je to nepomerne lepsie nez sucasny stav (nic).
-  # schedule:
-  #   - cron: "*/15 * * * *"
+  schedule:
+    - cron: "*/15 * * * *"
 
 permissions:
   contents: read
