@@ -784,6 +784,9 @@
         Z Vestníka verejného obstarávania: kto súťaž vyhral, za koľko a na ako
         dlho podpísal zmluvu. Z dátumu podpisu a dĺžky zmluvy vieme, kedy
         príde ďalšia súťaž &mdash; tu ju vidíte skôr, než ju úrad vyhlási.
+        Pri každej súťaži vidíte aj počet ponúk &mdash; tam, kde ich bolo
+        len 1 alebo 2, je šanca na víťazstvo vyššia než tam, kde súťažilo
+        desať firiem.
       </p>
 
       <div class="bg-white border border-line rounded-lg p-4 mb-5">
@@ -821,6 +824,20 @@
                    class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
             <span>Len tie, kde ešte je čas
               <span class="block text-[11px] text-slate2">skryje zmluvy, ktoré končia do 90 dní &mdash; tam súťaž už asi beží</span>
+            </span>
+          </label>
+        </div>
+        <!-- Audit P2.1 "kde chýba konkurencia": pocet_ponuk (z Vestníka, BT-759)
+             hovorí presne to, čo malá firma potrebuje vedieť — nie "vyhráte
+             isto", ale "tu súťažilo menej firiem". Len pri koncia/vysledky,
+             kde vieme počet ponúk z minulej súťaže; pri vyhlasene/predbezne
+             výsledok ešte nie je. -->
+        <div id="u-malo-ponuk-obal" class="mt-3">
+          <label class="flex items-start gap-2 text-[13px] text-ink cursor-pointer">
+            <input id="u-malo-ponuk" type="checkbox"
+                   class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
+            <span>Len kde chýba konkurencia
+              <span class="block text-[11px] text-slate2">posledná súťaž mala najviac 2 ponuky &mdash; tam je šanca vyššia</span>
             </span>
           </label>
         </div>
@@ -1871,6 +1888,23 @@ function odkazUvo(url, popis = 'Zákazka na ÚVO') {
              title="Otvorí zákazku vo vyhľadávaní ÚVO">${popis} ↗</a>`;
 }
 
+// Audit P2.1: "kde chýba konkurencia" — 1-2 ponuky v poslednej súťaži je
+// signál vyššej šance, nie záruka. num() aj tu, nech to prežije aj string
+// z REST ("2" namiesto 2).
+function jeSlabaKonkurencia(pocetPonuk) {
+  const n = num(pocetPonuk);
+  return Number.isFinite(n) && n > 0 && n <= 2;
+}
+
+function stitokKonkurencie(pocetPonuk) {
+  if (!jeSlabaKonkurencia(pocetPonuk)) return '';
+  const n = num(pocetPonuk);
+  return `<span class="inline-block text-[11px] font-semibold px-1.5 py-0.5 rounded
+               bg-emerald-50 text-emerald-800" title="Posledná súťaž mala len ${n} ${n === 1 ? 'ponuku' : 'ponuky'} — konkurencia tu bola slabá.">
+            slabá konkurencia
+          </span>`;
+}
+
 function mesiaceText(m) {
   const n = num(m);
   if (Number.isNaN(n) || n <= 0) return '';
@@ -1891,6 +1925,7 @@ function poslednaSutaz(r) {
             ${casti.length ? `<span class="text-slate2"> · ${casti.join(' · ')}</span>` : ''}
             ${u.url ? `<a href="${bezpecne(u.url)}" target="_blank" rel="noopener"
                           class="text-accent hover:text-accentDark hover:underline whitespace-nowrap"> ↗</a>` : ''}
+            ${jeSlabaKonkurencia(u.pocet_ponuk) ? `<div class="mt-1">${stitokKonkurencie(u.pocet_ponuk)}</div>` : ''}
           </div>`;
 }
 
@@ -1957,7 +1992,8 @@ function riadokUvo(r, typ) {
         <div class="text-[14px] font-medium leading-snug">${nazov}</div>
         ${stitok}
         <div class="text-[12px] mt-1">${vitazText(r)}
-          <span class="text-slate2">${ponuky}</span></div>
+          <span class="text-slate2">${ponuky}</span>
+          ${jeSlabaKonkurencia(r.pocet_ponuk) ? ` ${stitokKonkurencie(r.pocet_ponuk)}` : ''}</div>
         ${odkazUvo(r.url)}
         ${r.crz_url ? `<a href="${bezpecne(r.crz_url)}" target="_blank" rel="noopener"
              class="inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:underline whitespace-nowrap">Zmluva v CRZ ↗</a>` : ''}
@@ -3502,6 +3538,9 @@ async function dashboard(supabase, rola, spravaPozvanky) {
         ? `nazov.ilike.*${text}*,obstaravatel_nazov.ilike.*${text}*,vitaz_nazov.ilike.*${text}*`
         : `nazov.ilike.*${text}*,obstaravatel_nazov.ilike.*${text}*`);
     }
+    // Audit P2.1 "kde chýba konkurencia" — len pri koncia/vysledky, kde
+    // pocet_ponuk pochádza z už rozhodnutej súťaže.
+    if (vysl && el('u-malo-ponuk').checked) q = q.gt('pocet_ponuk', 0).lte('pocet_ponuk', 2);
     if (typ === 'koncia') {
       // Rovnaka hranica ako v Konciacich zmluvach (DNI_TENDER_UZ_BEZI):
       // pri konci do 90 dni sutaz vacsinou uz bezi, predstih nedava.
@@ -3541,6 +3580,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       ? `${cislo(c)} záznamov, zobrazujeme prvých ${cislo(posledne.uvo.length)}`
       : `${cislo(c)} ${c === 1 ? 'záznam' : c < 5 ? 'záznamy' : 'záznamov'}`;
     el('u-jeCas-obal').classList.toggle('hidden', typ !== 'koncia');
+    const uVysl = typ === 'koncia' || typ === 'vysledky';
+    el('u-malo-ponuk-obal').classList.toggle('hidden', !uVysl);
     if (typ === 'koncia' && el('u-jeCas').checked) {
       // Skryte riadky musia byt vidiet ako cislo (rovnaky princip ako
       // v Konciacich zmluvach).
@@ -3874,7 +3915,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     nacitajUvo().catch(() => { el('pocet-uvo').textContent = 'Túto vrstvu sa nepodarilo načítať.'; });
   };
   document.querySelector('[data-zalozka="sutaze"]')?.addEventListener('click', nacitajUvoRaz);
-  for (const id of ['u-typ', 'u-kraj', 'u-sektor', 'u-jeCas']) {
+  for (const id of ['u-typ', 'u-kraj', 'u-sektor', 'u-jeCas', 'u-malo-ponuk']) {
     el(id).addEventListener('change', odznova('uvo', nacitajUvo));
   }
   el('u-text').addEventListener('input', pozdrz(odznova('uvo', nacitajUvo)));
