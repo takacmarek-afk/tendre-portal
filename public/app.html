@@ -210,6 +210,32 @@
   <!-- Modal: rucne zaplatenie/predlzenie predplatneho cez Stripe.
        Funguje nezavisle od otvoreneho obdobia - slot na testovanie platby
        teraz, aj buduce ostre pouzitie po jeho skonceni. -->
+  <!-- Moj vyber: prvy krok po registracii a tlacidlo "Zmenit" (P1.3). -->
+  <div id="modal-vyber" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
+    <div class="bg-white rounded-lg border border-line w-full max-w-[520px] p-6 max-h-[85vh] overflow-y-auto">
+      <h2 class="text-[19px] font-serif font-semibold">Čo vás zaujíma?</h2>
+      <p class="mt-2 text-[14px] leading-relaxed text-slate2">
+        Vyberte kraje, sektory a veľkosť zákaziek. Podľa toho vám prehľad
+        vyfiltrujeme a zoradíme. Výber môžete kedykoľvek zmeniť alebo vypnúť.
+      </p>
+      <p class="mt-5 text-[13px] font-semibold">Kraje</p>
+      <div id="mv-kraje" class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[14px]"></div>
+      <p class="mt-5 text-[13px] font-semibold">Sektory</p>
+      <div id="mv-sektory" class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[14px]"></div>
+      <p class="mt-5 text-[13px] font-semibold">Veľkosť zákaziek</p>
+      <div id="mv-velkost" class="mt-2 space-y-2 text-[14px]"></div>
+      <p id="mv-chyba" class="hidden mt-4 text-[13px] text-red-700"></p>
+      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <button id="mv-ulozit"
+                class="inline-flex justify-center items-center bg-ink text-white font-semibold text-[14px]
+                       px-5 py-3 rounded-md hover:bg-accent transition">Uložiť a zobraziť</button>
+        <button id="mv-preskocit"
+                class="inline-flex justify-center items-center border border-line text-ink font-semibold
+                       text-[14px] px-5 py-3 rounded-md hover:border-accent transition">Zobraziť všetko</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modal-predplatne" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
     <div class="bg-white rounded-lg border border-line w-full max-w-[420px] p-6">
       <div class="flex items-center justify-between mb-1">
@@ -296,6 +322,19 @@
       <p class="mt-4 text-[13px] text-slate2">
         Zmlúv v databáze: <strong id="pocet-zmluv">0</strong>
       </p>
+    </div>
+
+    <!-- MOJ VYBER (audit 27. 9. 2026, P1.3): kraje, sektory a velkost
+         zakaziek z prveho prihlasenia. Predvoleny filter a radenie
+         "relevantne pre mna" vo vsetkych zalozkach, da sa vypnut. -->
+    <div id="moj-vyber" class="hidden mb-4 bg-white border border-line rounded-lg px-4 py-3
+                               flex flex-wrap items-center justify-between gap-3">
+      <label class="flex items-start gap-2 text-[13px] text-ink cursor-pointer">
+        <input id="mv-pouzit" type="checkbox" checked
+               class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
+        <span><span class="font-semibold">Môj výber:</span> <span id="mv-text"></span></span>
+      </label>
+      <button id="mv-zmenit" class="text-[13px] font-semibold text-accent hover:text-accentDark">Zmeniť</button>
     </div>
 
     <!-- Prepinac vrstiev -->
@@ -434,6 +473,7 @@
             <label for="f-radenie" class="block text-[12px] font-semibold text-slate2 mb-1">Zoradiť</label>
             <select id="f-radenie" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
                                           focus:outline-none focus:border-accent">
+              <option value="moje">relevantné pre mňa</option>
               <option value="signal">sila signálu</option>
               <option value="tender">najbližší tender</option>
               <option value="hodnota">najvyššia hodnota</option>
@@ -1302,6 +1342,39 @@ const POPIS_SEKTORA = {
   PASPORTIZACIA_SPRAVA_BUDOV: 'pasportizácia, správa budov',
 };
 
+// Moj vyber (P1.3): velkost zakaziek. Hranice v eurach; 'vsetko' = bez obmedzenia.
+const VELKOST_ZAKAZIEK = [
+  ['do50', 'do 50 000 €'],
+  ['do250', 'do 250 000 €'],
+  ['viac', 'nad 250 000 €'],
+  ['vsetko', 'všetky veľkosti'],
+];
+
+const MESIACE_SK = ['január', 'február', 'marec', 'apríl', 'máj', 'jún', 'júl',
+                    'august', 'september', 'október', 'november', 'december'];
+
+// Audit P1.3: "tender čakáme o 178 dní" bolo pri všetkých dotáciách rovnaké,
+// lebo okno je pevný odstup od podpisu. Poctivejšie je obdobie:
+// "marec až september 2027", "november 2026 až máj 2027".
+function mesiacRozsah(od, doo) {
+  const a = /^(\d{4})-(\d{2})/.exec(String(od || ''));
+  const b = /^(\d{4})-(\d{2})/.exec(String(doo || ''));
+  if (!a) return '';
+  const ma = MESIACE_SK[Number(a[2]) - 1];
+  if (!b) return `od ${ma} ${a[1]}`;
+  const mb = MESIACE_SK[Number(b[2]) - 1];
+  if (a[1] === b[1]) return a[2] === b[2] ? `${ma} ${a[1]}` : `${ma} až ${mb} ${a[1]}`;
+  return `${ma} ${a[1]} až ${mb} ${b[1]}`;
+}
+
+// Audit P1.3: pri väčšine dotácií je v CRZ ako predmet len "Zmluva
+// o poskytnutí dotácie". Účel je v prílohe zmluvy — povieme to rovno.
+function jeGenerickyUcel(ucel) {
+  const t = String(ucel || '').trim().replace(/\s+/g, ' ');
+  if (!t) return true;
+  return /^(zmluva o poskytnutí (dotácie|nenávratného finančného príspevku|finančných prostriedkov|finančného príspevku)|dotačná zmluva|zmluva o dotácii|zmluva o nfp)\.?$/i.test(t);
+}
+
 function bezpecne(t) {
   return String(t ?? '').replace(/[&<>"']/g, c =>
     ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -1699,13 +1772,18 @@ function riadokDotacie(r, stavMap) {
         ${stavMap ? crmStavSelect('dotacia', r.contract_id, stavMap) : ''}
       </td>
       <td data-popis="Na čo" data-blok class="px-4 py-4 align-top max-w-[380px]">
-        <div class="text-[14px] leading-snug" title="${bezpecne(r.ucel)}"
+        ${jeGenerickyUcel(r.ucel)
+          // Audit P1.3: "Zmluva o poskytnutí dotácie" nič nehovorí. Povieme,
+          // kde účel je, a dáme poskytovateľa ako jedinú istú stopu.
+          ? `<div class="text-[14px] leading-snug">Účel je v prílohe zmluvy</div>
+             <div class="text-[12px] text-slate2 mt-1">poskytovateľ: ${bezpecne(r.poskytovatel) || '—'}</div>`
+          : `<div class="text-[14px] leading-snug" title="${bezpecne(r.ucel)}"
              style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
           ${bezpecne(r.ucel)}
-        </div>
+        </div>`}
         ${sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5
                      rounded bg-accent/10 text-accent">${sektor}</span>` : ''}
-        <div>${odkazCrz(r, 'Dotačná zmluva v CRZ')}</div>
+        <div>${odkazCrz(r, jeGenerickyUcel(r.ucel) ? 'Otvoriť zmluvu s prílohou v CRZ' : 'Dotačná zmluva v CRZ')}</div>
       </td>
       <td data-popis="Suma" class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${suma(r.suma)}</td>
       <td data-popis="Tender" class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
@@ -1723,9 +1801,10 @@ function oknoDotacie(r) {
   const doKonca = dniOdDnes(r.okno_do);
 
   if (!Number.isNaN(doZaciatku) && doZaciatku > 0) {
-    return `<span class="text-[13px]">tender čakáme od</span><br>
-            <span class="font-medium whitespace-nowrap">${bezpecne(dSk(r.okno_od))}</span>
-            <div class="text-[11px] mt-1">o ${doZaciatku} dní</div>`;
+    // Audit P1.3: obdobie namiesto rovnakého "o 177 dní" pri každej dotácii.
+    return `<span class="text-[13px]">tender čakáme</span><br>
+            <span class="font-medium"
+                  title="Odhad z toho, ako dlho po podpise dotácie obce zvyčajne vyhlasujú obstarávanie.">${bezpecne(mesiacRozsah(r.okno_od, r.okno_do))}</span>`;
   }
   if (!Number.isNaN(doKonca) && doKonca >= 0) {
     const sucho = doKonca <= 90;
@@ -3006,10 +3085,65 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   let mojOdber = null;
   let mojProfil = null;
 
+  // ── MOJ VYBER (audit 27. 9. 2026, P1.3) ─────────────────────────────────
+  // Kraje, sektory a velkost zakaziek z prveho prihlasenia (tabulka
+  // nastavenia_pouzivatela, migracia 51). Kym je zaskrtnute "Moj vyber",
+  // pouzije sa ako predvoleny filter vo vsetkych zalozkach — vyslovne
+  // zvoleny kraj/sektor v selecte ma prednost.
+  let mojVyber = null;
+  const HRANICA_VELKOSTI = { do50: 50000, do250: 250000 };
+
+  function vyberZapnuty() {
+    return !!(mojVyber && el('mv-pouzit').checked &&
+      (mojVyber.kraje?.length || mojVyber.sektory?.length || (mojVyber.velkost && mojVyber.velkost !== 'vsetko')));
+  }
+
+  function sPopisomVyberu() {
+    if (!mojVyber) return '';
+    const casti = [];
+    const kr = mojVyber.kraje || [];
+    casti.push(kr.length ? kr.map(k => k.replace(' kraj', '')).join(', ') : 'celé Slovensko');
+    const se = mojVyber.sektory || [];
+    casti.push(se.length ? se.map(s => POPIS_SEKTORA[s] || s).join(', ') : 'všetky sektory');
+    const v = VELKOST_ZAKAZIEK.find(x => x[0] === mojVyber.velkost);
+    if (v && v[0] !== 'vsetko') casti.push(v[1]);
+    return casti.join(' · ');
+  }
+
+  // Pridá obmedzenie výberom na dopyt. `stlpce` hovorí, ako sa v danej
+  // tabuľke volá kraj, sektor a suma (null = tabuľka ho nemá).
+  function sVyberom(q, stlpce, vlastnyKraj, vlastnySektor) {
+    if (!vyberZapnuty()) return q;
+    if (stlpce.kraj && !vlastnyKraj && mojVyber.kraje?.length) q = q.in(stlpce.kraj, mojVyber.kraje);
+    if (stlpce.nuts && !vlastnyKraj && mojVyber.kraje?.length) {
+      const nuts = mojVyber.kraje.map(k => NUTS_KRAJA[k]).filter(Boolean);
+      if (nuts.length) q = q.or(nuts.map(n => `${stlpce.nuts}.like.${n}*`).join(','));
+    }
+    if (stlpce.sektor && !vlastnySektor && mojVyber.sektory?.length) {
+      q = stlpce.sektorAjPrazdny
+        ? q.or(`${stlpce.sektor}.in.(${mojVyber.sektory.join(',')}),${stlpce.sektor}.is.null`)
+        : q.in(stlpce.sektor, mojVyber.sektory);
+    }
+    if (stlpce.suma && mojVyber.velkost && mojVyber.velkost !== 'vsetko') {
+      const h = HRANICA_VELKOSTI[mojVyber.velkost];
+      // Zmluvy bez uvedenej ceny (rámcové) nevyhadzujeme — cenu nepoznáme.
+      q = h ? q.or(`${stlpce.suma}.lte.${h},${stlpce.suma}.is.null`)
+            : q.or(`${stlpce.suma}.gt.250000,${stlpce.suma}.is.null`);
+    }
+    return q;
+  }
+
   function bodRelevancie(r) {
     let b = num(r.skore) || 0;
     if (mojOdber?.sektor && r.sector === mojOdber.sektor) b += 15;
     if (mojOdber?.kraj && r.kraj === mojOdber.kraj) b += 10;
+    if (mojVyber?.sektory?.includes(r.sector)) b += 15;
+    if (mojVyber?.kraje?.includes(r.kraj)) b += 10;
+    const cenaV = num(r.price_total);
+    const h = HRANICA_VELKOSTI[mojVyber?.velkost];
+    if (cenaV > 0 && mojVyber?.velkost && mojVyber.velkost !== 'vsetko') {
+      if (h ? cenaV <= h : cenaV > 250000) b += 10;
+    }
     if (mojProfil?.hlavny_sektor && r.sector === mojProfil.hlavny_sektor) b += 20;
     const vlastnaCena = num(mojProfil?.priemerna_zmluva_eur);
     const cena = num(r.price_total);
@@ -3019,12 +3153,12 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     return b;
   }
 
-  // Aplikuje sa len na predvolene triedenie "podla sily signalu" — zakaznik,
-  // ktory si vedome zvolil "najblizsi tender"/"hodnota"/"koniec zmluvy",
-  // dostane presne to, o co poziadal, bez osobneho zasahu.
+  // Osobné poradie len pri "relevantné pre mňa" (P1.3). "Sila signálu" je
+  // odteraz čistý globálny percentil; kto si vedome zvolil "najbližší
+  // tender"/"hodnota"/"koniec zmluvy", dostane presne to.
   function zoradPodlaRelevancie() {
-    if (!mojOdber || el('f-radenie').value !== 'signal' || !posledne.zmluvy.length) return;
-    if (!(mojOdber.sektor || mojOdber.kraj || mojProfil)) return;
+    if (el('f-radenie').value !== 'moje' || !posledne.zmluvy.length) return;
+    if (!(mojOdber?.sektor || mojOdber?.kraj || mojProfil || mojVyber)) return;
     posledne.zmluvy = posledne.zmluvy
       .map((r, i) => ({ r, i, b: bodRelevancie(r) }))
       .sort((a, b) => (b.b - a.b) || (a.i - b.i))
@@ -3082,6 +3216,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
     if (kraj) q = q.eq('kraj', kraj);
     if (sektor) q = q.eq('sector', sektor);
+    q = sVyberom(q, { kraj: 'kraj', sektor: 'sector', suma: 'price_total' }, kraj, sektor);
     if (skore) q = q.gte('skore', skore);
     if (text) {
       q = q.or(`subject.ilike.*${text}*,authority_name.ilike.*${text}*,mesto.ilike.*${text}*`);
@@ -3153,6 +3288,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     // Zmiesanie sektorov riesi filter na sektor a novy filter PREDSTIH,
     // nie predvolene zoradenie.
     const RADENIE = {
+      moje:    ['skore', false],   // + osobné poradie v zoradPodlaRelevancie()
       signal:  ['skore', false],
       tender:  ['odhad_vyhlasenia', true],
       hodnota: ['price_total', false],
@@ -3251,6 +3387,9 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
     if (kraj) q = q.eq('kraj', kraj);
     if (sektor) q = q.eq('sektor_odhad', sektor);
+    // Pri dotáciách je sektor len odhad z textu zmluvy; dotácie bez odhadu
+    // (väčšina "Zmluva o poskytnutí dotácie") výber nesmie skryť.
+    q = sVyberom(q, { kraj: 'kraj', sektor: 'sektor_odhad', sektorAjPrazdny: true }, kraj, sektor);
     if (text) q = q.or(`prijimatel.ilike.*${text}*,ucel.ilike.*${text}*`);
 
     // Stav okna. `okno_od` v buducnosti = tender sa este necaka, teda
@@ -3310,6 +3449,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const kraj = el('zi-kraj').value;
     const text = ocisti(el('zi-text').value);
     if (kraj) q = q.eq('kraj', kraj);
+    q = sVyberom(q, { kraj: 'kraj' }, kraj, null);
     if (text) q = q.or(`obec.ilike.*${text}*,sprostredkovatel.ilike.*${text}*,mesto.ilike.*${text}*`);
     return q;
   }
@@ -3355,6 +3495,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const text = ocisti(el('u-text').value);
     if (kraj && NUTS_KRAJA[kraj]) q = q.like('nuts', `${NUTS_KRAJA[kraj]}%`);
     if (sektor) q = q.eq('sektor', sektor);
+    q = sVyberom(q, { nuts: 'nuts', sektor: 'sektor' }, kraj, sektor);
     const vysl = typ === 'koncia' || typ === 'vysledky';
     if (text) {
       q = q.or(vysl
@@ -3409,6 +3550,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       const kraj = el('u-kraj').value, sektor = el('u-sektor').value, t = ocisti(el('u-text').value);
       if (kraj && NUTS_KRAJA[kraj]) sq = sq.like('nuts', `${NUTS_KRAJA[kraj]}%`);
       if (sektor) sq = sq.eq('sektor', sektor);
+      sq = sVyberom(sq, { nuts: 'nuts', sektor: 'sektor' }, kraj, sektor);
       if (t) sq = sq.or(`nazov.ilike.*${t}*,obstaravatel_nazov.ilike.*${t}*,vitaz_nazov.ilike.*${t}*`);
       const skr = await sq;
       if (!skr.error && skr.count) text += ` · ${cislo(skr.count)} skrytých, kde súťaž už asi beží`;
@@ -3578,6 +3720,9 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const sektor = el('s-sektor').value;
     const text = ocisti(el('s-text').value);
     if (sektor) q = q.eq('hlavny_sektor', sektor);
+    // Audit P1.3: bez výberu boli navrchu ARRIVA a STRABAG. S výberom
+    // sa ukážu firmy z vašich sektorov (kraj dodávateľ v dátach nemá).
+    q = sVyberom(q, { sektor: 'hlavny_sektor' }, null, sektor);
     if (text) q = q.or(`dodavatel.ilike.*${text}*,supplier_cin.ilike.*${text}*`);
     return q;
   }
@@ -3801,6 +3946,109 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // tie su v cenniku vyslovne len v stlpci Growth. Pri neaktivnom predplatnom
   // (ani Start) tabulku vobec nedotahujeme — RLS by ju aj tak vratila
   // prazdnu, ale prazdna tabulka bez vysvetlenia vypada ako pokazeny produkt.
+  // ── MOJ VYBER: nacitanie a prvy krok po registracii (P1.3) ───────────
+  // Musi byt PRED prvym nacitanim dat nizsie — filtre a radenie z neho citaju.
+  {
+    const { data: { user: pouzivatel } } = await supabase.auth.getUser();
+    const { data: nv, error: nvChyba } = await supabase.from('nastavenia_pouzivatela')
+      .select('kraje, sektory, velkost').limit(1).maybeSingle();
+    // Ak tabuľka ešte neexistuje (migrácia 51), appka funguje ako doteraz.
+    const tabulkaJe = !nvChyba;
+    mojVyber = nv || null;
+
+    const zaskrtavatka = (id, meno, polozky, zvolene) => {
+      el(id).innerHTML = polozky.map(([v, t]) => `
+        <label class="flex items-start gap-2 cursor-pointer">
+          <input type="checkbox" name="${meno}" value="${bezpecne(v)}" ${zvolene.includes(v) ? 'checked' : ''}
+                 class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
+          <span>${bezpecne(t)}</span>
+        </label>`).join('');
+    };
+
+    const otvorVyber = () => {
+      zaskrtavatka('mv-kraje', 'mv-kraj', KRAJE.map(k => [k, k.replace(' kraj', '')]), mojVyber?.kraje || []);
+      zaskrtavatka('mv-sektory', 'mv-sektor', sektory, mojVyber?.sektory || []);
+      const v = mojVyber?.velkost || 'vsetko';
+      el('mv-velkost').innerHTML = VELKOST_ZAKAZIEK.map(([k, t]) => `
+        <label class="flex items-start gap-2 cursor-pointer">
+          <input type="radio" name="mv-velkost" value="${k}" ${k === v ? 'checked' : ''} class="mt-0.5">
+          <span>${bezpecne(t)}</span>
+        </label>`).join('');
+      el('mv-chyba').classList.add('hidden');
+      ukaz('modal-vyber');
+      el('modal-vyber').classList.add('flex');
+    };
+
+    const zavriVyber = () => {
+      el('modal-vyber').classList.add('hidden');
+      el('modal-vyber').classList.remove('flex');
+    };
+
+    const obnovPanel = () => {
+      const maObsah = mojVyber && (mojVyber.kraje?.length || mojVyber.sektory?.length ||
+        (mojVyber.velkost && mojVyber.velkost !== 'vsetko'));
+      el('moj-vyber').classList.toggle('hidden', !tabulkaJe);
+      el('mv-pouzit').classList.toggle('hidden', !maObsah);
+      el('mv-text').textContent = maObsah ? sPopisomVyberu() : 'nenastavený, zobrazujeme všetko';
+      el('mv-zmenit').textContent = maObsah ? 'Zmeniť' : 'Nastaviť';
+      // Predvolené radenie: s výberom "relevantné pre mňa", inak sila signálu.
+      if (maObsah && el('f-radenie').value === 'signal') el('f-radenie').value = 'moje';
+      if (!maObsah && el('f-radenie').value === 'moje') el('f-radenie').value = 'signal';
+    };
+
+    const ulozVyber = async (vyber) => {
+      const riadok = { user_id: pouzivatel?.id, ...vyber, upravene_at: new Date().toISOString() };
+      const { error } = await supabase.from('nastavenia_pouzivatela')
+        .upsert(riadok, { onConflict: 'user_id' });
+      if (error) {
+        el('mv-chyba').textContent = 'Nepodarilo sa uložiť: ' + error.message;
+        el('mv-chyba').classList.remove('hidden');
+        return false;
+      }
+      mojVyber = vyber;
+      return true;
+    };
+
+    const prekresliVsetko = () => {
+      for (const k of Object.keys(zobrazene)) zobrazene[k] = LIMIT;
+      if (mameZmluvy) nacitajZmluvy();
+      if (mameDotacie) nacitajDotacie();
+      nacitajZiadatelov().catch(() => {});
+      if (aktivny) nacitajDodavatelov();
+      if (uvoNacitane) nacitajUvo();
+    };
+
+    el('mv-ulozit').addEventListener('click', async () => {
+      const zvol = n => [...document.querySelectorAll(`input[name="${n}"]:checked`)].map(x => x.value);
+      const ok = await ulozVyber({
+        kraje: zvol('mv-kraj'), sektory: zvol('mv-sektor'),
+        velkost: document.querySelector('input[name="mv-velkost"]:checked')?.value || 'vsetko',
+      });
+      if (!ok) return;
+      zavriVyber();
+      el('mv-pouzit').checked = true;
+      obnovPanel();
+      prekresliVsetko();
+    });
+    // "Zobraziť všetko" uloží prázdny výber, aby sa okno pri ďalšom
+    // prihlásení znova nepýtalo. Zmeniť sa dá kedykoľvek cez Nastavenie.
+    el('mv-preskocit').addEventListener('click', async () => {
+      if (!mojVyber) await ulozVyber({ kraje: [], sektory: [], velkost: 'vsetko' });
+      zavriVyber();
+    });
+    el('mv-zmenit').addEventListener('click', otvorVyber);
+    el('mv-pouzit').addEventListener('change', () => {
+      if (!el('mv-pouzit').checked && el('f-radenie').value === 'moje') el('f-radenie').value = 'signal';
+      if (el('mv-pouzit').checked && el('f-radenie').value === 'signal') el('f-radenie').value = 'moje';
+      prekresliVsetko();
+    });
+    el('btn-moj-vyber')?.addEventListener('click', otvorVyber);
+
+    obnovPanel();
+    // Prvý krok po registrácii: kto ešte nemá uložený výber, dostane okno.
+    if (tabulkaJe && !mojVyber && aktivny) otvorVyber();
+  }
+
   if (aktivny) {
     ukaz('dod-obsah');
     await nacitajCenySektora();
