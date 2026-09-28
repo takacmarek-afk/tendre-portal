@@ -171,6 +171,16 @@ function eur(n) {
   return new Intl.NumberFormat('sk-SK', { maximumFractionDigits: 0 }).format(Math.round(n)) + ' €';
 }
 
+// Slovenská trojtvarová množnosť: 1 kus / 2-4 kusy / 0 a 5+ kusov.
+// Zistené naživo pri overovaní (28.9.2026): pôvodná dvojtvarová skratka
+// ukazovala doslova "zmluvy/zmlúv" používateľovi na stránke.
+function tvar(n, jeden, dvaAzStyri, pat) {
+  const a = Math.abs(n);
+  if (a === 1) return jeden;
+  if (a >= 2 && a <= 4) return dvaAzStyri;
+  return pat;
+}
+
 function el(id) { return document.getElementById(id); }
 
 function karta(cislo, popis) {
@@ -197,8 +207,8 @@ async function zobrazSuhrn(nazov, kraj) {
   el('vysledok').innerHTML = `
     <h2 class="font-serif text-[22px] font-bold text-ink">${nazov}${s.kraj ? ` <span class="text-slate2 font-sans text-[15px] font-normal">(${s.kraj})</span>` : ''}</h2>
     <div class="mt-4 grid sm:grid-cols-2 gap-4">
-      ${karta(s.pocet_konciacich, `${s.pocet_konciacich === 1 ? 'zmluva sa' : 'zmluvy/zmlúv sa'} končí do 12 mesiacov, spolu cca ${eur(s.objem_konciacich)}`)}
-      ${karta(s.pocet_dotacii_bezi, `${s.pocet_dotacii_bezi === 1 ? 'dotácia ešte beží' : 'dotácií ešte beží'} alebo je otvorené jej okno, spolu cca ${eur(s.objem_dotacii_bezi)}`)}
+      ${karta(s.pocet_konciacich, `${tvar(s.pocet_konciacich, 'zmluva sa končí', 'zmluvy sa končia', 'zmlúv sa končí')} do 12 mesiacov, spolu cca ${eur(s.objem_konciacich)}`)}
+      ${karta(s.pocet_dotacii_bezi, `${tvar(s.pocet_dotacii_bezi, 'dotácia ešte beží', 'dotácie ešte bežia', 'dotácií ešte beží')} alebo je otvorené jej okno, spolu cca ${eur(s.objem_dotacii_bezi)}`)}
     </div>
     <div class="mt-4 border border-line rounded-md p-6 bg-white">
       <p class="font-semibold text-ink">Doterajší poradcovia</p>
