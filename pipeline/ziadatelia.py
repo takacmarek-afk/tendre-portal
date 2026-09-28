@@ -22,9 +22,10 @@ DVE VECI, KTORE TREBA HOVORIT NAHLAS:
    dotaciu dostat jednoducho nestihli, takze sa pocitaju ako neuspesne.
    Skutocny podiel bude vyssi.
 
-CO S TOUTO VRSTVOU ROBIT: pri dvoch az dvoch a pol roku predstihu sa
-neda pripravovat ponuka. Da sa nadviazat vztah s obcou — a to je presne
-to okno, kedy sa to da urobit bez konkurencie.
+CO S TOUTO VRSTVOU ROBIT: pri dvoch az dvoch a pol roku predstihu ma
+firma cas pripravit si referencie, kapacity a cenu, aby bola pripravena,
+ked sa sutaz vyhlasi — ferovo a v otvorenej sutazi. (Audit 27. 9. 2026: nikdy
+nepisat, ze predstih znamena ziskat obec pre seba pred sutazou.)
 """
 import logging
 import re
@@ -101,10 +102,20 @@ def z_contracts(df: pd.DataFrame, dnes: date = None) -> pd.DataFrame:
     dot = df[df["sector"] == "DOTACIE_NFP"].copy()
     dot["suma"] = pd.to_numeric(dot["price_total"], errors="coerce")
     dot["kedy"] = pd.to_datetime(dot["signed_on"], errors="coerce")
-    dot = dot[(dot["suma"] >= 20000) & dot["kedy"].notna()]
-    dot["kluc"] = (dot["supplier_cin"].astype(str).str.strip()
+    dot = dot[(dot["suma"] >= 20000) & dot["kedy"].notna()].copy()
+    # Prijimatel dotacie je v CRZ v poli dodavatela — okrem zmluv s
+    # VYMENENYMI stranami (ministerstvo v poli dodavatela, obec v poli
+    # objednavatela). Rovnake pravidlo ako subsidies.z_contracts. Bez neho
+    # obec Sena ostala medzi "ziadatelmi", hoci dotaciu od MF SR dostala
+    # 23. 6. 2026 (audit 27. 9. 2026, P0.3).
+    import subsidies as _sub
+    vymenene = (dot["supplier_name"].fillna("").apply(_sub._je_vyssi_subjekt)
+                & dot["authority_name"].fillna("").apply(_sub._je_obec_alebo_mesto))
+    dot["prij_ico"] = dot["supplier_cin"].where(~vymenene, dot["authority_cin"])
+    dot["prij_nazov"] = dot["supplier_name"].where(~vymenene, dot["authority_name"])
+    dot["kluc"] = (dot["prij_ico"].astype(str).str.strip()
                     .replace({"": None, "nan": None, "None": None}))
-    dot["kluc"] = dot["kluc"].fillna(dot["supplier_name"].str.lower())
+    dot["kluc"] = dot["kluc"].fillna(dot["prij_nazov"].str.lower())
     posledna_dotacia = dot.groupby("kluc")["kedy"].max()
 
     d["dotacia_po_najati"] = d.apply(

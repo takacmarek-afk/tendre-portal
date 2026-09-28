@@ -452,43 +452,69 @@ def _po_davkach(zoznam, n=100):
         yield zoznam[i:i + n]
 
 
+def ico_kluc(ico):
+    """IČO bez úvodných núl. Rôzne zdroje ho píšu rôzne: Vestník ÚVO
+    "00324698", CRZ/dotácie "324698". Bez zjednotenia sa kontakt z Vestníka
+    s dotáciami obce takmer nespáral (28. 9. 2026: 6 zhôd namiesto 448)."""
+    return str(ico or "").strip().lstrip("0")
+
+
+def _varianty(ica):
+    """Všetky zápisy IČO, ktoré sa môžu v tabuľkách vyskytnúť."""
+    out = set()
+    for i in ica:
+        k = ico_kluc(i)
+        if k:
+            out.update({k, k.zfill(8), str(i).strip()})
+    return sorted(out)
+
+
 def nacitaj_data(sb, ica, dnes):
     """-> {ico: {segment: udaje}} pre vsetky segmenty naraz (davky po 100 ICO)."""
     out = {i: {} for i in ica}
+    podla_kluca = {ico_kluc(i): i for i in ica}
     dnes_s = dnes.isoformat()
-    for davka in _po_davkach(list(ica)):
+
+    def ciel(ico):
+        return out.get(podla_kluca.get(ico_kluc(ico)))
+
+    for davka in _po_davkach(list(ica), 60):
+        v = _varianty(davka)
         for r in (sb.table("obce_ziadatelia").select("obec_ico,sprostredkovatel,najate")
-                  .in_("obec_ico", davka).order("najate", desc=True).execute().data):
-            if r.get("sprostredkovatel"):
-                out[r["obec_ico"]].setdefault("poradca", r)
+                  .in_("obec_ico", v).order("najate", desc=True).execute().data):
+            c = ciel(r["obec_ico"])
+            if c is not None and r.get("sprostredkovatel"):
+                c.setdefault("poradca", r)
         for r in (sb.table("uvo_vysledky")
                   .select("obstaravatel_ico,nazov,cast_nazov,vitaz_nazov,hodnota,mena,koniec")
-                  .in_("obstaravatel_ico", davka).gte("koniec", dnes_s)
+                  .in_("obstaravatel_ico", v).gte("koniec", dnes_s)
                   .not_.is_("vitaz_nazov", "null").order("koniec").execute().data):
-            if (r.get("mena") or "EUR") != "EUR":
+            c = ciel(r["obstaravatel_ico"])
+            if c is None or (r.get("mena") or "EUR") != "EUR":
                 continue
-            out[r["obstaravatel_ico"]].setdefault("uvo", {
+            c.setdefault("uvo", {
                 "predmet": r.get("cast_nazov") or r.get("nazov"),
                 "dodavatel": r["vitaz_nazov"], "hodnota": r.get("hodnota"), "koniec": r["koniec"]})
         for r in (sb.table("opportunities")
                   .select("authority_cin,subject,supplier_name,price_total,effective_to")
-                  .in_("authority_cin", davka).gte("effective_to", dnes_s)
+                  .in_("authority_cin", v).gte("effective_to", dnes_s)
                   .order("effective_to").execute().data):
-            if r.get("subject") and r.get("supplier_name"):
-                out[r["authority_cin"]].setdefault("crz", {
+            c = ciel(r["authority_cin"])
+            if c is not None and r.get("subject") and r.get("supplier_name"):
+                c.setdefault("crz", {
                     "predmet": r["subject"], "dodavatel": r["supplier_name"],
                     "hodnota": r.get("price_total"), "koniec": r["effective_to"]})
-        sumy = {}
         for r in (sb.table("subsidies").select("prijimatel_ico,suma")
-                  .in_("prijimatel_ico", davka).execute().data):
-            s = sumy.setdefault(r["prijimatel_ico"], {"pocet": 0, "suma": 0.0})
+                  .in_("prijimatel_ico", v).execute().data):
+            c = ciel(r["prijimatel_ico"])
+            if c is None:
+                continue
+            s = c.setdefault("dotacie", {"pocet": 0, "suma": 0.0})
             s["pocet"] += 1
             try:
                 s["suma"] += float(r.get("suma") or 0)
             except (TypeError, ValueError):
                 pass
-        for ico, s in sumy.items():
-            out[ico]["dotacie"] = s
     return out
 
 
@@ -496,11 +522,13 @@ def vyber_prijemcov(kontakty, odoslane, ucty_ica, vlna, dnes):
     """Kontakty, ktorym sa v tejto vlne smie pisat.
     odoslane: [{ico, vlna, stav, odoslane_at}]"""
     uz_vlna = {o["ico"] for o in odoslane if o["vlna"] == vlna}
+    ucty_k = {ico_kluc(u) for u in ucty_ica}
     vlna1_ok = {o["ico"]: o["odoslane_at"] for o in odoslane
                 if o["vlna"] == "vlna1" and o["stav"] == "odoslane"}
     out = []
     for k in kontakty:
-        if k["stav"] != "ok" or k.get("odhlasene_at") or k["ico"] in uz_vlna or k["ico"] in ucty_ica:
+        if (k["stav"] != "ok" or k.get("odhlasene_at") or k["ico"] in uz_vlna
+                or ico_kluc(k["ico"]) in ucty_k):
             continue
         if vlna == "vlna2":
             kedy = vlna1_ok.get(k["ico"])
