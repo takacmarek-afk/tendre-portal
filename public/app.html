@@ -1131,6 +1131,31 @@
       </div>
     </div>
 
+    <!-- ── DOPYTY OD OBCÍ (audit P2.2, 28.9.2026) ───────────────
+         Rozsirenie obojsmerneho trhu (supabase/34_obce_marketplace.sql,
+         public/trh.html) do platenej appky. Zalozka aj tlacidlo existuju
+         len v DOM-e, ked ich prida nastavDopyty() nizsie — rovnaky vzor
+         ako Statistiky nizsie (viditelnost podla RPC ma_dopyty_pristup(),
+         nie len CSS hidden). Prehlad je tu len na citanie; odpovedat sa
+         da cez Trh dopytov, aby appka neduplikovala uz hotovy a otestovany
+         flow zalozenia profilu poradcu a odoslania reakcie. -->
+    <div id="dopyty" class="hidden max-w-3xl">
+      <p class="text-[14px] leading-relaxed text-slate2 mb-5 max-w-2xl">
+        Obce, ktoré na <a href="/trh.html" target="_blank" rel="noopener"
+        class="text-accent hover:underline font-semibold">Trhu dopytov</a>
+        (verejná burza pre obce a poradcov) hľadajú pomoc s konkrétnou súťažou
+        alebo dotáciou. Odpovedať môžete priamo tam — ak si tam ešte nezaložili
+        profil poradcu, urobíte to zadarmo v pár sekundách.
+      </p>
+      <div id="dopyty-prazdno" class="hidden bg-white border border-line rounded-lg p-10 text-center">
+        <p class="text-[14px] text-slate2">Momentálne žiadna obec nemá otvorený dopyt.</p>
+      </div>
+      <div id="dopyty-chyba" class="hidden bg-white border border-line rounded-lg p-10 text-center">
+        <p class="text-[14px] text-red-700">Dopyty sa nepodarilo načítať.</p>
+      </div>
+      <div id="dopyty-zoznam" class="space-y-3"></div>
+    </div>
+
     <!-- ── ŠTATISTIKY ──────────────────────────────────────────
          Vlastna mini-analytika namiesto Plausible (supabase/27_navstevnost.sql).
          Zalozka aj tlacidlo existuju len v DOM-e, ked ju pridal
@@ -2504,7 +2529,7 @@ function odznakPredplatneho(sub, zadarmo = false) {
   //             webhook, sanca na vyhru, trhovy podiel, prioritizacia podla
   //             vlastneho ICO. Ak sa cennik.html niekedy rozide s tymto
   //             rozdelenim, realny pristup sa riadi TÝMTO zoznamom, nie cennikom.
-  const PLANY = { start: 'Start', growth: 'Growth', team: 'Team', pro: 'Pro', admin: 'Admin' };
+  const PLANY = { start: 'Start', growth: 'Growth', team: 'Team', pro: 'Pro', poradca: 'Poradca', admin: 'Admin' };
   const proPlany = ['trial', 'pro', 'growth', 'team', 'admin'];
   const trialKonci = sub?.trial_konci ? new Date(sub.trial_konci) : null;
   const trialAktivny = sub?.stav === 'trial' && trialKonci && trialKonci > new Date();
@@ -2997,6 +3022,74 @@ async function nastavStatistiky(supabase) {
       ? sh.map(x => riadok(`${x.volba} (${Math.round(Number(x.pocet) / spolu * 100)} %)`, x.pocet)).join('')
       : prazdne;
   }
+}
+
+// ── DOPYTY OD OBCÍ (audit P2.2, 28.9.2026, supabase/52_dopyty_v_appke.sql) ─
+// Rovnaky vzor ako nastavStatistiky() vyssie: zalozka aj tlacidlo pribudnu
+// do DOM-u len vtedy, ked RPC ma_dopyty_pristup() vrati true (Growth, Team,
+// Poradca — alebo hocikto pocas je_zadarmo() testovacej prevadzky). Zamerne
+// vlozene PRED tlacidlo Tim, aby obsahove zalozky ostali pokope a Tim (ako
+// nastavenie, nie data) zostal posledny — viz komentar pri static zalozkach.
+async function nastavDopyty(supabase) {
+  const { data: maPristup, error } = await supabase.rpc('ma_dopyty_pristup');
+  if (error || !maPristup) return;
+
+  const btn = document.createElement('button');
+  btn.dataset.zalozka = 'dopyty';
+  btn.className = 'zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap';
+  btn.textContent = 'Dopyty od obcí';
+  document.querySelector('[data-zalozka="team"]')?.insertAdjacentElement('beforebegin', btn);
+
+  function kartaDopytu(d) {
+    const typLabel = { zmluva: 'zmluva', dotacia: 'dotácia', ine: 'iné' }[d.typ] || '';
+    return `
+      <div class="bg-white border border-line rounded-lg p-4">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <p class="text-[15px] font-semibold text-ink">${bezpecne(d.nazov)}</p>
+          <p class="text-[12px] text-slate2 whitespace-nowrap">${dSk(d.created_at)}</p>
+        </div>
+        <p class="mt-1 text-[13px] text-slate2">
+          ${bezpecne(d.obec_nazov)}${d.kraj ? ' · ' + bezpecne(d.kraj) : ''}${typLabel ? ' · ' + typLabel : ''}
+        </p>
+        ${d.popis ? `<p class="mt-2 text-[14px] leading-relaxed text-ink">${bezpecne(d.popis)}</p>` : ''}
+        <a href="/trh.html" target="_blank" rel="noopener"
+           class="mt-3 inline-block text-[13px] font-semibold text-accent hover:underline">
+          Odpovedať cez Trh dopytov →
+        </a>
+      </div>`;
+  }
+
+  async function nacitajDopyty() {
+    const { data, error: chyba } = await supabase
+      .from('dopyty')
+      .select('id,obec_nazov,kraj,typ,nazov,popis,created_at')
+      .eq('stav', 'otvoreny')
+      .order('created_at', { ascending: false });
+
+    skry('dopyty-prazdno'); skry('dopyty-chyba');
+
+    if (chyba) {
+      el('dopyty-zoznam').innerHTML = '';
+      ukaz('dopyty-chyba');
+      return;
+    }
+    if (!data || !data.length) {
+      el('dopyty-zoznam').innerHTML = '';
+      ukaz('dopyty-prazdno');
+      return;
+    }
+    el('dopyty-zoznam').innerHTML = data.map(kartaDopytu).join('');
+  }
+
+  let nacitane = false;
+  document.querySelector('[data-zalozka="dopyty"]')?.addEventListener('click', () => {
+    if (nacitane) return;
+    nacitane = true;
+    nacitajDopyty().catch(() => {
+      el('dopyty-zoznam').innerHTML = '';
+      ukaz('dopyty-chyba');
+    });
+  });
 }
 
 // ── DASHBOARD ───────────────────────────────────────────────────────────
@@ -4171,6 +4264,15 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     await nastavTeam(supabase, rola, jeTeam);
   } catch (e) {
     console.error('Tím sa nepodarilo nacitat:', e);
+  }
+
+  // Pred nastavZalozky() — tlacidlo Dopyty (ak vobec pribudne, viz
+  // komentar pri funkcii) musi v DOM-e existovat skor, nez nastavZalozky()
+  // vyhlada vsetky '.zal' tlacidla.
+  try {
+    await nastavDopyty(supabase);
+  } catch (e) {
+    console.error('Dopyty od obcí sa nepodarilo nacitat:', e);
   }
 
   // Az po Time a pred nastavZalozky() — tlacidlo Statistiky (ak vobec
