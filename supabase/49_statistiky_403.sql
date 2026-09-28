@@ -62,6 +62,13 @@ begin
 end;
 $$;
 
+-- Anon doteraz mohol navstevnost_* volat (27 odobral pravo len roli public;
+-- anon ma v Supabase vlastne predvolene prava). Dáta nedostal, ale nemá ich
+-- čo volať vôbec — rovnako ako merania_* od migrácie 45.
+revoke all on function public.navstevnost_denne(int)     from anon;
+revoke all on function public.navstevnost_stranky(int)   from anon;
+revoke all on function public.navstevnost_referreri(int) from anon;
+
 select string_agg(p.proname || '=' ||
        case when position('vyzaduj_admina' in pg_get_functiondef(p.oid)) > 0 then 'ok' else 'NEUPRAVENE' end,
        ', ' order by p.proname) as vysledok
