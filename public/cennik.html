@@ -223,6 +223,59 @@
   </p>
 </section>
 
+<!-- ══════════════ PORADCA (audit P2.2, 28. 9. 2026) ══════════════
+     Samostatná úroveň mimo rebríčka Start/Growth/Team podľa veľkosti
+     firmy — iné publikum (konzultanti pre obce, nie dodávatelia štátu),
+     preto vlastná sekcia s vlastným kontextom, nie štvrtý stĺpec v grid-e
+     vyššie. Cena a obsah: public/plany.js, cenove_plany (migrácia 50),
+     záložka Dopyty v appke: supabase/52_dopyty_v_appke.sql.
+     Bez vlastnej bg farby (necha default bg-paper) - hned za nou ide
+     sekcia Porovnanie s trhom, ktora uz ma bg-[#F3F0E6], takze takto
+     sekcie strieda farba namiesto dvoch rovnakych vedla seba. -->
+<section class="border-t border-line">
+  <div class="wrap py-16 md:py-20">
+    <div class="max-w-2xl">
+      <span class="inline-block text-[12px] font-semibold uppercase tracking-wider
+                   text-accent bg-accent/8 border border-accent/20 rounded-full px-3 py-1">
+        Pre poradcov
+      </span>
+      <h2 class="font-serif mt-4 text-[24px] md:text-[28px] font-bold tracking-tight">
+        Pomáhate obciam so súťažami a dotáciami?
+      </h2>
+      <p class="mt-4 text-[15px] leading-relaxed text-slate2">
+        Úroveň Poradca je pre konzultantov a poradenské firmy, ktoré obciam
+        pomáhajú s verejným obstarávaním alebo so žiadosťou o dotáciu — nie
+        pre firmy, čo štátu alebo obciam dodávajú tovar či službu (na to sú
+        úrovne vyššie). Namiesto radenia podľa veľkosti firmy dostanete
+        priamy prístup k záložke <strong class="text-ink">Dopyty od obcí</strong>
+        v appke: obce, ktoré na
+        <a href="./trh.html" class="text-accent hover:underline">Trhu dopytov</a>
+        hľadajú pomoc s konkrétnou súťažou alebo dotáciou, uvidíte priamo
+        vo svojom prehľade, bez toho, aby ste tam museli chodiť zvlášť.
+      </p>
+    </div>
+
+    <div class="mt-8 max-w-sm border border-line rounded-lg p-7 flex flex-col bg-white">
+      <h3 class="text-[19px] font-semibold">Poradca</h3>
+      <p class="mt-1 text-[13px] text-slate2">Pre konzultantov a poradenské firmy pracujúce s obcami.</p>
+      <div class="mt-5 flex items-baseline gap-1.5">
+        <span class="font-serif text-[40px] font-bold tracking-tight">59&nbsp;€</span>
+        <span class="text-[14px] text-slate2">/ mesiac</span>
+      </div>
+      <p class="mt-1 text-[12px] text-slate2">alebo 590&nbsp;€ ročne (2 mesiace zadarmo)</p>
+      <ul class="mt-6 space-y-3 text-[14px] text-slate2 flex-1">
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Záložka Dopyty od obcí priamo v appke</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Bezplatný profil poradcu na Trhu dopytov je súčasťou</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>Týždenný e-mailový prehľad</li>
+      </ul>
+      <a href="./prihlasenie.html"
+         class="mt-7 inline-flex justify-center items-center border-2 border-ink text-ink font-semibold px-5 py-3 rounded-md hover:bg-ink hover:text-white transition text-[14px]">
+        Vyskúšať 14 dní zadarmo
+      </a>
+    </div>
+  </div>
+</section>
+
 <!-- ══════════════ POROVNANIE S TRHOM ══════════════ -->
 <section class="border-t border-line bg-[#F3F0E6]">
   <div class="wrap py-16 md:py-20">

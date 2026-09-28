@@ -42,7 +42,7 @@ def test_skusobna_doba_vsade_rovnaka():
 
 def test_ceny_v_cenniku():
     t = _stranky()["cennik.html"]
-    for kod in ("start", "growth", "team"):
+    for kod in ("start", "growth", "team", "poradca"):
         p = plany()["plany"][kod]
         assert f">{_eur(p['mesiac'])}&nbsp;€<" in t, f"cenník: mesačná cena {kod} nesedí"
         assert f"alebo {_eur(p['rok'])}&nbsp;€ ročne" in t, f"cenník: ročná cena {kod} nesedí"
