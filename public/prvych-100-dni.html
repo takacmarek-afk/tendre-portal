@@ -81,6 +81,16 @@
 #hladanie-vstup:focus { outline: 2px solid #1d6f5c; outline-offset: 1px; }
 .suhrn-cislo { font-size: 30px; }
 @media (min-width: 640px) { .suhrn-cislo { font-size: 36px; } }
+
+/* Audit P3.2 B (28.9.2026, zadanie): "PDF Prehľad pre zastupiteľstvo".
+   Ziadna nova kniznica ani server-side PDF sluzba (staticky hostovana
+   stranka) — pouzivame vstavany tlacovy dialog prehliadaca (Ulozit ako PDF
+   tam vie kazdy prehliadac uz sam), len s cistym tlacovym rozlozenim. */
+.print-only { display: none; }
+@media print {
+  header, #hladanie-form, #vysledok, footer.wrap { display: none !important; }
+  .print-only { display: block !important; }
+}
 </style>
 <link rel="stylesheet" href="/style.css">
 </head>
@@ -135,6 +145,11 @@
   <div id="vysledok" class="mt-8"></div>
 </section>
 
+<!-- Audit P3.2 B: tlacovy jednostranovy prehlad "pre zastupitelstvo".
+     Normalne skryte, zobrazi sa len v @media print (viz <style> vyssie),
+     ked ho JS naplni cez pripravTlac() a spusti window.print(). -->
+<div id="tlac-prehlad" class="print-only wrap py-10"></div>
+
 <footer class="wrap py-10">
   <p class="text-[13px] leading-relaxed text-slate2">
     Zdroj údajov: <strong class="text-ink">Centrálny register zmlúv</strong> a
@@ -166,6 +181,11 @@ async function volajRpc(fn, telo) {
   return r.json();
 }
 
+// Slovenský formát dátumu 15. 1. 2027 (rovnaký helper ako v app.html).
+function dSk(d) {
+  return `${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}`;
+}
+
 function eur(n) {
   if (n === null || n === undefined) return '—';
   return new Intl.NumberFormat('sk-SK', { maximumFractionDigits: 0 }).format(Math.round(n)) + ' €';
@@ -190,6 +210,30 @@ function karta(cislo, popis) {
   </div>`;
 }
 
+// Audit P3.2 B: naplni skryty #tlac-prehlad jednostranovym suhrnom a
+// spusti nativny tlacovy dialog prehliadaca ("Ulozit ako PDF" je tam
+// jedna z volieb v kazdom bezneho prehliadaci, netreba na to novu sluzbu).
+function pripravTlac(nazov, s) {
+  el('tlac-prehlad').innerHTML = `
+    <p class="text-[12px] font-mono uppercase tracking-wider text-accent">PredTendrom.sk &mdash; prehľad pre zastupiteľstvo</p>
+    <h1 class="mt-2 font-serif text-[26px] font-bold text-ink">${nazov}${s.kraj ? ` (${s.kraj})` : ''}</h1>
+    <p class="mt-1 text-[13px] text-slate2">Vygenerované ${dSk(new Date())}</p>
+    <div class="mt-6 grid grid-cols-2 gap-4">
+      ${karta(s.pocet_konciacich, `${tvar(s.pocet_konciacich, 'zmluva sa končí', 'zmluvy sa končia', 'zmlúv sa končí')} do 12 mesiacov, spolu cca ${eur(s.objem_konciacich)}`)}
+      ${karta(s.pocet_dotacii_bezi, `${tvar(s.pocet_dotacii_bezi, 'dotácia ešte beží', 'dotácie ešte bežia', 'dotácií ešte beží')} alebo je otvorené jej okno, spolu cca ${eur(s.objem_dotacii_bezi)}`)}
+    </div>
+    <p class="mt-6 text-[13px] leading-relaxed text-slate2">
+      Toto sú súčty, nie zoznam jednotlivých zmlúv (predmet, presná suma
+      a presný dátum má k dispozícii firma, ktorá sa uchádza o zákazku,
+      cez platenú appku PredTendrom.sk). Zdroj: Centrálny register zmlúv
+      a Služby Slovensko.Digital. Údaje majú informatívny charakter a nie
+      sú právne záväzné &mdash; pred rozhodnutím si ich overte v pôvodnom zdroji.
+    </p>
+    <p class="mt-6 text-[12px] text-slate2">predtendrom.sk/prvych-100-dni &middot; Nie sme štátny orgán ani s ním prepojení.</p>
+  `;
+  window.print();
+}
+
 async function zobrazSuhrn(nazov, kraj) {
   el('vysledok').innerHTML = `<p class="text-slate2">Načítavam súhrn pre ${nazov}&hellip;</p>`;
   let riadky;
@@ -204,6 +248,7 @@ async function zobrazSuhrn(nazov, kraj) {
     el('vysledok').innerHTML = `<p class="text-slate2">Pre „${nazov}“ sme v našich dátach nič nenašli. Skúste presnejší názov, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a> a pozrieme sa spolu.</p>`;
     return;
   }
+  poslednyVysledok = { nazov, s };
   el('vysledok').innerHTML = `
     <h2 class="font-serif text-[22px] font-bold text-ink">${nazov}${s.kraj ? ` <span class="text-slate2 font-sans text-[15px] font-normal">(${s.kraj})</span>` : ''}</h2>
     <div class="mt-4 grid sm:grid-cols-2 gap-4">
@@ -229,8 +274,17 @@ async function zobrazSuhrn(nazov, kraj) {
         Vypísať dopyt na Trhu dopytov
       </a>
     </div>
+    <button type="button" id="btn-tlac"
+       class="mt-3 inline-flex justify-center items-center gap-2 text-[14px] text-slate2 hover:text-ink underline underline-offset-2">
+      Vytlačiť / uložiť ako PDF pre zastupiteľstvo
+    </button>
   `;
+  el('btn-tlac').addEventListener('click', () => {
+    if (poslednyVysledok) pripravTlac(poslednyVysledok.nazov, poslednyVysledok.s);
+  });
 }
+
+let poslednyVysledok = null;
 
 function zobrazKandidatov(zoznam, povodnyText) {
   const polozky = zoznam.map(o =>

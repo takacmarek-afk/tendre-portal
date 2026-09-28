@@ -216,8 +216,9 @@
     </a>
   </div>
   <p class="mt-4 text-[13px] text-slate2 max-w-[600px]">
-    Mesačný e-mail o novinkách pre obce vašej veľkosti a PDF prehľad na
-    vytlačenie pre zastupiteľstvo pripravujeme ako ďalší krok.
+    Prehľad si viete rovno <a href="./prvych-100-dni.html" class="text-accent hover:underline">vytlačiť alebo uložiť ako PDF pre zastupiteľstvo</a>.
+    Mesačný e-mail o novinkách pre obce vašej veľkosti a orientačné ceny
+    bežných služieb (benchmark) pripravujeme ako ďalší krok.
   </p>
 </section>
 
@@ -245,6 +246,49 @@
       Radšej napíšem, čo potrebujem
     </a>
   </div>
+
+  <!-- Audit P3.2 C (28.9.2026, zadanie): tlacidlo "Zavolajte mi" — kratsia
+       alternativa nez cely formular na servis.html, pre niekoho, kto teraz
+       nemoze zdvihnut telefon. Ulozene do samostatnej tabulky
+       spatne_volania (migracia 56), citanie len cez service_role. -->
+  <details class="mt-4 max-w-[480px]">
+    <summary class="cursor-pointer text-[14px] font-semibold text-accent hover:underline">
+      Alebo nechajte na seba kontakt — zavoláme vám späť
+    </summary>
+    <form id="form-zavolajte" class="mt-3 space-y-3 border border-line rounded-lg bg-white p-5" autocomplete="off">
+      <div id="zv-uspech" class="hidden text-[14px] text-ink">
+        Ďakujeme, máme váš kontakt. Zavoláme vám, zvyčajne do pár pracovných dní.
+      </div>
+      <div id="zv-pola" class="space-y-3">
+        <div>
+          <label class="block text-[13px] font-semibold mb-1" for="zv-meno">Meno</label>
+          <input id="zv-meno" type="text" required autocomplete="name"
+                 class="w-full border border-line rounded-md px-3 py-2 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+        </div>
+        <div>
+          <label class="block text-[13px] font-semibold mb-1" for="zv-obec">Obec</label>
+          <input id="zv-obec" type="text" required autocomplete="organization"
+                 class="w-full border border-line rounded-md px-3 py-2 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+        </div>
+        <div>
+          <label class="block text-[13px] font-semibold mb-1" for="zv-telefon">Telefón</label>
+          <input id="zv-telefon" type="text" required autocomplete="tel" placeholder="+421 900 000 000"
+                 class="w-full border border-line rounded-md px-3 py-2 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+        </div>
+        <div>
+          <label class="block text-[13px] font-semibold mb-1" for="zv-cas">Najlepší čas zavolať (nepovinné)</label>
+          <input id="zv-cas" type="text" placeholder="napr. popoludní po 14:00"
+                 class="w-full border border-line rounded-md px-3 py-2 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+        </div>
+        <button type="submit" id="zv-btn"
+                class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md hover:bg-accentDark transition disabled:opacity-50 text-[14px]">
+          Zavolajte mi
+        </button>
+        <p id="zv-chyba" class="hidden text-[13px] text-red-700"></p>
+      </div>
+    </form>
+  </details>
+
   <p class="mt-4 text-[13px] text-slate2 max-w-[600px]">
     Túto obec spravuje viac ľudí (prednosta, ekonómka, spoločný obecný
     úrad)? Možnosť pozvať ďalšiu osobu na účet obce pripravujeme.
@@ -308,6 +352,67 @@
     <a href="https://www.instagram.com/predtendrom.sk/" target="_blank" rel="noopener" class="text-accent hover:underline">Instagram</a>
   </p>
 </footer>
+
+<!-- Audit P3.2 C (28.9.2026): odoslanie formulara "Zavolajte mi" do
+     spatne_volania (migracia 56). Rovnaky vzor ako servis.html. -->
+<script>
+(function () {
+  const cfg = window.CONFIG || {};
+  const el = (id) => document.getElementById(id);
+  const form = el('form-zavolajte');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = el('zv-btn');
+    const chyba = el('zv-chyba');
+    chyba.classList.add('hidden');
+
+    if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY || cfg.SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
+      chyba.textContent = 'Formulár teraz nie je dostupný. Zavolajte prosím priamo na číslo v hlavičke.';
+      chyba.classList.remove('hidden');
+      return;
+    }
+
+    btn.disabled = true;
+    const povodny = btn.textContent;
+    btn.textContent = 'Odosielam…';
+
+    try {
+      const r = await fetch(`${cfg.SUPABASE_URL}/rest/v1/spatne_volania`, {
+        method: 'POST',
+        headers: {
+          apikey: cfg.SUPABASE_ANON_KEY,
+          Authorization: 'Bearer ' + cfg.SUPABASE_ANON_KEY,
+          'Content-Type': 'application/json',
+          Prefer: 'return=minimal',
+        },
+        body: JSON.stringify({
+          meno: el('zv-meno').value.trim(),
+          obec: el('zv-obec').value.trim(),
+          telefon: el('zv-telefon').value.trim(),
+          najlepsi_cas: el('zv-cas').value.trim() || null,
+        }),
+      });
+
+      if (r.ok) {
+        el('zv-pola').classList.add('hidden');
+        el('zv-uspech').classList.remove('hidden');
+      } else {
+        btn.disabled = false;
+        btn.textContent = povodny;
+        chyba.textContent = 'Nepodarilo sa to odoslať. Skúste to znova, alebo zavolajte priamo.';
+        chyba.classList.remove('hidden');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = povodny;
+      chyba.textContent = 'Nepodarilo sa to odoslať. Skúste to znova, alebo zavolajte priamo.';
+      chyba.classList.remove('hidden');
+    }
+  });
+})();
+</script>
 
 </body>
 </html>
