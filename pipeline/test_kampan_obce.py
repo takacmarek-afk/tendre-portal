@@ -232,3 +232,69 @@ def test_volby_presny_tvar_2022():
          "582000;Bratislava;Matúš;Vallo;Team Bratislava\r\n")
     r = volby.rozober(volby.dekoduj(x.encode("cp1250")), 2022)
     assert [(z["kod_obce"], z["priezvisko"]) for z in r] == [("582000", "Vallo")]
+
+
+# ── nacitanie dat: IČO s nulami aj bez ─────────────────────────────────────
+
+class _Q:
+    def __init__(self, riadky):
+        self.r = riadky
+        self.filtre = []
+
+    def select(self, *_):
+        return self
+
+    def in_(self, stlpec, hodnoty):
+        self.filtre.append(lambda x: str(x.get(stlpec)) in set(hodnoty))
+        return self
+
+    def gte(self, stlpec, h):
+        self.filtre.append(lambda x: (x.get(stlpec) or "") >= h)
+        return self
+
+    @property
+    def not_(self):
+        return self
+
+    def is_(self, stlpec, _):
+        self.filtre.append(lambda x: x.get(stlpec) is not None)
+        return self
+
+    def order(self, *_, **__):
+        return self
+
+    def execute(self):
+        class R:
+            pass
+        out = R()
+        out.data = [x for x in self.r if all(f(x) for f in self.filtre)]
+        return out
+
+
+class _SB:
+    def __init__(self, tabulky):
+        self.t = tabulky
+
+    def table(self, meno):
+        return _Q(self.t.get(meno, []))
+
+
+def test_nacitaj_data_ico_s_nulami_aj_bez():
+    sb = _SB({
+        "subsidies": [{"prijimatel_ico": "324698", "suma": 33000},
+                      {"prijimatel_ico": "324698", "suma": 1000}],
+        "obce_ziadatelia": [{"obec_ico": "324698", "sprostredkovatel": "Grant s.r.o.", "najate": "2025-09-19"}],
+        "uvo_vysledky": [{"obstaravatel_ico": "00324698", "nazov": "Zimná údržba", "cast_nazov": None,
+                          "vitaz_nazov": "Cesty s.r.o.", "hodnota": 5000, "mena": "EUR", "koniec": "2027-03-31"}],
+        "opportunities": [],
+    })
+    out = k.nacitaj_data(sb, ["00324698"], date(2026, 9, 28))
+    d = out["00324698"]
+    assert d["dotacie"] == {"pocet": 2, "suma": 34000.0}
+    assert d["poradca"]["sprostredkovatel"] == "Grant s.r.o."
+    assert d["uvo"]["dodavatel"] == "Cesty s.r.o."
+
+
+def test_obec_s_uctom_aj_ked_ico_bez_nul():
+    kontakty = [{"ico": "00324698", "stav": "ok"}]
+    assert k.vyber_prijemcov(kontakty, [], {"324698"}, "vlna1", date(2026, 11, 26)) == []
