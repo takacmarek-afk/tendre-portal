@@ -474,6 +474,27 @@ def doplnit(df):
     df["psc"] = [r[1] for r in rozobrane]
     df["kraj"] = [r[2] for r in rozobrane]
 
+    # Obec je sama sebe miestom. V adrese obce je za PSC casto posta inej
+    # obce ("Sliepkovce 34, 072 36 Lastomir"), a tak sa pri obci Sliepkovce
+    # zobrazovalo mesto Lastomir (audit 27. 9. 2026, P0.3). Pri
+    # "Obec X" / "Mesto X" preto mesto berieme z nazvu, ak ho register
+    # obci pozna. Kraj ostava z adresy (PSC je pri rovnakych nazvoch obci
+    # v roznych krajoch spolahlivejsie) a z nazvu sa doplni, len ked chyba.
+    if "authority_name" in df.columns:
+        for i, nazov in df["authority_name"].items():
+            if not re.match(r"^\s*(obec|mesto|mestsk[aá]\s+[cč]as[tť])\s", str(nazov or ""), re.I):
+                continue
+            # len presna zhoda "Obec X" s registrom, nie volne hladanie
+            # mena mesta kdekolvek v nazve (_hladaj)
+            m = re.match(r"^(?:mesto|obec|mestska cast)\s+(.+)$", _norm(nazov))
+            kandidat = re.split(r"\s*[-–,]", m.group(1))[0].strip() if m else None
+            mesto_n, kraj_n = MESTO_KRAJ.get(kandidat, (None, None)) if kandidat else (None, None)
+            if mesto_n:
+                df.at[i, "mesto"] = mesto_n
+                k = df.at[i, "kraj"]
+                if (k is None or k != k or k == "") and kraj_n:   # None / NaN / ""
+                    df.at[i, "kraj"] = kraj_n
+
     # Zalozna cesta: co adresa nedala, skusime z nazvu uradu.
     # "Zakladna skola, Hlavna 5, Presov" kraj vyda, aj ked sa adresa
     # rozobrat nedala. Bez tohto zostavala stvrtina zaznamov bez kraja
