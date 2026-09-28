@@ -103,9 +103,9 @@
            font, mensi padding na CTA), aby sa pri 375 px nic nezalamalo. -->
       <a href="./prihlasenie.html"
          class="text-[13px] sm:text-[14px] text-slate2 hover:text-ink transition whitespace-nowrap">Prihlásiť sa</a>
-      <a href="./prihlasenie.html" class="text-[13px] sm:text-[14px] font-semibold bg-ink text-white px-3 sm:px-4 py-2 rounded-md hover:bg-accent transition whitespace-nowrap">
-        <span class="sm:hidden">Skúsiť zadarmo</span>
-        <span class="hidden sm:inline">Vyskúšať zadarmo</span>
+      <a href="./prihlasenie.html" aria-label="Vyskúšať zadarmo" class="text-[13px] sm:text-[14px] font-semibold bg-ink text-white px-3 sm:px-4 py-2 rounded-md hover:bg-accent transition whitespace-nowrap">
+        <span aria-hidden="true" class="sm:hidden">Skúsiť zadarmo</span>
+        <span aria-hidden="true" class="hidden sm:inline">Vyskúšať zadarmo</span>
       </a>
     </div>
   </div>
@@ -158,7 +158,7 @@
 
       <h1 class="font-serif text-[34px] leading-[1.18] md:text-[50px] md:leading-[1.14] text-paper">
         O tendri viete až vo Vestníku.<br class="hidden md:block">
-        <em class="italic text-amber">My vám ho ukážeme až 2 roky skôr.</em>
+        <em class="italic text-amber">My vám ho ukážeme mesiace až roky skôr.</em>
       </h1>
 
       <!-- "228 000+" je overena hodnota verejne_pocty.zmluv (17.9.2026:
@@ -174,7 +174,7 @@
 
       <div class="mt-9 flex flex-wrap items-center gap-6">
         <a href="./prihlasenie.html" class="inline-flex justify-center items-center bg-amber text-ink font-semibold px-6 py-3.5 rounded-md hover:bg-[#F3B65C] transition">
-          Vyskúšať 3 dni zadarmo
+          Vyskúšať 14 dní zadarmo
         </a>
         <a href="#vrstvy" class="text-[15px] text-[#D8D3C4] underline underline-offset-4 hover:text-amber transition">
           Čo presne uvidím &rarr;
@@ -182,7 +182,7 @@
       </div>
 
       <p class="mt-6 text-[12px] tracking-wide text-[#6E6858] font-mono uppercase">
-        Bez platobnej karty &middot; 3 dni zadarmo &middot; aktualizované denne
+        Bez platobnej karty &middot; 14 dní zadarmo &middot; aktualizované denne
       </p>
     </div>
 
@@ -246,8 +246,8 @@
       <div class="text-[13px] text-slate2 mt-1 leading-snug">filtrujete si svoj región a sektor</div>
     </div>
     <div>
-      <div class="font-mono text-[28px] font-bold tracking-tight">0 &euro;</div>
-      <div class="text-[13px] text-slate2 mt-1 leading-snug">počas otvoreného obdobia, celý portál</div>
+      <div class="font-mono text-[28px] font-bold tracking-tight">14 dní</div>
+      <div class="text-[13px] text-slate2 mt-1 leading-snug">zadarmo, celý portál, bez platobnej karty</div>
     </div>
   </div>
 </section>
@@ -476,7 +476,7 @@
     <p class="mt-5 text-[17px] leading-relaxed text-slate2">
       Start, Growth aj Team &mdash; presný rozsah každej úrovne je na stránke
       <a href="./cennik.html" class="text-accent hover:underline font-medium">cenníka</a>.
-      Každý nový účet začína 3-dňovou skúškou zadarmo, bez platobnej karty.
+      Každý nový účet má prvých 14 dní zadarmo, bez platobnej karty.
     </p>
   </div>
 
@@ -505,7 +505,7 @@
     <div class="border border-line rounded-lg p-8 bg-[#F3F0E6]">
       <h3 class="text-[19px] font-semibold">Čo patrí k vyšším úrovniam</h3>
       <p class="mt-5 text-[15px] leading-relaxed text-slate2">
-        Týždenný e-mail posielame zadarmo každému, kto si zapne odber. Len
+        Týždenný e-mail je súčasťou každej úrovne, od Start vyššie. Len
         to, čo je nové od minule, filtrované na váš sektor a kraj, s
         krátkym vysvetlením, čo z tej dotácie pravdepodobne bude za
         zákazku.
@@ -515,8 +515,9 @@
         nikoho úlohou. Kým sa treba prihlásiť, nestane sa to.
       </p>
       <p class="mt-5 text-[15px] leading-relaxed text-ink font-medium">
-        Profily dodávateľov, cenový benchmark sektora, denný digest a
-        Slack/Teams webhook patria v <a href="./cennik.html" class="text-accent hover:underline">cenníku</a>
+        Profily dodávateľov a cenový benchmark sektora máte od úrovne Start.
+        Denný prehľad, Slack/Teams a sledovanie firiem patria v
+        <a href="./cennik.html" class="text-accent hover:underline">cenníku</a>
         k úrovniam Growth a Team.
       </p>
       <!-- ══ UKÁŽKA E-MAILU ══
@@ -587,12 +588,6 @@
     </a>
   </div>
 
-  <p class="mt-8 text-[14px] leading-relaxed text-slate2 max-w-3xl">
-    Ak vám portál niečo prinesie, radi si od vás vypočujeme, čo by za to
-    vaša firma zaplatila. Napíšte na
-    <a class="text-accent hover:underline" href="mailto:info@predtendrom.sk">info@predtendrom.sk</a>
-    &mdash; je to pre nás užitočnejšie než akýkoľvek náš odhad.
-  </p>
 </section>
 
 <!-- ══════════════ PRE KOHO ══════════════ -->
@@ -709,14 +704,14 @@
       </h2>
       <p class="mt-5 text-[17px] leading-relaxed text-slate2">
         Zaregistrujte sa a hneď uvidíte celú databázu — končiace zmluvy aj
-        dotácie, ktoré obce už dostali. 3 dni zadarmo, bez platobnej
+        dotácie, ktoré obce už dostali. 14 dní zadarmo, bez platobnej
         karty.
       </p>
 
       <a href="./prihlasenie.html"
          class="inline-flex justify-center items-center mt-9 bg-accent text-white
                 font-semibold text-[16px] px-8 py-4 rounded-md hover:bg-accentDark transition">
-        Vyskúšať 3 dni zadarmo
+        Vyskúšať 14 dní zadarmo
       </a>
 
       <ul class="mt-10 grid sm:grid-cols-3 gap-5 text-left">
@@ -730,7 +725,7 @@
         </li>
         <li class="flex gap-3 text-[15px] text-slate2">
           <span class="text-accent font-bold mt-px">&#10003;</span>
-          Prístup je jeden na firmu
+          Jedno predplatné pre celú firmu
         </li>
       </ul>
 

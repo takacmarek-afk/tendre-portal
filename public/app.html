@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PredTendrom.sk</title>
 <script src="./config.js"></script>
+<script src="./plany.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -138,9 +139,8 @@
     <div class="bg-white border border-line rounded-lg p-7">
       <h1 class="text-[19px] font-serif font-semibold">Ešte jedna vec</h1>
       <p class="mt-2 text-[14px] leading-relaxed text-slate2">
-        Zadajte firmu, pod ktorou budete portál používať. Prístup je počas
-        otvoreného obdobia bezplatný a bez skúšobnej lehoty, kartu
-        nepotrebujeme.
+        Zadajte firmu, pod ktorou budete portál používať. Prvých 14 dní je
+        zadarmo a platobnú kartu nepotrebujeme.
       </p>
 
       <form id="form-org" class="mt-6 space-y-4">
@@ -224,6 +224,7 @@
         — plné porovnanie všetkých úrovní je na
         <a class="text-accent hover:underline" href="./cennik.html" target="_blank" rel="noopener">cenníku</a>.
       </p>
+      <p id="modal-predplatne-aktualny" class="text-[14px] font-semibold mb-2"></p>
       <div id="modal-predplatne-plany" class="space-y-2 mb-4"></div>
       <p id="modal-predplatne-chyba" class="hidden text-[13px] text-red-700 mb-3"></p>
       <button id="modal-predplatne-zaplatit"
@@ -361,7 +362,7 @@
                  e-mail...", co znelo ako bezici sluzba. -->
             <p class="mt-2 text-[14px] leading-relaxed text-white/70">
               Pošleme vám prehľad toho, čo je nové vo vašom sektore a kraji —
-              týždenne alebo denne, podľa toho, čo si vyberiete. Zadarmo.
+              týždenne alebo denne, podľa toho, čo si vyberiete.
             </p>
           </div>
           <div class="flex flex-col sm:flex-row gap-2 lg:shrink-0">
@@ -1589,12 +1590,17 @@ function riadok(r, benchmark, sanca, mojIco, stavMap) {
       </td>
       <td data-popis="Hodnota" class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${cenaBunka}</td>
       <td data-popis="Zmluva končí" class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
-        <span class="whitespace-nowrap">${bezpecne(r.effective_to) || '—'}</span>
-        ${neskoro
+        <span class="whitespace-nowrap">${bezpecne(dSk(r.effective_to)) || '—'}</span>
+        ${r.sector === 'STAVEBNE_PRACE'
+          // Audit P1.2: stavba sa neopakuje, koniec zmluvy nie je predzvesť
+          // ďalšej súťaže. Stavebné firmy majú silnejší signál v Dotáciách.
+          ? `<div class="text-[11px] mt-1 text-slate2"
+                  title="Pri stavbe koniec zmluvy neznamená ďalšiu súťaž. Pre stavebné firmy je silnejší signál v záložke Dotácie.">stavba sa neopakuje</div>`
+          : neskoro
           ? `<div class="text-[11px] font-semibold text-amber-800 bg-amber-50
                         rounded px-1.5 py-0.5 mt-1 inline-block">tender už asi beží</div>`
           : (r.odhad_vyhlasenia
-              ? `<div class="text-[12px] mt-1 whitespace-nowrap">tender ~ ${bezpecne(r.odhad_vyhlasenia)}</div>`
+              ? `<div class="text-[12px] mt-1 whitespace-nowrap">tender ~ ${bezpecne(dSk(r.odhad_vyhlasenia))}</div>`
               : '')}
         ${typickyCyklus(r)}
       </td>
@@ -1682,13 +1688,14 @@ function riadokDotacie(r, stavMap) {
           ${nova ? `<span class="align-middle ml-1 text-[10px] font-semibold px-1.5 py-0.5
                          rounded bg-emerald-50 text-emerald-800">NOVÁ</span>` : ''}
         </div>
-        <div class="text-[12px] text-slate2 mt-1">${bezpecne(r.poskytovatel)}</div>
-        ${r.strany_vymenene ? `<div class="text-[11px] text-slate2 mt-1"
-             title="V registri boli strany zapísané naopak. Otočili sme ich, aby prijímateľ aj kraj boli správne.">
-             strany v CRZ naopak, opravené</div>` : ''}
+        <div class="text-[12px] text-slate2 mt-1">${bezpecne(r.poskytovatel)}${r.strany_vymenene
+          // Audit P1.2: interná poznámka nepatrí do riadku, len do bublinky.
+          ? ` <span class="cursor-pointer" tabindex="0" aria-label="Poznámka k údajom"
+                 title="V Centrálnom registri zmlúv sú pri tejto zmluve strany zapísané naopak. Príjemcu a kraj sme určili správne, v odkaze na CRZ uvidíte pôvodný zápis.">ⓘ</span>`
+          : ''}</div>
         ${poznamkaDodatky(r)}
         ${kde ? `<div class="text-[12px] text-slate2 mt-1">${bezpecne(kde)}</div>` : ''}
-        ${r.podpisane ? `<div class="text-[11px] text-slate2 mt-1">podpísaná ${bezpecne(r.podpisane)}</div>` : ''}
+        ${r.podpisane ? `<div class="text-[11px] text-slate2 mt-1">podpísaná ${bezpecne(dSk(r.podpisane))}</div>` : ''}
         ${stavMap ? crmStavSelect('dotacia', r.contract_id, stavMap) : ''}
       </td>
       <td data-popis="Na čo" data-blok class="px-4 py-4 align-top max-w-[380px]">
@@ -1717,7 +1724,7 @@ function oknoDotacie(r) {
 
   if (!Number.isNaN(doZaciatku) && doZaciatku > 0) {
     return `<span class="text-[13px]">tender čakáme od</span><br>
-            <span class="font-medium whitespace-nowrap">${bezpecne(r.okno_od)}</span>
+            <span class="font-medium whitespace-nowrap">${bezpecne(dSk(r.okno_od))}</span>
             <div class="text-[11px] mt-1">o ${doZaciatku} dní</div>`;
   }
   if (!Number.isNaN(doKonca) && doKonca >= 0) {
@@ -1726,11 +1733,11 @@ function oknoDotacie(r) {
                   ${sucho ? 'text-amber-800 bg-amber-50' : 'text-emerald-800 bg-emerald-50'}">
               okno je otvorené
             </span>
-            <div class="text-[12px] mt-1 whitespace-nowrap">do ${bezpecne(r.okno_do)}</div>
+            <div class="text-[12px] mt-1 whitespace-nowrap">do ${bezpecne(dSk(r.okno_do))}</div>
             <div class="text-[11px]">zostáva ${doKonca} dní</div>`;
   }
-  return `<span class="text-[13px]">${bezpecne(r.okno_od) || '—'}</span><br>
-          <span class="text-[12px]">až ${bezpecne(r.okno_do) || '—'}</span>`;
+  return `<span class="text-[13px]">${bezpecne(dSk(r.okno_od)) || '—'}</span><br>
+          <span class="text-[12px]">až ${bezpecne(dSk(r.okno_do)) || '—'}</span>`;
 }
 
 function riadokZiadatela(r) {
@@ -1750,15 +1757,15 @@ function riadokZiadatela(r) {
         ${suma(r.cena_sluzby)}
       </td>
       <td data-popis="Najala" class="px-4 py-4 align-top text-[14px] text-slate2 whitespace-nowrap">
-        <span class="whitespace-nowrap">${bezpecne(r.najate)}</span>
+        <span class="whitespace-nowrap">${bezpecne(dSk(r.najate))}</span>
       </td>
       <td data-popis="Dotáciu čakáme" class="px-4 py-4 align-top text-[14px] text-slate2">
-        <span class="font-medium whitespace-nowrap">${bezpecne(r.ocakavane)}</span>
+        <span class="font-medium whitespace-nowrap">${bezpecne(dSk(r.ocakavane))}</span>
         ${!Number.isNaN(doDotacie) && doDotacie > 0
           ? `<div class="text-[11px] mt-0.5">o ${doDotacie} dní</div>`
           : (!Number.isNaN(doDotacie)
               ? `<div class="text-[11px] mt-0.5 text-amber-800">okno už beží</div>` : '')}
-        <div class="text-[11px] mt-0.5">rozsah ${bezpecne(r.okno_od)} – ${bezpecne(r.okno_do)}</div>
+        <div class="text-[11px] mt-0.5">rozsah ${bezpecne(dSk(r.okno_od))} – ${bezpecne(dSk(r.okno_do))}</div>
       </td>
     </tr>`;
 }
@@ -1812,6 +1819,37 @@ function krajZNuts(nuts) {
   return nuts ? (KRAJ_NUTS[String(nuts).slice(0, 5)] || '') : '';
 }
 
+// Audit P1.2: jedna časť zákazky s viacerými víťazmi (rámcová dohoda
+// s viacerými dodávateľmi alebo združenie) bola ako 3 riadky s rovnakou
+// sumou a rôznymi víťazmi (Seňa, 5 734 000 €). Zlúčime ich do jedného.
+function zlucVitazov(riadky) {
+  const out = [], podla = new Map();
+  for (const r of riadky) {
+    const k = `${r.oznamenie_id}|${r.cast_id ?? ''}`;
+    const prvy = podla.get(k);
+    if (!prvy) {
+      const kopia = { ...r, vitazi: [{ nazov: r.vitaz_nazov, ico: r.vitaz_ico }] };
+      podla.set(k, kopia);
+      out.push(kopia);
+    } else {
+      prvy.vitazi.push({ nazov: r.vitaz_nazov, ico: r.vitaz_ico });
+      if (prvy.hodnota !== r.hodnota) prvy.rozne_sumy = true;
+    }
+  }
+  return out;
+}
+
+function vitazText(r) {
+  const v = r.vitazi || [{ nazov: r.vitaz_nazov, ico: r.vitaz_ico }];
+  if (v.length === 1) {
+    return `<span class="text-slate2">vyhral:</span>
+          <span class="font-medium">${bezpecne(v[0].nazov) || '—'}</span>
+          ${v[0].ico ? `<span class="text-slate2"> · IČO ${bezpecne(v[0].ico)}</span>` : ''}`;
+  }
+  return `<span class="text-slate2">vyhrali viacerí (rámcová dohoda alebo združenie):</span>
+          <span class="font-medium">${v.map(x => bezpecne(x.nazov) || '—').join(', ')}</span>`;
+}
+
 function riadokUvo(r, typ) {
   const sektor = POPIS_SEKTORA[r.sektor];
   const kraj = krajZNuts(r.nuts);
@@ -1839,9 +1877,7 @@ function riadokUvo(r, typ) {
       <td data-hlavny class="px-4 py-4 align-top max-w-[420px]">
         <div class="text-[14px] font-medium leading-snug">${nazov}</div>
         ${stitok}
-        <div class="text-[12px] mt-1"><span class="text-slate2">vyhral:</span>
-          <span class="font-medium">${bezpecne(r.vitaz_nazov) || '—'}</span>
-          ${r.vitaz_ico ? `<span class="text-slate2"> · IČO ${bezpecne(r.vitaz_ico)}</span>` : ''}
+        <div class="text-[12px] mt-1">${vitazText(r)}
           <span class="text-slate2">${ponuky}</span></div>
         ${odkazUvo(r.url)}
         ${r.crz_url ? `<a href="${bezpecne(r.crz_url)}" target="_blank" rel="noopener"
@@ -2066,12 +2102,17 @@ document.addEventListener('DOMContentLoaded', () => {
 // Do 22.9.2026 tu bola platobna brana TrustPay/finby - nahradene Stripe-om
 // kvoli nakladom (finby ma pri nizkom objeme transakcii pevny minimalny
 // mesacny poplatok 12 EUR, Stripe ziadny - detaily v 30_stripe_platby.sql).
-const PREDPLATNE_PLANY = [
-  { plan: 'start',  obdobie: 'mesiac', label: 'Start',  cena: '34 € / mesiac' },
-  { plan: 'start',  obdobie: 'rok',    label: 'Start',  cena: '340 € / rok' },
-  { plan: 'growth', obdobie: 'mesiac', label: 'Growth', cena: '89 € / mesiac' },
-  { plan: 'growth', obdobie: 'rok',    label: 'Growth', cena: '890 € / rok' },
-];
+// Ceny z public/plany.js (jedna verzia pravdy, audit P1.1). Kartou sa dá
+// zaplatiť Start a Growth; Team sa dohaduje e-mailom (cenník).
+const PREDPLATNE_PLANY = ['start', 'growth'].flatMap(plan => {
+  const p = (window.PLANY?.plany || {})[plan];
+  if (!p) return [];
+  const eur = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0') + '\u00a0€';
+  return [
+    { plan, obdobie: 'mesiac', label: p.nazov, cena: `${eur(p.mesiac)} / mesiac` },
+    { plan, obdobie: 'rok',    label: p.nazov, cena: `${eur(p.rok)} / rok` },
+  ];
+});
 
 // OPRAVA 22.9.2026 (zivy audit): modal doteraz ukazoval len ceny, ziadne
 // funkcie — kto sem prisiel priamo z appky (nie z cennik.html) nemal ako
@@ -2091,13 +2132,19 @@ const PREDPLATNE_CHYBY = {
   STRIPE_BEZ_GATEWAY_URL: 'Platobná brána vrátila neočakávanú odpoveď. Skúste to prosím o chvíľu.',
 };
 
-function otvorPredplatneModal(supabase) {
+function otvorPredplatneModal(supabase, aktualnyPlan) {
   const zoznam = el('modal-predplatne-plany');
+  // Audit P1.2: pri aktívnom Growth bol predvolený Start. Predvolený je
+  // teraz aktuálny plán (mesačne), inak prvá možnosť.
+  let predvolene = PREDPLATNE_PLANY.findIndex(p => p.plan === aktualnyPlan);
+  if (predvolene < 0) predvolene = 0;
+  const nazovPlanu = (window.PLANY?.plany || {})[aktualnyPlan]?.nazov;
+  el('modal-predplatne-aktualny').textContent = nazovPlanu ? `Váš plán: ${nazovPlanu}` : '';
   zoznam.innerHTML = PREDPLATNE_PLANY.map((p, i) => `
     <label class="flex items-start justify-between gap-3 border border-line rounded-md px-3 py-2.5
                    text-[14px] cursor-pointer has-[:checked]:border-ink has-[:checked]:bg-[#F3F0E6]">
       <span class="flex items-start gap-2">
-        <input type="radio" name="predplatne-volba" value="${p.plan}:${p.obdobie}" ${i === 0 ? 'checked' : ''} class="mt-0.5">
+        <input type="radio" name="predplatne-volba" value="${p.plan}:${p.obdobie}" ${i === predvolene ? 'checked' : ''} class="mt-0.5">
         <span>
           <span class="block">${p.label}</span>
           <span class="block text-[12px] text-slate2 mt-0.5">${PREDPLATNE_POPIS[p.plan] || ''}</span>
@@ -2179,7 +2226,7 @@ function suplTyzdenTrend(riadky) {
 
 function riadokProfil(r) {
   const kde = r.authority_name || '—';
-  const obdobie = [r.effective_from, r.effective_to].filter(Boolean).join(' – ') || (r.signed_on || '—');
+  const obdobie = [dSk(r.effective_from), dSk(r.effective_to)].filter(Boolean).join(' – ') || (dSk(r.signed_on) || '—');
   return `
     <tr class="border-b border-line last:border-0">
       <td class="py-2.5 pr-3 align-top w-[58%]">
@@ -2316,8 +2363,13 @@ async function otvorProfilDodavatela(supabase, ico, nazov, jeTeam) {
   el('modal-profil-riadky').innerHTML = riadky.map(riadokProfil).join('');
 }
 
-function odznakPredplatneho(sub) {
-  // Otvorene obdobie skoncilo 21.9.2026 (je_zadarmo() prepnute na false).
+function odznakPredplatneho(sub, zadarmo = false) {
+  // POZOR (overene 28. 9. 2026): je_zadarmo() je v produkcii stale TRUE —
+  // testovacia prevadzka, kym Marek nespusti ostre platby. Server vtedy
+  // pusta kazdeho ku vsetkemu (ma_aktivny_pristup/ma_pro = je_zadarmo OR ...).
+  // Klient to predtym nevedel: po vyprsani skusky ukazal "Predplatne
+  // neaktivne" a zamky (audit P1.2 "Sledovanie od Growth"), hoci data
+  // chodili. Teraz sa riadi tym istym prepinacom.
   // Odzrkadluje realnu logiku ma_aktivny_pristup()/ma_pro() z databazy
   // (08_zadarmo.sql, opravene pre growth/team/admin v 31_oprava_ma_pro_planov.sql)
   // - klient si to len ZOBRAZUJE, o skutocnom pristupe k datam vzdy
@@ -2341,13 +2393,18 @@ function odznakPredplatneho(sub) {
   const proPlany = ['trial', 'pro', 'growth', 'team', 'admin'];
   const trialKonci = sub?.trial_konci ? new Date(sub.trial_konci) : null;
   const trialAktivny = sub?.stav === 'trial' && trialKonci && trialKonci > new Date();
-  const aktivny = sub?.stav === 'aktivne' || trialAktivny;
-  const jePro = aktivny && proPlany.includes(sub?.plan);
+  const aktivny = zadarmo || sub?.stav === 'aktivne' || trialAktivny;
+  const jePro = zadarmo || (aktivny && proPlany.includes(sub?.plan));
 
   const o = el('odznak-trial');
   const p = el('odznak-plan');
 
-  if (!sub || !aktivny) {
+  if (zadarmo && !(sub?.stav === 'aktivne') && !trialAktivny) {
+    o.textContent = 'Testovacia prevádzka — plný prístup';
+    o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-green-100 text-green-800';
+    p.textContent = '';
+    p.className = 'hidden';
+  } else if (!sub || !aktivny) {
     o.textContent = 'Predplatné neaktívne';
     o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-red-100 text-red-800';
     p.textContent = '';
@@ -2389,7 +2446,7 @@ function obrazovkaTrialVycerpany(supabase) {
         <h1 class="text-[19px] font-serif font-semibold">Táto firma už prístup má</h1>
         <p class="mt-3 text-[14px] leading-relaxed text-slate2">
           Podľa IČO, ktoré ste zadali, je vaša firma u nás už zaregistrovaná.
-          Prístup je jeden na firmu.
+          Celá firma zdieľa jedno predplatné.
         </p>
         <p class="mt-4 text-[14px] leading-relaxed text-slate2">
           Požiadajte kolegu, ktorý ho zakladal, aby vás pridal. Ak si nie ste
@@ -2454,7 +2511,7 @@ function platneIco(v) {
   return /^\d{8}$/.test(t) ? t : '';
 }
 
-async function nastavOdber(supabase, sektory, email, onZmena) {
+async function nastavOdber(supabase, sektory, email, onZmena, jePro = false) {
   naplnSelect('o-sektor', sektory, 'všetky sektory');
   naplnSelect('o-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
 
@@ -2474,12 +2531,15 @@ async function nastavOdber(supabase, sektory, email, onZmena) {
   // od HTML, po prvom prekresleni by sa rozisiel so skutocnym stavom.
   function stavVypnute() {
     btn.textContent = 'Chcem ho dostávať';
+    el('o-frekvencia').value = jePro ? 'denne' : 'tyzdenne';
   }
 
   function stavZapnute(o, zbal = true) {
     el('o-sektor').value = o?.sektor ?? '';
     el('o-kraj').value = o?.kraj ?? '';
-    el('o-frekvencia').value = o?.frekvencia ?? 'tyzdenne';
+    // Audit P1.2: Growth a vyššie má denný prehľad — bez uloženej voľby
+    // je predvolený denný, inak platí voľba používateľa.
+    el('o-frekvencia').value = o?.frekvencia ?? (jePro ? 'denne' : 'tyzdenne');
     el('o-webhook').value = o?.webhook_url ?? '';
     el('o-moje-ico').value = o?.moje_ico ?? '';
     btn.textContent = 'Uložiť zmenu';
@@ -2495,7 +2555,8 @@ async function nastavOdber(supabase, sektory, email, onZmena) {
     const krajText = o?.kraj || 'celé Slovensko';
     const frekvenciaText = o?.frekvencia === 'denne' ? 'denne' : 'týždenne';
     el('o-zhrnutie-filtre').textContent =
-      ` ${sektorText}, ${krajText} — ${frekvenciaText}.`;
+      ` ${sektorText}, ${krajText} — ${frekvenciaText}.` +
+      (jePro && o?.frekvencia !== 'denne' ? ' Váš plán umožňuje aj denný prehľad.' : '');
 
     if (zbal) {
       el('odber-detail').classList.add('hidden');
@@ -2571,6 +2632,15 @@ async function nastavOdber(supabase, sektory, email, onZmena) {
 // pozvanky vie len owner — server (RLS aj kontrola v pozvi_clena()/
 // moje_pozvanky()) to aj tak vynucuje, toto je len zobrazenie podla `rola`
 // z memberships (nacitane raz v start(), viz jej komentar).
+// Audit P1.2: dátumy v tabuľkách po slovensky ("15. 1. 2027"), nie ISO.
+// Prázdna hodnota ostane prázdna (volajúci si dáva vlastné "—").
+function dSk(iso) {
+  if (!iso) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
+  if (!m) return String(iso);
+  return `${Number(m[3])}. ${Number(m[2])}. ${m[1]}`;
+}
+
 function datumKratky(iso) {
   if (!iso) return '—';
   return new Date(iso).toLocaleDateString('sk-SK');
@@ -2816,13 +2886,14 @@ async function nastavStatistiky(supabase) {
 
 // ── DASHBOARD ───────────────────────────────────────────────────────────
 async function dashboard(supabase, rola, spravaPozvanky) {
-  const [{ data: org }, { data: sub }] = await Promise.all([
+  const [{ data: org }, { data: sub }, { data: zadarmo }] = await Promise.all([
     supabase.from('organizations').select('id, nazov').limit(1).maybeSingle(),
-    supabase.from('subscriptions').select('stav, trial_konci, plan').limit(1).maybeSingle()
+    supabase.from('subscriptions').select('stav, trial_konci, plan').limit(1).maybeSingle(),
+    supabase.rpc('je_zadarmo'),
   ]);
 
   el('nazov-firmy').textContent = org?.nazov ?? '';
-  const { jePro, aktivny } = odznakPredplatneho(sub);
+  const { jePro, aktivny } = odznakPredplatneho(sub, zadarmo === true);
   // Team-only podmnozina jePro — financny kontext dodavatela (RUZ). Zrkadli
   // presne ma_team() v databaze (supabase/35_ruz_financie.sql): 'trial' dava
   // Pro uroven, nie Team (viz komentar pri odznakPredplatneho vyssie), preto
@@ -2835,7 +2906,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   if (rola === 'owner' || rola === 'admin') {
     const btnPredplatne = el('btn-predplatne');
     btnPredplatne.classList.remove('hidden');
-    btnPredplatne.addEventListener('click', () => otvorPredplatneModal(supabase));
+    btnPredplatne.addEventListener('click', () => otvorPredplatneModal(supabase, sub?.plan));
   }
 
   // Vysledok prijatia pozvanky (viz start()). Ziadny trvaly zapis, len
@@ -3294,7 +3365,10 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       // Rovnaka hranica ako v Konciacich zmluvach (DNI_TENDER_UZ_BEZI):
       // pri konci do 90 dni sutaz vacsinou uz bezi, predstih nedava.
       const od = el('u-jeCas').checked ? DNI_TENDER_UZ_BEZI : 0;
-      q = q.gte('koniec', oDni(od)).order('koniec', { ascending: true });
+      // Audit P1.2: stavba sa neopakuje — pri stavebných prácach koniec
+      // zmluvy neznamená ďalšiu súťaž, preto ich tu nezobrazujeme.
+      q = q.or('druh.is.null,druh.neq.works')
+           .gte('koniec', oDni(od)).order('koniec', { ascending: true });
     }
     else if (typ === 'vysledky') q = q.order('publikovane', { ascending: false }).order('podpisane', { ascending: false, nullsFirst: false });
     else if (typ === 'vyhlasene') q = q.eq('typ', 'sutaz').gte('lehota_ponuk', new Date().toISOString()).order('lehota_ponuk', { ascending: true });
@@ -3318,7 +3392,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       return;
     }
     posledne.uvo = data ?? [];
-    el('riadky-u').innerHTML = posledne.uvo.map(r => riadokUvo(r, typ)).join('');
+    const zobraz = (typ === 'koncia' || typ === 'vysledky') ? zlucVitazov(posledne.uvo) : posledne.uvo;
+    el('riadky-u').innerHTML = zobraz.map(r => riadokUvo(r, typ)).join('');
     el('prazdny-u').classList.toggle('hidden', posledne.uvo.length > 0);
     const c = count ?? posledne.uvo.length;
     let text = c > posledne.uvo.length
@@ -3329,6 +3404,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       // Skryte riadky musia byt vidiet ako cislo (rovnaky princip ako
       // v Konciacich zmluvach).
       let sq = supabase.from('uvo_vysledky').select('id', { count: 'exact', head: true })
+        .or('druh.is.null,druh.neq.works')
         .gte('koniec', oDni(0)).lt('koniec', oDni(DNI_TENDER_UZ_BEZI));
       const kraj = el('u-kraj').value, sektor = el('u-sektor').value, t = ocisti(el('u-text').value);
       if (kraj && NUTS_KRAJA[kraj]) sq = sq.like('nuts', `${NUTS_KRAJA[kraj]}%`);
@@ -3337,6 +3413,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       const skr = await sq;
       if (!skr.error && skr.count) text += ` · ${cislo(skr.count)} skrytých, kde súťaž už asi beží`;
     }
+    if (typ === 'koncia') text += ' · stavebné práce tu nie sú, stavba sa neopakuje';
     el('pocet-uvo').textContent = text;
     nastavViac('uvo', 'viac-u-obal', 'viac-u-stav', c, posledne.uvo.length);
   }
@@ -3374,7 +3451,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       const d = podla.get(ico);
       const nazov = d?.dodavatel ?? sledovaneIco.get(ico) ?? ico;
       const posledna = d?.posledna_zmluva
-        ? `naposledy ${bezpecne(d.posledna_zmluva)}`
+        ? `naposledy ${bezpecne(dSk(d.posledna_zmluva))}`
         : 'zatiaľ bez zmluvy v stiahnutom období';
       return `<span class="inline-flex items-center gap-2 text-[13px] bg-[#F3F0E6]
                           border border-line rounded-full pl-3 pr-1.5 py-1">
@@ -3426,7 +3503,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
         : `<span class="text-slate2" title="Rozptyl v sektore je príliš veľký, medián by klamal.">príliš rozptýlené</span>`;
       const poslednaTxt = (r.posledna_cena != null)
         ? `${suma(r.posledna_cena)}${jednotka}
-           <div class="text-[11px] text-slate2 mt-0.5">${bezpecne(r.posledna_cena_datum ?? '')}</div>`
+           <div class="text-[11px] text-slate2 mt-0.5">${bezpecne(dSk(r.posledna_cena_datum))}</div>`
         : '<span class="text-slate2">—</span>';
       return `
         <tr class="border-b border-line last:border-0">
@@ -3521,7 +3598,9 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       return;
     }
     posledne.dodavatelia = data ?? [];
-    el('riadky-f').innerHTML = posledne.dodavatelia.map(r => riadokDodavatela(r, sledovaneIco)).join('');
+    // Audit P1.2: tu chýbal tretí argument jePro — Growth preto videl pri
+    // každej firme zámok "Sledovanie od Growth" (overené naživo 28. 9. 2026).
+    el('riadky-f').innerHTML = posledne.dodavatelia.map(r => riadokDodavatela(r, sledovaneIco, jePro)).join('');
     el('prazdny-dod').classList.toggle('hidden', posledne.dodavatelia.length > 0);
 
     const c = count ?? posledne.dodavatelia.length;
@@ -3784,7 +3863,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // zobrazenie prilezitosti — tie su jadro produktu.
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    await nastavOdber(supabase, sektory, user?.email, nastavRelevanciu);
+    await nastavOdber(supabase, sektory, user?.email, nastavRelevanciu, jePro);
   } catch (e) {
     console.error('Odber sa nepodarilo nastavit:', e);
   }
