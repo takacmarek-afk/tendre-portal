@@ -4031,10 +4031,20 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       prekresliVsetko();
     });
     // "Zobraziť všetko" uloží prázdny výber, aby sa okno pri ďalšom
-    // prihlásení znova nepýtalo. Zmeniť sa dá kedykoľvek cez Nastavenie.
+    // prihlásení znova nepýtalo. Zmeniť sa dá kedykoľvek cez "Zmeniť".
+    //
+    // OPRAVA (naživo 28. 9. 2026): podmienka `if (!mojVyber)` fungovala
+    // len pri prvom prihlásení. Keď mal niekto výber už uložený a otvoril
+    // toto okno cez "Zmeniť", klik na "Zobraziť všetko" zatvoril okno bez
+    // toho, aby čokoľvek zmenil — starý výber ostal aktívny, hoci tlačidlo
+    // sľubovalo presný opak. Uložiť a prekresliť treba vždy.
     el('mv-preskocit').addEventListener('click', async () => {
-      if (!mojVyber) await ulozVyber({ kraje: [], sektory: [], velkost: 'vsetko' });
+      const ok = await ulozVyber({ kraje: [], sektory: [], velkost: 'vsetko' });
+      if (!ok) return;
       zavriVyber();
+      el('mv-pouzit').checked = false;
+      obnovPanel();
+      prekresliVsetko();
     });
     el('mv-zmenit').addEventListener('click', otvorVyber);
     el('mv-pouzit').addEventListener('change', () => {
