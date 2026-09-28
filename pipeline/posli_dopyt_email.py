@@ -39,6 +39,28 @@ ODKAZ_TRH = "https://predtendrom.sk/trh.html"
 
 EMAIL_RE = re.compile(r"[^@\s,;<>\"]+@[^@\s,;<>\"]+\.[A-Za-z]{2,}")
 
+# Rovnake popisky ako TERMIN_POPIS/ROZPOCET_POPIS v public/trh.html (P3.3,
+# migracia 55_dopyt_kontakt_a_sablony.sql) — pri zmene tam zmenit aj tu.
+TERMIN_POPIS = {
+    "co_najskor": "co najskor", "do_1_mesiaca": "do 1 mesiaca",
+    "do_3_mesiacov": "do 3 mesiacov", "neviem": "neviem / flexibilne",
+}
+ROZPOCET_POPIS = {
+    "do_5000": "do 5 000 eur", "5000_20000": "5 000 - 20 000 eur",
+    "20000_100000": "20 000 - 100 000 eur", "nad_100000": "nad 100 000 eur",
+    "neviem": "neviem",
+}
+
+
+def _detaily_dopytu(dopyt) -> str:
+    """'Termin: ... . Rozpocet: ...' — len tie casti, ktore su vyplnene."""
+    casti = []
+    if dopyt.get("termin"):
+        casti.append("Termin: " + TERMIN_POPIS.get(dopyt["termin"], dopyt["termin"]))
+    if dopyt.get("rozpocet"):
+        casti.append("Rozpocet: " + ROZPOCET_POPIS.get(dopyt["rozpocet"], dopyt["rozpocet"]))
+    return " · ".join(casti)
+
 
 def _platny_email(e) -> bool:
     return bool(e) and bool(EMAIL_RE.fullmatch(str(e).strip()))
@@ -69,6 +91,10 @@ def _obsah_pre_poradcu(dopyt) -> dict:
     typ_text = {"zmluva": "Koncici sa zmluva", "dotacia": "Dotacia", "ine": "Ine"}.get(
         dopyt.get("typ"), "Vseobecny dopyt")
     kde = dopyt.get("kraj") or "kraj neuvedeny"
+    popis = dopyt.get("popis") or ""
+    detaily = _detaily_dopytu(dopyt)
+    if detaily:
+        popis = f"{popis} ({detaily})" if popis else detaily
     return {
         "titulok": f"Novy dopyt: {dopyt.get('obec_nazov') or 'obec'}",
         "uvod": (f"{dopyt.get('obec_nazov') or 'Obec'} ({kde}) prave vypisala "
@@ -76,7 +102,7 @@ def _obsah_pre_poradcu(dopyt) -> dict:
                  f"takze cim skor, tym lepsie."),
         "bloky": [{
             "titul": dopyt.get("nazov") or "(bez nazvu)",
-            "popis": dopyt.get("popis") or "",
+            "popis": popis,
             "zvyraznene": typ_text,
         }],
         "cta_text": "Otvorit Trh dopytov",
@@ -89,7 +115,7 @@ def _obsah_pre_poradcu(dopyt) -> dict:
 
 def posli_poradcom(sb, kluc, nasucho, obmedz_na=None) -> tuple:
     dopyty = (sb.table("dopyty")
-                .select("id, obec_nazov, kraj, typ, nazov, popis, stav")
+                .select("id, obec_nazov, kraj, typ, nazov, popis, stav, termin, rozpocet")
                 .eq("poradcovia_notifikovani", False)
                 .execute().data or [])
     poslane = zlyhane = 0

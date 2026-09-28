@@ -178,7 +178,7 @@
     <p class="text-[12px] font-semibold text-accent bg-accent/10 rounded-full px-3 py-1 inline-block">Účet obce</p>
     <h1 id="obec-nazov" class="mt-3 text-[24px] font-bold tracking-tight"></h1>
     <p id="obec-podnadpis" class="mt-1 text-[13px] text-slate2"></p>
-    <button id="btn-uprava-obec" class="mt-2 text-[13px] font-semibold text-accent hover:underline">Upraviť kontaktný e-mail</button>
+    <button id="btn-uprava-obec" class="mt-2 text-[13px] font-semibold text-accent hover:underline">Upraviť kontaktné údaje</button>
 
     <form id="form-uprava-obec" class="hidden mt-3 space-y-3 border border-line rounded-lg bg-white p-5 max-w-[420px]">
       <div>
@@ -186,8 +186,22 @@
         <input id="uo-email" type="email" placeholder="starosta@obec.sk"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
-        <p class="mt-1.5 text-[12px] text-slate2">Kraj a IČO tu meniť nejde — pri zmene napíšte na info@predtendrom.sk.</p>
       </div>
+      <div>
+        <label class="block text-[13px] font-semibold mb-1.5" for="uo-telefon">Telefón (nepovinné)</label>
+        <input id="uo-telefon" type="text" placeholder="+421 900 000 000"
+               class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                      focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+      </div>
+      <div>
+        <label class="block text-[13px] font-semibold mb-1.5">Ako vás majú firmy radšej kontaktovať?</label>
+        <div class="flex flex-wrap gap-4 text-[14px]">
+          <label class="flex items-center gap-1.5"><input type="radio" name="uo-pref" value="email" class="rounded-full border-line">E-mailom</label>
+          <label class="flex items-center gap-1.5"><input type="radio" name="uo-pref" value="telefon" class="rounded-full border-line">Telefonicky</label>
+          <label class="flex items-center gap-1.5"><input type="radio" name="uo-pref" value="hocijaky" class="rounded-full border-line">Je mi to jedno</label>
+        </div>
+      </div>
+      <p class="text-[12px] text-slate2">Kraj a IČO tu meniť nejde — pri zmene napíšte na info@predtendrom.sk.</p>
       <div class="flex items-center gap-3">
         <button type="submit" id="uo-btn"
                 class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md text-[14px]
@@ -204,39 +218,110 @@
       <button id="btn-novy-dopyt" class="text-[13px] font-semibold text-accent hover:underline">+ Nový dopyt</button>
     </div>
 
-    <form id="form-novy-dopyt" class="hidden mt-4 space-y-3 border border-line rounded-lg bg-white p-5">
-      <div>
-        <label class="block text-[13px] font-semibold mb-1.5" for="nd-nazov">S čím potrebujete pomôcť</label>
-        <input id="nd-nazov" type="text" required placeholder="Napr. žiadosť o dotáciu na zateplenie škôlky"
-               class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
-                      focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+    <!-- Viackrokovy formular dopytu (P3.3, zadanie:
+         claude/predtendrom-p3-cesta-pre-starostov-zadanie.md). Krok 1
+         sablona, krok 2 podrobnosti + orientacny termin/rozpocet, krok 3
+         kontakt (v skutocnosti uklada na ucet obce, viz komentar pri
+         migracii 55_dopyt_kontakt_a_sablony.sql) + potvrdenie + pravny
+         text. Oba texty v kroku 3 (potvrdenie a pravne upozornenie) su
+         PRESNE znenie zo zadania — NAVRH, caka na overenie pravnikom pre
+         verejne obstaravanie pred kampanou 24.11.2026. Menit ich len na
+         jednom mieste nizsie v JS (WD_TEXTY). -->
+    <div id="wizard-dopyt" class="hidden mt-4 border border-line rounded-lg bg-white p-5">
+
+      <div id="wd-krok1">
+        <p class="text-[13px] font-semibold text-slate2 mb-3">Krok 1 z 3 — s čím potrebujete pomôcť?</p>
+        <div id="wd-sablony" class="grid sm:grid-cols-2 gap-3"></div>
+        <button type="button" id="wd-krok1-zrusit" class="mt-3 text-[13px] text-slate2 hover:text-ink">Zrušiť</button>
       </div>
-      <div>
-        <label class="block text-[13px] font-semibold mb-1.5" for="nd-typ">Typ (nepovinné)</label>
-        <select id="nd-typ" class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px] bg-white
-                                   focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
-          <option value="">Nevybraté</option>
-          <option value="dotacia">Dotácia</option>
-          <option value="zmluva">Zmluva</option>
-          <option value="ine">Iné</option>
-        </select>
+
+      <div id="wd-krok2" class="hidden">
+        <button type="button" id="wd-krok2-spat" class="text-[13px] text-slate2 hover:text-ink">&larr; Späť</button>
+        <p class="mt-2 text-[13px] font-semibold text-slate2 mb-3">Krok 2 z 3 — podrobnosti</p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-[13px] font-semibold mb-1.5" for="wd-nazov">Čoho sa to týka</label>
+            <input id="wd-nazov" type="text" required
+                   class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                          focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+          </div>
+          <div>
+            <label class="block text-[13px] font-semibold mb-1.5" for="wd-popis">Podrobnosti (nepovinné)</label>
+            <textarea id="wd-popis" rows="3" placeholder="Čo presne riešite, rozsah…"
+                      class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                             focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"></textarea>
+          </div>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[13px] font-semibold mb-1.5" for="wd-termin">Orientačný termín</label>
+              <select id="wd-termin" class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px] bg-white
+                                            focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+                <option value="">Vyberte</option>
+                <option value="co_najskor">Čo najskôr</option>
+                <option value="do_1_mesiaca">Do 1 mesiaca</option>
+                <option value="do_3_mesiacov">Do 3 mesiacov</option>
+                <option value="neviem">Neviem / flexibilné</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[13px] font-semibold mb-1.5" for="wd-rozpocet">Orientačný rozpočet</label>
+              <select id="wd-rozpocet" class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px] bg-white
+                                              focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+                <option value="">Vyberte</option>
+                <option value="do_5000">Do 5 000 €</option>
+                <option value="5000_20000">5 000 – 20 000 €</option>
+                <option value="20000_100000">20 000 – 100 000 €</option>
+                <option value="nad_100000">Nad 100 000 €</option>
+                <option value="neviem">Neviem</option>
+              </select>
+            </div>
+          </div>
+          <button type="button" id="wd-krok2-dalej"
+                  class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md text-[14px] hover:bg-accentDark transition">
+            Ďalej
+          </button>
+        </div>
       </div>
-      <div>
-        <label class="block text-[13px] font-semibold mb-1.5" for="nd-popis">Podrobnosti (nepovinné)</label>
-        <textarea id="nd-popis" rows="3" placeholder="Čo presne riešite, termín, rozsah…"
-                  class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
-                         focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"></textarea>
+
+      <div id="wd-krok3" class="hidden">
+        <button type="button" id="wd-krok3-spat" class="text-[13px] text-slate2 hover:text-ink">&larr; Späť</button>
+        <p class="mt-2 text-[13px] font-semibold text-slate2 mb-3">Krok 3 z 3 — kontakt</p>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-[13px] font-semibold mb-1.5" for="wd-email">Kontaktný e-mail</label>
+            <input id="wd-email" type="email" required placeholder="starosta@obec.sk"
+                   class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                          focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+          </div>
+          <div>
+            <label class="block text-[13px] font-semibold mb-1.5" for="wd-telefon">Telefón (nepovinné)</label>
+            <input id="wd-telefon" type="text" placeholder="+421 900 000 000"
+                   class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
+                          focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+          </div>
+          <div>
+            <label class="block text-[13px] font-semibold mb-1.5">Ako vás majú firmy radšej kontaktovať?</label>
+            <div class="flex flex-wrap gap-4 text-[14px]">
+              <label class="flex items-center gap-1.5"><input type="radio" name="wd-pref" value="email" checked class="rounded-full border-line">E-mailom</label>
+              <label class="flex items-center gap-1.5"><input type="radio" name="wd-pref" value="telefon" class="rounded-full border-line">Telefonicky</label>
+              <label class="flex items-center gap-1.5"><input type="radio" name="wd-pref" value="hocijaky" class="rounded-full border-line">Je mi to jedno</label>
+            </div>
+          </div>
+
+          <div id="wd-potvrdenie" class="border-t border-line pt-4 text-[13px] leading-relaxed text-slate2"></div>
+
+          <div class="flex items-center gap-3">
+            <button type="button" id="wd-btn"
+                    class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md text-[14px]
+                           hover:bg-accentDark transition disabled:opacity-50">
+              Zverejniť dopyt
+            </button>
+            <button type="button" id="wd-zrusit" class="text-[13px] text-slate2 hover:text-ink">Zrušiť</button>
+          </div>
+          <p id="wd-chyba" class="hidden text-[13px] text-red-700"></p>
+        </div>
       </div>
-      <div class="flex items-center gap-3">
-        <button type="submit" id="nd-btn"
-                class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md text-[14px]
-                       hover:bg-accentDark transition disabled:opacity-50">
-          Zverejniť dopyt
-        </button>
-        <button type="button" id="nd-zrusit" class="text-[13px] text-slate2 hover:text-ink">Zrušiť</button>
-      </div>
-      <p id="nd-chyba" class="hidden text-[13px] text-red-700"></p>
-    </form>
+    </div>
 
     <div id="obec-dopyty" class="mt-5 space-y-3"></div>
   </div>
@@ -290,6 +375,13 @@
       </label>
     </div>
 
+    <!-- P3.3 (zadanie), text pre poradcov — NAVRH, caka na overenie
+         pravnikom rovnako ako potvrdenie/pravny text v kroku 3 na strane
+         obce nizsie. -->
+    <p class="mt-3 text-[12px] leading-relaxed text-slate2 bg-line/40 rounded-md px-3 py-2">
+      Ak obci pripravujete podklady pre súťaž, nemusíte sa do nej môcť prihlásiť (konflikt záujmov).
+    </p>
+
     <div id="poradca-dopyty" class="mt-5 space-y-3"></div>
     <p id="poradca-prazdne" class="hidden mt-5 text-[14px] text-slate2">
       Zatiaľ tu nie je žiadny otvorený dopyt. Skúste sa vrátiť neskôr.
@@ -328,6 +420,50 @@ const KRAJE = [
 ];
 
 const TYP_POPIS = { dotacia: 'Dotácia', zmluva: 'Zmluva', ine: 'Iné' };
+const TERMIN_POPIS = {
+  co_najskor: 'Čo najskôr', do_1_mesiaca: 'Do 1 mesiaca',
+  do_3_mesiacov: 'Do 3 mesiacov', neviem: 'Neviem / flexibilné',
+};
+const ROZPOCET_POPIS = {
+  do_5000: 'Do 5 000 €', '5000_20000': '5 000 – 20 000 €',
+  '20000_100000': '20 000 – 100 000 €', nad_100000: 'Nad 100 000 €', neviem: 'Neviem',
+};
+
+// P3.3 (zadanie) — krok 1 formulara dopytu. `typ` mapuje na existujuci
+// stlpec dopyty.typ (dotacia/zmluva/ine), lebo ten uz pouziva zvysok kodu
+// (e-mailove notifikacie, filter podla typu) — sablona je jemnejsie
+// clenenie navyse, nie nahrada.
+const SABLONY = [
+  { id: 'dotacia_ziadost', typ: 'dotacia', nadpis: 'Poradca na žiadosť o dotáciu',
+    popis: 'Pomoc so spracovaním žiadosti o dotáciu alebo grant.',
+    placeholder: 'Napr. žiadosť o dotáciu na zateplenie škôlky' },
+  { id: 'obstaravanie', typ: 'zmluva', nadpis: 'Príprava verejného obstarávania',
+    popis: 'Pomoc s prípravou súťažných podkladov alebo prieskumom trhu.',
+    placeholder: 'Napr. obstarávanie na opravu miestnej komunikácie' },
+  { id: 'projektova_dok', typ: 'ine', nadpis: 'Projektová dokumentácia',
+    popis: 'Vypracovanie alebo doplnenie projektovej dokumentácie.',
+    placeholder: 'Napr. projekt na rekonštrukciu kultúrneho domu' },
+  { id: 'stavebny_dozor', typ: 'ine', nadpis: 'Stavebný dozor',
+    popis: 'Odborný dohľad nad stavbou alebo rekonštrukciou.',
+    placeholder: 'Napr. stavebný dozor pri výstavbe chodníka' },
+  { id: 'ine', typ: null, nadpis: 'Iné',
+    popis: 'Niečo iné — napíšte vlastnými slovami.',
+    placeholder: 'Opíšte, s čím potrebujete pomôcť' },
+];
+const SABLONY_MAP = Object.fromEntries(SABLONY.map(s => [s.id, s]));
+
+// ⚠️ NAVRH — presne znenie oboch textov (P3.3 zo zadania) nechaj pred
+// spustenim kampane 24.11.2026 overit pravnikom pre verejne obstaravanie.
+// Zamerne tu na jednom mieste ako upravitelne texty, nie roztrusene v HTML.
+const WD_TEXTY = {
+  potvrdenie: 'Váš dopyt uvidí najviac 5 overených firiem z vášho kraja. ' +
+    'Ozvú sa vám zvyčajne do 3 pracovných dní. Nič nepodpisujete a k ničomu ' +
+    'sa nezaväzujete. Dopyt môžete kedykoľvek uzavrieť jedným klikom.',
+  pravnyOdkaz: 'Ako presne dopyt súvisí s obstarávaním?',
+  pravnyText: 'Dopyt nie je verejné obstarávanie. Je to prieskum trhu, ktorý ' +
+    'vám pomôže zistiť ceny a možnosti a určiť predpokladanú hodnotu zákazky. ' +
+    'Samotnú zákazku potom zadávate podľa zákona o verejnom obstarávaní.',
+};
 
 function datum(iso) {
   try { return new Date(iso).toLocaleDateString('sk-SK'); } catch (e) { return ''; }
@@ -457,6 +593,11 @@ function vykresliDopytObec(d, reakcie) {
       ${stavOznacenie}
     </div>
     ${d.popis ? `<p class="mt-2 text-[13px] leading-relaxed text-slate2">${bezpecne(d.popis)}</p>` : ''}
+    ${(d.termin || d.rozpocet) ? `<div class="mt-1.5 text-[12px] text-slate2">
+      ${d.termin ? 'Termín: ' + bezpecne(TERMIN_POPIS[d.termin] ?? d.termin) : ''}
+      ${d.termin && d.rozpocet ? ' · ' : ''}
+      ${d.rozpocet ? 'Rozpočet: ' + bezpecne(ROZPOCET_POPIS[d.rozpocet] ?? d.rozpocet) : ''}
+    </div>` : ''}
     ${d.stav === 'otvoreny' ? `<button class="btn-zatvorit mt-3 text-[12px] font-semibold text-slate2 hover:text-ink" data-dopyt="${d.id}">Zatvoriť dopyt</button>` : ''}
     <div class="mt-2">
       <div class="text-[11px] font-semibold uppercase tracking-wider text-slate2">
@@ -469,7 +610,7 @@ function vykresliDopytObec(d, reakcie) {
 
 async function nacitajDopytyObce(obecId) {
   const { data: dopyty, error } = await supabase.from('dopyty')
-    .select('id,nazov,popis,typ,stav,created_at')
+    .select('id,nazov,popis,typ,stav,created_at,termin,rozpocet')
     .eq('obec_id', obecId)
     .order('created_at', { ascending: false });
 
@@ -518,6 +659,10 @@ async function ukazObecDashboard(obecId) {
   el('obec-podnadpis').textContent = [obec.kraj, obec.kontakt_email].filter(Boolean).join(' · ');
 
   el('uo-email').value = obec.kontakt_email ?? '';
+  el('uo-telefon').value = obec.kontakt_telefon ?? '';
+  const uoPrefVychodzi = obec.preferovany_kontakt || 'email';
+  const uoPrefRadio = document.querySelector(`input[name="uo-pref"][value="${uoPrefVychodzi}"]`);
+  if (uoPrefRadio) uoPrefRadio.checked = true;
   el('btn-uprava-obec').onclick = () => el('form-uprava-obec').classList.toggle('hidden');
   el('uo-zrusit').onclick = () => el('form-uprava-obec').classList.add('hidden');
 
@@ -531,6 +676,8 @@ async function ukazObecDashboard(obecId) {
 
     const { error: chybaRpc } = await supabase.rpc('uprav_kontakt_obce', {
       p_kontakt_email: el('uo-email').value.trim() || null,
+      p_kontakt_telefon: el('uo-telefon').value.trim() || null,
+      p_preferovany_kontakt: document.querySelector('input[name="uo-pref"]:checked')?.value ?? null,
     });
 
     btn.disabled = false;
@@ -546,41 +693,115 @@ async function ukazObecDashboard(obecId) {
     await ukazObecDashboard(obecId);
   };
 
-  el('btn-novy-dopyt').onclick = () => {
-    el('form-novy-dopyt').classList.toggle('hidden');
-  };
-  el('nd-zrusit').onclick = () => el('form-novy-dopyt').classList.add('hidden');
+  el('btn-novy-dopyt').onclick = () => otvorWizard(obec);
 
-  el('form-novy-dopyt').onsubmit = async (e) => {
-    e.preventDefault();
-    const btn = el('nd-btn');
-    const chyba = el('nd-chyba');
+  await nacitajDopytyObce(obecId);
+  ukazLen('sekcia-obec');
+
+  // ── Viackrokovy formular dopytu (P3.3) ──────────────────────────────────
+  let wdSablona = null;
+
+  function vykresliSablony() {
+    el('wd-sablony').innerHTML = SABLONY.map(s => `
+      <button type="button" class="wd-sablona-btn text-left border border-line rounded-lg p-4 hover:border-accent transition" data-sablona="${s.id}">
+        <div class="text-[14px] font-semibold">${bezpecne(s.nadpis)}</div>
+        <p class="mt-1 text-[12px] leading-relaxed text-slate2">${bezpecne(s.popis)}</p>
+      </button>`).join('');
+    for (const btn of el('wd-sablony').querySelectorAll('.wd-sablona-btn')) {
+      btn.addEventListener('click', () => zvolSablonu(btn.dataset.sablona));
+    }
+  }
+  vykresliSablony();
+
+  function wdUkazKrok(krok) {
+    el('wd-krok1').classList.toggle('hidden', krok !== 1);
+    el('wd-krok2').classList.toggle('hidden', krok !== 2);
+    el('wd-krok3').classList.toggle('hidden', krok !== 3);
+  }
+
+  function zvolSablonu(id) {
+    wdSablona = SABLONY_MAP[id] ?? null;
+    el('wd-nazov').placeholder = wdSablona?.placeholder ?? '';
+    wdUkazKrok(2);
+  }
+
+  el('wd-krok1-zrusit').onclick = () => el('wizard-dopyt').classList.add('hidden');
+  el('wd-krok2-spat').onclick = () => wdUkazKrok(1);
+  el('wd-krok2-dalej').onclick = () => {
+    if (!el('wd-nazov').value.trim()) { el('wd-nazov').focus(); return; }
+    wdUkazKrok(3);
+  };
+  el('wd-krok3-spat').onclick = () => wdUkazKrok(2);
+  el('wd-zrusit').onclick = () => el('wizard-dopyt').classList.add('hidden');
+
+  function otvorWizard(obec) {
+    wdSablona = null;
+    el('wd-nazov').value = ''; el('wd-popis').value = '';
+    el('wd-termin').value = ''; el('wd-rozpocet').value = '';
+    el('wd-email').value = obec.kontakt_email ?? '';
+    el('wd-telefon').value = obec.kontakt_telefon ?? '';
+    const prefVychodzi = obec.preferovany_kontakt || 'email';
+    const prefRadio = document.querySelector(`input[name="wd-pref"][value="${prefVychodzi}"]`);
+    if (prefRadio) prefRadio.checked = true;
+    el('wd-chyba').classList.add('hidden');
+    el('wd-potvrdenie').innerHTML = `
+      <p>${bezpecne(WD_TEXTY.potvrdenie)}</p>
+      <details class="mt-2">
+        <summary class="cursor-pointer text-accent">${bezpecne(WD_TEXTY.pravnyOdkaz)}</summary>
+        <p class="mt-1.5">${bezpecne(WD_TEXTY.pravnyText)}</p>
+      </details>`;
+    wdUkazKrok(1);
+    el('wizard-dopyt').classList.remove('hidden');
+  }
+
+  el('wd-btn').onclick = async () => {
+    const email = el('wd-email').value.trim();
+    if (!email) { el('wd-email').focus(); return; }
+    const btn = el('wd-btn');
+    const chyba = el('wd-chyba');
     chyba.classList.add('hidden');
     btn.disabled = true;
     btn.textContent = 'Zverejňujem…';
 
-    const { error: chybaRpc } = await supabase.rpc('vytvor_dopyt', {
-      p_nazov: el('nd-nazov').value.trim(),
-      p_popis: el('nd-popis').value.trim() || null,
-      p_typ: el('nd-typ').value || null,
+    const preferovanyKontakt = document.querySelector('input[name="wd-pref"]:checked')?.value ?? 'email';
+
+    // Kontaktne udaje sa ukladaju na ucet obce (nie na dopyt), viz
+    // migracia 55_dopyt_kontakt_a_sablony.sql — najprv ich ulozime,
+    // az potom zalozime samotny dopyt.
+    const { error: chybaKontakt } = await supabase.rpc('uprav_kontakt_obce', {
+      p_kontakt_email: email,
+      p_kontakt_telefon: el('wd-telefon').value.trim() || null,
+      p_preferovany_kontakt: preferovanyKontakt,
+    });
+    if (chybaKontakt) {
+      btn.disabled = false;
+      btn.textContent = 'Zverejniť dopyt';
+      chyba.textContent = chybaKontakt.message || 'Nepodarilo sa uložiť kontakt.';
+      chyba.classList.remove('hidden');
+      return;
+    }
+
+    const { error: chybaDopyt } = await supabase.rpc('vytvor_dopyt', {
+      p_nazov: el('wd-nazov').value.trim(),
+      p_popis: el('wd-popis').value.trim() || null,
+      p_typ: wdSablona?.typ ?? null,
+      p_sablona: wdSablona?.id ?? null,
+      p_termin: el('wd-termin').value || null,
+      p_rozpocet: el('wd-rozpocet').value || null,
     });
 
     btn.disabled = false;
     btn.textContent = 'Zverejniť dopyt';
 
-    if (chybaRpc) {
-      chyba.textContent = chybaRpc.message || 'Nepodarilo sa zverejniť dopyt.';
+    if (chybaDopyt) {
+      chyba.textContent = chybaDopyt.message || 'Nepodarilo sa zverejniť dopyt.';
       chyba.classList.remove('hidden');
       return;
     }
 
-    el('nd-nazov').value = ''; el('nd-popis').value = ''; el('nd-typ').value = '';
-    el('form-novy-dopyt').classList.add('hidden');
+    el('wizard-dopyt').classList.add('hidden');
     await nacitajDopytyObce(obecId);
   };
-
-  await nacitajDopytyObce(obecId);
-  ukazLen('sekcia-obec');
 }
 
 // ── Dashboard: poradca ───────────────────────────────────────────────────
@@ -602,6 +823,11 @@ function vykresliDopytPoradca(d) {
     </div>
     <div class="mt-2 text-[14px] font-medium">${bezpecne(d.nazov)}</div>
     ${d.popis ? `<p class="mt-1 text-[13px] leading-relaxed text-slate2">${bezpecne(d.popis)}</p>` : ''}
+    ${(d.termin || d.rozpocet) ? `<div class="mt-1.5 text-[12px] text-slate2">
+      ${d.termin ? 'Termín: ' + bezpecne(TERMIN_POPIS[d.termin] ?? d.termin) : ''}
+      ${d.termin && d.rozpocet ? ' · ' : ''}
+      ${d.rozpocet ? 'Rozpočet: ' + bezpecne(ROZPOCET_POPIS[d.rozpocet] ?? d.rozpocet) : ''}
+    </div>` : ''}
 
     <div class="mt-3">
       <button class="btn-reagovat text-[12px] font-semibold text-accent hover:underline" data-dopyt="${d.id}">
@@ -669,7 +895,7 @@ function vykresliZoznamDopytov() {
 async function nacitajDopytyPrePoradcu(poradcaId) {
   const [{ data: dopyty, error: eD }, { data: mojeReakcie, error: eR }] = await Promise.all([
     supabase.from('dopyty')
-      .select('id,obec_nazov,kraj,typ,nazov,popis,created_at')
+      .select('id,obec_nazov,kraj,typ,nazov,popis,created_at,termin,rozpocet')
       .eq('stav', 'otvoreny').order('created_at', { ascending: false }),
     supabase.from('reakcie').select('dopyt_id,sprava').eq('poradca_id', poradcaId),
   ]);

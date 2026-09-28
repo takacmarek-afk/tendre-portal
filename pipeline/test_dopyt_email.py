@@ -10,6 +10,7 @@ from posli_dopyt_email import (
     _obsah_pre_poradcu,
     _obsah_pre_obec,
     _poradcovia_pre_dopyt,
+    _detaily_dopytu,
 )
 
 
@@ -45,6 +46,38 @@ def test_obsah_pre_poradcu_bez_kraja():
          "nazov": "X", "popis": None}
     obsah = _obsah_pre_poradcu(d)
     assert "kraj neuvedeny" in obsah["uvod"]
+
+
+# ── _detaily_dopytu / termin+rozpocet v popise (P3.3) ───────────────────
+
+def test_detaily_dopytu_oba_vyplnene():
+    d = {"termin": "do_1_mesiaca", "rozpocet": "5000_20000"}
+    text = _detaily_dopytu(d)
+    assert "do 1 mesiaca" in text
+    assert "20 000" in text
+    assert "·" in text
+
+
+def test_detaily_dopytu_prazdne():
+    assert _detaily_dopytu({}) == ""
+    assert _detaily_dopytu({"termin": None, "rozpocet": None}) == ""
+
+
+def test_obsah_pre_poradcu_pridava_detaily_do_popisu():
+    d = {"obec_nazov": "Seňa", "kraj": "Košický kraj", "typ": "dotacia",
+         "nazov": "X", "popis": "Pôvodný popis",
+         "termin": "co_najskor", "rozpocet": "neviem"}
+    obsah = _obsah_pre_poradcu(d)
+    popis = obsah["bloky"][0]["popis"]
+    assert popis.startswith("Pôvodný popis")
+    assert "co najskor" in popis
+
+
+def test_obsah_pre_poradcu_detaily_bez_povodneho_popisu():
+    d = {"obec_nazov": "Seňa", "kraj": "Košický kraj", "typ": "ine",
+         "nazov": "X", "popis": None, "termin": None, "rozpocet": "do_5000"}
+    obsah = _obsah_pre_poradcu(d)
+    assert obsah["bloky"][0]["popis"] == "Rozpocet: do 5 000 eur"
 
 
 # ── _obsah_pre_obec ─────────────────────────────────────────────────────
