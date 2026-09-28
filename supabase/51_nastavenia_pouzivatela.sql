@@ -30,4 +30,8 @@ drop policy if exists nastavenia_update on public.nastavenia_pouzivatela;
 create policy nastavenia_update on public.nastavenia_pouzivatela
     for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
-select 'nastavenia_pouzivatela pripravené (RLS: len vlastný riadok)' as vysledok;
+select 'tabulka=' || (select to_regclass('public.nastavenia_pouzivatela') is not null)::text
+    || ' | rls=' || (select relrowsecurity from pg_class where oid = 'public.nastavenia_pouzivatela'::regclass)::text
+    || ' | policies=' || (select count(*) from pg_policies
+                            where schemaname = 'public' and tablename = 'nastavenia_pouzivatela')::text
+    as vysledok;
