@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<script src="/consent-analytics.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pre starostov a obce — PredTendrom.sk</title>
+<meta name="description" content="Čo ste v obci zdedili, ktoré zmluvy sa končia, kde sú dotácie a ako získať viac ponúk na súťaž. Bez registrácie, bez hesla — alebo nám jednoducho zavolajte.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://predtendrom.sk/starosta.html">
+<meta property="og:title" content="Pre starostov a obce — PredTendrom.sk">
+<meta property="og:description" content="Čo ste v obci zdedili, ktoré zmluvy sa končia, kde sú dotácie a ako získať viac ponúk na súťaž.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://predtendrom.sk/starosta.html">
+<meta property="og:locale" content="sk_SK">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Pre starostov a obce — PredTendrom.sk">
+<meta name="twitter:description" content="Čo ste v obci zdedili, ktoré zmluvy sa končia, kde sú dotácie a ako získať viac ponúk na súťaž.">
+<meta property="og:image" content="https://predtendrom.sk/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
+<script src="./config.js"></script>
+<script>
+// ── Návštevnosť + UTM (audit P3.1, 28.9.2026) ───────────────────────────
+// Zhodné s obce.html — kampaň od 24.11.2026 vedie sem s UTM parametrami,
+// tento blok ich zapíše rovnako ako na ostatných stránkach pre obce.
+// Zámerne tichý fallback všade: chyba analytiky tu nesmie nič pokaziť.
+(function(){
+  try {
+    var cfg = window.CONFIG || {};
+    if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
+    try { if (localStorage.getItem('pt_admin_zariadenie') === '1') return; } catch (e) {}
+    var sid = null;
+    try {
+      sid = sessionStorage.getItem('ptid');
+      if (!sid) {
+        sid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now() + '-' + Math.random());
+        sessionStorage.setItem('ptid', sid);
+      }
+    } catch (e) { sid = null; }
+    function posliNavstevu() {
+      fetch(cfg.SUPABASE_URL + '/rest/v1/navstevy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': cfg.SUPABASE_ANON_KEY, 'Prefer': 'return=minimal' },
+        body: JSON.stringify((function(){ var u = (window.ptUtm && window.ptUtm()) || {}; return { cesta: location.pathname, referrer: document.referrer || null, session_id: sid, utm_source: u.s || null, utm_medium: u.m || null, utm_campaign: u.c || null }; })()),
+        keepalive: true
+      }).catch(function(){});
+    }
+    var projectRef = (cfg.SUPABASE_URL.match(/https:\/\/([a-z0-9]+)\.supabase\.co/) || [])[1];
+    var token = null;
+    try {
+      var raw = projectRef && localStorage.getItem('sb-' + projectRef + '-auth-token');
+      if (raw) token = JSON.parse(raw).access_token;
+    } catch (e) { token = null; }
+    if (!token) { posliNavstevu(); return; }
+    fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/je_admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': cfg.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      body: '{}'
+    }).then(function(r){ return r.json(); }).then(function(jeAdmin){
+      if (jeAdmin === true) { try { localStorage.setItem('pt_admin_zariadenie', '1'); } catch (e) {} }
+      else { posliNavstevu(); }
+    }).catch(function(){ posliNavstevu(); });
+  } catch (e) {}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+.wrap { max-width: 900px; margin: 0 auto; padding: 0 1.25rem; }
+/* Audit P3.6 (28.9.2026): stranka pre starostov ma vlastnu, o cosi
+   vacsiu zakladnu velkost pisma nez zvysok webu (tam 14-15px) - cielova
+   skupina je zamerne sirsia vekovo a text-[17px]/[18px] uz je na hranici
+   toho, co da rozumne pouzit ako "text-base" cez Tailwind property
+   classes bez pridavania noveho utility retazca, preto tu par miest
+   pouziva vlastnu triedu .obsah-p, nech sa da menit na jednom mieste. */
+.obsah-p { font-size: 17px; line-height: 1.65; }
+@media (min-width: 640px) { .obsah-p { font-size: 18px; } }
+</style>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="font-sans text-ink bg-paper antialiased">
+
+<!-- ══════════════ HLAVIČKA (audit P3.1, 28.9.2026) ══════════════════════
+     Zámerne INÁ ako na obce.html/trh.html/servis.html: logo tu nikam
+     needie (táto stránka je pre obce vlastný "domov", nie podstránka),
+     žiadny odkaz na hlavný web pre dodávateľov — ten smie byť len ako
+     nenápadná zmienka v pätičke (presne podľa zadania P3.1). Namiesto
+     odkazu je v hlavičke rovno viditeľné telefónne číslo (P3.6). -->
+<header class="border-b border-line bg-white">
+  <div class="wrap flex items-center justify-between h-16">
+    <span class="flex items-center gap-2">
+      <svg width="19" height="19" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+      <span class="font-serif italic text-[19px] text-ink">predtendrom</span>
+      <span class="text-[13px] text-slate2 hidden sm:inline">Pre starostov</span>
+    </span>
+    <a href="tel:+421905438454"
+       class="inline-flex items-center gap-2 text-[15px] font-mono font-semibold text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      0905 438 454
+    </a>
+  </div>
+</header>
+
+<!-- ══════════════ ÚVOD + TRI CESTY ══════════════ -->
+<section class="wrap pt-12 pb-10">
+  <h1 class="text-[30px] sm:text-[38px] font-bold leading-tight tracking-tight max-w-[640px]">
+    Čo potrebuje vedieť starosta, na jednom mieste.
+  </h1>
+  <p class="obsah-p mt-4 text-slate2 max-w-[640px]">
+    Zmluvy, ktoré sa vašej obci končia. Dotácie, ktoré bežia alebo sú
+    otvorené. Firmy a poradcovia, ktorí už s obcami podobnými tej vašej
+    pracovali. Všetko z verejných zdrojov, zadarmo, bez hesla.
+  </p>
+
+  <p class="mt-8 text-[13px] font-semibold uppercase tracking-wider text-slate2">
+    Kde práve ste?
+  </p>
+  <div class="mt-3 grid sm:grid-cols-3 gap-3">
+    <a href="#novy"
+       class="block rounded-lg border-2 border-line bg-white p-5 hover:border-accent transition">
+      <div class="text-[17px] font-semibold">Som nový starosta</div>
+      <p class="mt-1.5 text-[14px] leading-relaxed text-slate2">
+        Prvýkrát vo funkcii a chcem vedieť, čo som po predchodcovi zdedil.
+      </p>
+    </a>
+    <a href="#znovu"
+       class="block rounded-lg border-2 border-line bg-white p-5 hover:border-accent transition">
+      <div class="text-[17px] font-semibold">Som starosta ďalšie obdobie</div>
+      <p class="mt-1.5 text-[14px] leading-relaxed text-slate2">
+        Poznám to, chcem hlavne ušetriť čas a mať argument pre zastupiteľstvo.
+      </p>
+    </a>
+    <a href="#mala"
+       class="block rounded-lg border-2 border-line bg-white p-5 hover:border-accent transition">
+      <div class="text-[17px] font-semibold">Sme malá obec bez úradníkov</div>
+      <p class="mt-1.5 text-[14px] leading-relaxed text-slate2">
+        Na toto všetko nemáme kapacitu — najradšej by som len zavolal.
+      </p>
+    </a>
+  </div>
+</section>
+
+<!-- ══════════════ ZÁRUKY (audit P3.6) ══════════════
+     Kratke, viditelne, hned pod uvodom - kym sa starosta rozhodne kliknut
+     dalej. Vsetky styri tvrdenia su uz dnes pravdive/vynutene v produkte
+     (limit 5 firiem na dopyt z public/plany.js, "nie sme statny organ"
+     je uz pouzite doslovne na obce.html/servis.html), ziadne nove sluby. -->
+<section class="border-y border-line bg-white">
+  <div class="wrap py-6">
+    <div class="grid sm:grid-cols-4 gap-4 text-[13px] leading-relaxed text-slate2">
+      <div class="flex gap-2"><span class="text-accent font-bold shrink-0">&#10003;</span>Vaše údaje nepredávame</div>
+      <div class="flex gap-2"><span class="text-accent font-bold shrink-0">&#10003;</span>Dopyt vidí najviac 5 overených firiem</div>
+      <div class="flex gap-2"><span class="text-accent font-bold shrink-0">&#10003;</span>Nie sme štátny orgán ani s ním prepojení</div>
+      <div class="flex gap-2"><span class="text-accent font-bold shrink-0">&#10003;</span>Každý údaj má odkaz na zdroj</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ A) NOVÝ STAROSTA ══════════════ -->
+<section id="novy" class="wrap py-14 border-b border-line">
+  <span class="inline-block text-[12px] font-semibold uppercase tracking-wider text-accent bg-accent/10 border border-accent/20 rounded-full px-3 py-1">
+    Nový starosta
+  </span>
+  <h2 class="font-serif mt-4 text-[24px] md:text-[28px] font-bold tracking-tight">
+    Prvých 100 dní: čo ste zdedili
+  </h2>
+  <p class="obsah-p mt-4 text-slate2 max-w-[640px]">
+    Samostatnú stránku, ktorá pre vašu konkrétnu obec spočíta končiace
+    zmluvy, bežiace dotácie a doterajších poradcov na jednom mieste,
+    práve pripravujeme. Do jej dokončenia nájdete tie isté dáta &mdash;
+    len ešte nie zoradené na jednu stránku pre vašu obec &mdash; tu:
+  </p>
+  <div class="mt-5 flex flex-col sm:flex-row gap-3">
+    <a href="./obce.html"
+       class="inline-flex justify-center items-center bg-ink text-white font-semibold px-6 py-3.5 rounded-md hover:bg-accent transition text-[16px]">
+      Pozrieť dotácie a zmluvy obcí
+    </a>
+    <a href="./trh.html"
+       class="inline-flex justify-center items-center border-2 border-ink text-ink font-semibold px-6 py-3.5 rounded-md hover:bg-ink hover:text-white transition text-[16px]">
+      Nájsť poradcu na trhu dopytov
+    </a>
+  </div>
+  <p class="mt-4 text-[13px] text-slate2 max-w-[600px]">
+    Kým funkcia pre vašu obec nebude hotová, najrýchlejšie sa dostanete
+    k odpovediam telefonicky &mdash; stačí zavolať na číslo v hlavičke.
+  </p>
+</section>
+
+<!-- ══════════════ B) STARONOVÝ STAROSTA ══════════════ -->
+<section id="znovu" class="wrap py-14 border-b border-line">
+  <span class="inline-block text-[12px] font-semibold uppercase tracking-wider text-accent bg-accent/10 border border-accent/20 rounded-full px-3 py-1">
+    Ďalšie obdobie
+  </span>
+  <h2 class="font-serif mt-4 text-[24px] md:text-[28px] font-bold tracking-tight">
+    Viac ponúk na súťaž, argument pre zastupiteľstvo
+  </h2>
+  <p class="obsah-p mt-4 text-slate2 max-w-[640px]">
+    Čím viac firiem obec osloví pred súťažou, tým lepšiu cenu spravidla
+    dostane &mdash; to je celý princíp prieskumu trhu. Vypíšte dopyt na
+    Trhu dopytov (funguje už dnes, zadarmo) a uvidí ho až
+    <strong class="text-ink">5 overených firiem</strong> vo vašom kraji.
+  </p>
+  <div class="mt-5">
+    <a href="./trh.html"
+       class="inline-flex justify-center items-center bg-ink text-white font-semibold px-6 py-3.5 rounded-md hover:bg-accent transition text-[16px]">
+      Vypísať dopyt na Trhu dopytov
+    </a>
+  </div>
+  <p class="mt-4 text-[13px] text-slate2 max-w-[600px]">
+    Mesačný e-mail o novinkách pre obce vašej veľkosti a PDF prehľad na
+    vytlačenie pre zastupiteľstvo pripravujeme ako ďalší krok.
+  </p>
+</section>
+
+<!-- ══════════════ C) MALÁ OBEC BEZ ÚRADNÍKOV ══════════════ -->
+<section id="mala" class="wrap py-14">
+  <span class="inline-block text-[12px] font-semibold uppercase tracking-wider text-accent bg-accent/10 border border-accent/20 rounded-full px-3 py-1">
+    Bez vlastnej kapacity
+  </span>
+  <h2 class="font-serif mt-4 text-[24px] md:text-[28px] font-bold tracking-tight">
+    Najjednoduchšie je zavolať
+  </h2>
+  <p class="obsah-p mt-4 text-slate2 max-w-[640px]">
+    Viem, že na toto všetko nemusíte mať čas ani chuť. Zavolajte, alebo
+    napíšte pár viet, čo potrebujete &mdash; ozveme sa a povieme vám,
+    či a ako vieme pomôcť. Úvodná konzultácia je zadarmo.
+  </p>
+  <div class="mt-5 flex flex-col sm:flex-row gap-3">
+    <a href="tel:+421905438454"
+       class="inline-flex justify-center items-center gap-2 bg-accent text-white font-semibold px-6 py-3.5 rounded-md hover:bg-accentDark transition text-[16px]">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      0905 438 454
+    </a>
+    <a href="./servis.html"
+       class="inline-flex justify-center items-center border-2 border-ink text-ink font-semibold px-6 py-3.5 rounded-md hover:bg-ink hover:text-white transition text-[16px]">
+      Radšej napíšem, čo potrebujem
+    </a>
+  </div>
+  <p class="mt-4 text-[13px] text-slate2 max-w-[600px]">
+    Túto obec spravuje viac ľudí (prednosta, ekonómka, spoločný obecný
+    úrad)? Možnosť pozvať ďalšiu osobu na účet obce pripravujeme.
+  </p>
+</section>
+
+<!-- ══════════════ ZAKLADATEĽ (audit P3.6) ══════════════
+     Rovnaky element ako na index.html (fotka + telefon), Marek dal na
+     zverejnenie 17.9.2026. Starostovia dôverujú ľuďom, nie znackam. -->
+<section class="bg-white border-t border-line">
+  <div class="wrap py-14">
+    <div class="flex flex-col sm:flex-row items-center sm:items-center gap-8">
+      <div class="w-[140px] h-[140px] rounded-full shrink-0 overflow-hidden border-[3px] border-ink relative">
+        <img src="./marek-zakladatel.jpg" alt="Marek Takáč, zakladateľ PredTendrom.sk"
+             class="w-full h-full object-cover" style="object-position: 50% 20%; filter: grayscale(1) contrast(1.06) brightness(1.03);">
+        <div class="absolute inset-0 bg-amber" style="mix-blend-mode: multiply; opacity: 0.16;"></div>
+      </div>
+      <div class="text-center sm:text-left max-w-[640px]">
+        <p class="text-[12px] font-mono uppercase tracking-wider text-accent">Zakladateľ</p>
+        <h2 class="mt-1 font-serif text-[24px] text-ink">Marek Takáč</h2>
+        <p class="obsah-p mt-2 text-slate2">
+          Portál robím sám. Keď zavoláte alebo napíšete, hovoríte so mnou,
+          nie s callcentrom.
+        </p>
+        <div class="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-3">
+          <a href="tel:+421905438454"
+             class="inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
+            0905 438 454
+          </a>
+          <a href="mailto:info@predtendrom.sk"
+             class="inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
+            info@predtendrom.sk
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Miesto na citáty starostov a počet zapojených obcí (P3.6) je
+     ZÁMERNE vynechané, kým nebudú skutoční ľudia — nič nevymýšľame. -->
+
+<footer class="wrap py-10">
+  <p class="text-[13px] leading-relaxed text-slate2">
+    Zdroj údajov: <strong class="text-ink">Centrálny register zmlúv</strong> a
+    <strong class="text-ink">Služby Slovensko.Digital</strong>.
+    Údaje majú informatívny charakter a nie sú právne záväzné &mdash;
+    pred rozhodnutím si ich overte v pôvodnom zdroji.
+    <a href="./zdroje.html" class="text-accent hover:underline">Podrobnosti o zdrojoch</a>.
+  </p>
+  <!-- Presne podla zadania P3.1: krizovy odkaz na predajne texty pre
+       firmy smie byt LEN takato nenapadna jednoriadkova zmienka tu v
+       päticke, nikde inde na stranke. -->
+  <p class="mt-3 text-[13px] text-slate2">
+    Nie sme štátny orgán ani s ním prepojení.
+    Hľadáte zákazky ako dodávateľ? <a href="./index.html" class="text-accent hover:underline">Druhá časť portálu</a>.
+  </p>
+  <p class="mt-3 text-[13px] text-slate2">
+    Sledujte nás:
+    <a href="https://www.facebook.com/profile.php?id=1381441591712353" target="_blank" rel="noopener" class="text-accent hover:underline">Facebook</a> ·
+    <a href="https://www.instagram.com/predtendrom.sk/" target="_blank" rel="noopener" class="text-accent hover:underline">Instagram</a>
+  </p>
+</footer>
+
+</body>
+</html>
