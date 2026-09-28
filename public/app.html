@@ -95,6 +95,20 @@
   mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
   -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
 }
+
+/* ── OPRAVA: NEVIDITEĽNÝ TEXT V ROZBALENOM <select> (audit P3, 28.9.2026) ──
+   #o-sektor/#o-kraj/#o-frekvencia v tmavom paneli "Nech vám to chodí samo"
+   maju text-white, aby bolo vidno vybranu hodnotu na tmavom pozadi. Farba
+   sa ale DEDI aj do <option> vnutri — a ten popup zoznam si prehliadac
+   vykresluje SAM, vzdy s bielym pozadim, bez ohladu na CSS okolo <select>.
+   Vysledok: biely text na bielom pozadi, cita sa len prave nahodena
+   (zvyraznena) polozka, kde prehliadac vlastnym zvyraznenim farbu prebije.
+   Cielene len na tieto tri selecty, nech sa nedotkne ostatnych (svetlych)
+   selectov na stranke, ktore tento problem nemaju. */
+#o-sektor option, #o-kraj option, #o-frekvencia option {
+  color: #0b1220;
+  background-color: #ffffff;
+}
 </style>
 <link rel="stylesheet" href="/style.css">
 </head>

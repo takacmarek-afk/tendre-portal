@@ -149,7 +149,8 @@
     Kto práve teraz rozdáva peniaze obciam.
   </h1>
   <p class="mt-4 text-[16px] leading-relaxed text-slate2 max-w-[640px]">
-    Toto nie je zoznam výziev. Je to zoznam poskytovateľov, ktorí za posledné
+    Toto nie je predovšetkým zoznam výziev &mdash; hoci pár nájdených nižšie
+    tiež pridávame. Hlavne je to zoznam poskytovateľov, ktorí za posledné
     tri mesiace <strong class="text-ink">naozaj podpísali zmluvy s obcami</strong>
     &mdash; aj s tým, koľko rozdelili a koľko dostala typická obec.
     Výzva je prísľub, podpísaná zmluva je dôkaz, že program platí.
@@ -214,8 +215,8 @@
       Účel dokážeme z registra spoľahlivo určiť len pri malej časti zmlúv
       &mdash; pri väčšine je v predmete zmluvy iba právna formulka a číslo
       výzvy, a to, na čo peniaze naozaj šli, je až v priloženom dokumente.
-      Ber to teda ako vzorku toho, čo sa financuje, nie ako úplný zoznam.
-      Keď tu svoju vec nevidíš, neznamená to, že na ňu peniaze nie sú.
+      Berte to teda ako vzorku toho, čo sa financuje, nie ako úplný zoznam.
+      Keď tu svoju vec nevidíte, neznamená to, že na ňu peniaze nie sú.
     </p>
   </div>
 </section>
@@ -223,13 +224,58 @@
 <!-- ══════════════ PODĽA KRAJA ══════════════ -->
 <!-- Audit 18.9. ("Marketing"): dlhy-chvost SEO ("dotacie pre obce [kraj]").
      Stranky vyrába pipeline/generuj_obce_podstranky.py z verejneho
-     agregatu kraj_prehlad — odkaz sem musi byt rucne, kedze web nema build
-     a teda ziadnu automaticku navigaciu k novym suborom. -->
+     agregatu kraj_prehlad — odkazy sem musia byt rucne, kedze web nema
+     build a teda ziadnu automaticku navigaciu k novym suborom.
+     Audit P3.5 (28.9.2026): povodne tu bol jeden odkaz "Prehľad podľa
+     kraja →" na /obce/index.html, ktora sama obsahuje presne tychto
+     8 tlacidiel — teda zbytocny medzikrok navyse. Teraz su tlacidla
+     rovno tu, cielia priamo na /obce/kraj-*.html. Cisla (poctu obci,
+     objem) rucne skopirovane z /obce/index.html, treba ich menit na
+     oboch miestach spolu, kym sa nesprava negeneruje aj tento blok. -->
 <section class="wrap pb-4">
-  <a href="./obce/index.html"
-     class="inline-flex items-center gap-2 text-[13px] font-medium text-accent hover:underline">
-    Prehľad podľa kraja →
-  </a>
+  <h2 class="text-[15px] font-semibold text-slate2 mb-3">Prehľad podľa kraja</h2>
+  <div class="grid sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+    <a href="./obce/kraj-presovsky.html"
+       class="block rounded-lg border border-line bg-white p-3.5 hover:border-accent transition">
+      <div class="text-[13px] font-semibold">Prešovský kraj</div>
+      <div class="text-[12px] text-slate2 mt-0.5">397 obcí · 461,3 mil. €</div>
+    </a>
+    <a href="./obce/kraj-kosicky.html"
+       class="block rounded-lg border border-line bg-white p-3.5 hover:border-accent transition">
+      <div class="text-[13px] font-semibold">Košický kraj</div>
+      <div class="text-[12px] text-slate2 mt-0.5">312 obcí · 471,0 mil. €</div>
+    </a>
+    <a href="./obce/kraj-nitriansky.html"
+       class="block rounded-lg border border-line bg-white p-3.5 hover:border-accent transition">
+      <div class="text-[13px] font-semibold">Nitriansky kraj</div>
+      <div class="text-[12px] text-slate2 mt-0.5">285 obcí · 241,1 mil. €</div>
+    </a>
+    <a href="./obce/kraj-banskobystricky.html"
+       class="block rounded-lg border border-line bg-white p-3.5 hover:border-accent transition">
+      <div class="text-[13px] font-semibold">Banskobystrický kraj</div>
+      <div class="text-[12px] text-slate2 mt-0.5">283 obcí · 582,4 mil. €</div>
+    </a>
+    <a href="./obce/kraj-zilinsky.html"
+       class="block rounded-lg border border-line bg-white p-3.5 hover:border-accent transition">
+      <div class="text-[13px] font-semibold">Žilinský kraj</div>
+      <div class="text-[12px] text-slate2 mt-0.5">224 obcí · 235,9 mil. €</div>
+    </a>
+    <a href="./obce/kraj-trenciansky.html"
+       class="block rounded-lg border border-line bg-white p-3.5 hover:border-accent transition">
+      <div class="text-[13px] font-semibold">Trenčiansky kraj</div>
+      <div class="text-[12px] text-slate2 mt-0.5">188 obcí · 204,1 mil. €</div>
+    </a>
+    <a href="./obce/kraj-trnavsky.html"
+       class="block rounded-lg border border-line bg-white p-3.5 hover:border-accent transition">
+      <div class="text-[13px] font-semibold">Trnavský kraj</div>
+      <div class="text-[12px] text-slate2 mt-0.5">172 obcí · 246,0 mil. €</div>
+    </a>
+    <a href="./obce/kraj-bratislavsky.html"
+       class="block rounded-lg border border-line bg-white p-3.5 hover:border-accent transition">
+      <div class="text-[13px] font-semibold">Bratislavský kraj</div>
+      <div class="text-[12px] text-slate2 mt-0.5">78 obcí · 182,3 mil. €</div>
+    </a>
+  </div>
 </section>
 
 <!-- ══════════════ AKTÍVNE PROGRAMY ══════════════ -->
@@ -475,6 +521,20 @@ const POPIS_UCELU = {
   PASPORTIZACIA: 'pasportizácia a správa budov',
 };
 
+// Audit P3.5 (28.9.2026): kategoria vediala pod nadpisom "co obce peniaze
+// DOSTAVAJU" (znie ako aktualne), ale karta mohla zobrazovat "naposledy"
+// spred vyse roka bez ineho upozornenia (napr. Cyklotrasy). Nemazeme ju —
+// stale je to fakt, ze niekedy tam peniaze boli — len jasne oznacime, ze
+// ide o starsie udaje, nech to nikoho nezavadza.
+function jeStarsieRokom(datum) {
+  if (!datum) return false;
+  const d = new Date(datum);
+  if (Number.isNaN(d.getTime())) return false;
+  const rokDozadu = new Date();
+  rokDozadu.setFullYear(rokDozadu.getFullYear() - 1);
+  return d < rokDozadu;
+}
+
 async function nacitajUcely() {
   try {
     const data = await citaj('ucely_dotacii',
@@ -508,8 +568,8 @@ async function nacitajUcely() {
             <div class="text-[13px] leading-snug mt-1">${bezpecne(u.poskytovatelia)}</div>
           </div>` : ''}
 
-        ${u.posledna ? `<div class="mt-2 text-[11px] text-slate2">
-            naposledy ${bezpecne(u.posledna)}</div>` : ''}
+        ${u.posledna ? `<div class="mt-2 text-[11px] ${jeStarsieRokom(u.posledna) ? 'text-amber-700 font-medium' : 'text-slate2'}">
+            naposledy ${bezpecne(u.posledna)}${jeStarsieRokom(u.posledna) ? ' — staršie údaje, viac ako rok' : ''}</div>` : ''}
       </div>`).join('');
     el('ucely').classList.remove('hidden');
   } catch (e) {

@@ -66,6 +66,48 @@ MIN_ZMLUV_AKTIVNY = 3
 MIN_OBCI_SPROSTREDKOVATEL = 1   # aj jedna obec je fakt, len to treba povedat
 MIN_SUMA_DOTACIE = 20000        # rovnaky prah ako v subsidies
 
+# ── RUCNE OPRAVY ZOZNAMU SPROSTREDKOVATELOV (audit P3.5, 28.9.2026) ────────
+# _PROJEKTOVE_SLUZBY vyssie je zamerne siroky regex na predmet zmluvy a
+# obcas chytí niekoho, kto nie je poradca pre dotacie/obstaravanie, len ma
+# v predmete zmluvy podobne slova (napr. "projektova dokumentacia" pri
+# realnej stavbe). Tieto 4 IČO Marek osobne overil 28.9.2026 ako NIE
+# poradcov (vodarenska spolocnost, solarna firma, sprava majetku) a
+# odstranil ich rucne — automaticky filter na predmet zmluvy by tu bol
+# prilis krehky (zuzil by zaznam aj skutocnym poradcom).
+_NIE_SU_PORADCOVIA_ICO = frozenset({
+    "36570460",   # Vychodoslovenska vodarenska spolocnost, a.s.
+    "45729735",   # SOLARPARK KOMARNO s.r.o.
+    "52044513",   # INSUCCOR s.r.o. (typicka cena 49 EUR — pozri MIN_CENA_SPROSTREDKOVATEL nizsie)
+    "52966101",   # Sprava majetku s. r. o.
+})
+
+# INSUCCOR (vyssie) mala "typicku cenu" 49 EUR za zmluvu na projektove
+# sluzby — realisticka poradenska/administrativna sluzba pre obec nestoji
+# desiatky eur, take nizke cislo je skor znak, ze zmluva je nieco ine
+# (administrativny ukon, nie poradenstvo k dotacii). Prah je zamerne NAD
+# nulou: median_ceny = 0 (chybajuca/neparsovana cena v CRZ) sa NEFILTRUJE,
+# lebo to nie je dokaz o podozrivo nizkej cene, len o chybajucom udaji —
+# firmu to nema zhadzovat zo zoznamu (viz test_priliz_nizka_cena_ale_nie_nula).
+MIN_CENA_SPROSTREDKOVATEL = 100
+
+# CRZ pri dvoch zmluvach uviedol tu istu firmu s adresou vlepenou priamo
+# do nazvu dodavatela namiesto samostatneho pola — na verejnej stranke to
+# vyzera ako súčasť obchodného mena. Adresu z konca nazvu orezeme, len
+# zobrazenie sa meni, IČO (a teda zoskupovanie) ostava presne z CRZ.
+_ADRESA_V_NAZVE = re.compile(
+    r"(s\.\s?r\.\s?o\.|a\.\s?s\.)\s*,.*\d{3}\s?\d{2}\s+\S.*$",
+    re.IGNORECASE)
+
+# Diervilla ma v CRZ jednu zmluvu bez vyplneneho IČO dodavatela — bez neho
+# padne do zoskupenia podla mena a rozdeli sa od druhej zmluvy tej istej
+# firmy, kde IČO vyplnene je (36506001 = "Diervilla, spol. s r.o."). Rucne
+# overene 28.9.2026 (Marek), preto explicitny dokumentovany zapis, nie
+# automaticke priradovanie podla podobnosti mena — to by bolo prilis
+# krehke a mohlo by zliat aj dve naozaj rozne firmy s podobnym nazvom.
+_CHYBAJUCE_ICO_PODLA_NAZVU = {
+    "diervilla s.r.o": "36506001",
+}
+
 
 def _je_obec(nazov) -> bool:
     return bool(nazov) and bool(_JE_OBEC.match(str(nazov)))
@@ -277,9 +319,26 @@ def sprostredkovatelia(df: pd.DataFrame) -> pd.DataFrame:
     # u nej v okoli — firma z druheho konca krajiny jej velmi nepomoze.
     d = regiony.doplnit(d)
 
-    d["kluc"] = (d["supplier_cin"].astype(str).str.strip()
-                  .replace({"": None, "nan": None, "None": None}))
-    d["kluc"] = d["kluc"].fillna(d["supplier_name"].str.lower())
+    d["supplier_cin"] = (d["supplier_cin"].astype(str).str.strip()
+                          .replace({"": None, "nan": None, "None": None}))
+
+    # Rucna dopna chybajuceho ICO pre zname pripady (viz
+    # _CHYBAJUCE_ICO_PODLA_NAZVU vyssie) — musi byt PRED zoskupenim, inak
+    # ostanu obe zmluvy tej istej firmy v samostatnych riadkoch.
+    chybajuce = d["supplier_cin"].isna()
+    if chybajuce.any():
+        d.loc[chybajuce, "supplier_cin"] = (
+            d.loc[chybajuce, "supplier_name"].str.lower().str.strip()
+             .map(_CHYBAJUCE_ICO_PODLA_NAZVU))
+
+    # Firmy, ktore Marek rucne overil ako NIE poradcov (audit P3.5,
+    # 28.9.2026, viz _NIE_SU_PORADCOVIA_ICO vyssie) von este PRED
+    # zoskupenim, aby ich zmluvy nezostali v zoznamoch obci/kraju nikoho.
+    d = d[~d["supplier_cin"].isin(_NIE_SU_PORADCOVIA_ICO)].copy()
+    if d.empty:
+        return pd.DataFrame()
+
+    d["kluc"] = d["supplier_cin"].fillna(d["supplier_name"].str.lower())
 
     g = d.groupby("kluc")
     out = pd.DataFrame({
@@ -295,7 +354,20 @@ def sprostredkovatelia(df: pd.DataFrame) -> pd.DataFrame:
         "posledna_zmluva": g["podpisane"].max().dt.strftime("%Y-%m-%d").values,
     })
 
+    # Adresa vlepena do nazvu dodavatela v CRZ (viz _ADRESA_V_NAZVE vyssie)
+    # — na verejnej stranke orezana, ICO/zoskupenie sa tym nemeni.
+    out["sprostredkovatel"] = out["sprostredkovatel"].astype(str).apply(
+        lambda n: _ADRESA_V_NAZVE.sub(r"\1", n).strip())
+
     out = out[out["obci"] >= MIN_OBCI_SPROSTREDKOVATEL].copy()
+
+    # "Typicka cena" pod MIN_CENA_SPROSTREDKOVATEL EUR, ale NAD nulou, je
+    # skor znak chybneho zaradenia (napr. administrativny ukon, nie
+    # poradenstvo) nez realny poplatok za pomoc s dotaciou — presne 0
+    # naopak znamena chybajuci udaj v CRZ, nie podozrivo nizku cenu, a
+    # preto sa nefiltruje (viz komentar pri konstante).
+    out = out[~((out["median_ceny"] > 0)
+                & (out["median_ceny"] < MIN_CENA_SPROSTREDKOVATEL))].copy()
 
     # Zoradene podla poctu obci, co je FAKT, nie podla uspesnosti,
     # ktoru nemame. Pri rovnakom pocte rozhoduje novsia aktivita.
