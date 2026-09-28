@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<script src="/consent-analytics.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Prvých 100 dní: čo ste zdedili — PredTendrom.sk</title>
+<meta name="description" content="Vyhľadajte si obec a zistite, koľko zmlúv sa jej v najbližších 12 mesiacoch končí, koľko dotácií ešte beží a koľko firiem jej doteraz písalo žiadosti. Bez registrácie, zadarmo.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://predtendrom.sk/prvych-100-dni.html">
+<meta property="og:title" content="Prvých 100 dní: čo ste zdedili — PredTendrom.sk">
+<meta property="og:description" content="Vyhľadajte si obec a zistite, koľko zmlúv sa jej v najbližších 12 mesiacoch končí a koľko dotácií ešte beží.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://predtendrom.sk/prvych-100-dni.html">
+<meta property="og:locale" content="sk_SK">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Prvých 100 dní: čo ste zdedili — PredTendrom.sk">
+<meta name="twitter:description" content="Vyhľadajte si obec a zistite, koľko zmlúv sa jej v najbližších 12 mesiacoch končí a koľko dotácií ešte beží.">
+<meta property="og:image" content="https://predtendrom.sk/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
+<script src="./config.js"></script>
+<script>
+// ── Návštevnosť + UTM (audit P3.2, 28.9.2026) ───────────────────────────
+// Zhodné so starosta.html.
+(function(){
+  try {
+    var cfg = window.CONFIG || {};
+    if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
+    try { if (localStorage.getItem('pt_admin_zariadenie') === '1') return; } catch (e) {}
+    var sid = null;
+    try {
+      sid = sessionStorage.getItem('ptid');
+      if (!sid) {
+        sid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now() + '-' + Math.random());
+        sessionStorage.setItem('ptid', sid);
+      }
+    } catch (e) { sid = null; }
+    function posliNavstevu() {
+      fetch(cfg.SUPABASE_URL + '/rest/v1/navstevy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': cfg.SUPABASE_ANON_KEY, 'Prefer': 'return=minimal' },
+        body: JSON.stringify((function(){ var u = (window.ptUtm && window.ptUtm()) || {}; return { cesta: location.pathname, referrer: document.referrer || null, session_id: sid, utm_source: u.s || null, utm_medium: u.m || null, utm_campaign: u.c || null }; })()),
+        keepalive: true
+      }).catch(function(){});
+    }
+    var projectRef = (cfg.SUPABASE_URL.match(/https:\/\/([a-z0-9]+)\.supabase\.co/) || [])[1];
+    var token = null;
+    try {
+      var raw = projectRef && localStorage.getItem('sb-' + projectRef + '-auth-token');
+      if (raw) token = JSON.parse(raw).access_token;
+    } catch (e) { token = null; }
+    if (!token) { posliNavstevu(); return; }
+    fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/je_admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': cfg.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      body: '{}'
+    }).then(function(r){ return r.json(); }).then(function(jeAdmin){
+      if (jeAdmin === true) { try { localStorage.setItem('pt_admin_zariadenie', '1'); } catch (e) {} }
+      else { posliNavstevu(); }
+    }).catch(function(){ posliNavstevu(); });
+  } catch (e) {}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+.wrap { max-width: 900px; margin: 0 auto; padding: 0 1.25rem; }
+/* Rovnaka zakladna velkost textu ako starosta.html (audit P3.6). */
+.obsah-p { font-size: 17px; line-height: 1.65; }
+@media (min-width: 640px) { .obsah-p { font-size: 18px; } }
+#hladanie-vstup {
+  border: 1px solid #d8dee8;
+  border-radius: 0.375rem;
+  padding: 0.875rem 1rem;
+  font-size: 17px;
+  width: 100%;
+}
+#hladanie-vstup:focus { outline: 2px solid #1d6f5c; outline-offset: 1px; }
+.suhrn-cislo { font-size: 30px; }
+@media (min-width: 640px) { .suhrn-cislo { font-size: 36px; } }
+</style>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="font-sans text-ink bg-paper antialiased">
+
+<!-- ══════════════ HLAVIČKA (audit P3.2, 28.9.2026) ══════════════════════
+     Na rozdiel od starosta.html tu logo VEDIE späť na starosta.html —
+     táto stránka je konkrétny nástroj v rámci sekcie pre obce, nie jej
+     vlastný "domov" (rovnaký princíp ako oprava trh.html vo vlne 48:
+     logo smeruje tam, kde to dáva zmysel pre danú stránku). -->
+<header class="border-b border-line bg-white">
+  <div class="wrap flex items-center justify-between h-16">
+    <a href="./starosta.html" class="flex items-center gap-2">
+      <svg width="19" height="19" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+      <span class="font-serif italic text-[19px] text-ink">predtendrom</span>
+      <span class="text-[13px] text-slate2 hidden sm:inline">Pre starostov</span>
+    </a>
+    <a href="tel:+421905438454"
+       class="inline-flex items-center gap-2 text-[15px] font-mono font-semibold text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+      0905 438 454
+    </a>
+  </div>
+</header>
+
+<section class="wrap pt-12 pb-8">
+  <p class="text-[13px]"><a href="./starosta.html" class="text-accent hover:underline">&larr; Pre starostov</a></p>
+  <h1 class="text-[28px] sm:text-[34px] font-bold leading-tight tracking-tight max-w-[640px] mt-4">
+    Prvých 100 dní: čo ste zdedili
+  </h1>
+  <p class="obsah-p mt-4 text-slate2 max-w-[640px]">
+    Napíšte názov obce alebo mesta a uvidíte súhrn: koľko zmlúv sa
+    v najbližších 12 mesiacoch končí, koľko dotácií ešte beží a či obec
+    doteraz spolupracovala s poradenskými firmami. Bez registrácie,
+    zadarmo, z verejných zdrojov.
+  </p>
+
+  <form id="hladanie-form" class="mt-6 flex flex-col sm:flex-row gap-3" autocomplete="off">
+    <input id="hladanie-vstup" type="text" placeholder="napr. Kolárovo alebo Nová Baňa" aria-label="Názov obce alebo mesta">
+    <button type="submit"
+            class="inline-flex justify-center items-center bg-ink text-white font-semibold px-6 py-3.5 rounded-md hover:bg-accent transition text-[16px] shrink-0">
+      Zobraziť súhrn
+    </button>
+  </form>
+
+  <div id="vysledok" class="mt-8"></div>
+</section>
+
+<footer class="wrap py-10">
+  <p class="text-[13px] leading-relaxed text-slate2">
+    Zdroj údajov: <strong class="text-ink">Centrálny register zmlúv</strong> a
+    <strong class="text-ink">Služby Slovensko.Digital</strong>.
+    Údaje majú informatívny charakter a nie sú právne záväzné &mdash;
+    pred rozhodnutím si ich overte v pôvodnom zdroji.
+    <a href="./zdroje.html" class="text-accent hover:underline">Podrobnosti o zdrojoch</a>.
+  </p>
+  <p class="mt-3 text-[13px] text-slate2">
+    Nie sme štátny orgán ani s ním prepojení.
+    Hľadáte zákazky ako dodávateľ? <a href="./index.html" class="text-accent hover:underline">Druhá časť portálu</a>.
+  </p>
+</footer>
+
+<script>
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG ?? {};
+
+async function volajRpc(fn, telo) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+    },
+    body: JSON.stringify(telo || {}),
+  });
+  if (!r.ok) throw new Error('Volanie zlyhalo (' + r.status + ')');
+  return r.json();
+}
+
+function eur(n) {
+  if (n === null || n === undefined) return '—';
+  return new Intl.NumberFormat('sk-SK', { maximumFractionDigits: 0 }).format(Math.round(n)) + ' €';
+}
+
+function el(id) { return document.getElementById(id); }
+
+function karta(cislo, popis) {
+  return `<div class="border border-line rounded-md p-6 bg-white">
+    <p class="suhrn-cislo font-bold text-ink font-serif">${cislo}</p>
+    <p class="mt-1 text-[14px] text-slate2">${popis}</p>
+  </div>`;
+}
+
+async function zobrazSuhrn(nazov, kraj) {
+  el('vysledok').innerHTML = `<p class="text-slate2">Načítavam súhrn pre ${nazov}&hellip;</p>`;
+  let riadky;
+  try {
+    riadky = await volajRpc('prvych_100_dni_suhrn', { p_nazov: nazov });
+  } catch (e) {
+    el('vysledok').innerHTML = `<p class="text-slate2">Súhrn sa nepodarilo načítať. Skúste to prosím znova, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a>.</p>`;
+    return;
+  }
+  const s = (riadky && riadky[0]) || null;
+  if (!s || !s.najdena) {
+    el('vysledok').innerHTML = `<p class="text-slate2">Pre „${nazov}“ sme v našich dátach nič nenašli. Skúste presnejší názov, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a> a pozrieme sa spolu.</p>`;
+    return;
+  }
+  el('vysledok').innerHTML = `
+    <h2 class="font-serif text-[22px] font-bold text-ink">${nazov}${s.kraj ? ` <span class="text-slate2 font-sans text-[15px] font-normal">(${s.kraj})</span>` : ''}</h2>
+    <div class="mt-4 grid sm:grid-cols-2 gap-4">
+      ${karta(s.pocet_konciacich, `${s.pocet_konciacich === 1 ? 'zmluva sa' : 'zmluvy/zmlúv sa'} končí do 12 mesiacov, spolu cca ${eur(s.objem_konciacich)}`)}
+      ${karta(s.pocet_dotacii_bezi, `${s.pocet_dotacii_bezi === 1 ? 'dotácia ešte beží' : 'dotácií ešte beží'} alebo je otvorené jej okno, spolu cca ${eur(s.objem_dotacii_bezi)}`)}
+    </div>
+    <div class="mt-4 border border-line rounded-md p-6 bg-white">
+      <p class="font-semibold text-ink">Doterajší poradcovia</p>
+      <p class="mt-1 text-[14px] text-slate2">Súhrn firiem, ktoré vašej obci doteraz písali žiadosti o dotácie, pripravujeme ako ďalší krok — potrebuje rovnaké ručné overenie, aké dnes robíme pre celý zoznam na <a href="./obce.html" class="text-accent hover:underline">obce.html</a>.</p>
+    </div>
+    <p class="mt-4 text-[13px] text-slate2 max-w-[600px]">
+      Toto sú len súčty. Podrobný zoznam jednotlivých zmlúv (predmet, presná
+      suma, presný dátum) majú k dispozícii firmy, ktoré sa uchádzajú o vaše
+      zákazky, v našej platenej appke.
+    </p>
+    <div class="mt-5 flex flex-col sm:flex-row gap-3">
+      <a href="./obce.html"
+         class="inline-flex justify-center items-center bg-ink text-white font-semibold px-6 py-3.5 rounded-md hover:bg-accent transition text-[16px]">
+        Pozrieť dotácie a zmluvy obcí
+      </a>
+      <a href="./trh.html"
+         class="inline-flex justify-center items-center border-2 border-ink text-ink font-semibold px-6 py-3.5 rounded-md hover:bg-ink hover:text-white transition text-[16px]">
+        Vypísať dopyt na Trhu dopytov
+      </a>
+    </div>
+  `;
+}
+
+function zobrazKandidatov(zoznam, povodnyText) {
+  const polozky = zoznam.map(o =>
+    `<button type="button" data-nazov="${o.nazov.replace(/"/g, '&quot;')}" data-kraj="${(o.kraj || '').replace(/"/g, '&quot;')}"
+       class="kandidat-btn block w-full text-left border border-line rounded-md px-4 py-3 hover:border-accent transition">
+       ${o.nazov}${o.kraj ? ` <span class="text-slate2 text-[13px]">(${o.kraj})</span>` : ''}
+     </button>`
+  ).join('');
+  el('vysledok').innerHTML = `
+    <p class="text-slate2">Pre „${povodnyText}“ sme našli viacero zhôd. Vyberte tú vašu:</p>
+    <div class="mt-3 space-y-2">${polozky}</div>
+  `;
+  document.querySelectorAll('.kandidat-btn').forEach(btn => {
+    btn.addEventListener('click', () => zobrazSuhrn(btn.dataset.nazov, btn.dataset.kraj));
+  });
+}
+
+el('hladanie-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = el('hladanie-vstup').value.trim();
+  if (!text) return;
+  el('vysledok').innerHTML = `<p class="text-slate2">Hľadám&hellip;</p>`;
+  let kandidati;
+  try {
+    kandidati = await volajRpc('hladaj_obec', { p_hladanie: text });
+  } catch (e2) {
+    el('vysledok').innerHTML = `<p class="text-slate2">Vyhľadávanie sa nepodarilo. Skúste to prosím znova.</p>`;
+    return;
+  }
+  if (!kandidati || kandidati.length === 0) {
+    el('vysledok').innerHTML = `<p class="text-slate2">Pre „${text}“ sme v našich dátach nič nenašli. Skúste presnejší názov, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a> a pozrieme sa spolu.</p>`;
+    return;
+  }
+  if (kandidati.length === 1) {
+    await zobrazSuhrn(kandidati[0].nazov, kandidati[0].kraj);
+  } else {
+    zobrazKandidatov(kandidati, text);
+  }
+});
+</script>
+
+</body>
+</html>
