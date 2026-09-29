@@ -31,9 +31,8 @@ on:
         type: string
         default: ""
 
-  # Zatial zakomentovane — pozri STAV vyssie. Az po manualnom overeni:
-  # schedule:
-  #   - cron: "*/30 * * * *"
+  schedule:
+    - cron: "*/30 * * * *"
 
 permissions:
   contents: read

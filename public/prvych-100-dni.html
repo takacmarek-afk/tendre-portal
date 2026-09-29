@@ -238,7 +238,7 @@ async function zobrazSuhrn(nazov, kraj) {
   el('vysledok').innerHTML = `<p class="text-slate2">Načítavam súhrn pre ${nazov}&hellip;</p>`;
   let riadky;
   try {
-    riadky = await volajRpc('prvych_100_dni_suhrn', { p_nazov: nazov });
+    riadky = await volajRpc('prvych_100_dni_suhrn', { p_nazov: nazov, p_kraj: kraj || null });
   } catch (e) {
     el('vysledok').innerHTML = `<p class="text-slate2">Súhrn sa nepodarilo načítať. Skúste to prosím znova, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a>.</p>`;
     return;
