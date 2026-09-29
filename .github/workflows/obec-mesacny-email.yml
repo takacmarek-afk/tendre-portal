@@ -1,10 +1,9 @@
 name: Obec mesacny email
 
 # ══════════════════════════════════════════════════════════════════════════
-#  STAV: LEN RUCNE SPUSTANIE (29.9.2026). Rovnaka discliplina ako pri
-#  obce-podstranky.yml pred 19.9. a zmluvy-podstranky.yml dnes: `schedule:`
-#  ostava ZAKOMENTOVANY, kym sa naziva neoveri cez workflow_dispatch
-#  s nasucho=true, potom s nasucho=false a komu=Marekov e-mail.
+#  STAV: AUTOMATICKY BEH ZAPNUTY (29.9.2026). Overene rucnym spustenim
+#  (workflow_dispatch, nasucho=true) hned po nasadeni migracie 57 — 0
+#  chyb, 0 poslanych (v produkcii zatial 0 obecnych uctov, cakane).
 #
 #  CO TOTO ROBI
 #  P3.2 B (staronovy starosta, claude/predtendrom-p3-cesta-pre-starostov-
@@ -13,8 +12,6 @@ name: Obec mesacny email
 #  este bezi, kto prave teraz rozdava peniaze obciam. Podrobnosti a dovod,
 #  preco LEN existujuce ucty (Marekovo rozhodnutie 29.9.2026), su v
 #  pipeline/posli_obec_mesacny_email.py a v migracii 57.
-#
-#  AZ PO OVERENI: odkomentuj `schedule:` nizsie, napr. na 1. den v mesiaci.
 #
 #  Ziadne nove tajomstva — pouziva presne tie iste tri (SUPABASE_URL,
 #  SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY), co uz ma email.yml.
@@ -32,9 +29,8 @@ on:
         type: string
         default: ""
 
-  # Zatial zakomentovane — pozri STAV vyssie. Az po manualnom overeni:
-  # schedule:
-  #   - cron: "0 6 1 * *"
+  schedule:
+    - cron: "0 6 1 * *"
 
 permissions:
   contents: read

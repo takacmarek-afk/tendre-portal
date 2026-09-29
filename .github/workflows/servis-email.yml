@@ -1,10 +1,11 @@
 name: Servis email
 
 # ══════════════════════════════════════════════════════════════════════════
-#  STAV: LEN RUCNE SPUSTANIE (29.9.2026). Rovnaka disciplina ako pri
-#  obec-mesacny-email.yml: `schedule:` ostava ZAKOMENTOVANY, kym sa naziva
-#  neoveri cez workflow_dispatch s nasucho=true, potom s nasucho=false a
-#  komu=Marekov e-mail.
+#  STAV: AUTOMATICKY BEH ZAPNUTY (29.9.2026). Overene rucnym spustenim
+#  (workflow_dispatch, nasucho=true) hned po nasadeni migracie 59 — 0 chyb,
+#  0 poslanych (v produkcii zatial 0 schvalenych servisnych dopytov,
+#  cakane). Beh kazdych 30 min, kedze schvaleny sa nastavuje rucne a
+#  nepravidelne (podobne ako dopyty-email.yml).
 #
 #  CO TOTO ROBI
 #  P3.2 C, druha polovica ("zo ziadosti o pomoc sa so suhlasom obce
@@ -13,10 +14,6 @@ name: Servis email
 #  ma suhlas_zverejnit=true AJ schvaleny=true (rucne nastavene v Supabase
 #  Studio po precitani textu). Podrobnosti v pipeline/posli_servis_email.py
 #  a v migracii 59.
-#
-#  AZ PO OVERENI: odkomentuj `schedule:` nizsie. Kedze schvaleny sa nastavuje
-#  rucne a nepravidelne, casty beh (napr. kazdych 30 min, podobne ako
-#  dopyty-email.yml) dava zmysel viac nez raz denne.
 #
 #  Ziadne nove tajomstva — pouziva presne tie iste tri (SUPABASE_URL,
 #  SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY), co uz ma email.yml.
