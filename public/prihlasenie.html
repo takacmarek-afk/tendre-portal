@@ -242,6 +242,14 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
   // formular tak, aby bolo jasne, do coho sa hlasi, a zamkni e-mail na
   // ten, na ktory bola pozvanka poslana (zvraty inej adresy by skoncili
   // chybou UZ_MAS_FIRMU/nezhodou v prijmi_pozvanku()).
+  //
+  // Dva NEZAVISLE pozyvacie systemy zdielaju tento isty ?pozvanka=<kod>
+  // odkaz (viz supabase/58_pozvat_kolegu.sql): organizacie (app.html,
+  // nazov_pozvanky/prijmi_pozvanku, pozvanie na konkretny e-mail) a
+  // obecne ucty (trh.html, nazov_obec_pozvanky/prijmi_obec_pozvanku,
+  // zdielatelny kod bez viazania na e-mail). Skusime najprv organizacny
+  // lookup a ak nevysiel, obecny — presne jeden z nich uspeje, kody sa
+  // medzi systemami neprelinaju.
   if (TOKEN_POZVANKY) {
     const { data: p } = await supabase.rpc('nazov_pozvanky', { p_token: TOKEN_POZVANKY });
     if (p?.ok) {
@@ -256,10 +264,23 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
         eml.readOnly = true;
         eml.classList.add('bg-slate2/10');
       }
+    } else {
+      const { data: po } = await supabase.rpc('nazov_obec_pozvanky', { p_kod: TOKEN_POZVANKY });
+      if (po?.ok) {
+        document.getElementById('pozvanka-nazov').textContent = po.nazov
+          ? 'obce ' + po.nazov : 'účtu obce';
+        document.getElementById('pozvanka-banner').classList.remove('hidden');
+        document.getElementById('uvod-text').textContent =
+          'Zadajte svoj e-mail a pošleme vám odkaz na prihlásenie. Žiadne ' +
+          'heslo si pamätať nemusíte — pripojíte sa k účtu obce.';
+        // Ziadny email-lock: obecna pozvanka nie je viazana na konkretnu
+        // adresu, prijme ju ktokolvek s odkazom.
+      }
     }
     // Neplatny/vyprsany token sa tu ticho ignoruje — pouzivatel sa
     // proste prihlasi bezne, ako keby ziadny odkaz na pozvanku nemal.
-    // Samotne prijatie (prijmi_pozvanku) aj tak overi platnost znova.
+    // Samotne prijatie (prijmi_pozvanku/prijmi_obec_pozvanku) aj tak
+    // overi platnost znova.
   }
 
   document.getElementById('login').addEventListener('submit', async (e) => {

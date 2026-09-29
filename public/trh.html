@@ -219,6 +219,28 @@
       <p id="uo-chyba" class="hidden text-[13px] text-red-700"></p>
     </form>
 
+    <!-- ══ Pozvat kolegu (P3.2 C, 58_pozvat_kolegu.sql) — len vlastnik ══ -->
+    <div id="tim-box" class="hidden mt-6 border border-line rounded-lg bg-white p-5 max-w-[520px]">
+      <h2 class="text-[15px] font-semibold">Tím</h2>
+      <p class="mt-1 text-[12px] leading-relaxed text-slate2">
+        Účet spravuje viac ľudí (prednosta, ekonómka, spoločný obecný úrad)?
+        Pozvite kolegu odkazom — dostane vlastný prístup, ktorý mu viete
+        kedykoľvek odobrať.
+      </p>
+      <div id="tim-zoznam" class="mt-3 space-y-1.5 text-[13px]"></div>
+      <button id="btn-pozvat" class="mt-3 text-[13px] font-semibold text-accent hover:underline">+ Pozvať kolegu</button>
+      <div id="pozvanka-vysledok" class="hidden mt-3 border border-line rounded-md bg-paper p-3">
+        <p class="text-[12px] text-slate2">Odkaz platí 14 dní, dá sa použiť len raz. Pošlite ho kolegovi:</p>
+        <div class="mt-1.5 flex gap-2">
+          <input id="pozvanka-odkaz" type="text" readonly
+                 class="flex-1 border border-line rounded-md px-2.5 py-1.5 text-[12px] font-mono bg-white">
+          <button id="btn-kopirovat-pozvanku" type="button"
+                  class="text-[12px] font-semibold text-accent hover:underline shrink-0">Kopírovať</button>
+        </div>
+      </div>
+      <p id="tim-chyba" class="hidden mt-2 text-[13px] text-red-700"></p>
+    </div>
+
     <div class="mt-6 flex items-center justify-between">
       <h2 class="text-[17px] font-semibold">Vaše dopyty</h2>
       <button id="btn-novy-dopyt" class="text-[13px] font-semibold text-accent hover:underline">+ Nový dopyt</button>
@@ -490,6 +512,7 @@ function ukazChybu(text) {
 }
 
 let supabase;
+let sessia;
 
 // Selecty a checkboxy pre kraje su na dvoch miestach (registracia poradcu,
 // filter) — naplnaju sa z rovnakeho pola KRAJE, aby sa pri buducej zmene
@@ -614,6 +637,43 @@ function vykresliDopytObec(d, reakcie) {
   </div>`;
 }
 
+async function nacitajTim() {
+  const { data: riadky, error } = await supabase.rpc('moj_tim');
+
+  if (error) {
+    el('tim-zoznam').innerHTML = '';
+    el('tim-chyba').textContent = 'Tím sa nepodarilo načítať.';
+    el('tim-chyba').classList.remove('hidden');
+    return;
+  }
+
+  if (!riadky || !riadky.length) {
+    el('tim-zoznam').innerHTML = '<p class="text-slate2">Zatiaľ ste nikoho nepozvali.</p>';
+    return;
+  }
+
+  el('tim-zoznam').innerHTML = riadky.map(r => {
+    if (r.typ === 'clen') {
+      return `<div class="flex items-center justify-between gap-2">
+        <span>${bezpecne(r.email || 'člen tímu')}</span>
+        <button type="button" class="btn-odobrat-clena text-[12px] text-slate2 hover:text-red-700" data-clen="${r.id}">Odobrať</button>
+      </div>`;
+    }
+    return `<div class="flex items-center justify-between gap-2 text-slate2">
+      <span>Čaká na prijatie (do ${bezpecne(datum(r.vyprsi_at))})</span>
+    </div>`;
+  }).join('');
+
+  for (const btn of el('tim-zoznam').querySelectorAll('.btn-odobrat-clena')) {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = 'Odoberám…';
+      await supabase.rpc('odober_clena', { p_clen_id: btn.dataset.clen });
+      await nacitajTim();
+    });
+  }
+}
+
 async function nacitajDopytyObce(obecId) {
   const { data: dopyty, error } = await supabase.from('dopyty')
     .select('id,nazov,popis,typ,stav,created_at,termin,rozpocet')
@@ -656,8 +716,13 @@ async function nacitajDopytyObce(obecId) {
 }
 
 async function ukazObecDashboard(obecId) {
+  // Poznamka (najdene 29.9.2026 pri praci na "Pozvat kolegu", nesuvisiace
+  // s tou funkciou, ale opravene hned): select tu predtym nenacitaval
+  // kontakt_telefon/preferovany_kontakt, hoci sa nizsie citaju — pri
+  // kazdom otvoreni "Upravit kontaktne udaje" a ulozeni sa tak tichoo
+  // vymazal ulozeny telefon a reset na "email" ako preferovany kontakt.
   const { data: obec, error } = await supabase.from('obce_ucty')
-    .select('nazov,kraj,kontakt_email').eq('id', obecId).single();
+    .select('nazov,kraj,kontakt_email,kontakt_telefon,preferovany_kontakt,owner').eq('id', obecId).single();
 
   if (error || !obec) { ukazChybu('Nepodarilo sa načítať váš účet obce.'); return; }
 
@@ -671,6 +736,50 @@ async function ukazObecDashboard(obecId) {
   if (uoPrefRadio) uoPrefRadio.checked = true;
   el('btn-uprava-obec').onclick = () => el('form-uprava-obec').classList.toggle('hidden');
   el('uo-zrusit').onclick = () => el('form-uprava-obec').classList.add('hidden');
+
+  // ── Tim / Pozvat kolegu (P3.2 C, 58_pozvat_kolegu.sql) — len vlastnik ──
+  if (sessia?.user?.id && obec.owner === sessia.user.id) {
+    el('tim-box').classList.remove('hidden');
+    await nacitajTim();
+
+    el('btn-pozvat').onclick = async () => {
+      const btn = el('btn-pozvat');
+      const chyba = el('tim-chyba');
+      chyba.classList.add('hidden');
+      btn.disabled = true;
+      btn.textContent = 'Vytváram odkaz…';
+
+      const { data: kod, error: chybaRpc } = await supabase.rpc('vytvor_pozvanku');
+
+      btn.disabled = false;
+      btn.textContent = '+ Pozvať kolegu';
+
+      if (chybaRpc || !kod) {
+        chyba.textContent = chybaRpc?.message || 'Nepodarilo sa vytvoriť pozvánku.';
+        chyba.classList.remove('hidden');
+        return;
+      }
+
+      const odkaz = new URL('./prihlasenie.html', location.href);
+      odkaz.searchParams.set('pozvanka', kod);
+      odkaz.searchParams.set('dalej', 'trh.html');
+      el('pozvanka-odkaz').value = odkaz.href;
+      el('pozvanka-vysledok').classList.remove('hidden');
+      await nacitajTim();
+    };
+
+    el('btn-kopirovat-pozvanku').onclick = async () => {
+      const btn = el('btn-kopirovat-pozvanku');
+      try {
+        await navigator.clipboard.writeText(el('pozvanka-odkaz').value);
+        btn.textContent = 'Skopírované ✓';
+      } catch (e) {
+        el('pozvanka-odkaz').select();
+        btn.textContent = 'Označené, skopírujte Ctrl+C';
+      }
+      setTimeout(() => { btn.textContent = 'Kopírovať'; }, 2500);
+    };
+  }
 
   el('form-uprava-obec').onsubmit = async (e) => {
     e.preventDefault();
@@ -1006,6 +1115,11 @@ async function start() {
     return;
   }
 
+  // Kod z pozvanky do timu obce (58_pozvat_kolegu.sql, ?pozvanka=<kod>
+  // poslane z prihlasenie.html) — zachytit PRED history.replaceState
+  // nizsie, ten cely query retazec adresy zmaze.
+  const kodPozvanky = new URLSearchParams(location.search).get('pozvanka');
+
   supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   naplnKrajSelect();
   naplnKrajeCheckboxy('pr-kraje', 'pr-kraj');
@@ -1014,13 +1128,31 @@ async function start() {
   if (!session) session = await pockajNaSpracovanieOdkazu(supabase);
   history.replaceState({}, document.title, location.pathname);
 
-  if (!session) return location.replace(PRIHLASENIE);
+  if (!session) {
+    // Neprihlaseny s pozvankou v odkaze — presmeruj na prihlasenie a po
+    // nom sa vrat sem znova, s kodom zachovanym v adrese (prihlasenie.html
+    // ho po prihlaseni posle spat presne takto).
+    return location.replace(kodPozvanky
+      ? PRIHLASENIE + '&pozvanka=' + encodeURIComponent(kodPozvanky)
+      : PRIHLASENIE);
+  }
+
+  sessia = session;
 
   el('odhlasit').classList.remove('hidden');
   el('odhlasit').addEventListener('click', async () => {
     await supabase.auth.signOut();
     location.replace(PRIHLASENIE);
   });
+
+  if (kodPozvanky) {
+    const { error: chybaPozvanky } = await supabase.rpc('prijmi_obec_pozvanku', { p_kod: kodPozvanky });
+    if (chybaPozvanky) {
+      ukazChybu('Pozvánku sa nepodarilo prijať: ' +
+        (chybaPozvanky.message || 'skúste to znova, alebo požiadajte o nový odkaz.'));
+      return;
+    }
+  }
 
   await nacitajRolu();
 }
