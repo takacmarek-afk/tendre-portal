@@ -1,0 +1,81 @@
+name: Obec mesacny email
+
+# ══════════════════════════════════════════════════════════════════════════
+#  STAV: LEN RUCNE SPUSTANIE (29.9.2026). Rovnaka discliplina ako pri
+#  obce-podstranky.yml pred 19.9. a zmluvy-podstranky.yml dnes: `schedule:`
+#  ostava ZAKOMENTOVANY, kym sa naziva neoveri cez workflow_dispatch
+#  s nasucho=true, potom s nasucho=false a komu=Marekov e-mail.
+#
+#  CO TOTO ROBI
+#  P3.2 B (staronovy starosta, claude/predtendrom-p3-cesta-pre-starostov-
+#  zadanie.md): mesacny e-mail o obci pre ucty uz zalozene na Trhu dopytov
+#  (obce_ucty.kontakt_email) — kolko zmluv obce sa konci, kolko dotacii
+#  este bezi, kto prave teraz rozdava peniaze obciam. Podrobnosti a dovod,
+#  preco LEN existujuce ucty (Marekovo rozhodnutie 29.9.2026), su v
+#  pipeline/posli_obec_mesacny_email.py a v migracii 57.
+#
+#  AZ PO OVERENI: odkomentuj `schedule:` nizsie, napr. na 1. den v mesiaci.
+#
+#  Ziadne nove tajomstva — pouziva presne tie iste tri (SUPABASE_URL,
+#  SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY), co uz ma email.yml.
+# ══════════════════════════════════════════════════════════════════════════
+
+on:
+  workflow_dispatch:
+    inputs:
+      nasucho:
+        description: "Nasucho — nic neposielat, len vypisat (nechaj true, kym si neistý)"
+        type: boolean
+        default: true
+      komu:
+        description: "Poslat len na tuto adresu (na test). Prazdne = vsetkym, komu prislo na rad."
+        type: string
+        default: ""
+
+  # Zatial zakomentovane — pozri STAV vyssie. Az po manualnom overeni:
+  # schedule:
+  #   - cron: "0 6 1 * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: obec-mesacny-email
+  cancel-in-progress: false
+
+jobs:
+  posli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Poslat mesacny email obciam
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EVENT: ${{ github.event_name }}
+          NASUCHO: ${{ inputs.nasucho }}
+          KOMU: ${{ inputs.komu }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$NASUCHO" = "true" ]; then
+            ARGS+=(--nasucho)
+          fi
+          if [ -n "${KOMU:-}" ]; then
+            ARGS+=(--komu "$KOMU")
+          fi
+          echo "Spustam: python posli_obec_mesacny_email.py ${ARGS[*]-}"
+          python posli_obec_mesacny_email.py "${ARGS[@]}"

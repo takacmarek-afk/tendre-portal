@@ -217,9 +217,23 @@
   </div>
   <p class="mt-4 text-[13px] text-slate2 max-w-[600px]">
     Prehľad si viete rovno <a href="./prvych-100-dni.html" class="text-accent hover:underline">vytlačiť alebo uložiť ako PDF pre zastupiteľstvo</a>.
-    Mesačný e-mail o novinkách pre obce vašej veľkosti a orientačné ceny
-    bežných služieb (benchmark) pripravujeme ako ďalší krok.
+    Po založení bezplatného účtu na Trhu dopytov vám raz mesačne pošleme
+    e-mail s novinkami o vašej obci — bez nutnosti prihlasovať sa.
   </p>
+
+  <!-- Audit P3.2 B (29.9.2026): verejny cenovy median (bez presneho
+       rozsahu — ten je platena funkcia appky, pozri migraciu 57 a
+       audit dokument). Bez "obce vasej velkosti" — spolahlivy zdroj
+       poctu obyvatelov obci nemame (rovnake zistenie ako pri "Sused uz
+       stavia", pipeline/alerty.py). -->
+  <div id="benchmark-box" class="hidden mt-5 border border-line rounded-lg bg-paper p-5 max-w-[640px]">
+    <div class="text-[12px] font-semibold uppercase tracking-wider text-slate2">Orientačná cena</div>
+    <div id="benchmark-text" class="mt-1.5 text-[15px] text-ink"></div>
+    <div class="mt-2 text-[13px] text-slate2">
+      Presný rozsah cien a ďalšie sektory nájdete v
+      <a href="./cennik.html" class="text-accent hover:underline">plnej appke</a> (od plánu Start).
+    </div>
+  </div>
 </section>
 
 <!-- ══════════════ C) MALÁ OBEC BEZ ÚRADNÍKOV ══════════════ -->
@@ -411,6 +425,62 @@
       chyba.classList.remove('hidden');
     }
   });
+})();
+</script>
+
+<!-- Audit P3.2 B (29.9.2026): verejny cenovy median cez novu RPC
+     verejny_cenovy_median (migracia 57) — vracia LEN median a pocet
+     vzoriek pre sektory so spolahlivy=true, nikdy presny rozsah (ten
+     je platena funkcia appky). Skusi upratovanie, potom stravovanie,
+     potom tlac_kancelaria — zobrazi prvy, co naozaj vrati data. -->
+<script>
+(function () {
+  const cfg = window.CONFIG || {};
+  const box = document.getElementById('benchmark-box');
+  const text = document.getElementById('benchmark-text');
+  if (!box || !text) return;
+  if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY || cfg.SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) return;
+
+  const SEKTORY = [
+    { kod: 'UPRATOVANIE', nazov: 'upratovanie' },
+    { kod: 'STRAVOVANIE', nazov: 'stravovanie' },
+    { kod: 'TLAC_KANCELARIA', nazov: 'tlač a kancelárske potreby' },
+  ];
+
+  function eur(v) {
+    return Math.round(v).toLocaleString('sk-SK') + ' €';
+  }
+
+  async function nacitaj() {
+    for (const s of SEKTORY) {
+      try {
+        const r = await fetch(`${cfg.SUPABASE_URL}/rest/v1/rpc/verejny_cenovy_median`, {
+          method: 'POST',
+          headers: {
+            apikey: cfg.SUPABASE_ANON_KEY,
+            Authorization: 'Bearer ' + cfg.SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ p_sektor: s.kod }),
+        });
+        if (!r.ok) continue;
+        const data = await r.json();
+        const row = Array.isArray(data) ? data[0] : null;
+        if (!row || row.median_cena == null) continue;
+
+        const jednotka = row.zaklad === 'zmluva' ? 'za zákazku' : 'mesačne';
+        text.textContent =
+          `Obce na Slovensku platia za ${s.nazov} zvyčajne okolo ` +
+          `${eur(row.median_cena)} ${jednotka} (medián z ${row.vzoriek} zmlúv).`;
+        box.classList.remove('hidden');
+        return;
+      } catch (err) {
+        continue;
+      }
+    }
+  }
+
+  nacitaj();
 })();
 </script>
 
