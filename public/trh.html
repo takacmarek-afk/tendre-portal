@@ -514,6 +514,13 @@ function ukazChybu(text) {
 let supabase;
 let sessia;
 
+// Servisny dopyt cakajuci na prevzatie (59_servis_dopyt_prevod.sql) — token
+// a popis prenesene z zurcitVstupZoServisu() do submit handlera registracie
+// obce nizsie, kde sa po zalozeni uctu pouziju na automaticke vytvorenie
+// dopytu. Oboje null, ked ziadny servisny dopyt nie je v hre.
+let servisToken = null;
+let servisPopis = null;
+
 // Selecty a checkboxy pre kraje su na dvoch miestach (registracia poradcu,
 // filter) — naplnaju sa z rovnakeho pola KRAJE, aby sa pri buducej zmene
 // zoznamu krajov nemuselo menit na viacerych miestach.
@@ -563,6 +570,28 @@ el('form-obec-reg').addEventListener('submit', async (e) => {
     chyba.classList.remove('hidden');
     return;
   }
+
+  // Servisny dopyt cakajuci na prevzatie (zurcitVstupZoServisu vyssie) —
+  // ucet obce prave vznikol, teraz z neho automaticky vytvorime verejny
+  // dopyt presne podla rozhodnutia "e-mail s rychlou registraciou".
+  // Zamerne BEZ zastavenia registracie pri zlyhani tohto kroku — ucet uz
+  // existuje, chybu tu len ticho zalogujeme do konzoly a pokracujeme, aby
+  // obec neuviazla na chybovej hlaske kvoli niecomu, co uz nevie ovplyvnit.
+  if (servisToken) {
+    try {
+      await supabase.rpc('vytvor_dopyt', {
+        p_nazov: 'Pomoc s obstarávaním (zo servisného formulára)',
+        p_popis: servisPopis || null,
+        p_typ: 'ine',
+      });
+      await supabase.rpc('oznac_servis_prevzaty', { p_token: servisToken });
+    } catch (e) {
+      console.error('Automaticke vytvorenie dopytu zo servisu zlyhalo:', e);
+    }
+    servisToken = null;
+    servisPopis = null;
+  }
+
   await nacitajRolu();
 });
 
@@ -1081,6 +1110,38 @@ async function ukazPoradcaDashboard(poradcaId) {
   ukazLen('sekcia-poradca');
 }
 
+// ── Servisny dopyt -> rychla registracia (59_servis_dopyt_prevod.sql) ──────
+// Volane zo start() PRED nacitajRolu(), ked adresa nesie ?servis=<token>.
+// Ked uz ma prihlaseny clovek obecny alebo poradcovsky ucet, token sa
+// ignoruje (uz je niekde inde, prefill by nedaval zmysel) a pokracuje sa
+// bezne cez nacitajRolu(). Inak sa (pri platnom tokene) preskoci vyber roly
+// rovno na predvyplnenu registraciu obce.
+async function zurcitVstupZoServisu(token) {
+  const [{ data: obecId }, { data: poradcaId }] = await Promise.all([
+    supabase.rpc('moj_obec_id'),
+    supabase.rpc('moj_poradca_id'),
+  ]);
+  if (obecId || poradcaId) { await nacitajRolu(); return; }
+
+  const { data: sd, error } = await supabase.rpc('moj_servisny_dopyt', { p_token: token });
+  if (error || !sd?.ok) {
+    // Neplatny/vyprsany/uz prevzaty odkaz, alebo nezhoda e-mailu — ticho sa
+    // ignoruje (rovnaky princip ako neplatna pozvanka v prihlasenie.html) a
+    // pokracuje sa bezne, ako keby ziadny servisny token nebol v adrese.
+    await nacitajRolu();
+    return;
+  }
+
+  servisToken = token;
+  servisPopis = sd.popis || null;
+
+  el('or-nazov').value = sd.obec || '';
+  if (sd.kraj) el('or-kraj').value = sd.kraj;
+  el('or-ico').value = sd.ico || '';
+  el('or-email').value = sd.email || '';
+  ukazLen('sekcia-obec-registracia');
+}
+
 // ── Zistenie roly a smerovanie ───────────────────────────────────────────
 async function nacitajRolu() {
   ukazLen('stav-nacitavam');
@@ -1115,10 +1176,12 @@ async function start() {
     return;
   }
 
-  // Kod z pozvanky do timu obce (58_pozvat_kolegu.sql, ?pozvanka=<kod>
-  // poslane z prihlasenie.html) — zachytit PRED history.replaceState
+  // Kod z pozvanky do timu obce (58_pozvat_kolegu.sql, ?pozvanka=<kod>) a
+  // token zo servisneho dopytu (59_servis_dopyt_prevod.sql, ?servis=<token>),
+  // oba poslane z prihlasenie.html — zachytit PRED history.replaceState
   // nizsie, ten cely query retazec adresy zmaze.
   const kodPozvanky = new URLSearchParams(location.search).get('pozvanka');
+  const sluzbaToken = new URLSearchParams(location.search).get('servis');
 
   supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   naplnKrajSelect();
@@ -1129,12 +1192,14 @@ async function start() {
   history.replaceState({}, document.title, location.pathname);
 
   if (!session) {
-    // Neprihlaseny s pozvankou v odkaze — presmeruj na prihlasenie a po
-    // nom sa vrat sem znova, s kodom zachovanym v adrese (prihlasenie.html
-    // ho po prihlaseni posle spat presne takto).
-    return location.replace(kodPozvanky
-      ? PRIHLASENIE + '&pozvanka=' + encodeURIComponent(kodPozvanky)
-      : PRIHLASENIE);
+    // Neprihlaseny s pozvankou/servisnym tokenom v odkaze — presmeruj na
+    // prihlasenie a po nom sa vrat sem znova, s kodom/tokenom zachovanym v
+    // adrese (prihlasenie.html ich po prihlaseni posle spat presne takto).
+    const dalsieParams = new URLSearchParams();
+    if (kodPozvanky) dalsieParams.set('pozvanka', kodPozvanky);
+    if (sluzbaToken) dalsieParams.set('servis', sluzbaToken);
+    const qs = dalsieParams.toString();
+    return location.replace(PRIHLASENIE + (qs ? '&' + qs : ''));
   }
 
   sessia = session;
@@ -1154,7 +1219,11 @@ async function start() {
     }
   }
 
-  await nacitajRolu();
+  if (sluzbaToken) {
+    await zurcitVstupZoServisu(sluzbaToken);
+  } else {
+    await nacitajRolu();
+  }
 }
 
 start().catch((e) => {

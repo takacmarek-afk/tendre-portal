@@ -128,6 +128,18 @@
         </p>
       </div>
 
+      <!-- Zobrazene len ked adresa nesie platny ?servis=<token> z e-mailu
+           posli_servis_email.py (viz 59_servis_dopyt_prevod.sql) — samostatny
+           banner od pozvanka-banner vyssie, ina situacia (dokoncenie
+           registrácie obce, nie pripojenie sa k timu). -->
+      <div id="servis-banner" class="hidden mb-5 bg-ink text-white rounded-lg px-4 py-3">
+        <p class="text-[13px] leading-relaxed">
+          Váš dopyt za <strong id="servis-obec"></strong> je pripravený na
+          zverejnenie. Prihláste sa rovnakým e-mailom, na aký prišla táto
+          pozvánka, a dopyt sa vytvorí automaticky.
+        </p>
+      </div>
+
       <h1 class="text-[19px] font-semibold">Prihlásenie a registrácia</h1>
       <!-- Skusobna doba: 14 dni (rozhodnutie 28. 9. 2026, audit P1.1).
            Jedno cislo pre vsetky stranky — public/plany.js a test
@@ -217,6 +229,10 @@ if (zAdresy) {
 // query cast adresy tym ostava nedotknuta. Token teda prezije popri nich.
 const TOKEN_POZVANKY = new URLSearchParams(location.search).get('pozvanka');
 
+// Token zo servisneho dopytu (viz trh.html a supabase/59_servis_dopyt_prevod.sql)
+// — rovnaky "prezije v query retazci popri hash-i" dovod ako TOKEN_POZVANKY.
+const TOKEN_SERVIS = new URLSearchParams(location.search).get('servis');
+
 // Kam po prihlaseni ist, ak nie do app.html (napr. trh.html pre obce a
 // poradcov — vlna 16). Whitelist na holy nazov "xyz.html" bez lomiek ci
 // protokolu — je to redirect ciel poskladany z URL, takym sa neveri naslepo
@@ -234,8 +250,11 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
 
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
-    location.replace(CIELOVA_STRANKA +
-      (TOKEN_POZVANKY ? '?pozvanka=' + encodeURIComponent(TOKEN_POZVANKY) : ''));
+    const dalsieParams = new URLSearchParams();
+    if (TOKEN_POZVANKY) dalsieParams.set('pozvanka', TOKEN_POZVANKY);
+    if (TOKEN_SERVIS) dalsieParams.set('servis', TOKEN_SERVIS);
+    const qs = dalsieParams.toString();
+    location.replace(CIELOVA_STRANKA + (qs ? '?' + qs : ''));
   }
 
   // Pozvany kolega este nema session — over token a ak je platny, uprav
@@ -281,6 +300,28 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
     // proste prihlasi bezne, ako keby ziadny odkaz na pozvanku nemal.
     // Samotne prijatie (prijmi_pozvanku/prijmi_obec_pozvanku) aj tak
     // overi platnost znova.
+  } else if (TOKEN_SERVIS) {
+    // Servisny dopyt -> dopyt (59_servis_dopyt_prevod.sql). Banner + zamknuty
+    // e-mail (na rozdiel od obecnej pozvanky TOTO viazane na konkretny e-mail
+    // JE — bol na neho poslany, a moj_servisny_dopyt() na trh.html rovnaku
+    // zhodu aj tak overi, takze zamknutie tu je len predchadzanie zbytocnemu
+    // zlyhaniu, nie jediny bezpecnostny mechanizmus).
+    const { data: sd } = await supabase.rpc('over_servisny_token', { p_token: TOKEN_SERVIS });
+    if (sd?.ok) {
+      document.getElementById('servis-obec').textContent = sd.obec || 'vašu obec';
+      document.getElementById('servis-banner').classList.remove('hidden');
+      document.getElementById('uvod-text').textContent =
+        'Zadajte rovnaký e-mail, na ktorý prišla táto správa, a pošleme ' +
+        'vám odkaz na prihlásenie. Žiadne heslo si pamätať nemusíte.';
+      const eml = document.getElementById('email');
+      if (sd.email) {
+        eml.value = sd.email;
+        eml.readOnly = true;
+        eml.classList.add('bg-slate2/10');
+      }
+    }
+    // Neplatny/vyprsany/uz prevzaty token sa tu ticho ignoruje, rovnaky
+    // princip ako pri pozvanke vyssie.
   }
 
   document.getElementById('login').addEventListener('submit', async (e) => {
@@ -292,6 +333,7 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
     const email = document.getElementById('email').value.trim();
     const cielovaAdresa = new URL(CIELOVA_STRANKA, location.href);
     if (TOKEN_POZVANKY) cielovaAdresa.searchParams.set('pozvanka', TOKEN_POZVANKY);
+    if (TOKEN_SERVIS) cielovaAdresa.searchParams.set('servis', TOKEN_SERVIS);
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: cielovaAdresa.href }

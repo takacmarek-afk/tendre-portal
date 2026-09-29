@@ -1,0 +1,83 @@
+name: Servis email
+
+# ══════════════════════════════════════════════════════════════════════════
+#  STAV: LEN RUCNE SPUSTANIE (29.9.2026). Rovnaka disciplina ako pri
+#  obec-mesacny-email.yml: `schedule:` ostava ZAKOMENTOVANY, kym sa naziva
+#  neoveri cez workflow_dispatch s nasucho=true, potom s nasucho=false a
+#  komu=Marekov e-mail.
+#
+#  CO TOTO ROBI
+#  P3.2 C, druha polovica ("zo ziadosti o pomoc sa so suhlasom obce
+#  automaticky stane dopyt na trhu", Marekovo rozhodnutie 29.9.2026): posle
+#  e-mail s odkazom na rychlu registraciu obciam, ktorych servisny dopyt
+#  ma suhlas_zverejnit=true AJ schvaleny=true (rucne nastavene v Supabase
+#  Studio po precitani textu). Podrobnosti v pipeline/posli_servis_email.py
+#  a v migracii 59.
+#
+#  AZ PO OVERENI: odkomentuj `schedule:` nizsie. Kedze schvaleny sa nastavuje
+#  rucne a nepravidelne, casty beh (napr. kazdych 30 min, podobne ako
+#  dopyty-email.yml) dava zmysel viac nez raz denne.
+#
+#  Ziadne nove tajomstva — pouziva presne tie iste tri (SUPABASE_URL,
+#  SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY), co uz ma email.yml.
+# ══════════════════════════════════════════════════════════════════════════
+
+on:
+  workflow_dispatch:
+    inputs:
+      nasucho:
+        description: "Nasucho — nic neposielat, len vypisat (nechaj true, kym si neistý)"
+        type: boolean
+        default: true
+      komu:
+        description: "Poslat len na tuto adresu (na test). Prazdne = vsetkym schvalenym, ktori este email nedostali."
+        type: string
+        default: ""
+
+  # Zatial zakomentovane — pozri STAV vyssie. Az po manualnom overeni:
+  # schedule:
+  #   - cron: "*/30 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: servis-email
+  cancel-in-progress: false
+
+jobs:
+  posli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Poslat email so schvalenymi servisnymi dopytmi
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EVENT: ${{ github.event_name }}
+          NASUCHO: ${{ inputs.nasucho }}
+          KOMU: ${{ inputs.komu }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$NASUCHO" = "true" ]; then
+            ARGS+=(--nasucho)
+          fi
+          if [ -n "${KOMU:-}" ]; then
+            ARGS+=(--komu "$KOMU")
+          fi
+          echo "Spustam: python posli_servis_email.py ${ARGS[*]-}"
+          python posli_servis_email.py "${ARGS[@]}"
