@@ -47,10 +47,14 @@ ROBOTS_CESTA = os.path.join(os.path.dirname(__file__), "..", "public", "robots.t
 
 # MVP: 3 najsilnejsie sektory (zadanie 23.9.2026). Kluce presne ako v
 # pipeline/config.py SEKTORY — `opportunities.sector` ich take aj obsahuje.
+#  "nazov" je akuzativ (pouziva sa vo vetach ako "zmluvy na ostrahu"),
+#  "nazov_nom" je nominativ (pre samostatny nadpis/title, kde akuzativ
+#  znie zle — "Ostrahu v Presovskom kraji" namiesto "Ostraha..."). Oprava
+#  z auditu 29.9.2026 ("Ostrahu v Prešovský kraj" v <title>).
 SEKTORY_SEO = {
-    "UPRATOVANIE": {"slug": "upratovanie", "nazov": "upratovanie", "nazov_2": "upratovacie služby"},
-    "STRAVOVANIE": {"slug": "stravovanie", "nazov": "stravovanie", "nazov_2": "stravovanie a dodávku potravín"},
-    "OSTRAHA":     {"slug": "ostraha",     "nazov": "ostrahu",     "nazov_2": "ostrahu a bezpečnostné služby"},
+    "UPRATOVANIE": {"slug": "upratovanie", "nazov": "upratovanie", "nazov_nom": "upratovanie", "nazov_2": "upratovacie služby"},
+    "STRAVOVANIE": {"slug": "stravovanie", "nazov": "stravovanie", "nazov_nom": "stravovanie", "nazov_2": "stravovanie a dodávku potravín"},
+    "OSTRAHA":     {"slug": "ostraha",     "nazov": "ostrahu",     "nazov_nom": "ostraha",     "nazov_2": "ostrahu a bezpečnostné služby"},
 }
 
 MESIACE_SK = ["", "januári", "februári", "marci", "apríli", "máji", "júni",
@@ -116,6 +120,18 @@ HLAVICKA = """<!doctype html>
 <meta name="description" content="{popis}">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://predtendrom.sk/konciace-zmluvy/{sektor_slug}/{kraj_slug}.html">
+<meta property="og:title" content="{titul}">
+<meta property="og:description" content="{popis}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://predtendrom.sk/konciace-zmluvy/{sektor_slug}/{kraj_slug}.html">
+<meta property="og:locale" content="sk_SK">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{titul}">
+<meta name="twitter:description" content="{popis}">
+<meta property="og:image" content="https://predtendrom.sk/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
 <script src="../../config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -168,7 +184,7 @@ def _vygeneruj_stranku(sector, agregat_row):
         <div class="text-[14px] font-medium">{t['authority_name']}</div>
         <div class="mt-1 flex items-center justify-between text-[13px] text-slate2">
           <span>{_suma(t['price_total'])}</span>
-          <span>zmluva končí {t['mesiac_konca']}</span>
+          <span>zmluva končí v {t['mesiac_konca']}</span>
         </div>
       </div>"""
             for t in agregat_row["teaser"]
@@ -194,7 +210,11 @@ def _vygeneruj_stranku(sector, agregat_row):
     else:
         blok_zvysok = ""
 
-    titul = f"Končiace zmluvy — {sektor_info['nazov'].capitalize()} v {kraj} | PredTendrom.sk"
+    # OPRAVA (audit 29.9.2026): "v {kraj}" pouzival nominativ po predlozke
+    # "v", ktora vyzaduje lokal ("v Bratislavský kraj" -> "v Bratislavskom
+    # kraji"). "nazov_nom" rieši rovnaky problem pre sektor (OSTRAHA malo
+    # v nazov ulozeny akuzativ "ostrahu", ktory v title cital ako "Ostrahu").
+    titul = f"Končiace zmluvy — {sektor_info['nazov_nom'].capitalize()} v {lokal} kraji | PredTendrom.sk"
     popis = (
         f"{_cislo(agregat_row['pocet'])} zmlúv na {sektor_info['nazov']} v {lokal} kraji sa blíži ku koncu, "
         f"spolu {_suma(agregat_row['objem_eur'])}. Kto ich má teraz a kedy sa uvoľnia — z Centrálneho registra zmlúv."
@@ -264,9 +284,12 @@ def _vygeneruj_index_sektora(sector, agregaty):
 """
     return (
         HLAVICKA.format(
-            titul=f"Končiace zmluvy — {sektor_info['nazov'].capitalize()} | PredTendrom.sk",
+            titul=f"Končiace zmluvy — {sektor_info['nazov_nom'].capitalize()} | PredTendrom.sk",
             popis=f"Prehľad končiacich zmlúv na {sektor_info['nazov']} za všetkých 8 krajov Slovenska.",
-            sektor_slug=sektor_info["slug"], kraj_slug="",
+            # OPRAVA (audit 29.9.2026): prazdny kraj_slug davel rozbity canonical
+            # ".../ostraha/.html" (chybajuci "index"). Rovnaky vzor ako subor sam:
+            # tato stranka sa fyzicky vola index.html.
+            sektor_slug=sektor_info["slug"], kraj_slug="index",
         )
         + telo
         + PATICKA.format(aktualizovane=_datum(date.today().isoformat()))

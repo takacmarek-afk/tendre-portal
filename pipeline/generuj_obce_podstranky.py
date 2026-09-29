@@ -108,7 +108,19 @@ HLAVICKA = """<!doctype html>
 <title>{titul}</title>
 <meta name="description" content="{popis}">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="https://predtendrom.sk/obce/kraj-{slug}.html">
+<link rel="canonical" href="https://predtendrom.sk/obce/{cesta}.html">
+<meta property="og:title" content="{titul}">
+<meta property="og:description" content="{popis}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://predtendrom.sk/obce/{cesta}.html">
+<meta property="og:locale" content="sk_SK">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{titul}">
+<meta name="twitter:description" content="{popis}">
+<meta property="og:image" content="https://predtendrom.sk/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
 <script src="../config.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -246,7 +258,7 @@ def _vygeneruj_stranku_kraja(row, spolu_sprostredkovatelia):
 
     aktualizovane = _datum(row.get("posledna") or date.today().isoformat())
     return (
-        HLAVICKA.format(titul=titul, popis=popis, slug=slug)
+        HLAVICKA.format(titul=titul, popis=popis, cesta=f"kraj-{slug}")
         + telo
         + PATICKA.format(aktualizovane=aktualizovane)
     )
@@ -279,7 +291,11 @@ def _vygeneruj_index(riadky):
         HLAVICKA.format(
             titul="Dotácie pre obce podľa kraja | PredTendrom.sk",
             popis="Prehľad dotácií pre obce a mestá za všetkých 8 krajov Slovenska — z Centrálneho registra zmlúv.",
-            slug="",
+            # OPRAVA (audit 29.9.2026): povodne slug="" davalo rozbity canonical
+            # "obce/kraj-.html" (neexistujuca stranka). "cesta" je teraz cely
+            # nazov suboru bez pripony, aby ta ista HLAVICKA sedela aj pre
+            # kraj-*.html aj pre tento index.html.
+            cesta="index",
         )
         + telo
         + PATICKA.format(aktualizovane=_datum(date.today().isoformat()))
@@ -317,8 +333,16 @@ def vygeneruj(riadky_kraj, riadky_sprostredkovatelia, vystup_dir=VYSTUP_DIR):
 
 # Staticke verejne stranky, ktore existuju bez ohladu na kraj_prehlad.
 # Rucny zoznam — web nema build, teda ani automaticky zoznam suborov.
+#
+# OPRAVA (audit 29.9.2026): tento zoznam bol nekompletny — starosta.html bol
+# v komittovanom sitemap.xml len rucne dopisany niekym predtym, nie aj TU, co
+# znamena, ze dalsi automaticky beh (obce-podstranky.yml, streda) by ho zase
+# vymazal. Doplnene starosta/prvych-100-dni/trh/servis (chybali uplne — audit
+# ich oznacil ako "vstupnu branu pre kampan"). prihlasenie.html odobrane —
+# prihlasovacia stranka nema byt vo vyhladavacom indexe (SEO odporucanie).
 STATICKE_STRANKY = [
-    "/index.html", "/cennik.html", "/obce.html", "/zdroje.html", "/prihlasenie.html",
+    "/index.html", "/cennik.html", "/obce.html", "/zdroje.html",
+    "/starosta.html", "/prvych-100-dni.html", "/trh.html", "/servis.html",
 ]
 
 
