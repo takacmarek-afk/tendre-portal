@@ -113,6 +113,14 @@ def _je_obec(nazov) -> bool:
     return bool(nazov) and bool(_JE_OBEC.match(str(nazov)))
 
 
+def _obec_core_nazov(nazov) -> str:
+    """Nazov obce bez predpony Obec/Mesto/Mestska cast — rovnaky vystup ako
+    SQL funkcia public._obec_core_nazov (supabase/53_prvych_100_dni.sql),
+    aby sa dala pouzit ako spolocny zoskupovaci kluc medzi pipeline a appkou.
+    """
+    return _JE_OBEC.sub("", str(nazov or "")).strip()
+
+
 # ── KTO SMIE VYSTUPOVAT AKO POSKYTOVATEL ───────────────────────────────────
 # Odmerane 16. 9. 2026: zo 6 690 dotacii obciam nad 20 000 EUR malo len
 # 3 642 (54 %) skutocne verejneho poskytovatela. Vo zvysku boli futbalove
@@ -378,6 +386,108 @@ def sprostredkovatelia(df: pd.DataFrame) -> pd.DataFrame:
 
     log.info("Sprostredkovatelov: %s (obci spolu %s, zmluv %s)",
              len(out), int(out["obci"].sum()), int(out["zmluv"].sum()))
+    return out
+
+
+def doterajsi_poradcovia_po_obci(df: pd.DataFrame) -> pd.DataFrame:
+    """Firmy, ktore KONKRETNEJ obci doteraz pisali ziadosti o dotacie —
+    jeden riadok na dvojicu (obec, firma), pre zobrazenie na
+    /prvych-100-dni.html pri konkretnej obci (audit 29.9.2026, punch list).
+
+    Zamerne DUPLIKUJE filtre z sprostredkovatelia() (je obec, projektove
+    sluzby, pravnicka osoba, vylucene ICO, dopnenie chybajuceho ICO, min.
+    cena) namiesto zdielania jednej internej funkcie — sprostredkovatelia()
+    je uz v produkcii a otestovana, a tu ide o inu os zoskupenia (podla
+    obce, nie podla firmy), takze radsej samostatna, jasne citatelna
+    funkcia nez riskovat zmenu spravania uz beziacej funkcie kvoli zdielaniu
+    kodu. Rovnake GDPR aj obchodne dovody ako pri sprostredkovatelia() —
+    pozri hlavicku modulu.
+    """
+    if df.empty:
+        return pd.DataFrame()
+
+    chyba = [c for c in ("authority_name", "supplier_name", "supplier_cin",
+                         "subject", "price_total", "signed_on")
+             if c not in df.columns]
+    if chyba:
+        raise KeyError(f"Doterajsi poradcovia: chybaju stlpce {chyba}.")
+
+    d = df[df["authority_name"].apply(_je_obec)].copy()
+    if d.empty:
+        return pd.DataFrame()
+
+    d = d[d["subject"].fillna("").apply(lambda s: bool(_PROJEKTOVE_SLUZBY.search(s)))]
+    if d.empty:
+        return pd.DataFrame()
+
+    import analytics
+    d = d[d["supplier_name"].apply(analytics.je_pravnicka_osoba)].copy()
+    if d.empty:
+        return pd.DataFrame()
+
+    d["suma"] = pd.to_numeric(d["price_total"], errors="coerce")
+    d["podpisane"] = pd.to_datetime(d["signed_on"], errors="coerce")
+
+    d = regiony.doplnit(d)
+
+    d["supplier_cin"] = (d["supplier_cin"].astype(str).str.strip()
+                          .replace({"": None, "nan": None, "None": None}))
+
+    chybajuce = d["supplier_cin"].isna()
+    if chybajuce.any():
+        d.loc[chybajuce, "supplier_cin"] = (
+            d.loc[chybajuce, "supplier_name"].str.lower().str.strip()
+             .map(_CHYBAJUCE_ICO_PODLA_NAZVU))
+
+    d = d[~d["supplier_cin"].isin(_NIE_SU_PORADCOVIA_ICO)].copy()
+    if d.empty:
+        return pd.DataFrame()
+
+    d["kluc"] = d["supplier_cin"].fillna(d["supplier_name"].str.lower())
+
+    # Obec ako GROUPOVACI kluc, nie ako obstaravatel na zobrazenie — musi
+    # byt rovnaky "core" nazov (bez predpony), aky vracia hladaj_obec()
+    # na appke, inak by sa "Seňa" z pipeline a "Seňa" z RPC nezhodli.
+    d["obec_core"] = d["authority_name"].apply(_obec_core_nazov)
+    d = d[d["obec_core"] != ""].copy()
+    if d.empty:
+        return pd.DataFrame()
+
+    # kraj je sucast zlozeneho kluca v Supabase (obec_core, kraj, kluc) —
+    # NULL v stlpci primarneho kluca Postgres nedovoli, preto prazdny
+    # retazec namiesto None, ked adresu obstaravatela nejde rozobrat.
+    d["kraj"] = d["kraj"].fillna("")
+
+    g = d.groupby(["obec_core", "kraj", "kluc"])
+    out = pd.DataFrame({
+        "obec_core": [k[0] for k in g.groups.keys()],
+        "kraj": [k[1] for k in g.groups.keys()],
+        "kluc": [k[2] for k in g.groups.keys()],
+        "sprostredkovatel": g["supplier_name"].agg(lambda s: s.mode().iat[0]).values,
+        "supplier_cin": g["supplier_cin"].first().values,
+        "zmluv": g.size().values,
+        "median_ceny": g["suma"].median().round(0).values,
+        "prva_zmluva": g["podpisane"].min().dt.strftime("%Y-%m-%d").values,
+        "posledna_zmluva": g["podpisane"].max().dt.strftime("%Y-%m-%d").values,
+    })
+
+    # Adresa vlepena do nazvu dodavatela (viz _ADRESA_V_NAZVE) — len
+    # zobrazenie sa meni.
+    out["sprostredkovatel"] = out["sprostredkovatel"].astype(str).apply(
+        lambda n: _ADRESA_V_NAZVE.sub(r"\1", n).strip())
+
+    # Rovnaky dovod ako v sprostredkovatelia(): typicka cena pod
+    # MIN_CENA_SPROSTREDKOVATEL, ale nad nulou, je skor chybne zaradenie
+    # nez realny poplatok. Presne 0 (chybajuci udaj v CRZ) sa nefiltruje.
+    out = out[~((out["median_ceny"] > 0)
+                & (out["median_ceny"] < MIN_CENA_SPROSTREDKOVATEL))].copy()
+
+    out = out.sort_values(["obec_core", "zmluv", "posledna_zmluva"],
+                          ascending=[True, False, False]).reset_index(drop=True)
+    out["zmluv"] = out["zmluv"].astype("Int64")
+
+    log.info("Doterajsi poradcovia po obci: %s riadkov, %s roznych obci",
+             len(out), out["obec_core"].nunique())
     return out
 
 

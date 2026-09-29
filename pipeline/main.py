@@ -194,7 +194,7 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     # ── VRSTVA PRE OBCE ────────────────────────────────────────────────────
     # Vlastny try, aby zlyhanie tejto vrstvy nezhodilo prilezitosti ani
     # analytiku. Je to najnovsia cast a najmenej zabehnuta.
-    programov = sprostred = vyziev = ucelov = ziadatelov = 0
+    programov = sprostred = vyziev = ucelov = ziadatelov = poradcov_po_obci = 0
     try:
         if vsetky is not None and not vsetky.empty:
             prog = obce.aktivne_programy(vsetky)
@@ -202,6 +202,12 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
 
             spr = obce.sprostredkovatelia(vsetky)
             sprostred = store.nahrad_sprostredkovatelov(sb, spr, dnes)
+
+            # Rovnake fakty ako vyssie (spr), len zoskupene po (obec, firma)
+            # namiesto len po firme — pre /prvych-100-dni.html pri
+            # konkretnej obci (audit 29.9.2026, punch list).
+            ppo = obce.doterajsi_poradcovia_po_obci(vsetky)
+            poradcov_po_obci = store.nahrad_obec_poradcovia(sb, ppo, dnes)
 
             # NA CO obce peniaze dostavaju. Bez tohto stranka pre obce
             # hovorila len "ministerstvo rozdelilo 39 M EUR", co je
@@ -222,8 +228,9 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
                              str(r["popis"])[:38], r["obci"], r["dotacii"],
                              r["median_suma"])
 
-            log.info("Obce: aktivnych programov %s, sprostredkovatelov %s, ucelov %s",
-                     programov, sprostred, ucelov)
+            log.info("Obce: aktivnych programov %s, sprostredkovatelov %s, ucelov %s, "
+                     "poradcov po obci %s",
+                     programov, sprostred, ucelov, poradcov_po_obci)
             if prog is not None and not prog.empty:
                 log.info("Kto prave teraz rozdava obciam (90 dni):")
                 for _, r in prog.head(8).iterrows():

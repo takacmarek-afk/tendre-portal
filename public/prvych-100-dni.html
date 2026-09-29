@@ -257,7 +257,7 @@ async function zobrazSuhrn(nazov, kraj) {
     </div>
     <div class="mt-4 border border-line rounded-md p-6 bg-white">
       <p class="font-semibold text-ink">Doterajší poradcovia</p>
-      <p class="mt-1 text-[14px] text-slate2">Súhrn firiem, ktoré vašej obci doteraz písali žiadosti o dotácie, pripravujeme ako ďalší krok — potrebuje rovnaké ručné overenie, aké dnes robíme pre celý zoznam na <a href="./obce.html" class="text-accent hover:underline">obce.html</a>.</p>
+      <div id="poradcovia-box" class="mt-1 text-[14px] text-slate2">Načítavam&hellip;</div>
     </div>
     <div class="mt-3 border border-line rounded-md p-6 bg-white">
       <p class="font-semibold text-ink">Porovnanie s podobnými obcami</p>
@@ -291,6 +291,37 @@ async function zobrazSuhrn(nazov, kraj) {
   el('btn-tlac').addEventListener('click', () => {
     if (poslednyVysledok) pripravTlac(poslednyVysledok.nazov, poslednyVysledok.s);
   });
+
+  // Samostatne, nezavisle od hlavneho suhrnu — ked toto zlyha alebo je
+  // prazdne, zvysok stranky (koncerciace zmluvy, dotacie) ostava funkcny.
+  nacitajPoradcov(nazov, kraj);
+}
+
+// Punch list (audit 29.9.2026): doterajsi poradcovia PRE KONKRETNU obec,
+// namiesto povodneho "pripravujeme". Fakty z verejnych zmluv, ziadne
+// skore uspesnosti (rovnaky princip ako obce.html, viz pipeline/obce.py).
+async function nacitajPoradcov(nazov, kraj) {
+  const box = el('poradcovia-box');
+  if (!box) return;
+  let riadky;
+  try {
+    riadky = await volajRpc('doterajsi_poradcovia_obce', { p_nazov: nazov, p_kraj: kraj || null });
+  } catch (e) {
+    box.textContent = 'Zoznam poradcov sa nepodarilo načítať.';
+    return;
+  }
+  if (!riadky || riadky.length === 0) {
+    box.innerHTML = `Pre túto obec sme v Centrálnom registri zmlúv nenašli žiadnu firmu, ktorá by jej písala žiadosti o dotácie alebo viedla projekt. Celý zoznam naprieč všetkými obcami je na <a href="./obce.html" class="text-accent hover:underline">obce.html</a>.`;
+    return;
+  }
+  const polozky = riadky.map(r => `<li class="py-1.5 border-b border-line last:border-0">
+    <span class="text-ink">${r.sprostredkovatel}</span>
+    <span class="text-slate2"> — ${tvar(r.zmluv, 'zmluva', 'zmluvy', 'zmlúv')}${r.posledna_zmluva ? `, naposledy ${dSk(new Date(r.posledna_zmluva))}` : ''}</span>
+  </li>`).join('');
+  box.innerHTML = `
+    <ul class="mt-1">${polozky}</ul>
+    <p class="mt-2 text-[12px] text-slate2">Len fakty z verejných zmlúv (Centrálny register zmlúv) — žiadne skóre úspešnosti. Celý zoznam naprieč všetkými obcami je na <a href="./obce.html" class="text-accent hover:underline">obce.html</a>.</p>
+  `;
 }
 
 let poslednyVysledok = null;

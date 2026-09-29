@@ -84,6 +84,65 @@ def test_dve_rozne_ico_sa_nezlucuju_len_kvoli_podobnemu_menu():
     assert len(out) == 2, f"malo zostat 2 rozne firmy, je {len(out)}"
 
 
+# ── doterajsi_poradcovia_po_obci (audit 29.9.2026, punch list) ────────────
+# Rovnake ciste filtre ako sprostredkovatelia() vyssie, ale zoskupene podla
+# (obec, firma) namiesto len podla firmy — pre zobrazenie na
+# /prvych-100-dni.html pri konkretnej obci.
+
+def test_poradcovia_po_obci_zoskupuje_podla_obce_nie_len_podla_firmy():
+    # Ta ista firma pisala dvom roznym obciam -> sprostredkovatelia() by to
+    # zlucila do 1 riadku (obci=2), tu maju byt DVA samostatne riadky.
+    df = pd.DataFrame([
+        z("Obec Testov", "Ján Poradca s.r.o.", "11112222"),
+        z("Mesto Iné", "Ján Poradca s.r.o.", "11112222"),
+    ])
+    out = obce.doterajsi_poradcovia_po_obci(df)
+    assert len(out) == 2, f"malo byt 2 riadky (jeden na obec), je {len(out)}"
+    obce_v_out = sorted(out["obec_core"].tolist())
+    assert obce_v_out == ["Iné", "Testov"], obce_v_out
+
+
+def test_poradcovia_po_obci_orezava_predponu_obec_mesto():
+    df = pd.DataFrame([z("Obec Seňa", "Poradca s.r.o.", "11112222")])
+    out = obce.doterajsi_poradcovia_po_obci(df)
+    assert out.loc[0, "obec_core"] == "Seňa", out.loc[0, "obec_core"]
+
+
+def test_poradcovia_po_obci_rozlisuje_rovnaky_nazov_v_inom_kraji():
+    # Dve rozne obce s rovnakym nazvom ("Nova Ves"), v roznom kraji podla
+    # adresy obstaravatela — nesmu sa zliat do jedneho riadku, rovnaky
+    # dovod ako pri oprave migracie 60 (p_kraj filter).
+    df = pd.DataFrame([
+        z("Obec Nova Ves", "Poradca s.r.o.", "11112222",
+          adresa="Hlavná 1, 040 01 Košice"),
+        z("Obec Nova Ves", "Poradca s.r.o.", "11112222",
+          adresa="Nám. slobody 1, 811 06 Bratislava"),
+    ])
+    out = obce.doterajsi_poradcovia_po_obci(df)
+    assert len(out) == 2, f"malo byt 2 riadky (jeden na kraj), je {len(out)}"
+    kraje = sorted(out["kraj"].tolist())
+    assert kraje == ["Bratislavský kraj", "Košický kraj"], kraje
+
+
+def test_poradcovia_po_obci_min_cena_filtruje_rovnako():
+    df = pd.DataFrame([
+        z("Obec A", "Lacná Firma s.r.o.", "22223333", suma=49),
+        z("Obec B", "Nulová Firma s.r.o.", "33334444", suma=0),
+    ])
+    out = obce.doterajsi_poradcovia_po_obci(df)
+    mena = set(out["sprostredkovatel"])
+    assert "Lacná Firma s.r.o." not in mena, mena
+    assert "Nulová Firma s.r.o." in mena, mena
+
+
+def test_poradcovia_po_obci_vylucene_ico_von():
+    df = pd.DataFrame([
+        z("Obec Testov", "SOLARPARK KOMÁRNO s.r.o.", "45729735"),
+    ])
+    out = obce.doterajsi_poradcovia_po_obci(df)
+    assert out.empty, out
+
+
 if __name__ == "__main__":
     for meno, f in list(globals().items()):
         if meno.startswith("test_") and callable(f):

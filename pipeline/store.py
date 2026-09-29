@@ -339,6 +339,21 @@ def nahrad_sprostredkovatelov(sb, df: pd.DataFrame, dnes: str):
     return _nahrad_tabulku(sb, "sprostredkovatelia", d, kluc="kluc")
 
 
+def nahrad_obec_poradcovia(sb, df: pd.DataFrame, dnes: str):
+    """Doterajsi poradcovia PO OBCI (audit 29.9.2026) — jeden riadok na
+    dvojicu (obec, firma), pre /prvych-100-dni.html. Zlozeny kluc
+    (obec_core, kraj, kluc), lebo rovnaky nazov obce moze existovat vo
+    viacerych krajoch (rovnaky dovod ako migracia 60 pri prvych_100_dni_suhrn).
+    """
+    if df is None or df.empty:
+        return _nahrad_tabulku(sb, "obec_poradcovia_agregat", df,
+                                kluc="obec_core,kraj,kluc")
+    d = df.copy()
+    d["last_seen_at"] = dnes
+    return _nahrad_tabulku(sb, "obec_poradcovia_agregat", d,
+                            kluc="obec_core,kraj,kluc")
+
+
 def nahrad_ziadatelov(sb, df: pd.DataFrame, dnes: str):
     """Obce, ktore si najali projektanta a dotaciu este nemaju."""
     if df is None or df.empty:
