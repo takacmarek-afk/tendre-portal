@@ -574,8 +574,16 @@ def main():
             preskocene += 1
             continue
 
-        if (o["_typ"] == "dodavatel"
-                and not pripraveny_na_dalsi(o, _ma_pro(o.get("org_id")))):
+        # OPRAVA 29.9.2026: predtym sa tento throttle volal len pre
+        # _typ == "dodavatel", takze obce z odber_obce nemali ziadne
+        # obmedzenie frekvencie a dostavali mail kazdy pracovny den (kedy
+        # bezi email.yml), hoci web sluboval "raz tyzdenne" a pre_obec()
+        # nema ziadnu vlastnu "co je nove od posledneho maila" logiku —
+        # vzdy vrati aktualny stav aktivne_programy. pripraveny_na_dalsi()
+        # je vseobecna (cita len frekvencia/posledny_email z dict), takze
+        # funguje rovnako spravne aj pre obce (bez stlpca frekvencia
+        # defaultuje na 'tyzdenne', presne ako sluby na obce.html).
+        if not pripraveny_na_dalsi(o, _ma_pro(o.get("org_id"))):
             preskocene += 1
             continue
 
