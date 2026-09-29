@@ -39,6 +39,7 @@ import time
 import unicodedata
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
+from urllib.parse import quote
 
 import requests
 
@@ -309,6 +310,19 @@ def utm(cesta, vlna, segment):
     return f"{WEB}/{cesta}?utm_source=email&utm_medium=obce&utm_campaign={vlna}-{segment}"
 
 
+def obec_odkaz(obec, kraj, vlna, segment):
+    """Priamy odkaz na strancu konkretnej obce (P3.4, Marekovo rozhodnutie
+    29.9.2026: 'Jedna stranka + vyhladavanie' namiesto tisicok statickych
+    stranok) — prvych-100-dni.html?nazov=X&kraj=Y, mesto rovnakeho
+    generickeho /obce.html. `obec` uz je bez prefixu 'Obec'/'Mesto'
+    (bez_prefixu), presne ako to prvych-100-dni.html ocakava."""
+    qs = f"nazov={quote(obec)}"
+    if kraj:
+        qs += f"&kraj={quote(kraj)}"
+    qs += f"&utm_source=email&utm_medium=obce&utm_campaign={vlna}-{segment}"
+    return f"{WEB}/prvych-100-dni.html?{qs}"
+
+
 def zostav(vlna, kontakt, starosta, data):
     """-> dict(segment, predmet, odstavce[list[str|tuple]]) alebo None.
 
@@ -331,8 +345,8 @@ def zostav(vlna, kontakt, starosta, data):
             "predmet": f"{obec}: dotácie a obstarávanie na rok 2027",
             "odstavce": [
                 uvod,
-                [veta, ("odkaz", "predtendrom.sk/obce", utm("obce.html", vlna, "followup")),
-                 " je prehľad, kto práve rozdáva peniaze obciam, a na ",
+                [veta, ("odkaz", "predtendrom.sk/prvych-100-dni", obec_odkaz(obec, kontakt.get("kraj"), vlna, "followup")),
+                 " uvidíte, čo sa práve deje vo vašej obci, a na ",
                  ("odkaz", "predtendrom.sk/trh", utm("trh.html", vlna, "followup")),
                  " môžete nájsť poradcu. Obe sú pre obce zadarmo."],
                 "Ak to pre vás nie je aktuálne, stačí odpísať a viac vám nebudem písať.",
@@ -344,7 +358,7 @@ def zostav(vlna, kontakt, starosta, data):
     if not seg:
         return None
     d = data[seg]
-    obce_link = ("odkaz", "predtendrom.sk/obce", utm("obce.html", vlna, seg))
+    obce_link = ("odkaz", "predtendrom.sk/prvych-100-dni", obec_odkaz(obec, kontakt.get("kraj"), vlna, seg))
     trh_link = ("odkaz", "predtendrom.sk/trh", utm("trh.html", vlna, seg))
 
     if seg == "poradca":
@@ -383,9 +397,7 @@ def zostav(vlna, kontakt, starosta, data):
                     " podpísané a kedy to končí. S tým vám vieme pomôcť hneď.",
                     f"{zdroj} {fakt} Ak ju chcete znova obstarávať, príprava zvyčajne trvá"
                     " 3 až 6 mesiacov.",
-                    ["Prehľad zmlúv a dotácií pre obce"
-                     + (f" v {kraj_lokal(kontakt['kraj'])}" if kontakt.get("kraj") else "")
-                     + " je zadarmo a bez registrácie: ", obce_link],
+                    [f"Prehľad zmlúv a dotácií priamo pre {obec} je zadarmo a bez registrácie: ", obce_link],
                     ["Ak by ste na obstarávanie alebo žiadosť o dotáciu potrebovali pomoc, na ",
                      trh_link, " môžete vypísať, s čím potrebujete pomôcť, a ozvú sa vám poradcovia."
                      " Aj to je pre obce zadarmo."],
@@ -401,7 +413,7 @@ def zostav(vlna, kontakt, starosta, data):
                 uvod,
                 f"blahoželám k zvoleniu. Podľa Centrálneho registra zmlúv obec {obec} dostala"
                 f" {pocet} {slovo}" + (f" v celkovej sume {suma}" if suma else "") + ".",
-                ["Kto práve rozdáva peniaze obciam a na čo, uvidíte zadarmo a bez registrácie na ",
+                [f"Prehľad dotácií a zmlúv pre {obec} uvidíte zadarmo a bez registrácie na ",
                  obce_link, "."],
                 podpis]}
 

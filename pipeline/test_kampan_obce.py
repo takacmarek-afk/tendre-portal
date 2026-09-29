@@ -107,7 +107,9 @@ def test_segment_podla_priority_a_obsah():
     text, telo = k.vyrenderuj(s, KONTAKT["token"])
     assert "Zimná údržba ciest — súťaž vyhrala firma Cesty <s.r.o.> za 48 200 €, zmluva končí 31. 3. 2027." in text
     assert "Cesty &lt;s.r.o.&gt;" in telo and "<s.r.o.>" not in telo     # escapovanie
-    assert "pre obce v Trnavskom kraji je zadarmo" in text
+    assert "Prehľad zmlúv a dotácií priamo pre Dolná Streda je zadarmo" in text
+    assert "predtendrom.sk/prvych-100-dni" in text
+    assert "prvych-100-dni.html?nazov=Doln%C3%A1%20Streda&amp;kraj=Trnavsk%C3%BD%20kraj" in telo
     assert "utm_campaign=vlna1-uvo" in telo
     assert "odhlasenie-obce.html?t=11111111-2222-3333-4444-555555555555" in text
 
@@ -205,7 +207,8 @@ def test_kraj_lokal_a_followup():
     assert k.kraj_lokal("Trenčiansky kraj") == "Trenčianskom kraji"
     s = k.zostav("vlna2", KONTAKT, None, {"uvo": {"predmet": "Zimná údržba."}})
     text, _ = k.vyrenderuj(s, KONTAKT["token"])
-    assert "znova obstarávať zákazku „Zimná údržba“, na predtendrom.sk/obce" in text
+    assert "znova obstarávať zákazku „Zimná údržba“, na predtendrom.sk/prvych-100-dni" in text
+    assert "uvidíte, čo sa práve deje vo vašej obci" in text
     text, _ = k.vyrenderuj(k.zostav("vlna2", KONTAKT, None, {}), KONTAKT["token"])
     assert "alebo niečo obstarávať, na" in text
 
