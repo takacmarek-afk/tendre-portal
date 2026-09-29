@@ -42,10 +42,20 @@ def test_skusobna_doba_vsade_rovnaka():
 
 def test_ceny_v_cenniku():
     t = _stranky()["cennik.html"]
-    for kod in ("start", "growth", "team", "poradca"):
+    for kod in ("start", "growth", "team"):
         p = plany()["plany"][kod]
         assert f">{_eur(p['mesiac'])}&nbsp;€<" in t, f"cenník: mesačná cena {kod} nesedí"
         assert f"alebo {_eur(p['rok'])}&nbsp;€ ročne" in t, f"cenník: ročná cena {kod} nesedí"
+    # Poradca: dočasne "Zadarmo" (zakladajúci člen, rozhodnutie 29.9.2026),
+    # nie aktívna cena ako pri ostatných — no budúca cena z plany.js musí
+    # niekde v karte ostať ako referencia, nech sa nestratí pri spoplatnení.
+    p = plany()["plany"]["poradca"]
+    usek_poradca = t.split('>Poradca<', 1)[1][:600]
+    assert "Zadarmo" in usek_poradca, "cenník: Poradca už nemá text 'Zadarmo'"
+    assert str(p["mesiac"]) in usek_poradca, \
+        f"cenník: budúca mesačná cena poradca ({p['mesiac']}) sa v karte nespomína"
+    assert _eur(p["rok"]) in usek_poradca, \
+        f"cenník: budúca ročná cena poradca ({p['rok']}) sa v karte nespomína"
     assert "alebo ~" not in t, "cenník: cena s vlnovkou"
 
 
