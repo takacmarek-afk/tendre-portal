@@ -188,7 +188,7 @@
 
   </div>
 
-  <p class="text-center text-[12px] text-slate2 mt-6 leading-relaxed">
+  <p id="pata-text" class="text-center text-[12px] text-slate2 mt-6 leading-relaxed">
     Služba je určená podnikateľským subjektom.<br>
     Prevádzkovateľ: LoveHome s.r.o., IČO 47586362
   </p>
@@ -241,6 +241,18 @@ const DALEJ_PARAM = new URLSearchParams(location.search).get('dalej');
 const CIELOVA_STRANKA = (DALEJ_PARAM && /^[a-z0-9_-]+\.html$/i.test(DALEJ_PARAM))
   ? './' + DALEJ_PARAM
   : './app.html';
+
+// Audit 30.9.2026: kym text nizsie bol vzdy rovnaky ako pre platenu appku
+// (14 dni zadarmo, "urcene podnikatelskym subjektom"), obec alebo poradca
+// prichadzajuci z trh.html (bezplatny trh dopytov, ziadna skusobna doba,
+// obce nie su podnikatelsky subjekt) mohol nadobudnut dojem, ze sa hlasi
+// do platenej sluzby. Text sa preto pre tento jeden ciel prepisuje.
+if (DALEJ_PARAM === 'trh.html') {
+  const uvod = document.getElementById('uvod-text');
+  if (uvod) uvod.textContent = 'Zadajte e-mail a pošleme vám odkaz na prihlásenie. Žiadne heslo si pamätať nemusíte. Účet pre obce a poradcov na Trhu dopytov je úplne zadarmo — vytvorí sa automaticky a hneď uvidíte otvorené dopyty.';
+  const pata = document.getElementById('pata-text');
+  if (pata) pata.innerHTML = 'Trh dopytov je bezplatný, pre obce aj poradcov.<br>Prevádzkovateľ: LoveHome s.r.o., IČO 47586362';
+}
 
 if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
   ukazChybu('Aplikácia nie je nastavená: v súbore config.js chýba anon kľúč.');
