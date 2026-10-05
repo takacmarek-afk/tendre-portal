@@ -195,7 +195,7 @@
         </summary>
         <form id="kod-formular" class="mt-3 space-y-3" novalidate onsubmit="return false;">
           <p class="text-[13px] leading-relaxed text-slate2">
-            V tom istom e-maile je aj 6-miestny kód. Napíšte ho sem a prihlásite sa bez odkazu.
+            V tom istom e-maile je aj číselný kód. Napíšte ho sem a prihlásite sa bez odkazu.
           </p>
           <div>
             <label for="kod" class="block text-[13px] font-semibold mb-1.5">Kód z e-mailu</label>
@@ -431,7 +431,7 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
     // princip ako pri pozvanke vyssie.
   }
 
-  // Zalozne prihlasenie 6-miestnym kodom (rovnaky e-mail ako odkaz).
+  // Zalozne prihlasenie cislenym kodom (rovnaky e-mail ako odkaz).
   let cielHref = CIELOVA_STRANKA;
   let emailPreKod = '';
   const kodChyba = document.getElementById('kod-chyba');
@@ -457,7 +457,7 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
     kodChyba.classList.add('hidden');
     const kod = document.getElementById('kod').value.replace(/\s+/g, '');
     if (!/^\d{6,10}$/.test(kod)) {
-      kodChyba.textContent = 'Zadajte, prosím, kód z e-mailu (6 číslic).';
+      kodChyba.textContent = 'Zadajte, prosím, kód z e-mailu (len číslice).';
       kodChyba.classList.remove('hidden');
       return;
     }
