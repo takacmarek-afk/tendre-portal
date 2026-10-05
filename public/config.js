@@ -22,5 +22,5 @@ window.CONFIG = {
   // nezobrazuje a prihlasenie funguje ako doteraz. Vyplnit az ked je v Supabase
   // (Authentication -> Attack Protection) zapnuty Turnstile, inak prihlasenie
   // zlyha na chybajucom tokene.
-  TURNSTILE_SITE_KEY: "",
+  TURNSTILE_SITE_KEY: "0x4AAAAAAFOg6N9a_gBGX4Jl",
 };
