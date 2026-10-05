@@ -7,15 +7,9 @@ const colors = require('tailwindcss/colors');
 
 module.exports = {
   content: [
-    "./public/app.html",
-    "./public/cennik.html",
-    "./public/index.html",
-    "./public/obce.html",
-    "./public/prihlasenie.html",
-    "./public/zdroje.html",
-    "./public/404.html",
-    "./public/servis.html",
-    "./public/trh.html",
+    // Vsetky hlavne stranky (aj starosta, prvych-100-dni, odber-obce, mapa,
+    // kontrola...): trieda, ktora v zozname chyba, sa v style.css nevygeneruje.
+    "./public/*.html",
     "./public/*.js",
     // Generovane podstranky (pipeline ich prepisuje) — triedy pochadzaju
     // zo sablon v generuj_*.py, preto skenujeme aj tie.

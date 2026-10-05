@@ -96,6 +96,47 @@
   -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
 }
 
+/* ── NASTENKA "DNES" ──────────────────────────────────────────────────────
+   Rozlozenie je zamerne v tomto bloku, nie len v Tailwind triedach — nastenka
+   musi na 375 px fungovat bez horizontalneho scrollu aj vtedy, ked sa
+   static style.css este neprebudoval. Mobil-first: jeden stlpec, od 1024 px
+   dva. `minmax(0, 1fr)` + overflow-wrap, aby dlhy nazov zmluvy nikdy
+   nerozsiril stranku. */
+#dnes { min-width: 0; }
+#dnes .dnes-kpi { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin-bottom: 1.25rem; }
+#dnes .dnes-stlpce { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1.25rem; margin-bottom: 1.25rem; }
+@media (min-width: 1024px) {
+  #dnes .dnes-kpi { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  #dnes .dnes-stlpce { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+#dnes .dnes-karta, #dnes .dnes-dlazdica {
+  background: #fff; border: 1px solid #E4DFD2; border-radius: .5rem; min-width: 0;
+  overflow-wrap: anywhere;
+}
+#dnes .dnes-karta { padding: 1rem 1.25rem; }
+#dnes .dnes-dlazdica { padding: .85rem 1rem; }
+#dnes .dnes-polozka { padding: .85rem 0; border-top: 1px solid #E4DFD2; min-width: 0; }
+#dnes .dnes-polozka:first-child { border-top: 0; padding-top: .25rem; }
+#dnes .dnes-akcie { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; }
+#dnes .dnes-btn {
+  font: inherit; font-size: 12px; font-weight: 600; line-height: 1.2; cursor: pointer;
+  min-height: 36px; padding: .4rem .75rem; border-radius: .375rem;
+  border: 1px solid #E4DFD2; background: #fff; color: #0B1220;
+}
+#dnes .dnes-btn:hover { border-color: #B25313; color: #B25313; }
+#dnes .dnes-btn:disabled { opacity: .55; cursor: default; }
+#dnes .dnes-btn-hlavne { background: #0B1220; border-color: #0B1220; color: #fff; }
+#dnes .dnes-btn-hlavne:hover { background: #8A3F0D; border-color: #8A3F0D; color: #fff; }
+#dnes .dnes-odkaz {
+  font: inherit; text-align: left; background: none; border: 0; padding: 0; cursor: pointer;
+  color: inherit; overflow-wrap: anywhere;
+}
+#dnes .dnes-odkaz:hover { color: #B25313; text-decoration: underline; }
+#dnes button:focus-visible, #dnes a:focus-visible { outline: 2px solid #B25313; outline-offset: 2px; }
+#dnes .dnes-duch { height: 10px; border-radius: 5px; background: #E4DFD2; margin-top: .6rem; }
+#dnes .dnes-pruh { height: 10px; border-radius: 5px; background: #B25313; }
+#dnes .dnes-pruh-dno { height: 10px; border-radius: 5px; background: #F3F0E6; margin-top: .3rem; overflow: hidden; }
+
 /* ── OPRAVA: NEVIDITEĽNÝ TEXT V ROZBALENOM <select> (audit P3, 28.9.2026) ──
    #o-sektor/#o-kraj/#o-frekvencia v tmavom paneli "Nech vám to chodí samo"
    maju text-white, aby bolo vidno vybranu hodnotu na tmavom pozadi. Farba
@@ -355,6 +396,12 @@
 
     <!-- Prepinac vrstiev -->
     <div id="zalozky" class="hidden flex items-center gap-1 mb-6 border-b border-line overflow-x-auto">
+      <!-- Ranna nastenka: co je nove a co treba dnes riesit. Predvolena
+           zalozka pri prvom nacitani appky (viz nastavZalozky nizsie). -->
+      <button data-zalozka="dnes"
+              class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap">
+        Dnes
+      </button>
       <button data-zalozka="obsah"
               class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap">
         Končiace zmluvy <span id="pocet-z" class="font-normal text-slate2"></span>
@@ -463,6 +510,10 @@
         <p id="o-hlaska" class="hidden mt-4 text-[13px] text-white/80"></p>
       </div>
     </div>
+
+    <!-- ── DNES (nastenka) ──────────────────────────────────────
+         Obsah kresli nastavDnes() v JS — kazda cast sa nacitava samostatne. -->
+    <div id="dnes" class="hidden"></div>
 
     <!-- ── KONČIACE ZMLUVY ──────────────────────────────────── -->
     <div id="obsah" class="hidden">
@@ -1410,6 +1461,13 @@ function ocistiIco(v) {
   return String(v ?? '').replace(/\D/g, '');
 }
 
+/** V CRZ datach (contracts, dodavatelia, sanca_na_vyhru) je IČO uložené BEZ
+ *  úvodných núl (151742, nie 00151742). Vlastné IČO zákazníka je 8-ciferné,
+ *  preto sa pred porovnaním s `supplier_cin` / `top_dodavatel_cin` upraví. */
+function cinKluc(v) {
+  return ocistiIco(v).replace(/^0+/, '');
+}
+
 const SPRAVA_ULOZENIE = 'Nepodarilo sa to teraz uložiť. Skúste to prosím znova.';
 const SPRAVA_NACITANIE = 'Údaje sa nepodarilo načítať. Obnovte stránku alebo to skúste o chvíľu.';
 
@@ -1655,12 +1713,13 @@ function sancaNaVyhru(r, sanca, mojIco) {
   if (!mojIco) return '';
   const s = sanca?.get(r.contract_id);
   if (!s) return '';
+  const mojCin = cinKluc(mojIco);
 
-  if (s.supplier_cin && s.supplier_cin === mojIco) {
+  if (s.supplier_cin && s.supplier_cin === mojCin) {
     return odznakSanca('emerald', 'túto zmluvu už máte',
       'Podľa CRZ ste súčasným dodávateľom tejto zmluvy.');
   }
-  if (s.top_dodavatel_cin && s.top_dodavatel_cin === mojIco) {
+  if (s.top_dodavatel_cin && s.top_dodavatel_cin === mojCin) {
     return odznakSanca('emerald', 'tu ste doteraz vyhrávali najčastejšie',
       'V histórii tohto úradu a sektora ste doteraz vyhrávali najčastejšie vy.');
   }
@@ -3374,6 +3433,659 @@ function ukazBanner(typ, text) {
   if (typ === 'chyba') b.scrollIntoView?.({ block: 'nearest' });
 }
 
+// ── NASTENKA "DNES" A EXPORT DO KALENDARA (.ics) ──────────────────────────
+// Ranna stranka pre prihlaseneho zakaznika: co je nove a co treba dnes
+// riesit. Frontend-only nad uz existujucimi tabulkami a ich RLS — ziadna
+// nova DB funkcia ani migracia. Nastenka NIKDE nerozsiruje pristup nad to,
+// co dany plan uz dnes vidi: opportunities a contracts su Start+ (aktivny),
+// sledovanie firiem a CRM stav su Growth+ (jePro) — pre Start sa tie dve
+// karty vykreslia ako zamknuty nahlad a dopyt sa vobec neposle.
+
+// ICS-ZACIATOK (cista cast bez zavislosti na DOM — testuje sa samostatne)
+const ICS_ODKAZ = 'https://predtendrom.sk/app';
+
+/** Escapovanie TEXT hodnoty podla RFC 5545 (3.3.11): \ ; , a novy riadok. */
+function icsEscape(t) {
+  return String(t ?? '')
+    .replace(/\r\n|\r|\n/g, '\n')
+    .replace(/[\u0000-\u0009\u000B-\u001F\u007F]/g, ' ')
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\x5c;')
+    .replace(/,/g, '\\,')
+    .replace(/\n/g, '\\n');
+}
+
+/** Skladanie riadkov (RFC 5545, 3.1): najviac 75 oktetov na riadok, pokracovanie
+ *  zacina medzerou (ta sa do 75 pocita). Znak v UTF-8 sa nikdy nerozdeli. */
+function icsZloz(riadok) {
+  const enc = new TextEncoder();
+  if (enc.encode(riadok).length <= 75) return riadok;
+  const casti = [];
+  let cur = '', dlzka = 0, limit = 75;
+  for (const znak of riadok) {
+    const b = enc.encode(znak).length;
+    if (dlzka + b > limit) { casti.push(cur); cur = ''; dlzka = 0; limit = 74; }
+    cur += znak;
+    dlzka += b;
+  }
+  casti.push(cur);
+  return casti.join('\r\n ');
+}
+
+/** 'YYYY-MM-DD...' -> 'YYYYMMDD' (len platny kalendarny den), inak null. */
+function icsDatum(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ''));
+  if (!m) return null;
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  if (d.getUTCFullYear() !== +m[1] || d.getUTCMonth() !== +m[2] - 1 || d.getUTCDate() !== +m[3]) return null;
+  return m[1] + m[2] + m[3];
+}
+
+/** Den po `iso` ako 'YYYYMMDD' (DTEND celodennej udalosti je exkluzivny). */
+function icsDalsiDen(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso ?? ''));
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3] + 1));
+  return String(d.getUTCFullYear()).padStart(4, '0')
+    + String(d.getUTCMonth() + 1).padStart(2, '0')
+    + String(d.getUTCDate()).padStart(2, '0');
+}
+
+/** Hodnota v tvare "389 550 €" (nezlomitelne medzery), alebo "neuvedená". */
+function icsSuma(v) {
+  if (v === null || v === undefined || v === '') return 'neuvedená';
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return 'neuvedená';
+  return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €';
+}
+
+/** Zbali medzery a orezeme na `max` znakov (kodovych bodov); orezanie oznaci "…". */
+function icsOrez(t, max) {
+  const znaky = Array.from(String(t ?? '').replace(/\s+/g, ' ').trim());
+  return znaky.length > max ? znaky.slice(0, max - 1).join('') + '…' : znaky.join('');
+}
+
+/**
+ * Zmluvy -> text iCalendar (RFC 5545). Vstup: pole riadkov z `opportunities`
+ * (contract_id, subject, authority_name, price_total, effective_to). Riadok
+ * bez platneho dna konca alebo bez contract_id sa preskoci; rovnake
+ * contract_id sa pouzije raz. Kazda zmluva = celodenna udalost v den konca
+ * zmluvy s pripomienkou 30 dni vopred. Riadky su oddelene CRLF.
+ */
+function vytvorIcs(zmluvy, teraz = new Date()) {
+  const stamp = teraz.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const r = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//PredTendrom.sk//Kalendar zmluv//SK',
+    'CALSCALE:GREGORIAN',
+    'METHOD:PUBLISH',
+  ];
+  const videne = new Set();
+  for (const z of zmluvy ?? []) {
+    const den = icsDatum(z?.effective_to);
+    if (!den || z.contract_id == null || videne.has(String(z.contract_id))) continue;
+    videne.add(String(z.contract_id));
+    const predmet = String(z.subject ?? '').replace(/\s+/g, ' ').trim();
+    const popis = [
+      `Obstarávateľ: ${z.authority_name || 'neuvedený'}`,
+      `Hodnota: ${icsSuma(z.price_total)}`,
+      predmet ? `Predmet: ${icsOrez(predmet, 300)}` : null,
+      `Odkaz: ${ICS_ODKAZ}`,
+    ].filter(Boolean).map(icsEscape).join('\\n');
+    r.push(
+      'BEGIN:VEVENT',
+      `UID:${String(z.contract_id).replace(/[^0-9A-Za-z_-]/g, '')}@predtendrom.sk`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${den}`,
+      `DTEND;VALUE=DATE:${icsDalsiDen(z.effective_to)}`,
+      `SUMMARY:${icsEscape('Koniec zmluvy: ' + icsOrez(predmet, 80))}`,
+      `DESCRIPTION:${popis}`,
+      'TRANSP:TRANSPARENT',
+      'BEGIN:VALARM',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Zmluva končí o 30 dní',
+      'TRIGGER:-P30D',
+      'END:VALARM',
+      'END:VEVENT',
+    );
+  }
+  r.push('END:VCALENDAR');
+  return r.map(icsZloz).join('\r\n') + '\r\n';
+}
+// ICS-KONIEC
+
+/** Skloňovaný odpočet: "dnes", "o 1 deň", "o 3 dni", "o 12 dní". */
+function dniText(n) {
+  if (!Number.isFinite(n)) return '';
+  if (n <= 0) return 'dnes';
+  return `o ${cislo(n)} ${tvar(n, 'deň', 'dni', 'dní')}`;
+}
+
+/**
+ * Jedna veta zhrnutia z REALNYCH cisel. `nove`/`koncia` su cisla alebo null
+ * (null = tento udaj sa nepodarilo nacitat, vo vete sa vynecha).
+ * `kde`: { zapnuty: bool, sektorov: pocet vybranych sektorov, iba: true ak
+ * vyber obsahuje len sektory (bez krajov a velkosti) }.
+ */
+function vetaSuhrnu(nove, koncia, kde) {
+  const uvod = !kde?.zapnuty ? 'Na Slovensku'
+    : (kde.iba && kde.sektorov === 1) ? 'Vo vašom sektore'
+    : (kde.iba && kde.sektorov > 1) ? `V ${kde.sektorov} vašich sektoroch`
+    : 'Vo vašom výbere';
+  const casti = [];
+  if (Number.isFinite(nove)) {
+    const t = tvar(nove, 0, 1, 2);
+    casti.push(nove === 0 ? 'nepribudla za posledných 7 dní žiadna nová príležitosť'
+      : t === 0 ? 'pribudla 1 nová príležitosť za posledných 7 dní'
+      : t === 1 ? `pribudli ${cislo(nove)} nové príležitosti za posledných 7 dní`
+      : `pribudlo ${cislo(nove)} nových príležitostí za posledných 7 dní`);
+  }
+  if (Number.isFinite(koncia)) {
+    const t = tvar(koncia, 0, 1, 2);
+    casti.push(koncia === 0 ? 'do 90 dní nekončí žiadna zmluva'
+      : t === 0 ? '1 zmluva končí do 90 dní'
+      : t === 1 ? `${cislo(koncia)} zmluvy končia do 90 dní`
+      : `${cislo(koncia)} zmlúv končí do 90 dní`);
+  }
+  if (!casti.length) return '';
+  return `${uvod} ${casti.join(' a ')}.`;
+}
+
+/** Stiahne text ako subor (Blob + docasny odkaz s `download`). */
+function stiahniSubor(nazov, obsah, mime) {
+  const blob = new Blob([obsah], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nazov;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+// Stlpce `opportunities` pre nastenku — podmnozina toho, co uz nacitava
+// tabulka Koncicich zmluv (STLPCE_Z), nic navyse.
+const STLPCE_DNES = 'contract_id, skore, subject, sector, authority_name, price_total, ' +
+                    'cena_neuvedena, effective_to, dni_do_konca, kraj, mesto';
+const DNES_KALENDAR_MAX = 25;
+const DNES_TOP = 5;
+const DNES_SLEDOVANYCH_MAX = 100;
+
+/**
+ * Nastenka. `ctx` dodava dashboard() (nechce sa mu davat desiatky parametrov):
+ *   firma, orgId, aktivny, jePro,
+ *   vyber()          -> { zapnuty, maObsah, popis, sektorov, iba, moze }
+ *   obmedz(q)        -> dopyt zuzeny na "Moj vyber"
+ *   prepniNa(kluc)   -> klik na zalozku
+ *   otvorZmluvu(r)   -> predvyplni hladanie v Konciacich zmluvach a prepne
+ *   otvorVyber(), zapniVyber()
+ * Vrati { priZobrazeni, zneplatni }.
+ */
+function nastavDnes(supabase, ctx) {
+  const koren = el('dnes');
+  let gen = 0;            // cislo "generacie" — odpoved zo starsej sa zahodi
+  let zdroje = {};        // zdielane dopyty (kluc -> promise), aby sa nikdy neopakovali
+  const stav = {};        // id casti -> 'nacitava' | 'hotovo' | 'chyba'
+  const data = {};        // kluc zdroja -> nacitane data
+  let spustene = false;
+  let zastarane = false;
+
+  const sp = (kluc, nacitaj) => {
+    if (!zdroje[kluc]) {
+      const g = gen;
+      const moje = Promise.resolve().then(nacitaj).then(
+        (v) => { if (g === gen) data[kluc] = v; return v; },
+        (e) => { if (zdroje[kluc] === moje) delete zdroje[kluc]; throw e; });
+      zdroje[kluc] = moje;
+    }
+    return zdroje[kluc];
+  };
+
+  const kde = () => ctx.vyber().zapnuty ? 'vo vašom výbere' : 'na celom Slovensku';
+
+  // ── Zdroje dat (kazdy dopyt nanajvys raz na generaciu) ──────────────────
+  const ZDROJE = {
+    nove: () => sp('nove', async () => {
+      const { count, error } = await ctx.obmedz(
+        supabase.from('opportunities').select('contract_id', { count: 'exact', head: true })
+          .gte('first_seen_at', oDni(-7)));
+      if (error) throw error;
+      return count ?? 0;
+    }),
+    koncia90: () => sp('koncia90', async () => {
+      const { count, error } = await ctx.obmedz(
+        supabase.from('opportunities').select('contract_id', { count: 'exact', head: true })
+          .gte('effective_to', oDni(0)).lte('effective_to', oDni(DNI_TENDER_UZ_BEZI)));
+      if (error) throw error;
+      return count ?? 0;
+    }),
+    signaly: () => sp('signaly', async () => {
+      // Rovnaky predvoleny pohlad ako zalozka Koncice zmluvy: bez zmlúv, kde
+      // tender uz pravdepodobne bezi (DNI_TENDER_UZ_BEZI).
+      const { data: d, error } = await ctx.obmedz(
+        supabase.from('opportunities').select(STLPCE_DNES)
+          .gte('dni_do_konca', DNI_TENDER_UZ_BEZI).not('skore', 'is', null))
+        .order('skore', { ascending: false, nullsFirst: false })
+        .order('contract_id', { ascending: true })
+        .limit(DNES_TOP);
+      if (error) throw error;
+      return d ?? [];
+    }),
+    koncia: () => sp('koncia', async () => {
+      const { data: d, error } = await ctx.obmedz(
+        supabase.from('opportunities').select(STLPCE_DNES)
+          .gte('effective_to', oDni(0)))
+        .order('effective_to', { ascending: true })
+        .order('contract_id', { ascending: true })
+        .limit(DNES_KALENDAR_MAX);
+      if (error) throw error;
+      return d ?? [];
+    }),
+    // Growth+ — pre Start sa dopyt neposle (RLS by ho aj tak neumoznila).
+    sledovane: () => sp('sledovane', async () => {
+      if (!ctx.jePro) return { zamknute: true, firmy: [] };
+      if (!ctx.orgId) return { firmy: [] };
+      const { data: d, error } = await supabase.from('sledovane_ico')
+        .select('ico, nazov').eq('org_id', ctx.orgId).limit(1000);
+      if (error) throw error;
+      return { firmy: d ?? [] };
+    }),
+    crm: () => sp('crm', async () => {
+      if (!ctx.jePro) return { zamknute: true };
+      const STAVY = ['sledujeme', 'ponuka', 'nezaujima'];
+      const TYPY = ['zmluva', 'dotacia'];
+      const vysl = {};
+      // Head-only pocty po (stav x typ): select by sa na 1 000 riadkoch ticho
+      // orezal (db-max-rows), cisla v lieviku by potom klamali.
+      await Promise.all(STAVY.flatMap(s => TYPY.map(async (t) => {
+        const { count, error } = await supabase.from('moj_stav_prilezitosti')
+          .select('contract_id', { count: 'exact', head: true }).eq('stav', s).eq('typ', t);
+        if (error) throw error;
+        (vysl[s] ??= {})[t] = count ?? 0;
+      })));
+      return vysl;
+    }),
+    konkurenti: () => sp('konkurenti', async () => {
+      const sl = await ZDROJE.sledovane();
+      if (sl.zamknute) return { zamknute: true };
+      const vsetky = sl.firmy.map(f => f.ico).filter(Boolean);
+      const ico = vsetky.slice(0, DNES_SLEDOVANYCH_MAX);
+      if (!ico.length) return { pocet: 0, zmluvy: [], orezane: false };
+      // RLS na `contracts` dovoluje citat kazdemu s aktivnym pristupom; ten
+      // isty dopyt robi profil dodavatela.
+      const { data: d, error } = await supabase.from('contracts')
+        .select('id, supplier_name, supplier_cin, subject, authority_name, price_total, signed_on')
+        .in('supplier_cin', ico)
+        .order('signed_on', { ascending: false, nullsFirst: false })
+        .order('id', { ascending: false })
+        .limit(DNES_TOP);
+      if (error) throw error;
+      return { pocet: vsetky.length, zmluvy: d ?? [], orezane: vsetky.length > ico.length };
+    }),
+  };
+
+  // ── Vykreslenie jednotlivych casti ──────────────────────────────────────
+  const prazdnaDlazdica = (nadpis, telo) =>
+    `<p class="text-[12px] font-semibold text-slate2 uppercase tracking-wide">${bezpecne(nadpis)}</p>${telo}`;
+
+  const kpiTelo = (cislo_, pod) => `
+    <p class="font-serif text-[32px] leading-none mt-2 text-ink">${bezpecne(cislo_)}</p>
+    <p class="text-[12px] text-slate2 mt-2 leading-snug">${bezpecne(pod)}</p>`;
+
+  const zamknutaDlazdica = (nadpis, text) => prazdnaDlazdica(nadpis, `
+    <p class="text-[13px] text-slate2 mt-2 leading-snug">${bezpecne(text)}</p>
+    <p class="text-[11px] text-slate2 mt-2">Od plánu Growth</p>`);
+
+  function sila(skore) {
+    const s = Number(skore);
+    if (!Number.isFinite(s)) return '';
+    const [text, trieda] = s >= 80 ? ['silný', 'bg-accent/10 text-accentDark']
+      : s >= 50 ? ['stredný', 'bg-[#F3F0E6] text-ink'] : ['nižší', 'bg-[#F3F0E6] text-slate2'];
+    return `<span class="inline-block text-[11px] font-semibold px-2 py-0.5 rounded ${trieda}"
+                  title="Sila signálu je poradie v rámci sektora (1 až 99), nie záruka tendra.">${bezpecne(text)} signál · ${bezpecne(String(Math.round(s)))}</span>`;
+  }
+
+  const hodnota = (r) => r.cena_neuvedena ? 'neuvedená (rámcová zmluva)' : suma(r.price_total);
+
+  function polozkaPrilezitosti(r, spolocne = {}) {
+    const dni = dniOdDnes(String(r.effective_to ?? '').slice(0, 10));
+    const koniec = r.effective_to
+      ? `končí ${dSk(r.effective_to)}${Number.isFinite(dni) ? ` (${dniText(dni)})` : ''}` : 'koniec zmluvy neuvedený';
+    const kdeR = [r.mesto, r.kraj].filter(Boolean).join(', ');
+    const id = bezpecne(r.contract_id);
+    return `
+      <li class="dnes-polozka">
+        <div class="flex flex-wrap items-center gap-2 mb-1">${spolocne.odznak ?? ''}</div>
+        <button type="button" class="dnes-odkaz text-[14px] font-medium leading-snug"
+                data-dnes-otvor="${id}" tabindex="-1" title="Zobraziť v záložke Končiace zmluvy">${bezpecne(r.subject) || '(bez predmetu)'}</button>
+        <p class="text-[12px] text-slate2 mt-1">${bezpecne(r.authority_name) || '—'}${kdeR ? ' · ' + bezpecne(kdeR) : ''}</p>
+        <p class="text-[12px] text-slate2 mt-0.5">${bezpecne(hodnota(r))} · ${bezpecne(koniec)}</p>
+        <div class="dnes-akcie">
+          <button type="button" class="dnes-btn" data-dnes-otvor="${id}">Zobraziť v zmluvách</button>
+          <button type="button" class="dnes-btn" data-dnes-ics="${id}"
+                  aria-label="Pridať do kalendára: ${bezpecne(icsOrez(r.subject, 60))}">Pridať do kalendára</button>
+        </div>
+      </li>`;
+  }
+
+  const duchoveRiadky = (n) => Array.from({ length: n }, (_, i) =>
+    `<div class="dnes-duch" style="width:${[92, 74, 83, 66][i % 4]}%"></div>`).join('');
+
+  const zamknutyNahlad = (text) => `
+    <div aria-hidden="true" style="opacity:.55">${duchoveRiadky(3)}</div>
+    <p class="text-[13px] leading-relaxed text-slate2 mt-4">${bezpecne(text)}
+      Podrobnosti v <a class="text-accent hover:underline" href="/cennik">cenníku</a>.</p>`;
+
+  const prazdnyStav = (text, tlacidla = '') => `
+    <p class="text-[13px] leading-relaxed text-slate2">${bezpecne(text)}</p>${tlacidla}`;
+
+  const CASTI = {
+    'kpi-nove': {
+      zdroje: [ZDROJE.nove],
+      vykresli: ([n]) => prazdnaDlazdica('Nové príležitosti',
+        kpiTelo(cislo(n), `za posledných 7 dní · ${ctx.vyber().zapnuty ? ctx.vyber().popis : 'celé Slovensko'}`)),
+    },
+    'kpi-koncia': {
+      zdroje: [ZDROJE.koncia90],
+      vykresli: ([n]) => prazdnaDlazdica('Zmluvy končiace do 90 dní',
+        kpiTelo(cislo(n), ctx.vyber().zapnuty ? ctx.vyber().popis : 'celé Slovensko')),
+    },
+    'kpi-sledovane': {
+      zdroje: [ZDROJE.sledovane],
+      vykresli: ([s]) => s.zamknute
+        ? zamknutaDlazdica('Sledované firmy', 'Sledovanie firiem je súčasťou plánu Growth a vyššie.')
+        : prazdnaDlazdica('Sledované firmy', kpiTelo(cislo(s.firmy.length),
+            s.firmy.length ? 'firmy, ktorých zmluvy sledujete' : 'zatiaľ nesledujete žiadnu firmu')),
+    },
+    'kpi-crm': {
+      zdroje: [ZDROJE.crm],
+      vykresli: ([c]) => {
+        if (c.zamknute) return zamknutaDlazdica('Rozpracované príležitosti', 'Stav príležitostí je súčasťou plánu Growth a vyššie.');
+        const sucet = (s) => (c[s]?.zmluva ?? 0) + (c[s]?.dotacia ?? 0);
+        const roz = sucet('sledujeme') + sucet('ponuka');
+        return prazdnaDlazdica('Rozpracované príležitosti', kpiTelo(cislo(roz),
+          roz ? `z toho ponuka v príprave: ${cislo(sucet('ponuka'))}` : 'zatiaľ ste žiadnu neoznačili'));
+      },
+    },
+    signaly: {
+      zdroje: [ZDROJE.signaly],
+      vykresli: ([riadky]) => {
+        if (!riadky.length) {
+          return prazdnyStav(`${ctx.vyber().zapnuty ? 'Pre váš výber' : 'Na celom Slovensku'} teraz nemáme žiadnu príležitosť so signálom na zobrazenie.`,
+            ctx.vyber().zapnuty && ctx.vyber().moze
+              ? '<div class="dnes-akcie"><button type="button" class="dnes-btn" data-dnes-vyber>Zmeniť výber</button></div>' : '');
+        }
+        return `<ol class="list-none m-0 p-0">${riadky.map(r => polozkaPrilezitosti(r, { odznak: sila(r.skore) })).join('')}</ol>
+          <p class="text-[11px] text-slate2 mt-3">Rovnaký pohľad ako v záložke Končiace zmluvy: bez zmlúv, kde tender už pravdepodobne beží.</p>`;
+      },
+    },
+    koncia: {
+      zdroje: [ZDROJE.koncia],
+      vykresli: ([riadky]) => {
+        if (!riadky.length) {
+          return prazdnyStav(`Nenašli sme žiadnu zmluvu, ktorá by ${kde()} končila.`);
+        }
+        const top = riadky.slice(0, DNES_TOP);
+        const odznak = (r) => {
+          const dni = dniOdDnes(String(r.effective_to ?? '').slice(0, 10));
+          return Number.isFinite(dni)
+            ? `<span class="inline-block text-[11px] font-semibold px-2 py-0.5 rounded bg-amber-50 text-amber-800">${bezpecne(dniText(dni))}</span>` : '';
+        };
+        return `<ol class="list-none m-0 p-0">${top.map(r => polozkaPrilezitosti(r, { odznak: odznak(r) })).join('')}</ol>
+          <div class="dnes-akcie" style="margin-top:.9rem">
+            <button type="button" class="dnes-btn dnes-btn-hlavne" data-dnes-ics-vsetky>Stiahnuť kalendár končiacich zmlúv (.ics)</button>
+          </div>
+          <p class="text-[11px] text-slate2 mt-2">Súbor obsahuje ${cislo(riadky.length)} ${tvar(riadky.length, 'najbližšiu zmluvu', 'najbližšie zmluvy', 'najbližších zmlúv')} ${bezpecne(kde())} (najviac ${DNES_KALENDAR_MAX}), každú s pripomienkou 30 dní vopred.</p>
+          `;
+      },
+    },
+    konkurenti: {
+      zdroje: [ZDROJE.konkurenti],
+      vykresli: ([k]) => {
+        if (k.zamknute) return zamknutyNahlad('Sledovanie firiem je súčasťou plánu Growth a vyššie.');
+        const tlacidlo = '<div class="dnes-akcie"><button type="button" class="dnes-btn" data-dnes-tab="dodavatelia">Otvoriť Dodávateľov</button></div>';
+        if (!k.pocet) {
+          return prazdnyStav('Zatiaľ nesledujete žiadnu firmu. V záložke Dodávatelia pri firme kliknite na Sledovať a jej najnovšie zmluvy uvidíte tu.', tlacidlo);
+        }
+        if (!k.zmluvy.length) {
+          return prazdnyStav(`Sledované firmy (${cislo(k.pocet)}) zatiaľ nemajú v stiahnutých dátach žiadnu zmluvu.`, tlacidlo);
+        }
+        return `<ol class="list-none m-0 p-0">${k.zmluvy.map(z => `
+          <li class="dnes-polozka">
+            <p class="text-[13px] font-semibold text-ink">${bezpecne(z.supplier_name) || '—'}</p>
+            <p class="text-[14px] leading-snug mt-0.5">${bezpecne(z.subject) || '(bez predmetu)'}</p>
+            <p class="text-[12px] text-slate2 mt-1">${bezpecne(z.authority_name) || '—'}</p>
+            <p class="text-[12px] text-slate2 mt-0.5">${bezpecne(suma(z.price_total))}${z.signed_on ? ' · podpísaná ' + bezpecne(dSk(z.signed_on)) : ''}</p>
+          </li>`).join('')}</ol>
+          ${k.orezane ? `<p class="text-[11px] text-slate2 mt-2">Zobrazené podľa prvých ${DNES_SLEDOVANYCH_MAX} sledovaných firiem.</p>` : ''}
+          ${tlacidlo}`;
+      },
+    },
+    crm: {
+      zdroje: [ZDROJE.crm],
+      vykresli: ([c]) => {
+        if (c.zamknute) return zamknutyNahlad('Stav príležitostí je súčasťou plánu Growth a vyššie.');
+        const riadky = ['sledujeme', 'ponuka', 'nezaujima'].map(s => ({
+          s, z: c[s]?.zmluva ?? 0, d: c[s]?.dotacia ?? 0 }));
+        const max = Math.max(...riadky.map(r => r.z + r.d));
+        const tlacidla = `<div class="dnes-akcie">
+            <button type="button" class="dnes-btn" data-dnes-tab="obsah">Končiace zmluvy</button>
+            <button type="button" class="dnes-btn" data-dnes-tab="dotacie">Dotácie</button>
+          </div>`;
+        if (max === 0) {
+          return prazdnyStav('Zatiaľ ste žiadnu príležitosť neoznačili. Stav nastavíte pri každej príležitosti v záložkách Končiace zmluvy a Dotácie.', tlacidla);
+        }
+        return `<div>${riadky.map(r => {
+          const spolu = r.z + r.d;
+          const sirka = spolu ? Math.max(4, Math.round(spolu / max * 100)) : 0;
+          return `<div style="margin-bottom:.8rem">
+            <div class="flex items-baseline justify-between gap-3">
+              <span class="text-[13px] font-medium text-ink">${bezpecne(POPIS_STAV_CRM[r.s])}</span>
+              <span class="text-[13px] font-semibold text-ink">${bezpecne(cislo(spolu))}</span>
+            </div>
+            <div class="dnes-pruh-dno"><div class="dnes-pruh" style="width:${sirka}%"></div></div>
+            <p class="text-[11px] text-slate2 mt-1">zmluvy ${bezpecne(cislo(r.z))} · dotácie ${bezpecne(cislo(r.d))}</p>
+          </div>`;
+        }).join('')}</div>${tlacidla}`;
+      },
+    },
+  };
+
+  // ── Kostra stranky ──────────────────────────────────────────────────────
+  const karta = (id, nadpis, podnadpis = '') => `
+    <section class="dnes-karta" aria-labelledby="dnes-h-${id}">
+      <h2 id="dnes-h-${id}" class="text-[17px] font-serif font-semibold">${bezpecne(nadpis)}</h2>
+      ${podnadpis ? `<p class="text-[12px] text-slate2 mt-0.5">${bezpecne(podnadpis)}</p>` : ''}
+      <div id="dnes-c-${id}" class="mt-3" aria-live="polite"></div>
+      <p class="text-[12px] text-slate2 mt-2" data-dnes-hlaska role="status" aria-live="polite"></p>
+    </section>`;
+
+  function postav() {
+    if (!ctx.aktivny) {
+      koren.innerHTML = `<section class="dnes-karta"><h2 class="text-[17px] font-serif font-semibold">Dnes</h2>
+        <p class="text-[13px] leading-relaxed text-slate2 mt-2">Nástenka vyžaduje aktívne predplatné.</p></section>`;
+      return;
+    }
+    koren.innerHTML = `
+      <section class="mb-5" aria-labelledby="dnes-pozdrav">
+        <h1 id="dnes-pozdrav" class="text-[22px] font-serif font-semibold leading-tight"></h1>
+        <p id="dnes-datum" class="text-[13px] text-slate2 mt-1"></p>
+        <p id="dnes-veta" class="text-[15px] leading-relaxed text-ink mt-2 max-w-3xl" role="status" aria-live="polite"></p>
+      </section>
+      <div class="dnes-kpi">
+        ${['kpi-nove', 'kpi-koncia', 'kpi-sledovane', 'kpi-crm'].map(id =>
+          `<div class="dnes-dlazdica" id="dnes-c-${id}" aria-live="polite"></div>`).join('')}
+      </div>
+      <div id="dnes-vyzva" class="hidden mb-5 text-[13px] text-slate2"></div>
+      <div class="dnes-stlpce">
+        ${karta('signaly', 'Najsilnejšie signály', 'Päť príležitostí s najsilnejším signálom')}
+        ${karta('koncia', 'Končí čoskoro', 'Najbližšie končiace zmluvy')}
+      </div>
+      <div class="dnes-stlpce">
+        ${karta('konkurenti', 'Vaši konkurenti', 'Najnovšie zmluvy sledovaných firiem')}
+        ${karta('crm', 'Moje príležitosti', 'Stav príležitostí, ktoré ste označili')}
+      </div>
+      <p class="text-[12px] leading-relaxed text-slate2 max-w-3xl">
+        Zdroje údajov, oznámenie o úpravách a podmienky použitia nájdete v
+        <a class="text-accent hover:underline" href="./zdroje.html">Zdrojoch dát</a>.
+        Údaje majú len informatívny charakter a nie sú právne záväzné.
+      </p>`;
+    const hodiny = new Date().getHours();
+    el('dnes-pozdrav').textContent = (hodiny < 10 ? 'Dobré ráno' : hodiny < 18 ? 'Dobrý deň' : 'Dobrý večer')
+      + (ctx.firma ? `, ${ctx.firma}` : '');
+    el('dnes-datum').textContent = dSk(dnesLokalne());
+  }
+
+  const telo = (id) => el(`dnes-c-${id}`);
+  const jeDlazdica = (id) => id.startsWith('kpi-');
+
+  function ukazNacitavam(id) {
+    stav[id] = 'nacitava';
+    const t = telo(id);
+    if (!t) return;
+    t.setAttribute('aria-busy', 'true');
+    t.innerHTML = `<p class="text-[13px] text-slate2" role="status">Načítavam…</p>`;
+  }
+
+  function ukazChybu(id) {
+    stav[id] = 'chyba';
+    const t = telo(id);
+    if (!t) return;
+    t.setAttribute('aria-busy', 'false');
+    t.innerHTML = `<p class="text-[13px] text-red-700">Túto časť sa nepodarilo načítať.</p>
+      <div class="dnes-akcie"><button type="button" class="dnes-btn" data-dnes-znova>Skúsiť znova</button></div>`;
+  }
+
+  function obnovVyzvu() {
+    const v = el('dnes-vyzva');
+    if (!v) return;
+    const vy = ctx.vyber();
+    if (vy.zapnuty || !vy.moze) { v.classList.add('hidden'); v.innerHTML = ''; return; }
+    v.classList.remove('hidden');
+    v.innerHTML = vy.maObsah
+      ? `Môj výber je vypnutý, zobrazujeme celé Slovensko.
+         <button type="button" class="dnes-btn" data-dnes-zapni-vyber style="margin-left:.4rem">Zapnúť výber</button>`
+      : `Zatiaľ nemáte nastavený výber, zobrazujeme celé Slovensko.
+         <button type="button" class="dnes-btn dnes-btn-hlavne" data-dnes-vyber style="margin-left:.4rem">Nastaviť výber</button>`;
+  }
+
+  function obnovUvod() {
+    const v = el('dnes-veta');
+    if (!v) return;
+    const vy = ctx.vyber();
+    const znamy = (kluc) => (kluc in data ? data[kluc] : null);
+    const nove = znamy('nove'), koncia = znamy('koncia90');
+    const veta = vetaSuhrnu(nove, koncia, { zapnuty: vy.zapnuty, sektorov: vy.sektorov, iba: vy.iba });
+    if (veta) { v.textContent = veta; return; }
+    const cakame = stav['kpi-nove'] === 'nacitava' || stav['kpi-koncia'] === 'nacitava';
+    v.textContent = cakame ? 'Načítavam prehľad…' : 'Súhrn sa teraz nepodarilo zostaviť, skúste čísla nižšie načítať znova.';
+  }
+
+  async function nacitajCast(id, ticho = false) {
+    const mojaGen = gen;
+    const cast = CASTI[id];
+    if (!telo(id)) return;
+    if (!ticho || stav[id] !== 'hotovo') ukazNacitavam(id);
+    try {
+      const vysledky = await Promise.all(cast.zdroje.map(z => z()));
+      if (mojaGen !== gen) return;
+      const html = cast.vykresli(vysledky);
+      telo(id).setAttribute('aria-busy', 'false');
+      telo(id).innerHTML = html;
+      stav[id] = 'hotovo';
+    } catch (e) {
+      if (mojaGen !== gen) return;
+      console.error(e);
+      ukazChybu(id);
+    }
+    obnovUvod();
+  }
+
+  function nacitajVsetko(len) {
+    const id = len ?? Object.keys(CASTI);
+    obnovVyzvu();
+    // Kazda cast vo svojom allSettled — chyba jednej nezhodi ostatne.
+    return Promise.allSettled(id.map(i => nacitajCast(i, len !== undefined)));
+  }
+
+  // ── Udalosti ────────────────────────────────────────────────────────────
+  function najdiRiadok(id) {
+    const zoznam = [...(data.signaly ?? []), ...(data.koncia ?? [])];
+    return zoznam.find(r => String(r.contract_id) === String(id));
+  }
+
+  function stiahniKalendar(riadky, nazov, tlacidlo) {
+    // Hlaska sa pise do karty, v ktorej bolo kliknute (citacka ju ohlasi).
+    const hlaska = (text) => {
+      const h = tlacidlo?.closest('section')?.querySelector('[data-dnes-hlaska]');
+      if (h) h.textContent = text;
+    };
+    try {
+      const obsah = vytvorIcs(riadky);
+      if (!/BEGIN:VEVENT/.test(obsah)) { hlaska('Nebolo čo pridať do kalendára.'); return; }
+      stiahniSubor(nazov, obsah, 'text/calendar;charset=utf-8');
+      hlaska('Kalendár sme stiahli. Otvorte ho v kalendári vo svojom zariadení.');
+    } catch (e) {
+      console.error(e);
+      hlaska('Súbor kalendára sa nepodarilo vytvoriť.');
+    }
+  }
+
+  koren.addEventListener('click', (e) => {
+    const t = e.target.closest('button');
+    if (!t || !koren.contains(t)) return;
+    if (t.hasAttribute('data-dnes-znova')) {
+      const zlyhane = Object.keys(CASTI).filter(i => stav[i] === 'chyba');
+      if (zlyhane.length) nacitajVsetko(zlyhane);
+    } else if (t.dataset.dnesOtvor !== undefined) {
+      const r = najdiRiadok(t.dataset.dnesOtvor);
+      if (r) ctx.otvorZmluvu(r);
+    } else if (t.dataset.dnesIcs !== undefined) {
+      const r = najdiRiadok(t.dataset.dnesIcs);
+      if (r) stiahniKalendar([r], `koniec-zmluvy-${String(r.contract_id).replace(/\W/g, '')}.ics`, t);
+    } else if (t.hasAttribute('data-dnes-ics-vsetky')) {
+      stiahniKalendar(data.koncia ?? [], `konciace-zmluvy-${dnesLokalne()}.ics`, t);
+    } else if (t.dataset.dnesTab) {
+      ctx.prepniNa(t.dataset.dnesTab);
+    } else if (t.hasAttribute('data-dnes-vyber')) {
+      ctx.otvorVyber();
+    } else if (t.hasAttribute('data-dnes-zapni-vyber')) {
+      ctx.zapniVyber();
+    }
+  });
+
+  postav();
+
+  return {
+    /** Prve zobrazenie: nacita vsetky casti paralelne (bez cakania z dashboardu). */
+    priZobrazeni() {
+      if (!ctx.aktivny) return;
+      if (!spustene || zastarane) {
+        spustene = true;
+        zastarane = false;
+        return nacitajVsetko();
+      }
+      // Dalsie navstevy: velke dopyty sa nezopakuju, len male casti, ktore
+      // sa medzitym mohli zmenit v inych zalozkach (sledovanie, stav CRM).
+      delete zdroje.sledovane; delete zdroje.crm; delete zdroje.konkurenti;
+      return nacitajVsetko(['kpi-sledovane', 'kpi-crm', 'konkurenti', 'crm']);
+    },
+    /** Zmena "Moj vyber": stare data uz neplatia, nacitaju sa pri dalsom zobrazeni. */
+    zneplatni() {
+      gen++;
+      zdroje = {};
+      for (const k of Object.keys(data)) delete data[k];
+      zastarane = true;
+      if (spustene && !el('dnes').classList.contains('hidden')) {
+        zastarane = false;
+        nacitajVsetko();
+      }
+    },
+  };
+}
+
 // ── DASHBOARD ───────────────────────────────────────────────────────────
 async function dashboard(supabase, rola, spravaPozvanky) {
   const [{ data: org }, { data: sub }, { data: zadarmo }] = await Promise.all([
@@ -3457,6 +4169,10 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // schoval hned a zakaznik 1-2 s pozeral na prazdnu stranku.
   // Modalne okno "Moj vyber" sa preto otvara az po zobrazeni appky (viz koniec).
   let otvorVyberNeskor = null;
+
+  // Nastenka "Dnes" (nastavDnes), vytvori sa tesne pred nastavZalozky().
+  // Deklarovana tu, aby ju mohol zavolat prekresliVsetko() pri zmene vyberu.
+  let dnes = null;
 
   const sektory = Object.entries(POPIS_SEKTORA).sort((a, b) => a[1].localeCompare(b[1], 'sk'));
   naplnSelect('f-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
@@ -3587,7 +4303,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     if (jePro && mojOdber?.moje_ico) {
       const { data } = await supabase.from('dodavatelia')
         .select('hlavny_sektor, priemerna_zmluva_eur')
-        .eq('supplier_cin', mojOdber.moje_ico).maybeSingle();
+        .eq('supplier_cin', cinKluc(mojOdber.moje_ico)).maybeSingle();
       mojProfil = data || null;
     }
     zoradPodlaRelevancie();
@@ -4476,6 +5192,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       nacitajZiadatelov().catch(() => {});
       if (aktivny) nacitajDodavatelov();
       if (uvoNacitane) nacitajUvo();
+      // Nastenka si drzi vlastne dopyty — pri zmene vyberu ich treba zahodit.
+      dnes?.zneplatni();
     };
 
     el('mv-ulozit').addEventListener('click', async () => {
@@ -4616,7 +5334,61 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // (pred nastavZalozky(), ktora meria sirku zaloziek).
   skry('nacitavam');
   ukaz('app');
-  nastavZalozky(mameZmluvy ? 'obsah' : 'dotacie');
+
+  // ── NASTENKA "DNES" ────────────────────────────────────────────────────
+  // Predvolena zalozka len pri tomto prvom nacitani; spravanie ostatnych
+  // zaloziek sa nemeni. Dopyty nastenky bezia az po zobrazeni zalozky
+  // (neblokuju tabulku Koncicich zmluv) a nikto na ne necaka.
+  const mvTextVyberu = () => {
+    const m = mojVyber;
+    return !!(m && (m.kraje?.length || m.sektory?.length || (m.velkost && m.velkost !== 'vsetko')));
+  };
+  dnes = nastavDnes(supabase, {
+    firma: org?.nazov ?? '',
+    orgId,
+    aktivny,
+    jePro,
+    vyber: () => ({
+      zapnuty: vyberZapnuty(),
+      maObsah: mvTextVyberu(),
+      popis: sPopisomVyberu(),
+      sektorov: mojVyber?.sektory?.length ?? 0,
+      iba: !(mojVyber?.kraje?.length) && !(mojVyber?.velkost && mojVyber.velkost !== 'vsetko'),
+      // Bez tabulky nastavenia_pouzivatela (migracia 51) sa vyber nastavit neda.
+      moze: !el('moj-vyber').classList.contains('hidden'),
+    }),
+    obmedz: (q) => sVyberom(q, { kraj: 'kraj', sektor: 'sector', suma: 'price_total' }, null, null),
+    prepniNa: (kluc) => {
+      document.querySelector(`[data-zalozka="${kluc}"]`)?.click();
+      window.scrollTo?.({ top: 0 });
+    },
+    otvorVyber: () => el('mv-zmenit').click(),
+    zapniVyber: () => {
+      el('mv-pouzit').checked = true;
+      el('mv-pouzit').dispatchEvent(new Event('change'));
+    },
+    // Tabulka Koncicich zmluv nema detail jednej prilezitosti, preto sa
+    // otvori predvyplnenym hladanim (prvych par slov predmetu) a filtre,
+    // ktore by zmluvu skryli (kraj, sektor, sila, predstih, "tender uz bezi",
+    // "len sledovane"), sa vynuluju.
+    otvorZmluvu: (r) => {
+      el('f-kraj').value = ''; el('f-sektor').value = '';
+      el('f-skore').value = '0'; el('f-predstih').value = '0';
+      el('f-len-sledovane').checked = false;
+      const dni = dniOdDnes(String(r.effective_to ?? '').slice(0, 10));
+      el('f-jeCas').checked = !(Number.isFinite(dni) && dni < DNI_TENDER_UZ_BEZI);
+      const slova = String(r.subject ?? '').match(/[^\s"'%_\\:;,*()]+(?: [^\s"'%_\\:;,*()]+){0,4}/);
+      el('f-text').value = slova ? slova[0] : '';
+      zobrazene.zmluvy = LIMIT;
+      document.querySelector('[data-zalozka="obsah"]')?.click();
+      window.scrollTo?.({ top: 0 });
+      nacitajZmluvy();
+    },
+  });
+
+  nastavZalozky('dnes');
+  document.querySelector('[data-zalozka="dnes"]')?.addEventListener('click', () => dnes.priZobrazeni());
+  dnes.priZobrazeni();
   if (otvorVyberNeskor) otvorVyberNeskor();
 }
 

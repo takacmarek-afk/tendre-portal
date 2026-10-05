@@ -1,0 +1,586 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<script src="/consent-analytics.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mapa končiacich zmlúv — PredTendrom.sk</title>
+<meta name="description" content="Mapa Slovenska po krajoch: koľko zmlúv na upratovanie, stravovanie a ostrahu sa blíži ku koncu, s objemom a najbližším termínom.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://predtendrom.sk/mapa">
+<meta property="og:title" content="Mapa končiacich zmlúv — PredTendrom.sk">
+<meta property="og:description" content="Mapa Slovenska po krajoch: koľko zmlúv na upratovanie, stravovanie a ostrahu sa blíži ku koncu, s objemom a najbližším termínom.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://predtendrom.sk/mapa">
+<meta property="og:locale" content="sk_SK">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mapa končiacich zmlúv — PredTendrom.sk">
+<meta name="twitter:description" content="Mapa Slovenska po krajoch: koľko zmlúv na upratovanie, stravovanie a ostrahu sa blíži ku koncu, s objemom a najbližším termínom.">
+<meta property="og:image" content="https://predtendrom.sk/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
+<script src="./config.js"></script>
+<script>
+// ── Návštevnosť + UTM (audit P3.1, 28.9.2026) ───────────────────────────
+// Zhodné s ostatnými verejnými stránkami (obce.html, starosta.html).
+// Zámerne tichý fallback všade: chyba analytiky tu nesmie nič pokaziť.
+(function(){
+  try {
+    var cfg = window.CONFIG || {};
+    if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
+    try { if (localStorage.getItem('pt_admin_zariadenie') === '1') return; } catch (e) {}
+    var sid = null;
+    try {
+      sid = sessionStorage.getItem('ptid');
+      if (!sid) {
+        sid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now() + '-' + Math.random());
+        sessionStorage.setItem('ptid', sid);
+      }
+    } catch (e) { sid = null; }
+    function posliNavstevu() {
+      fetch(cfg.SUPABASE_URL + '/rest/v1/navstevy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': cfg.SUPABASE_ANON_KEY, 'Prefer': 'return=minimal' },
+        body: JSON.stringify((function(){ var u = (window.ptUtm && window.ptUtm()) || {}; return { cesta: location.pathname, referrer: document.referrer || null, session_id: sid, utm_source: u.s || null, utm_medium: u.m || null, utm_campaign: u.c || null }; })()),
+        keepalive: true
+      }).catch(function(){});
+    }
+    var projectRef = (cfg.SUPABASE_URL.match(/https:\/\/([a-z0-9]+)\.supabase\.co/) || [])[1];
+    var token = null;
+    try {
+      var raw = projectRef && localStorage.getItem('sb-' + projectRef + '-auth-token');
+      if (raw) token = JSON.parse(raw).access_token;
+    } catch (e) { token = null; }
+    if (!token) { posliNavstevu(); return; }
+    fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/je_admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': cfg.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      body: '{}'
+    }).then(function(r){ return r.json(); }).then(function(jeAdmin){
+      if (jeAdmin === true) { try { localStorage.setItem('pt_admin_zariadenie', '1'); } catch (e) {} }
+      else { posliNavstevu(); }
+    }).catch(function(){ posliNavstevu(); });
+  } catch (e) {}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="font-sans text-ink bg-paper antialiased">
+
+<header class="border-b border-line bg-white/95">
+  <div class="max-w-[960px] mx-auto flex items-center justify-between h-16 px-5">
+    <a href="/" class="flex items-center gap-2">
+      <svg width="19" height="19" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0" aria-hidden="true">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+      <span class="font-serif italic text-[18px] text-ink">predtendrom</span>
+    </a>
+    <a href="/cennik" class="text-[13px] text-slate2 hover:text-ink">Cenník</a>
+  </div>
+</header>
+
+<main>
+<section class="max-w-[960px] mx-auto px-5 pt-10 pb-4">
+  <p class="inline-block text-[12px] font-semibold text-accent bg-accent/10 rounded-full px-3 py-1">Ukážka z portálu</p>
+  <h1 class="mt-4 font-serif text-[34px] sm:text-[44px] leading-tight text-ink">Mapa končiacich zmlúv</h1>
+  <p class="mt-3 text-[16px] leading-relaxed text-slate2 max-w-[680px]">
+    Koľko zmlúv z Centrálneho registra zmlúv sa v ktorom kraji blíži ku koncu. Vyberte sektor a metriku, farba dlaždice ukazuje, kde je zmlúv alebo peňazí najviac.
+  </p>
+  <p class="mt-2 text-[14px] leading-relaxed text-slate2 max-w-[680px]">
+    Údaje pokrývajú len tri sektory: upratovanie, stravovanie a ostrahu.
+  </p>
+  <p class="mt-2 text-[14px] text-slate2">
+    Podľa sektora:
+    <a href="/konciace-zmluvy/upratovanie/" class="text-accent hover:underline">Upratovanie</a> ·
+    <a href="/konciace-zmluvy/stravovanie/" class="text-accent hover:underline">Stravovanie</a> ·
+    <a href="/konciace-zmluvy/ostraha/" class="text-accent hover:underline">Ostraha</a>
+  </p>
+</section>
+
+<noscript>
+  <p class="max-w-[960px] mx-auto px-5 py-4 text-[14px] text-slate2">Mapa potrebuje zapnutý JavaScript. Prehľady po krajoch nájdete na stránkach jednotlivých sektorov vyššie.</p>
+</noscript>
+
+<section class="max-w-[960px] mx-auto px-5 pb-6" aria-labelledby="ovladanie-nadpis">
+  <h2 id="ovladanie-nadpis" class="sr-only">Nastavenie zobrazenia</h2>
+  <div class="flex flex-col sm:flex-row sm:items-end gap-4 rounded-lg border border-line bg-white p-4">
+    <div class="sm:w-[260px]">
+      <label for="sektor" class="block text-[12px] font-semibold uppercase tracking-wider text-slate2">Sektor</label>
+      <select id="sektor" disabled
+              class="mt-1.5 w-full rounded-md border border-line bg-white px-3 py-2 text-[15px] text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-accent disabled:opacity-60">
+        <option value="ALL">Všetky tri sektory</option>
+      </select>
+    </div>
+    <div>
+      <span id="metrika-popis" class="block text-[12px] font-semibold uppercase tracking-wider text-slate2">Metrika</span>
+      <div role="group" aria-labelledby="metrika-popis" class="mt-1.5 inline-flex rounded-md border border-line overflow-hidden">
+        <button type="button" id="m-pocet" data-metrika="pocet" aria-pressed="true" disabled
+                class="px-4 py-2 text-[15px] bg-white text-ink aria-pressed:bg-ink aria-pressed:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent disabled:opacity-60">Počet zmlúv</button>
+        <button type="button" id="m-objem" data-metrika="objem" aria-pressed="false" disabled
+                class="px-4 py-2 text-[15px] bg-white text-ink aria-pressed:bg-ink aria-pressed:text-white border-l border-line focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent disabled:opacity-60">Objem v €</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="max-w-[960px] mx-auto px-5 pb-8" aria-labelledby="mapa-nadpis">
+  <h2 id="mapa-nadpis" class="sr-only">Mapa krajov</h2>
+
+  <!-- Stavy: nacitavanie / chyba / prazdny agregat. aria-live, aby ich citacka oznamila. -->
+  <div id="stav" role="status" aria-live="polite" class="rounded-lg border border-line bg-white p-6 text-[15px] text-slate2">Načítavam údaje o končiacich zmluvách&hellip;</div>
+
+  <div id="obsah" class="hidden">
+    <p id="zhrnutie" class="mb-3 text-[14px] text-slate2" aria-live="polite"></p>
+
+    <!-- Kartogram: 8 krajov, zapad -> vychod, hore sever. Je to zoznam (ul), takze ho citacky
+         cita ako 8 poloziek; poradie v DOM = poradie zapad -> vychod. -->
+    <ul id="dlazdice" aria-label="Kraje Slovenska zoradené približne zo západu na východ"
+        class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 list-none p-0 m-0"></ul>
+
+    <div class="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] text-slate2" aria-label="Legenda farieb" role="group">
+      <span id="legenda-nadpis" class="font-semibold text-ink"></span>
+      <span class="inline-flex items-center gap-1.5">
+        <span id="legenda-min" class="tabular-nums">0</span>
+        <span id="legenda-pasik" class="inline-flex" aria-hidden="true"></span>
+        <span id="legenda-max" class="tabular-nums"></span>
+      </span>
+      <span class="inline-flex items-center gap-1.5"><span class="inline-block w-4 h-4 rounded border border-dashed border-slate2 bg-white" aria-hidden="true"></span>bez údajov</span>
+    </div>
+
+    <h2 class="mt-10 text-[20px] font-semibold">Kraje zoradené podľa zvolenej metriky</h2>
+    <p class="mt-1 text-[13px] text-slate2">Rovnaké údaje ako na mape, v tabuľke.</p>
+    <div class="mt-3 overflow-x-auto rounded-lg border border-line bg-white">
+      <table class="w-full text-[12px] sm:text-[14px]">
+        <caption id="tabulka-popis" class="sr-only"></caption>
+        <thead>
+          <tr class="border-b border-line text-left text-slate2">
+            <th scope="col" class="py-2.5 pl-2.5 sm:pl-4 pr-1 sm:pr-2 font-semibold">Kraj</th>
+            <th scope="col" class="py-2.5 px-1 sm:px-2 font-semibold text-right">Počet zmlúv</th>
+            <th scope="col" class="py-2.5 px-1 sm:px-2 font-semibold text-right">Objem</th>
+            <th scope="col" class="py-2.5 pl-1 sm:pl-2 pr-2.5 sm:pr-4 font-semibold text-right">Najbližší koniec</th>
+          </tr>
+        </thead>
+        <tbody id="tabulka"></tbody>
+      </table>
+    </div>
+
+    <div class="mt-8 rounded-lg border-2 border-accent bg-white p-5 sm:p-6 sm:flex sm:items-center sm:justify-between sm:gap-6">
+      <p class="text-[16px] sm:text-[17px] leading-snug text-ink max-w-[560px]">
+        <strong class="font-semibold">Chcete vidieť, ktoré zmluvy a ktorí obstarávatelia to sú?</strong>
+        Vyskúšajte portál 14 dní zadarmo, bez platobnej karty.
+      </p>
+      <a href="/prihlasenie?dalej=app.html&amp;utm_source=mapa&amp;utm_medium=organic&amp;utm_campaign=mapa_konciacich_zmluv"
+         class="mt-4 sm:mt-0 inline-block shrink-0 rounded-md bg-accent text-white text-[15px] font-medium px-5 py-2.5 hover:bg-accentDark focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent">
+        Vyskúšať portál zadarmo
+      </a>
+    </div>
+  </div>
+
+  <p id="zdroj" class="mt-8 text-[13px] leading-relaxed text-slate2 max-w-[760px]">
+    Zdroj: Centrálny register zmlúv; počet tvoria zmluvy, ktorých účinnosť končí 30 až 365 dní od spracovania údajov (bez dodatkov, prevodov peňazí a regulovaných monopolov, s cenou aspoň 5&nbsp;000&nbsp;€ alebo bez uvedenej ceny), kraj sa určuje podľa adresy obstarávateľa a objem je súčet uvedených cien.
+    <span id="aktualizacia"></span>
+    Údaje pokrývajú len 3 sektory (upratovanie, stravovanie, ostraha).
+    <a href="/zdroje" class="text-accent hover:underline">Ako to počítame</a>
+  </p>
+</section>
+</main>
+
+<footer class="border-t border-line mt-8">
+  <div class="max-w-[960px] mx-auto px-5 py-8 text-[12px] text-slate2">
+    Údaje majú informatívny charakter a nie sú právne záväzné.
+    <a href="/zdroje" class="text-accent hover:underline">Zdroje údajov</a>
+    · <a href="mailto:info@predtendrom.sk" class="text-accent hover:underline">info@predtendrom.sk</a>
+  </div>
+</footer>
+
+<script>
+(function () {
+'use strict';
+var cfg = window.CONFIG || {};
+var SUPABASE_URL = cfg.SUPABASE_URL, SUPABASE_ANON_KEY = cfg.SUPABASE_ANON_KEY;
+
+// Trojtvarova slovenska mnozna: 1 zmluva / 2-4 zmluvy / 0 a 5+ zmlúv (ako tvar() v prvych-100-dni.html).
+function tvar(n, jeden, dvaAzStyri, pat) {
+  var a = Math.abs(n);
+  if (a === 1) return jeden;
+  if (a >= 2 && a <= 4) return dvaAzStyri;
+  return pat;
+}
+// Escapovanie kazdej hodnoty pred vlozenim do innerHTML (ako v obce.html / prvych-100-dni.html).
+function bezpecne(t) {
+  return String(t == null ? '' : t)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function el(id) { return document.getElementById(id); }
+
+var NBSP = ' ';
+
+// Poradie krajov v DOM = zapad -> vychod; mriezka 4 x 2 (hore sever, dole juh):
+//   Trnavsky   Trenciansky   Zilinsky   Presovsky
+//   Bratislavsky  Nitriansky  Banskobystricky  Kosicky
+// Na mobile sa rovnaky zoznam preskladá do mriezky 2 x 4.
+var KRAJE = [
+  { nazov: 'Trnavský kraj', slug: 'trnavsky' },
+  { nazov: 'Trenčiansky kraj', slug: 'trenciansky' },
+  { nazov: 'Žilinský kraj', slug: 'zilinsky' },
+  { nazov: 'Prešovský kraj', slug: 'presovsky' },
+  { nazov: 'Bratislavský kraj', slug: 'bratislavsky' },
+  { nazov: 'Nitriansky kraj', slug: 'nitriansky' },
+  { nazov: 'Banskobystrický kraj', slug: 'banskobystricky' },
+  { nazov: 'Košický kraj', slug: 'kosicky' }
+];
+var SEKTORY = [
+  { kluc: 'UPRATOVANIE', slug: 'upratovanie', nazov: 'Upratovanie' },
+  { kluc: 'STRAVOVANIE', slug: 'stravovanie', nazov: 'Stravovanie' },
+  { kluc: 'OSTRAHA', slug: 'ostraha', nazov: 'Ostraha' }
+];
+// Existujuce SEO podstranky (public/konciace-zmluvy/<sektor>/<kraj>.html). Odkaz sa dava len na ne.
+var PODSTRANKY = {
+  upratovanie: ['bratislavsky', 'trnavsky', 'trenciansky', 'nitriansky', 'zilinsky', 'banskobystricky', 'presovsky', 'kosicky'],
+  stravovanie: ['bratislavsky', 'trnavsky', 'trenciansky', 'nitriansky', 'zilinsky', 'banskobystricky', 'presovsky', 'kosicky'],
+  ostraha: ['bratislavsky', 'trnavsky', 'trenciansky', 'nitriansky', 'zilinsky', 'banskobystricky', 'presovsky', 'kosicky']
+};
+function adresaPodstranky(sektor, kraj) {
+  if (!PODSTRANKY[sektor.slug] || PODSTRANKY[sektor.slug].indexOf(kraj.slug) === -1) return null;
+  return '/konciace-zmluvy/' + sektor.slug + '/' + kraj.slug;
+}
+
+// Sekvencna jednofarebna skala (paleta PredTendrom: paper -> accent -> accentDark), 5 tried.
+// Trieda 0 = presne nula. Farby su vybrane tak, aby text (ink alebo biely) mal kontrast aspon 4,5:1.
+var INK = '#0B1220', BIELA = '#FFFFFF';
+var TRIEDY = ['#FFF8EC', '#F3D9B8', '#E6AE78', '#B25313', '#8A3F0D'];
+
+function jasLinearny(hex) {
+  var c = [1, 3, 5].map(function (i) {
+    var v = parseInt(hex.substr(i, 2), 16) / 255;
+    return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+}
+function kontrast(a, b) {
+  var la = jasLinearny(a), lb = jasLinearny(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+// Farba textu = ta z dvojice (ink / biela), ktora ma na danom pozadi vyssi kontrast.
+function textNa(hex) { return kontrast(hex, INK) >= kontrast(hex, BIELA) ? 'ink' : 'biela'; }
+
+function triedaHodnoty(v, max) {
+  if (!(v > 0) || !(max > 0)) return 0;
+  return 1 + Math.min(3, Math.floor((v / max) * 4));
+}
+
+function cislo(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, NBSP); }
+function eur(v) {
+  var n = Number(v);
+  if (v == null || !isFinite(n) || n <= 0) return '—';
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace('.', ',') + NBSP + 'mil.' + NBSP + '€';
+  return cislo(n) + NBSP + '€';
+}
+function datumSk(iso) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso == null ? '' : iso));
+  if (!m) return null;
+  var y = +m[1], mo = +m[2], d = +m[3];
+  if (mo < 1 || mo > 12 || d < 1 || d > 31) return null;
+  return d + '. ' + mo + '. ' + y;
+}
+function datumAktualizacie(ts) {
+  var t = new Date(ts);
+  if (isNaN(t.getTime())) return null;
+  try {
+    var casti = new Intl.DateTimeFormat('sk-SK', { timeZone: 'Europe/Bratislava', day: 'numeric', month: 'numeric', year: 'numeric' }).formatToParts(t);
+    var o = {};
+    casti.forEach(function (c) { o[c.type] = c.value; });
+    if (o.day && o.month && o.year) return o.day + '. ' + o.month + '. ' + o.year;
+  } catch (e) {}
+  return t.getUTCDate() + '. ' + (t.getUTCMonth() + 1) + '. ' + t.getUTCFullYear();
+}
+
+// ── Stav ─────────────────────────────────────────────────────────────────
+var data = null;          // { [sektorKluc]: { [krajSlug]: {pocet, objem, koniec} } }
+var aktualizacia = null;  // najnovsi refreshed_at
+var sektor = 'ALL';
+var metrika = 'pocet';
+
+function cisloAleboNull(v) {
+  if (v == null || v === '') return null;
+  var n = Number(v);
+  return isFinite(n) ? n : null;
+}
+
+// Z odpovede vyberie len znamy sektor a znamy kraj (ostatne hodnoty sa ignoruju).
+function spracujRiadky(riadky) {
+  var vystup = {}, kraje = {}, najnovsi = null, pocetPouzitych = 0;
+  SEKTORY.forEach(function (s) { vystup[s.kluc] = {}; });
+  KRAJE.forEach(function (k) { kraje[k.nazov] = k; });
+  riadky.forEach(function (r) {
+    if (!r || typeof r !== 'object') return;
+    var s = String(r.sector == null ? '' : r.sector).trim().toUpperCase();
+    var kraj = kraje[String(r.kraj == null ? '' : r.kraj).trim()];
+    if (!vystup[s] || !kraj) return;
+    var pocet = cisloAleboNull(r.pocet);
+    if (pocet == null || pocet < 0) return;
+    var objem = cisloAleboNull(r.objem_eur);
+    var koniec = datumSk(r.najblizsi_koniec) ? String(r.najblizsi_koniec).slice(0, 10) : null;
+    var stary = vystup[s][kraj.slug];
+    if (stary) { // PK (sector, kraj) duplicitu nepripusta; pre istotu spocitame
+      stary.pocet += pocet;
+      if (objem != null) stary.objem = (stary.objem || 0) + objem;
+      if (koniec && (!stary.koniec || koniec < stary.koniec)) stary.koniec = koniec;
+    } else {
+      vystup[s][kraj.slug] = { pocet: pocet, objem: objem, koniec: koniec };
+    }
+    pocetPouzitych++;
+    var t = Date.parse(r.refreshed_at);
+    if (isFinite(t) && (najnovsi == null || t > najnovsi)) najnovsi = t;
+  });
+  return { data: vystup, pocet: pocetPouzitych, najnovsi: najnovsi == null ? null : new Date(najnovsi).toISOString() };
+}
+
+function sektoryVData() {
+  return SEKTORY.filter(function (s) { return Object.keys(data[s.kluc]).length > 0; });
+}
+
+// Hodnoty pre jeden kraj podla zvoleneho sektora. null = bez udajov.
+function hodnotyKraja(kraj) {
+  var zdroje = [];
+  SEKTORY.forEach(function (s) {
+    if (sektor !== 'ALL' && s.kluc !== sektor) return;
+    var r = data[s.kluc][kraj.slug];
+    if (r) zdroje.push({ sektor: s, r: r });
+  });
+  if (!zdroje.length) return null;
+  var pocet = 0, objem = null, koniec = null;
+  zdroje.forEach(function (z) {
+    pocet += z.r.pocet;
+    if (z.r.objem != null && z.r.objem > 0) objem = (objem || 0) + z.r.objem;
+    if (z.r.koniec && z.r.pocet > 0 && (!koniec || z.r.koniec < koniec)) koniec = z.r.koniec;
+  });
+  return { kraj: kraj, pocet: pocet, objem: objem, koniec: koniec, zdroje: zdroje };
+}
+function hodnotaMetriky(h) {
+  if (!h) return null;
+  return metrika === 'pocet' ? h.pocet : h.objem;
+}
+
+function vypocitaj() {
+  var vsetky = KRAJE.map(hodnotyKraja);
+  var max = 0;
+  vsetky.forEach(function (h) {
+    var v = hodnotaMetriky(h);
+    if (v != null && v > max) max = v;
+  });
+  return { vsetky: vsetky, max: max };
+}
+
+function textPoctu(n) { return cislo(n) + NBSP + tvar(n, 'zmluva', 'zmluvy', 'zmlúv'); }
+function popisKonca(h) {
+  var d = h.koniec ? datumSk(h.koniec) : null;
+  return d ? 'najbližšia končí ' + d : 'najbližší koniec neuvedený';
+}
+
+function odkazyHtml(h) {
+  var odkazy = [];
+  h.zdroje.forEach(function (z) {
+    if (!(z.r.pocet > 0)) return;
+    var url = adresaPodstranky(z.sektor, h.kraj);
+    if (url) odkazy.push({ url: url, sektor: z.sektor });
+  });
+  if (!odkazy.length) return '';
+  var cls = 'underline underline-offset-2 font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-current rounded-sm';
+  if (sektor !== 'ALL') {
+    return '<p class="mt-2 text-[13px]"><a href="' + bezpecne(odkazy[0].url) + '" class="' + cls + '" aria-label="Pozrieť kraj ' + bezpecne(h.kraj.nazov) + ' (' + bezpecne(odkazy[0].sektor.nazov.toLowerCase()) + ')">Pozrieť kraj &rarr;</a></p>';
+  }
+  return '<p class="mt-2 text-[13px] leading-snug">Pozrieť kraj: ' + odkazy.map(function (o) {
+    return '<a href="' + bezpecne(o.url) + '" class="' + cls + ' whitespace-nowrap" aria-label="Pozrieť kraj ' + bezpecne(h.kraj.nazov) + ' (' + bezpecne(o.sektor.nazov.toLowerCase()) + ')">' + bezpecne(o.sektor.nazov) + ' &rarr;</a>';
+  }).join(' ') + '</p>';
+}
+
+function dlazdicaHtml(kraj, h, max) {
+  var zakl = 'min-w-0 rounded-lg border p-3 sm:p-4 flex flex-col transition-shadow hover:ring-2 hover:ring-ink focus-within:ring-2 focus-within:ring-ink ';
+  var hodnota = hodnotaMetriky(h);
+  if (!h) {
+    return '<li data-kraj="' + bezpecne(kraj.slug) + '" class="' + zakl + 'border-dashed border-slate2 bg-white text-ink">' +
+      '<h3 class="text-[14px] sm:text-[15px] font-semibold leading-snug break-words">' + bezpecne(kraj.nazov) + '</h3>' +
+      '<p class="mt-2 text-[14px] font-semibold">Bez údajov</p>' +
+      '<p class="mt-1 text-[13px] leading-snug">Pre túto kombináciu zatiaľ nemáme agregát.</p></li>';
+  }
+  var farba, text;
+  if (hodnota == null) { farba = null; text = 'ink'; } // objem neuvedeny: bez farby, nie "nula"
+  else { farba = TRIEDY[triedaHodnoty(hodnota, max)]; text = textNa(farba); }
+  var cls = zakl + (farba ? 'border-line ' : 'border-dashed border-slate2 bg-white ') + (text === 'biela' ? 'text-white' : 'text-ink');
+  var styl = farba ? ' style="background-color:' + farba + '"' : '';
+  var ciastocne = '';
+  if (sektor === 'ALL' && h.zdroje.length < sektoryVData().length) {
+    ciastocne = '<p class="mt-1 text-[12px] leading-snug">údaje len z ' + h.zdroje.length + ' z ' + sektoryVData().length + ' sektorov</p>';
+  }
+  return '<li data-kraj="' + bezpecne(kraj.slug) + '" class="' + cls + '"' + styl + '>' +
+    '<h3 class="text-[14px] sm:text-[15px] font-semibold leading-snug break-words">' + bezpecne(kraj.nazov) + '</h3>' +
+    '<p class="mt-1.5 leading-tight"><span class="font-serif text-[30px] sm:text-[34px]">' + bezpecne(cislo(h.pocet)) + '</span> <span class="text-[14px]">' + bezpecne(tvar(h.pocet, 'zmluva', 'zmluvy', 'zmlúv')) + '</span></p>' +
+    '<p class="mt-1 text-[14px] leading-snug">Objem: <span class="font-semibold">' + bezpecne(h.objem == null ? 'neuvedený' : eur(h.objem)) + '</span></p>' +
+    (h.pocet > 0 ? '<p class="mt-1 text-[13px] leading-snug">' + bezpecne(popisKonca(h)) + '</p>' : '<p class="mt-1 text-[13px] leading-snug">žiadna zmluva v sledovanom okne</p>') +
+    ciastocne + odkazyHtml(h) + '</li>';
+}
+
+function zoradene(vsetky) {
+  var riadky = KRAJE.map(function (k, i) { return { kraj: k, h: vsetky[i] }; });
+  riadky.sort(function (a, b) {
+    var va = hodnotaMetriky(a.h), vb = hodnotaMetriky(b.h);
+    if (va == null && vb == null) return a.kraj.nazov.localeCompare(b.kraj.nazov, 'sk');
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    if (vb !== va) return vb - va;
+    return a.kraj.nazov.localeCompare(b.kraj.nazov, 'sk');
+  });
+  return riadky;
+}
+
+function nazovSektora() {
+  if (sektor === 'ALL') return sektoryVData().length === SEKTORY.length ? 'všetky tri sektory' : 'všetky sektory v dátach';
+  var s = SEKTORY.filter(function (x) { return x.kluc === sektor; })[0];
+  return s.nazov.toLowerCase();
+}
+
+function vykresli() {
+  var v = vypocitaj();
+  var nazovMetriky = metrika === 'pocet' ? 'počet zmlúv' : 'objem v eurách';
+
+  el('dlazdice').innerHTML = KRAJE.map(function (k, i) { return dlazdicaHtml(k, v.vsetky[i], v.max); }).join('');
+
+  var r = zoradene(v.vsetky);
+  el('tabulka').innerHTML = r.map(function (x) {
+    var h = x.h;
+    if (!h) {
+      return '<tr data-kraj="' + bezpecne(x.kraj.slug) + '" class="border-b border-line last:border-0"><th scope="row" class="py-2.5 pl-2.5 sm:pl-4 pr-1 sm:pr-2 text-left font-medium">' + bezpecne(x.kraj.nazov) + '</th><td colspan="3" class="py-2.5 px-1 sm:px-2 pr-2.5 sm:pr-4 text-right text-slate2">bez údajov</td></tr>';
+    }
+    var koniec = h.pocet > 0 && h.koniec ? datumSk(h.koniec) : null;
+    return '<tr data-kraj="' + bezpecne(x.kraj.slug) + '" class="border-b border-line last:border-0">' +
+      '<th scope="row" class="py-2.5 pl-2.5 sm:pl-4 pr-1 sm:pr-2 text-left font-medium">' + bezpecne(x.kraj.nazov) + '</th>' +
+      '<td class="py-2.5 px-1 sm:px-2 text-right tabular-nums whitespace-nowrap">' + bezpecne(textPoctu(h.pocet)) + '</td>' +
+      '<td class="py-2.5 px-1 sm:px-2 text-right tabular-nums whitespace-nowrap">' + bezpecne(eur(h.objem)) + '</td>' +
+      '<td class="py-2.5 pl-1 sm:pl-2 pr-2.5 sm:pr-4 text-right tabular-nums whitespace-nowrap">' + bezpecne(koniec || '—') + '</td></tr>';
+  }).join('');
+
+  // Legenda
+  el('legenda-nadpis').textContent = 'Farba: ' + nazovMetriky + ' (od svetlej po tmavú)';
+  el('legenda-pasik').innerHTML = TRIEDY.map(function (c) {
+    return '<span class="inline-block w-6 h-4 border border-line first:rounded-l last:rounded-r" style="background-color:' + c + '"></span>';
+  }).join('');
+  el('legenda-min').textContent = metrika === 'pocet' ? '0' : '0' + NBSP + '€';
+  el('legenda-max').textContent = v.max > 0 ? (metrika === 'pocet' ? cislo(v.max) : eur(v.max)) : '0';
+
+  el('zhrnutie').textContent = 'Zobrazené: ' + nazovSektora() + ', ' + nazovMetriky + '.';
+  el('tabulka-popis').textContent = 'Kraje zoradené podľa metriky ' + nazovMetriky + ', sektor: ' + nazovSektora() + '.';
+
+  var tlacidla = document.querySelectorAll('[data-metrika]');
+  Array.prototype.forEach.call(tlacidla, function (b) {
+    b.setAttribute('aria-pressed', b.getAttribute('data-metrika') === metrika ? 'true' : 'false');
+  });
+}
+
+function pripravSektory() {
+  var sel = el('sektor');
+  var dostupne = sektoryVData();
+  var moznosti = '<option value="ALL">' + (dostupne.length === SEKTORY.length ? 'Všetky tri sektory' : 'Všetky sektory v dátach') + '</option>';
+  dostupne.forEach(function (s) { moznosti += '<option value="' + bezpecne(s.kluc) + '">' + bezpecne(s.nazov) + '</option>'; });
+  sel.innerHTML = moznosti;
+  sel.value = 'ALL';
+  sektor = 'ALL';
+}
+
+function nastavOvladanie(povolene) {
+  el('sektor').disabled = !povolene;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-metrika]'), function (b) { b.disabled = !povolene; });
+}
+
+function ukazStav(typ, html) {
+  var s = el('stav');
+  s.innerHTML = html;
+  s.classList.toggle('hidden', typ === null);
+  el('obsah').classList.toggle('hidden', typ !== null);
+}
+
+async function nacitaj() {
+  nastavOvladanie(false);
+  ukazStav('nacitavanie', 'Načítavam údaje o končiacich zmluvách&hellip;');
+  el('aktualizacia').textContent = '';
+  var ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+  var casovac = ctrl ? setTimeout(function () { ctrl.abort(); }, 20000) : null;
+  try {
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) throw new Error('chýba konfigurácia');
+    var r = await fetch(SUPABASE_URL + '/rest/v1/zmluvy_seo_agregat?select=sector,kraj,pocet,objem_eur,najblizsi_koniec,refreshed_at&limit=1000', {
+      headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
+      signal: ctrl ? ctrl.signal : undefined
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var riadky = await r.json();
+    if (!Array.isArray(riadky)) throw new Error('neočakávaná odpoveď');
+    var s = spracujRiadky(riadky);
+    if (!s.pocet) {
+      ukazStav('prazdne', '<p class="font-semibold text-ink">Prehľad zatiaľ nemá údaje.</p><p class="mt-1">Agregát končiacich zmlúv je momentálne prázdny. Skúste to prosím neskôr.</p>');
+      return;
+    }
+    data = s.data;
+    aktualizacia = s.najnovsi;
+    var d = aktualizacia ? datumAktualizacie(aktualizacia) : null;
+    el('aktualizacia').textContent = d ? 'Posledná aktualizácia údajov: ' + d + '.' : '';
+    pripravSektory();
+    nastavOvladanie(true);
+    ukazStav(null, '');
+    vykresli();
+  } catch (e) {
+    ukazStav('chyba', '<p class="font-semibold text-ink">Údaje sa nepodarilo načítať.</p><p class="mt-1">Skontrolujte pripojenie a skúste to znova.</p><button type="button" id="skusit-znova" class="mt-3 rounded-md bg-ink text-white text-[14px] font-medium px-4 py-2 hover:bg-accentDark focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent">Skúsiť znova</button>');
+    var b = el('skusit-znova');
+    if (b) { b.addEventListener('click', nacitaj); b.focus(); }
+  } finally {
+    if (casovac) clearTimeout(casovac);
+  }
+}
+
+// ── Udalosti ─────────────────────────────────────────────────────────────
+el('sektor').addEventListener('change', function (e) {
+  sektor = e.target.value;
+  vykresli();
+});
+Array.prototype.forEach.call(document.querySelectorAll('[data-metrika]'), function (b) {
+  b.addEventListener('click', function () {
+    metrika = b.getAttribute('data-metrika');
+    vykresli();
+  });
+});
+
+// Zvyraznenie: dlazdica <-> riadok tabulky (hover aj focus).
+var RIADOK_ZVYRAZNENIE = ['bg-amber-100'];
+var DLAZDICA_ZVYRAZNENIE = ['ring-2', 'ring-ink'];
+function zvyrazni(slug, zapni) {
+  if (!slug) return;
+  var sel = '[data-kraj="' + slug.replace(/[^a-z0-9-]/g, '') + '"]';
+  var tr = document.querySelector('#tabulka ' + sel);
+  var li = document.querySelector('#dlazdice ' + sel);
+  if (tr) RIADOK_ZVYRAZNENIE.forEach(function (c) { tr.classList.toggle(c, zapni); });
+  if (li) DLAZDICA_ZVYRAZNENIE.forEach(function (c) { li.classList.toggle(c, zapni); });
+}
+function slugZ(cil) {
+  var n = cil && cil.closest ? cil.closest('[data-kraj]') : null;
+  return n ? n.getAttribute('data-kraj') : null;
+}
+['mouseover', 'focusin'].forEach(function (typ) {
+  el('obsah').addEventListener(typ, function (e) { zvyrazni(slugZ(e.target), true); });
+});
+['mouseout', 'focusout'].forEach(function (typ) {
+  el('obsah').addEventListener(typ, function (e) { zvyrazni(slugZ(e.target), false); });
+});
+
+nacitaj();
+})();
+</script>
+</body>
+</html>

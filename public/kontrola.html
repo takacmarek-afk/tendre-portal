@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<script src="/consent-analytics.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kontrola zmlúv podľa IČO — PredTendrom.sk</title>
+<meta name="description" content="Zadajte IČO a zistite, ktoré vaše zmluvy so štátom a verejným sektorom sa v najbližších 24 mesiacoch končia. Bez registrácie, zadarmo.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://predtendrom.sk/kontrola">
+<meta property="og:title" content="Kontrola zmlúv podľa IČO — PredTendrom.sk">
+<meta property="og:description" content="Zadajte IČO a zistite, ktoré vaše zmluvy so štátom a verejným sektorom sa v najbližších 24 mesiacoch končia.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://predtendrom.sk/kontrola">
+<meta property="og:locale" content="sk_SK">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kontrola zmlúv podľa IČO — PredTendrom.sk">
+<meta name="twitter:description" content="Zadajte IČO a zistite, ktoré vaše zmluvy so štátom a verejným sektorom sa v najbližších 24 mesiacoch končia.">
+<meta property="og:image" content="https://predtendrom.sk/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
+<script src="/config.js"></script>
+<script>
+// ── Návštevnosť + UTM ───────────────────────────────────────────────────
+// Zhodné s prvych-100-dni.html a starosta.html. Posiela sa len cesta stránky
+// (location.pathname) — zadané IČO v ?ico= sa do návštevnosti nedostane.
+(function(){
+  try {
+    var cfg = window.CONFIG || {};
+    if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
+    try { if (localStorage.getItem('pt_admin_zariadenie') === '1') return; } catch (e) {}
+    var sid = null;
+    try {
+      sid = sessionStorage.getItem('ptid');
+      if (!sid) {
+        sid = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now() + '-' + Math.random());
+        sessionStorage.setItem('ptid', sid);
+      }
+    } catch (e) { sid = null; }
+    function posliNavstevu() {
+      fetch(cfg.SUPABASE_URL + '/rest/v1/navstevy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': cfg.SUPABASE_ANON_KEY, 'Prefer': 'return=minimal' },
+        body: JSON.stringify((function(){ var u = (window.ptUtm && window.ptUtm()) || {}; return { cesta: location.pathname, referrer: document.referrer || null, session_id: sid, utm_source: u.s || null, utm_medium: u.m || null, utm_campaign: u.c || null }; })()),
+        keepalive: true
+      }).catch(function(){});
+    }
+    var projectRef = (cfg.SUPABASE_URL.match(/https:\/\/([a-z0-9]+)\.supabase\.co/) || [])[1];
+    var token = null;
+    try {
+      var raw = projectRef && localStorage.getItem('sb-' + projectRef + '-auth-token');
+      if (raw) token = JSON.parse(raw).access_token;
+    } catch (e) { token = null; }
+    if (!token) { posliNavstevu(); return; }
+    fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/je_admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': cfg.SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + token },
+      body: '{}'
+    }).then(function(r){ return r.json(); }).then(function(jeAdmin){
+      if (jeAdmin === true) { try { localStorage.setItem('pt_admin_zariadenie', '1'); } catch (e) {} }
+      else { posliNavstevu(); }
+    }).catch(function(){ posliNavstevu(); });
+  } catch (e) {}
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<style>
+/* Vlastné štýly stránky — nezávisia od prebudovania style.css. */
+:root { --ink:#0B1220; --slate2:#6B6558; --line:#E4DFD2; --accent:#B25313; --accentDark:#8A3F0D; --paper:#F7F3EA; --amber:#E8A33D; }
+body { background: var(--paper); color: var(--ink); }
+.kz-wrap { max-width: 900px; margin: 0 auto; padding: 0 1rem; }
+@media (min-width: 640px) { .kz-wrap { padding: 0 1.25rem; } }
+.kz-hdr { border-bottom: 1px solid var(--line); background: #fff; }
+.kz-hdr-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; height: 4rem; }
+.kz-logo { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--ink); text-decoration: none; }
+.kz-logo span { font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-size: 19px; }
+.kz-hdr-akcie { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+.kz-len-desktop { display: none; }
+@media (min-width: 640px) { .kz-len-mobil { display: none; } .kz-len-desktop { display: inline; } .kz-hdr-akcie { gap: 1rem; } }
+.kz-logo span { min-width: 0; }
+.kz-hdr-link { font-size: 13px; color: var(--slate2); text-decoration: none; white-space: nowrap; }
+.kz-hdr-link:hover { color: var(--ink); }
+.kz-btn-tmavy { display: inline-flex; justify-content: center; align-items: center; background: var(--ink); color: #fff; font-weight: 600; border-radius: 0.375rem; text-decoration: none; border: 0; cursor: pointer; white-space: nowrap; transition: background .15s; }
+.kz-btn-tmavy:hover { background: var(--accent); }
+.kz-hdr .kz-btn-tmavy { font-size: 13px; padding: 0.5rem 0.75rem; }
+@media (min-width: 640px) { .kz-hdr-link { font-size: 14px; } .kz-hdr .kz-btn-tmavy { font-size: 14px; padding: 0.5rem 1rem; } }
+.kz-sekcia { padding: 2.25rem 0 1.5rem; }
+@media (min-width: 640px) { .kz-sekcia { padding: 3rem 0 2rem; } }
+.kz-h1 { font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; max-width: 640px; margin: 0; }
+@media (min-width: 640px) { .kz-h1 { font-size: 34px; } }
+.kz-uvod { font-size: 17px; line-height: 1.6; color: var(--slate2); max-width: 640px; margin: 1rem 0 0; }
+@media (min-width: 640px) { .kz-uvod { font-size: 18px; } }
+.kz-form { margin-top: 1.5rem; max-width: 640px; }
+.kz-label { display: block; font-size: 15px; font-weight: 600; margin-bottom: 0.4rem; }
+.kz-riadok { display: flex; flex-direction: column; gap: 0.75rem; }
+@media (min-width: 640px) { .kz-riadok { flex-direction: row; } }
+.kz-input { width: 100%; flex: 1 1 auto; min-width: 0; box-sizing: border-box; border: 1px solid #b9b3a3; border-radius: 0.375rem; padding: 0.875rem 1rem; font-size: 17px; font-family: 'IBM Plex Mono', monospace; background: #fff; color: var(--ink); letter-spacing: 0.04em; }
+.kz-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.kz-input[aria-invalid="true"] { border-color: #b42318; }
+.kz-btn-zistit { padding: 0.875rem 1.5rem; font-size: 16px; flex-shrink: 0; }
+.kz-btn-zistit:focus-visible, .kz-cta:focus-visible, .kz-btn-tmavy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.kz-btn-zistit[disabled] { opacity: .6; cursor: progress; }
+.kz-chyba { margin: 0.5rem 0 0; font-size: 15px; color: #b42318; min-height: 1px; }
+.kz-napoveda { margin: 0.5rem 0 0; font-size: 13px; color: var(--slate2); }
+.kz-vysledok { margin-top: 2rem; }
+.kz-stav { color: var(--slate2); font-size: 16px; line-height: 1.55; max-width: 640px; margin: 0; }
+.kz-stav-box { border: 1px solid var(--line); background: #fff; border-radius: 0.375rem; padding: 1.25rem; max-width: 640px; }
+.kz-stav-box.kz-varovanie { border-color: #f1c27d; background: #fffaf0; }
+.kz-nazov { font-family: 'Instrument Serif', Georgia, serif; font-size: 26px; font-weight: 700; line-height: 1.2; margin: 0; overflow-wrap: anywhere; }
+.kz-ico-riadok { margin: 0.25rem 0 0; font-size: 14px; color: var(--slate2); font-family: 'IBM Plex Mono', monospace; }
+.kz-karty { display: grid; grid-template-columns: 1fr; gap: 0.75rem; margin-top: 1.25rem; }
+@media (min-width: 480px) { .kz-karty { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 760px) { .kz-karty { grid-template-columns: repeat(4, 1fr); } }
+.kz-karta { border: 1px solid var(--line); border-radius: 0.375rem; padding: 1rem 1.1rem; background: #fff; min-width: 0; }
+.kz-cislo { font-family: 'Instrument Serif', Georgia, serif; font-size: 34px; font-weight: 700; line-height: 1.1; margin: 0; overflow-wrap: anywhere; }
+.kz-popis { margin: 0.35rem 0 0; font-size: 14px; line-height: 1.4; color: var(--slate2); }
+.kz-h2 { font-size: 16px; font-weight: 600; margin: 1.75rem 0 0.5rem; }
+.kz-zoznam { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: 0.375rem; background: #fff; }
+.kz-zoznam li { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.25rem 1rem; padding: 0.8rem 1rem; border-bottom: 1px solid var(--line); }
+.kz-zoznam li:last-child { border-bottom: 0; }
+.kz-z-obst { font-weight: 500; min-width: 0; overflow-wrap: anywhere; flex: 1 1 14rem; }
+.kz-z-meta { color: var(--slate2); font-size: 14px; flex: 0 1 auto; }
+.kz-dalsie { margin: 0.6rem 0 0; font-size: 15px; color: var(--slate2); }
+.kz-cta-box { margin-top: 1.5rem; background: var(--ink); color: #fff; border-radius: 0.5rem; padding: 1.5rem 1.25rem; }
+@media (min-width: 640px) { .kz-cta-box { padding: 1.75rem; } }
+.kz-cta-box p { margin: 0; }
+.kz-cta { display: flex; justify-content: center; align-items: center; text-align: center; margin-top: 1rem; background: var(--amber); color: var(--ink); font-weight: 600; font-size: 16px; line-height: 1.35; padding: 0.9rem 1.25rem; border-radius: 0.375rem; text-decoration: none; transition: background .15s; }
+@media (min-width: 640px) { .kz-cta { display: inline-flex; text-align: left; } }
+.kz-cta:hover { background: #F3B65C; }
+.kz-cta-pod { margin-top: 0.75rem !important; font-size: 14px; color: #d9d4c7; }
+.kz-poznamka { margin: 1.25rem 0 0; max-width: 640px; font-size: 13px; line-height: 1.6; color: var(--slate2); }
+.kz-poznamka a, .kz-stav a, .kz-pata a { color: var(--accent); }
+.kz-pata { padding: 1.5rem 0 2.5rem; border-top: 1px solid var(--line); margin-top: 1.5rem; }
+.kz-pata p { margin: 0 0 0.6rem; font-size: 13px; line-height: 1.6; color: var(--slate2); max-width: 720px; }
+</style>
+</head>
+<body class="font-sans antialiased">
+
+<header class="kz-hdr">
+  <div class="kz-wrap kz-hdr-row">
+    <a href="/" class="kz-logo" aria-label="PredTendrom.sk, úvodná stránka">
+      <svg width="19" height="19" viewBox="0 0 40 40" fill="none" style="color:var(--accent);flex-shrink:0" aria-hidden="true">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+      <span>predtendrom</span>
+    </a>
+    <div class="kz-hdr-akcie">
+      <a href="/prihlasenie" class="kz-hdr-link">Prihlásiť sa</a>
+      <a href="/prihlasenie?dalej=app.html" class="kz-btn-tmavy" aria-label="Vyskúšať zadarmo"><span aria-hidden="true" class="kz-len-mobil">Skúsiť zadarmo</span><span aria-hidden="true" class="kz-len-desktop">Vyskúšať zadarmo</span></a>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="kz-wrap kz-sekcia">
+  <h1 class="kz-h1">Kedy vám končia zmluvy so štátom?</h1>
+  <p class="kz-uvod">
+    Zadajte svoje IČO a hneď uvidíte, koľko vašich zmlúv zverejnených
+    v Centrálnom registri zmlúv sa v najbližších 24 mesiacoch končí.
+  </p>
+
+  <form id="kz-form" class="kz-form" novalidate autocomplete="off">
+    <label for="kz-ico" class="kz-label">Vaše IČO</label>
+    <div class="kz-riadok">
+      <input id="kz-ico" name="ico" type="text" inputmode="numeric" maxlength="14"
+             autocomplete="off" autocapitalize="characters" spellcheck="false"
+             placeholder="8 číslic" aria-describedby="kz-napoveda kz-chyba">
+      <button id="kz-btn" type="submit" class="kz-btn-tmavy kz-btn-zistit">Zistiť</button>
+    </div>
+    <p id="kz-napoveda" class="kz-napoveda">IČO môžete zadať aj s medzerami alebo s predponou SK.</p>
+    <p id="kz-chyba" class="kz-chyba" role="alert"></p>
+  </form>
+
+  <div id="kz-vysledok" class="kz-vysledok" aria-live="polite" aria-atomic="false"></div>
+  <noscript><p class="kz-stav">Nástroj vyžaduje zapnutý JavaScript.</p></noscript>
+</section>
+</main>
+
+<footer class="kz-wrap kz-pata">
+  <p>
+    Zdroj údajov: <strong style="color:var(--ink)">Centrálny register zmlúv</strong>.
+    Údaje majú informatívny charakter a nie sú právne záväzné &mdash; pred
+    rozhodnutím si ich overte v pôvodnom zdroji.
+    <a href="/zdroje">Podrobnosti o zdrojoch</a>.
+  </p>
+  <p>
+    Zadané IČO sa zapisuje len na ochranu služby pred hromadným zneužívaním.
+  </p>
+  <p>
+    Nie sme štátny orgán ani s ním prepojení.
+    <a href="/cennik">Cenník</a> &middot; <a href="/">PredTendrom.sk pre dodávateľov</a>
+  </p>
+</footer>
+
+<script>
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG ?? {};
+
+// Escapovanie každej hodnoty z URL / DB / vstupu pred vložením do innerHTML.
+const bezpecne = (t) => String(t ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+function el(id) { return document.getElementById(id); }
+
+// Slovenská trojtvarová množnosť: 1 kus / 2-4 kusy / 0 a 5+ kusov.
+function tvar(n, jeden, dvaAzStyri, pat) {
+  const a = Math.abs(n);
+  if (a === 1) return jeden;
+  if (a >= 2 && a <= 4) return dvaAzStyri;
+  return pat;
+}
+
+// Číslo z RPC: vždy konečné číslo (inak 0), nikdy surový text.
+function cislo(x) {
+  const n = Number(x);
+  return Number.isFinite(n) ? n : 0;
+}
+
+// Tisíce oddelené nezlomiteľnou medzerou: 389 550 €
+function eur(n) {
+  const cele = String(Math.round(Math.abs(n)));
+  return (n < 0 ? '-' : '') + cele.replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €';
+}
+
+const MESIACE = ['január', 'február', 'marec', 'apríl', 'máj', 'jún',
+                 'júl', 'august', 'september', 'október', 'november', 'december'];
+
+// "2027-09-01" -> "september 2027" (bez časových pásiem, len z textu).
+function mesiacSk(d) {
+  const m = /^(\d{4})-(\d{2})/.exec(String(d ?? ''));
+  if (!m) return '—';
+  const i = Number(m[2]) - 1;
+  return i >= 0 && i < 12 ? `${MESIACE[i]} ${m[1]}` : '—';
+}
+
+// "2026-10-25" -> "25. 10. 2026"
+function datumSk(d) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(d ?? ''));
+  return m ? `${Number(m[3])}. ${Number(m[2])}. ${m[1]}` : '—';
+}
+
+// ── Kontrola IČO (rovnaký algoritmus ako public._ico_platne v SQL) ──────
+// Súčet cifier 1–7 vynásobených 8..2, zvyšok po delení 11,
+// kontrolná číslica = (11 − zvyšok) % 10.
+function icoPlatne(ico) {
+  if (!/^\d{8}$/.test(ico)) return false;
+  let s = 0;
+  for (let i = 0; i < 7; i++) s += Number(ico[i]) * (8 - i);
+  return ((11 - (s % 11)) % 10) === Number(ico[7]);
+}
+
+// Medzery preč, predpona SK preč. Vráti { ico } alebo { chyba }.
+function skontrolujIco(vstup) {
+  let v = String(vstup ?? '').replace(/\s+/g, '').toUpperCase();
+  if (v.startsWith('SK')) v = v.slice(2);
+  if (v === '') return { chyba: 'Zadajte IČO.' };
+  if (!/^\d{8}$/.test(v)) {
+    return { chyba: 'IČO má presne 8 číslic. Skontrolujte ho prosím, môžete ho zadať aj s medzerami alebo s predponou SK.' };
+  }
+  if (!icoPlatne(v)) {
+    return { chyba: 'Toto IČO nie je platné, nesedí jeho kontrolná číslica. Skontrolujte ho prosím.' };
+  }
+  return { ico: v };
+}
+
+// ── Volanie RPC ─────────────────────────────────────────────────────────
+class ChybaRpc extends Error {
+  constructor(druh) { super(druh); this.druh = druh; }
+}
+
+async function volajRpc(fn, telo) {
+  let r;
+  try {
+    r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify(telo || {}),
+    });
+  } catch (e) {
+    throw new ChybaRpc('siet');
+  }
+  if (!r.ok) {
+    let kod = '';
+    try { kod = String((await r.json())?.code ?? ''); } catch (e) { /* telo nie je JSON */ }
+    if (kod === '54000' || r.status === 429) throw new ChybaRpc('limit');
+    throw new ChybaRpc('server');
+  }
+  try { return await r.json(); } catch (e) { throw new ChybaRpc('server'); }
+}
+
+// Surové chyby databázy sa používateľovi nikdy neukazujú.
+const HLASKY = {
+  siet: 'Nepodarilo sa spojiť so serverom. Skontrolujte pripojenie na internet a skúste to prosím znova.',
+  limit: 'Prišlo príliš veľa požiadaviek. Počkajte prosím chvíľu a skúste to znova, najneskôr o hodinu.',
+  server: 'Údaje sa teraz nepodarilo načítať. Skúste to prosím znova o chvíľu.',
+};
+
+// ── Vykresľovanie ───────────────────────────────────────────────────────
+const CTA_HREF = '/prihlasenie?dalej=app.html';
+
+function stav(html, trieda) {
+  el('kz-vysledok').innerHTML = `<div class="kz-stav-box ${trieda || ''}"><p class="kz-stav">${html}</p></div>`;
+}
+
+function karta(hodnota, popis) {
+  return `<div class="kz-karta"><p class="kz-cislo">${bezpecne(hodnota)}</p><p class="kz-popis">${bezpecne(popis)}</p></div>`;
+}
+
+function skoncene(n) {
+  if (n <= 0) return '';
+  return `<p class="kz-dalsie">V posledných 6 mesiacoch navyše ${tvar(n, 'skončila', 'skončili', 'skončilo')} ${n} ${tvar(n, 'zmluva', 'zmluvy', 'zmlúv')}.</p>`;
+}
+
+function vykresli(d) {
+  const ico = String(d.ico ?? '');
+  const aktivne = cislo(d.pocet_aktivnych);
+  const do6 = cislo(d.pocet_do_6_mesiacov);
+  const do12 = cislo(d.pocet_do_12_mesiacov);
+  const do24 = cislo(d.pocet_do_24_mesiacov);
+  const skonc = cislo(d.pocet_skoncenych_6_mesiacov);
+  const dalsich = Math.max(0, cislo(d.pocet_dalsich));
+  const zoznam = Array.isArray(d.zoznam) ? d.zoznam.slice(0, 3) : [];
+  const nazov = typeof d.nazov === 'string' && d.nazov.trim() ? d.nazov.trim() : '';
+
+  if (do24 === 0) {
+    const navyse = aktivne > 0
+      ? ` Evidujeme ${aktivne} ${tvar(aktivne, 'aktívnu zmluvu', 'aktívne zmluvy', 'aktívnych zmlúv')} s koncom neskôr ako o 24 mesiacov.`
+      : '';
+    el('kz-vysledok').innerHTML = `
+      ${nazov ? `<h2 class="kz-nazov">${bezpecne(nazov)}</h2><p class="kz-ico-riadok">IČO ${bezpecne(ico)}</p>` : ''}
+      <div class="kz-stav-box kz-varovanie" style="margin-top:1rem">
+        <p class="kz-stav">V registri zmlúv sme pre toto IČO nenašli žiadnu zmluvu, ktorá by končila v najbližších 24 mesiacoch. Register pokrýva len zmluvy zverejnené v Centrálnom registri zmlúv.${bezpecne(navyse)}</p>
+      </div>
+      ${skoncene(skonc)}
+      <p class="kz-poznamka">Celý portál si môžete vyskúšať 14 dní zadarmo, bez platobnej karty: <a href="${CTA_HREF}">Vyskúšať 14 dní zadarmo</a>.</p>`;
+    return;
+  }
+
+  const objem = d.objem_do_12_mesiacov;
+  const maObjem = objem !== null && objem !== undefined && Number.isFinite(Number(objem)) && Number(objem) > 0;
+  const karty = [
+    karta(do6, `${tvar(do6, 'zmluva končí', 'zmluvy končia', 'zmlúv končí')} do 6 mesiacov`),
+    karta(do12, `${tvar(do12, 'zmluva končí', 'zmluvy končia', 'zmlúv končí')} do 12 mesiacov`),
+    karta(do24, `${tvar(do24, 'zmluva končí', 'zmluvy končia', 'zmlúv končí')} do 24 mesiacov`),
+    karta(maObjem ? eur(Number(objem)) : '—',
+          maObjem ? 'súčet uvedených hodnôt zmlúv, ktoré končia do 12 mesiacov'
+                  : 'hodnota zmlúv končiacich do 12 mesiacov nie je v registri uvedená'),
+  ].join('');
+
+  const riadky = zoznam.map((z) => {
+    const h = Number(z && z.hodnota);
+    const hodnota = z && z.hodnota !== null && z.hodnota !== undefined && Number.isFinite(h) && h > 0
+      ? eur(h) : 'hodnota neuvedená';
+    return `<li><span class="kz-z-obst">${bezpecne(z && z.obstaravatel ? z.obstaravatel : 'Obstarávateľ neuvedený')}</span>
+      <span class="kz-z-meta">končí ${bezpecne(mesiacSk(z && z.mesiac_konca))} &middot; ${bezpecne(hodnota)}</span></li>`;
+  }).join('');
+
+  const dalsie = dalsich > 0
+    ? `<p class="kz-dalsie">a ešte ${dalsich} ${tvar(dalsich, 'ďalšia zmluva', 'ďalšie zmluvy', 'ďalších zmlúv')}, ktoré končia do 24 mesiacov</p>`
+    : '';
+
+  const najblizsi = d.najblizsi_koniec
+    ? `<p class="kz-dalsie">Najbližšia z vašich zmlúv končí ${bezpecne(datumSk(d.najblizsi_koniec))}.</p>` : '';
+
+  el('kz-vysledok').innerHTML = `
+    <h2 class="kz-nazov">${bezpecne(nazov || 'IČO ' + ico)}</h2>
+    ${nazov ? `<p class="kz-ico-riadok">IČO ${bezpecne(ico)}</p>` : ''}
+    <div class="kz-karty">${karty}</div>
+    ${najblizsi}
+    <h3 class="kz-h2">Najbližšie končiace zmluvy</h3>
+    <ul class="kz-zoznam">${riadky}</ul>
+    ${dalsie}
+    ${skoncene(skonc)}
+    <div class="kz-cta-box">
+      <p style="font-weight:600;font-size:18px;line-height:1.4">Predmety zmlúv, mená všetkých obstarávateľov a konkurentov uvidíte po registrácii.</p>
+      <a class="kz-cta" href="${CTA_HREF}">Zobraziť všetky zmluvy, predmety a konkurentov, ktorí o ne budú súťažiť</a>
+      <p class="kz-cta-pod">Každý nový účet má prvých 14 dní zadarmo, bez platobnej karty.</p>
+    </div>
+    <p class="kz-poznamka">
+      Zdroj: Centrálny register zmlúv. Započítané sú zmluvy, pri ktorých je v registri
+      uvedený koniec platnosti; zmluvy bez uvedeného konca sa nezapočítavajú. Údaje majú
+      informatívny charakter a nie sú právne záväzné.
+    </p>`;
+}
+
+// ── Ovládanie formulára ─────────────────────────────────────────────────
+let cislovanie = 0;
+
+function ukazChybuVstupu(text) {
+  el('kz-chyba').textContent = text || '';
+  const vstup = el('kz-ico');
+  if (text) vstup.setAttribute('aria-invalid', 'true'); else vstup.removeAttribute('aria-invalid');
+}
+
+async function zisti() {
+  const kontrola = skontrolujIco(el('kz-ico').value);
+  if (kontrola.chyba) {
+    cislovanie++;
+    ukazChybuVstupu(kontrola.chyba);
+    el('kz-vysledok').innerHTML = '';
+    return;
+  }
+  ukazChybuVstupu('');
+  const moje = ++cislovanie;
+  el('kz-btn').disabled = true;
+  el('kz-vysledok').setAttribute('aria-busy', 'true');
+  stav('Načítavam&hellip;');
+  try {
+    const d = await volajRpc('kontrola_zmluv_ico', { p_ico: kontrola.ico });
+    if (moje !== cislovanie) return;
+    if (d && d.ok === true) {
+      vykresli(d);
+      try {
+        const u = new URL(location.href);
+        u.searchParams.set('ico', kontrola.ico);
+        history.replaceState(null, '', u);
+      } catch (e) { /* adresa sa nezmení, výsledok to neovplyvní */ }
+    } else if (d && d.kod === 'ICO_NEPLATNE') {
+      el('kz-vysledok').innerHTML = '';
+      ukazChybuVstupu('Toto IČO nie je platné. Skontrolujte ho prosím.');
+    } else {
+      stav(bezpecne(HLASKY.server), 'kz-varovanie');
+    }
+  } catch (e) {
+    if (moje !== cislovanie) return;
+    stav(bezpecne(HLASKY[e && e.druh] || HLASKY.server), 'kz-varovanie');
+  } finally {
+    if (moje === cislovanie) {
+      el('kz-btn').disabled = false;
+      el('kz-vysledok').removeAttribute('aria-busy');
+    }
+  }
+}
+
+el('kz-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  zisti();
+});
+
+// Priamy odkaz ?ico=12345678 predvyplní pole a rovno spustí kontrolu.
+(function () {
+  const z = new URLSearchParams(location.search).get('ico');
+  if (!z) return;
+  el('kz-ico').value = z.slice(0, 14);
+  zisti();
+})();
+</script>
+
+</body>
+</html>

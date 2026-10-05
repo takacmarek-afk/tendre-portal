@@ -364,7 +364,7 @@ def vygeneruj(riadky_kraj, riadky_sprostredkovatelia, vystup_dir=VYSTUP_DIR):
 # vyzaduje prihlasenie, preto v sitemap nie je.
 STATICKE_STRANKY = [
     "/", "/cennik", "/obce", "/zdroje",
-    "/starosta", "/prvych-100-dni", "/servis",
+    "/starosta", "/prvych-100-dni", "/servis", "/kontrola", "/mapa",
 ]
 
 
