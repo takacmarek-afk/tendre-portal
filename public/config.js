@@ -16,4 +16,11 @@ window.CONFIG = {
   SUPABASE_URL: "https://kcpgqchdyhbvssybbaaz.supabase.co",
 
   SUPABASE_ANON_KEY: "sb_publishable_q3oov5jf4ij70hP4f_4JWg_lrwVl7zl",
+
+  // Cloudflare Turnstile (ochrana prihlasovacieho formulara pred robotmi).
+  // Verejny "site key" (nie secret!). Kym je prazdny, stranka overenie
+  // nezobrazuje a prihlasenie funguje ako doteraz. Vyplnit az ked je v Supabase
+  // (Authentication -> Attack Protection) zapnuty Turnstile, inak prihlasenie
+  // zlyha na chybajucom tokene.
+  TURNSTILE_SITE_KEY: "",
 };

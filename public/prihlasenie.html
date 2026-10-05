@@ -164,6 +164,10 @@
                         focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
         </div>
 
+        <!-- Cloudflare Turnstile: vykresli sa len ked je v config.js vyplneny
+             TURNSTILE_SITE_KEY (viz skript nizsie). -->
+        <div id="ts-box" class="flex justify-center"></div>
+
         <button type="submit" id="odoslat"
                 class="w-full bg-accent text-white font-semibold py-3 rounded-md
                        hover:bg-accentDark transition disabled:opacity-50">
@@ -331,6 +335,9 @@ function hlaskaOdoslania(error) {
   const text = String((error && (error.message || '')) || '');
   const kod = String((error && error.code) || '');
   const stav = error && error.status;
+  if (/captcha/i.test(text + ' ' + kod)) {
+    return 'Overenie, že nie ste robot, sa nepodarilo. Skúste to prosím znova.';
+  }
   if (stav === 429 || /rate.?limit|too many|after \d+ seconds?|security purposes/i.test(text)
       || /rate_limit/i.test(kod)) {
     return 'Odkaz sme vám už posielali. Počkajte minútu a skúste to znova.';
@@ -431,6 +438,32 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
     // princip ako pri pozvanke vyssie.
   }
 
+  // ---- Cloudflare Turnstile (volitelne; zapina sa vyplnenim site key) ----
+  const TS_KLUC = (window.CONFIG && window.CONFIG.TURNSTILE_SITE_KEY) || '';
+  let tsToken = '';
+  let tsWidget = null;
+  if (TS_KLUC) {
+    const sk = document.createElement('script');
+    sk.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    sk.async = true;
+    sk.onload = () => {
+      try {
+        tsWidget = window.turnstile.render('#ts-box', {
+          sitekey: TS_KLUC,
+          language: 'sk',
+          callback: (t) => { tsToken = t; },
+          'expired-callback': () => { tsToken = ''; },
+          'error-callback': () => { tsToken = ''; },
+        });
+      } catch (e) { /* bez widgetu sa odoslanie ukaze chybou nizsie */ }
+    };
+    document.head.appendChild(sk);
+  }
+  function tsObnov() {
+    tsToken = '';
+    try { if (window.turnstile && tsWidget !== null) window.turnstile.reset(tsWidget); } catch (e) {}
+  }
+
   // Zalozne prihlasenie cislenym kodom (rovnaky e-mail ako odkaz).
   let cielHref = CIELOVA_STRANKA;
   let emailPreKod = '';
@@ -497,6 +530,11 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
       return;
     }
 
+    if (TS_KLUC && !tsToken) {
+      ukazChybu('Dokončite, prosím, krátke overenie, že nie ste robot, a skúste to znova.');
+      return;
+    }
+
     tlacidlo.disabled = true;
     tlacidlo.textContent = 'Odosielam...';
 
@@ -510,7 +548,8 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
     try {
       ({ error } = await supabase.auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: cielovaAdresa.href }
+        options: { emailRedirectTo: cielovaAdresa.href,
+                   ...(TS_KLUC ? { captchaToken: tsToken } : {}) }
       }));
     } catch (e) {
       error = e || { message: 'network' };
@@ -518,6 +557,7 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
 
     if (error) {
       ukazChybu(hlaskaOdoslania(error));
+      tsObnov();
       tlacidlo.disabled = false;
       tlacidlo.textContent = 'Poslať odkaz na prihlásenie';
       return;
