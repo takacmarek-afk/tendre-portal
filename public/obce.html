@@ -710,6 +710,23 @@ async function nacitajSprostredkovatelov() {
 // v zozname) — nesmie prezradit, ci adresa v zozname je.
 const HLASKA_POTVRDENIE = 'Poslali sme vám potvrdzovací e-mail. Kliknite v ňom na odkaz '
   + '— až potom vám začneme posielať prehľady. Ak ho nevidíte, pozrite si aj priečinok Spam.';
+// Hned po zapise popros server o potvrdzovaci e-mail (Supabase Edge Function
+// potvrd-odber-email). Nie je to nutne: ak zlyha, e-mail dopiska zalozny
+// planovany workflow. Odpoved sa zamerne nepouziva (neprezradzat, ci adresa
+// uz v zozname bola) a chyba nesmie rusit stranku.
+function posliPotvrdenieHned(email) {
+  try {
+    fetch(`${SUPABASE_URL}/functions/v1/potvrd-odber-email`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_ANON_KEY,
+                 Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+                 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch (e) { /* zalozna cesta to dorobi */ }
+}
+
 el('odber').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = el('o-btn');
@@ -758,6 +775,7 @@ el('odber').addEventListener('submit', async (e) => {
     });
 
     if (r.ok) {
+      posliPotvrdenieHned(email);
       el('odber').classList.add('hidden');
       povedz(HLASKA_POTVRDENIE, false);
     } else if (r.status === 409) {
