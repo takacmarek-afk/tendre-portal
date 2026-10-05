@@ -301,3 +301,13 @@ def test_nacitaj_data_ico_s_nulami_aj_bez():
 def test_obec_s_uctom_aj_ked_ico_bez_nul():
     kontakty = [{"ico": "00324698", "stav": "ok"}]
     assert k.vyber_prijemcov(kontakty, [], {"324698"}, "vlna1", date(2026, 11, 26)) == []
+
+
+def test_text_neslubuje_ze_sa_poradcovia_ozvu():
+    """Audit 5. 10. 2026 (C): zaruky, ktore nevieme dodrzat — 'ozvu sa vam' -> 'mozu sa vam ozvat'."""
+    data = [{"poradca": {"sprostredkovatel": "Grant s.r.o.", "najate": None}},
+            {"uvo": {"predmet": "Upratovanie.", "dodavatel": "X s.r.o.", "hodnota": 1000, "koniec": None}}]
+    for d in data:
+        s = k.zostav("vlna1", KONTAKT, None, d)
+        text, _ = k.vyrenderuj(s, KONTAKT["token"])
+        assert "ozvú sa" not in text and "môžu sa vám ozvať" in text, text

@@ -66,4 +66,15 @@ with tempfile.TemporaryDirectory() as tmp:
     assert "https://predtendrom.sk/</loc>" in xml and "https://predtendrom.sk/obce/kraj-kosicky</loc>" in xml
 print("OK: sitemap bez .html, bez trh")
 
+# 5. Rozsirenie sektorov (5.10.2026): slugy, nadpisy, velke pismeno v title
+assert {v["slug"] for v in zmluvy.SEKTORY_SEO.values()} == {
+    "upratovanie", "stravovanie", "ostraha", "stavebne-prace", "it-technika"}
+for kluc, titul, slug in (("IT_TECHNIKA", "Končiace zmluvy — IT služby a výpočtová technika v trenčianskom kraji | PredTendrom.sk", "it-technika"),
+                          ("STAVEBNE_PRACE", "Končiace zmluvy — Stavebné práce v trenčianskom kraji | PredTendrom.sk", "stavebne-prace")):
+    h = zmluvy._vygeneruj_stranku(kluc, agregat(7, 50000.0, teaser))
+    assert f"<title>{titul}</title>" in h, (kluc, re.search(r"<title>.*?</title>", h).group(0))
+    assert f'href="https://predtendrom.sk/konciace-zmluvy/{slug}/trenciansky"' in h
+    assert "It služby" not in h
+print("OK: nove sektory (title, canonical)")
+
 print("\nVSETKY TESTY PRESLI\n")

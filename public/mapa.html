@@ -95,13 +95,15 @@
     Koľko zmlúv z Centrálneho registra zmlúv sa v ktorom kraji blíži ku koncu. Vyberte sektor a metriku, farba dlaždice ukazuje, kde je zmlúv alebo peňazí najviac.
   </p>
   <p class="mt-2 text-[14px] leading-relaxed text-slate2 max-w-[680px]">
-    Údaje pokrývajú len tri sektory: upratovanie, stravovanie a ostrahu.
+    Údaje pokrývajú päť sektorov: upratovanie, stravovanie, ostrahu, stavebné práce a IT služby s technikou.
   </p>
   <p class="mt-2 text-[14px] text-slate2">
     Podľa sektora:
     <a href="/konciace-zmluvy/upratovanie/" class="text-accent hover:underline">Upratovanie</a> ·
     <a href="/konciace-zmluvy/stravovanie/" class="text-accent hover:underline">Stravovanie</a> ·
-    <a href="/konciace-zmluvy/ostraha/" class="text-accent hover:underline">Ostraha</a>
+    <a href="/konciace-zmluvy/ostraha/" class="text-accent hover:underline">Ostraha</a> ·
+    <a href="/konciace-zmluvy/stavebne-prace/" class="text-accent hover:underline">Stavebné práce</a> ·
+    <a href="/konciace-zmluvy/it-technika/" class="text-accent hover:underline">IT služby a technika</a>
   </p>
 </section>
 
@@ -187,7 +189,7 @@
   <p id="zdroj" class="mt-8 text-[13px] leading-relaxed text-slate2 max-w-[760px]">
     Zdroj: Centrálny register zmlúv; počet tvoria zmluvy, ktorých účinnosť končí 30 až 365 dní od spracovania údajov (bez dodatkov, prevodov peňazí a regulovaných monopolov, s cenou aspoň 5&nbsp;000&nbsp;€ alebo bez uvedenej ceny), kraj sa určuje podľa adresy obstarávateľa a objem je súčet uvedených cien.
     <span id="aktualizacia"></span>
-    Údaje pokrývajú len 3 sektory (upratovanie, stravovanie, ostraha).
+    Údaje pokrývajú päť sektorov (upratovanie, stravovanie, ostraha, stavebné práce, IT služby a technika).
     <a href="/zdroje" class="text-accent hover:underline">Ako to počítame</a>
   </p>
 </section>
@@ -241,13 +243,17 @@ var KRAJE = [
 var SEKTORY = [
   { kluc: 'UPRATOVANIE', slug: 'upratovanie', nazov: 'Upratovanie' },
   { kluc: 'STRAVOVANIE', slug: 'stravovanie', nazov: 'Stravovanie' },
-  { kluc: 'OSTRAHA', slug: 'ostraha', nazov: 'Ostraha' }
+  { kluc: 'OSTRAHA', slug: 'ostraha', nazov: 'Ostraha' },
+  { kluc: 'STAVEBNE_PRACE', slug: 'stavebne-prace', nazov: 'Stavebné práce' },
+  { kluc: 'IT_TECHNIKA', slug: 'it-technika', nazov: 'IT služby a technika' }
 ];
 // Existujuce SEO podstranky (public/konciace-zmluvy/<sektor>/<kraj>.html). Odkaz sa dava len na ne.
 var PODSTRANKY = {
   upratovanie: ['bratislavsky', 'trnavsky', 'trenciansky', 'nitriansky', 'zilinsky', 'banskobystricky', 'presovsky', 'kosicky'],
   stravovanie: ['bratislavsky', 'trnavsky', 'trenciansky', 'nitriansky', 'zilinsky', 'banskobystricky', 'presovsky', 'kosicky'],
-  ostraha: ['bratislavsky', 'trnavsky', 'trenciansky', 'nitriansky', 'zilinsky', 'banskobystricky', 'presovsky', 'kosicky']
+  ostraha: ['bratislavsky', 'trnavsky', 'trenciansky', 'nitriansky', 'zilinsky', 'banskobystricky', 'presovsky', 'kosicky'],
+  'stavebne-prace': ['bratislavsky', 'trnavsky', 'trenciansky', 'nitriansky', 'zilinsky', 'banskobystricky', 'presovsky', 'kosicky'],
+  'it-technika': ['bratislavsky', 'trnavsky', 'trenciansky', 'nitriansky', 'zilinsky', 'banskobystricky', 'presovsky', 'kosicky']
 };
 function adresaPodstranky(sektor, kraj) {
   if (!PODSTRANKY[sektor.slug] || PODSTRANKY[sektor.slug].indexOf(kraj.slug) === -1) return null;
@@ -444,7 +450,7 @@ function zoradene(vsetky) {
 }
 
 function nazovSektora() {
-  if (sektor === 'ALL') return sektoryVData().length === SEKTORY.length ? 'všetky tri sektory' : 'všetky sektory v dátach';
+  if (sektor === 'ALL') return sektoryVData().length === SEKTORY.length ? 'všetky sektory' : 'všetky sektory v dátach';
   var s = SEKTORY.filter(function (x) { return x.kluc === sektor; })[0];
   return s.nazov.toLowerCase();
 }
@@ -489,7 +495,7 @@ function vykresli() {
 function pripravSektory() {
   var sel = el('sektor');
   var dostupne = sektoryVData();
-  var moznosti = '<option value="ALL">' + (dostupne.length === SEKTORY.length ? 'Všetky tri sektory' : 'Všetky sektory v dátach') + '</option>';
+  var moznosti = '<option value="ALL">' + (dostupne.length === SEKTORY.length ? 'Všetky sektory' : 'Všetky sektory v dátach') + '</option>';
   dostupne.forEach(function (s) { moznosti += '<option value="' + bezpecne(s.kluc) + '">' + bezpecne(s.nazov) + '</option>'; });
   sel.innerHTML = moznosti;
   sel.value = 'ALL';

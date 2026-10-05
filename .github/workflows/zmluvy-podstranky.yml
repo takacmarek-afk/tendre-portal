@@ -9,7 +9,7 @@ name: Zmluvy podstranky
 #  CO TOTO ROBI
 #  pipeline/generuj_zmluvy_podstranky.py precita `opportunities` (cez
 #  service_role, ktory RLS obchadza), spocita agregat per sektor+kraj pre
-#  3 MVP sektory (upratovanie, stravovanie, ostraha), zapise ho do verejnej
+#  sektory z SEKTORY_SEO (upratovanie, stravovanie, ostraha, stavebne prace, IT), zapise ho do verejnej
 #  tabulky `zmluvy_seo_agregat` (supabase/44_zmluvy_seo_agregat.sql — musi
 #  byt v Supabase spustena PRED prvym behom tohto workflow) a vygeneruje
 #  staticke public/konciace-zmluvy/<sektor>/<kraj>.html (24 stranok),

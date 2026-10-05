@@ -23,7 +23,7 @@ HTML nezapisuju VOBEC, ani ako "zamazane" — zobrazi sa len pocet + CTA.
 Dovod: staticke HTML komittovane do repozitara je vzdy citatelne cez
 view-source/curl, takze CSS blur na realnych datach by paywall obisiel.
 
-MVP ROZSAH (zadanie, 23.9.2026): 3 najsilnejsie sektory x 8 krajov = 24
+ROZSAH: MVP (zadanie, 23.9.2026) 3 sektory x 8 krajov = 24 stranok, od 5.10.2026 5 sektorov x 8 krajov = 40
 stranok. Rozsirenie na cely register je dalsi krok, az po 2-3 tyzdnoch
 sledovania Impressions v Google Search Console.
 
@@ -55,6 +55,11 @@ SEKTORY_SEO = {
     "UPRATOVANIE": {"slug": "upratovanie", "nazov": "upratovanie", "nazov_nom": "upratovanie", "nazov_2": "upratovacie služby"},
     "STRAVOVANIE": {"slug": "stravovanie", "nazov": "stravovanie", "nazov_nom": "stravovanie", "nazov_2": "stravovanie a dodávku potravín"},
     "OSTRAHA":     {"slug": "ostraha",     "nazov": "ostrahu",     "nazov_nom": "ostraha",     "nazov_2": "ostrahu a bezpečnostné služby"},
+    # Rozsirenie 5.10.2026: dalsie dva sektory, ktore maju zmluvy vo vsetkych
+    # 8 krajoch a dost riadkov na obsahovu stranku (STAVEBNE_PRACE 142,
+    # IT_TECHNIKA 95; zelen 35 a elektroinstalacie 29 by boli tenke).
+    "STAVEBNE_PRACE": {"slug": "stavebne-prace", "nazov": "stavebné práce", "nazov_nom": "stavebné práce", "nazov_2": "stavebné práce"},
+    "IT_TECHNIKA":    {"slug": "it-technika",    "nazov": "IT služby a výpočtovú techniku", "nazov_nom": "IT služby a výpočtová technika", "nazov_2": "IT služby a výpočtovú techniku"},
 }
 
 MESIACE_SK = ["", "januári", "februári", "marci", "apríli", "máji", "júni",
@@ -206,6 +211,11 @@ def _popis_stranky(agregat_row, sektor_info, lokal):
     )
 
 
+def _velke_prve(t):
+    """Prve pismeno velke, zvysok bez zmeny ('IT služby' nesmie byt 'It služby' ako pri str.capitalize())."""
+    return t[:1].upper() + t[1:]
+
+
 def _vygeneruj_stranku(sector, agregat_row):
     kraj = agregat_row["kraj"]
     sektor_info = SEKTORY_SEO[sector]
@@ -250,7 +260,7 @@ def _vygeneruj_stranku(sector, agregat_row):
     # "v", ktora vyzaduje lokal ("v Bratislavský kraj" -> "v Bratislavskom
     # kraji"). "nazov_nom" rieši rovnaky problem pre sektor (OSTRAHA malo
     # v nazov ulozeny akuzativ "ostrahu", ktory v title cital ako "Ostrahu").
-    titul = f"Končiace zmluvy — {sektor_info['nazov_nom'].capitalize()} v {lokal} kraji | PredTendrom.sk"
+    titul = f"Končiace zmluvy — {_velke_prve(sektor_info['nazov_nom'])} v {lokal} kraji | PredTendrom.sk"
     popis = _popis_stranky(agregat_row, sektor_info, lokal)
 
     telo = f"""
@@ -317,7 +327,7 @@ def _vygeneruj_index_sektora(sector, agregaty):
 """
     return (
         HLAVICKA.format(
-            titul=f"Končiace zmluvy — {sektor_info['nazov_nom'].capitalize()} | PredTendrom.sk",
+            titul=f"Končiace zmluvy — {_velke_prve(sektor_info['nazov_nom'])} | PredTendrom.sk",
             popis=f"Prehľad končiacich zmlúv na {sektor_info['nazov']} za všetkých 8 krajov Slovenska.",
             # OPRAVA (audit 29.9.2026): prazdny kraj_slug davel rozbity canonical
             # ".../ostraha/.html" (chybajuci "index"). Rovnaky vzor ako subor sam:

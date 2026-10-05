@@ -372,8 +372,8 @@ def zostav(vlna, kontakt, starosta, data):
                     + f" zmluvu s firmou {d['sprostredkovatel']} na prípravu žiadosti o dotáciu."
                     " Keď dotácia príde, obec bude musieť vybrať dodávateľa — a na to je dobré"
                     " byť pripravený včas.",
-                    ["Na ", trh_link, " môžete vypísať, s čím budete potrebovať pomôcť, a ozvú sa"
-                     " vám poradcovia so skúsenosťami s obdobnými projektmi. Pre obce je to zadarmo."],
+                    ["Na ", trh_link, " môžete vypísať, s čím budete potrebovať pomôcť, a môžu sa"
+                     " vám ozvať poradcovia so skúsenosťami s obdobnými projektmi. Pre obce je to zadarmo."],
                     podpis]}
 
     if seg in ("uvo", "crz"):
@@ -399,7 +399,7 @@ def zostav(vlna, kontakt, starosta, data):
                     " 3 až 6 mesiacov.",
                     [f"Prehľad zmlúv a dotácií priamo pre {obec} je zadarmo a bez registrácie: ", obce_link],
                     ["Ak by ste na obstarávanie alebo žiadosť o dotáciu potrebovali pomoc, na ",
-                     trh_link, " môžete vypísať, s čím potrebujete pomôcť, a ozvú sa vám poradcovia."
+                     trh_link, " môžete vypísať, s čím potrebujete pomôcť, a môžu sa vám ozvať poradcovia."
                      " Aj to je pre obce zadarmo."],
                     podpis]}
 
