@@ -45,7 +45,8 @@ from datetime import datetime, timedelta, timezone
 
 from supabase import create_client
 
-from posli_email import ODOSIELATEL, PAUZA_S, _obal, _eur, posli  # noqa: F401
+from posli_email import (ODOSIELATEL, PAUZA_S, _obal, _eur, posli,  # noqa: F401
+                         _popis_programu, _sklon)
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)-7s %(name)-9s %(message)s",
@@ -106,26 +107,29 @@ def _obsah(obec, suhrn, programy) -> dict | None:
     if suhrn and (suhrn.get("pocet_konciacich") or 0) > 0:
         bloky.append({
             "titul": "Zmluvy vašej obce, ktoré sa blížia ku koncu",
-            "popis": (f"{suhrn['pocet_konciacich']} zmlúv sa končí "
-                      f"v najbližších 12 mesiacoch."),
+            "popis": (f"{suhrn['pocet_konciacich']} "
+                      + _sklon(suhrn['pocet_konciacich'], "zmluva sa končí",
+                               "zmluvy sa končia", "zmlúv sa končí")
+                      + " v najbližších 12 mesiacoch."),
             "zvyraznene": f"Spolu cca {_eur(suhrn.get('objem_konciacich'))}",
         })
 
     if suhrn and (suhrn.get("pocet_dotacii_bezi") or 0) > 0:
         bloky.append({
             "titul": "Dotácie vašej obce, ktoré ešte bežia",
-            "popis": (f"{suhrn['pocet_dotacii_bezi']} dotácií ešte beží, "
-                      f"alebo majú otvorené okno na čerpanie."),
+            "popis": (f"{suhrn['pocet_dotacii_bezi']} "
+                      + _sklon(suhrn['pocet_dotacii_bezi'],
+                               "dotácia, ktorá ešte beží alebo má otvorené okno na čerpanie.",
+                               "dotácie, ktoré ešte bežia alebo majú otvorené okno na čerpanie.",
+                               "dotácií, ktoré ešte bežia alebo majú otvorené okno na čerpanie.")),
             "zvyraznene": f"Spolu cca {_eur(suhrn.get('objem_dotacii_bezi'))}",
         })
 
     for p in programy:
         bloky.append({
             "titul": p.get("poskytovatel"),
-            "popis": (f"Za 90 dní podpísal {p.get('zmluv_90d') or 0} zmlúv "
-                      f"s {p.get('obci_90d') or 0} obcami"
-                      f" · naposledy {p.get('posledna_zmluva') or '—'}"),
-            "zvyraznene": (f"Rozdelil {_eur(p.get('objem_90d'))}, "
+            "popis": _popis_programu(p),
+            "zvyraznene": (f"Spolu {_eur(p.get('objem_90d'))}, "
                            f"typicky {_eur(p.get('median_dotacie'))} na obec"),
         })
 
@@ -133,7 +137,8 @@ def _obsah(obec, suhrn, programy) -> dict | None:
         return None
 
     return {
-        "titulok": f"Novinky pre {obec.get('nazov') or 'vašu obec'}",
+        "titulok": (f"Novinky pre obec {obec['nazov']}" if obec.get("nazov")
+                    else "Novinky pre vašu obec"),
         "uvod": ("Mesačný prehľad — čo sa deje okolo zmlúv a dotácií vašej "
                  "obce, a kto práve teraz rozdáva peniaze obciam všeobecne. "
                  "Presné súčty, žiadne jednotlivé zmluvy — tie nájdete "

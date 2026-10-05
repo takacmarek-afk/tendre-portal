@@ -65,6 +65,15 @@ assert obsah["bloky"][0]["titul"] == "Obec Jablonové", obsah
 assert obsah["_contract_ids"] == [1], obsah
 print("OK:", obsah["bloky"][0]["titul"], obsah["bloky"][0]["zvyraznene"])
 
+hlavicka("pre_odberatela: odhlasovaci odkaz len ked ma riadok token; datum po slovensky")
+tok = "11111111-1111-4111-8111-111111111111"
+o_tok = dict(o, token=tok)
+obsah_t = alerty.pre_odberatela(None, o_tok, podla_okresu, uz_poslane=set())
+assert obsah_t["odhlasovaci_odkaz"] == f"https://predtendrom.sk/odber-obce?t={tok}&akcia=odhlasit", obsah_t
+assert obsah["odhlasovaci_odkaz"] is None, obsah
+assert "podpísané 1. 9. 2026" in obsah_t["bloky"][0]["zvyraznene"], obsah_t["bloky"][0]
+print("OK")
+
 hlavicka("pre_odberatela: udalost o SEBE SAMOM sa NEZARADI (nie je 'sused')")
 podla_okresu_self = {"Okres Malacky": [{
     "contract_id": 2, "obec_norm": "malacky", "obec_nazov": "Obec Malacky",

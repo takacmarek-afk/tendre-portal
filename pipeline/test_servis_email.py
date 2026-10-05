@@ -7,7 +7,9 @@ nainstalovany balik `supabase` (beh v tomto pieskovisku bez sietoveho
 pristupu preto nie je mozny, ale v GitHub Actions/lokalne u Mareka ano).
 Spustenie: python test_servis_email.py  (alebo pytest pipeline/)
 """
-from posli_servis_email import _platny_email, _odkaz, _obsah
+from datetime import datetime, timedelta, timezone
+
+from posli_servis_email import _platny_email, _odkaz, _obsah, _ma_sa_poslat
 
 
 # ── _platny_email ────────────────────────────────────────────────────────
@@ -44,7 +46,30 @@ def test_obsah_ma_cta_na_predtendrom_a_obsahuje_obec():
 def test_obsah_bez_obce_ma_fallback_text():
     sd = {"id": 2, "obec": None, "kontakt_email": "x@y.sk", "token": "tok-2"}
     obsah = _obsah(sd)
-    assert "vašu obec" in obsah["uvod"]
+    assert "vašu obec" not in obsah["uvod"]
+    assert " za obec" not in obsah["uvod"]
+    assert obsah["uvod"].startswith("Dobrý deň, žiadosť o pomoc")
+
+
+def test_obsah_s_obcou_je_vo_vykani_a_tretej_osobe():
+    sd = {"id": 3, "obec": "Seňa", "kontakt_email": "x@y.sk", "token": "t"}
+    uvod = _obsah(sd)["uvod"]
+    assert "Dobrý deň, žiadosť o pomoc, ktorú ste nám poslali za obec Seňa," in uvod
+    assert "Dobrý deň, Seňa." not in uvod
+
+
+# ── _ma_sa_poslat (poistka: schvaleny + vek riadku) ─────────────────────────
+
+def test_ma_sa_poslat_len_schvaleny_a_cerstvy():
+    teraz = datetime.now(timezone.utc)
+    cerstvy = (teraz - timedelta(days=5)).isoformat()
+    stary = (teraz - timedelta(days=61)).isoformat()
+    assert _ma_sa_poslat({"schvaleny": True, "created_at": cerstvy}, teraz)
+    assert not _ma_sa_poslat({"schvaleny": False, "created_at": cerstvy}, teraz)
+    assert not _ma_sa_poslat({"schvaleny": None, "created_at": cerstvy}, teraz)
+    assert not _ma_sa_poslat({"schvaleny": True, "created_at": stary}, teraz)
+    assert not _ma_sa_poslat({"schvaleny": True, "created_at": None}, teraz)
+    assert not _ma_sa_poslat({"schvaleny": True}, teraz)
 
 
 if __name__ == "__main__":

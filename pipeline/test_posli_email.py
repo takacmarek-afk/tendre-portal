@@ -15,7 +15,7 @@ if "supabase" not in sys.modules:
         fake.create_client = lambda *a, **k: None
         sys.modules["supabase"] = fake
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 import posli_email as pe
 
 teraz = datetime.now(timezone.utc)
@@ -392,3 +392,104 @@ print(f"24) je_zadarmo=False -> Pro org = {sorted(vysledok)}")
 assert vysledok == {"org-aktivny-pro", "org-trial-plati"}
 
 print("VSETKY TESTY PRESLI (Growth gating: _nacitaj_pro_org)")
+
+
+# ── texty e-mailov (audit 5.10.2026, C4 + odhlasovaci odkaz) ────────────────
+
+# T1) Skloňovanie po cislovke.
+assert pe._sklon(1, "a", "b", "c") == "a"
+assert pe._sklon(2, "a", "b", "c") == "b"
+assert pe._sklon(4, "a", "b", "c") == "b"
+assert pe._sklon(5, "a", "b", "c") == "c"
+assert pe._sklon(0, "a", "b", "c") == "c"
+assert pe._sklon(22, "a", "b", "c") == "c"
+print("T1) skloňovanie OK")
+
+# T2) ISO datum -> '31. 3. 2027', prazdny -> '—'.
+assert pe._datum_sk("2027-03-31") == "31. 3. 2027"
+assert pe._datum_sk("2026-09-05T10:00:00+00:00") == "5. 9. 2026"
+assert pe._datum_sk(None) == "—"
+print("T2) datum OK")
+
+# T3) Kod sektora sa nikdy nezobrazi surovy.
+assert pe._sektor_text("UPRATOVANIE") == "upratovanie"
+assert pe._sektor_text("NIECO_NOVE") == "nieco nove"
+print("T3) sektor OK")
+
+# T4) Odkaz na potvrdenie/odhlasenie; bez tokenu None.
+t = "11111111-1111-4111-8111-111111111111"
+assert pe.odkaz_odberu_obce(t, "odhlasit") == f"https://predtendrom.sk/odber-obce?t={t}&akcia=odhlasit"
+assert pe.odkaz_odberu_obce(t, "potvrdit").endswith("&akcia=potvrdit")
+assert pe.odkaz_odberu_obce(None, "odhlasit") is None
+print("T4) odkazy OK")
+
+# T5) _obal: odhlasovaci odkaz v pateke; cudzia domena sa odmietne.
+odk = pe.odkaz_odberu_obce(t, "odhlasit")
+h = pe._obal("T", "U", [], "CTA", "https://predtendrom.sk/x", "Odhl.", odhlasovaci_odkaz=odk)
+assert "Odhlásiť odber:" in h and f"t={t}" in h
+assert "Odhlásiť odber:" not in pe._obal("T", "U", [], "CTA", "https://predtendrom.sk/x", "Odhl.")
+try:
+    pe._obal("T", "U", [], "CTA", "https://predtendrom.sk/x", "Odhl.",
+             odhlasovaci_odkaz="https://evil.example/x")
+    raise SystemExit("cudzi odkaz mal byt odmietnuty")
+except ValueError:
+    pass
+print("T5) obal OK")
+
+
+# T6) pre_obec: odkaz len ked ma riadok token; programy bez rodovo
+#     zafixovanych slovies ("podpísal", "Rozdelil").
+class _Q:
+    def __init__(self, d): self.d = d
+    def select(self, *a, **k): return self
+    def order(self, *a, **k): return self
+    def limit(self, *a, **k): return self
+    def execute(self):
+        class R: pass
+        r = R(); r.data = self.d; return r
+
+
+class _Sb:
+    def table(self, n):
+        return _Q([{"poskytovatel": "Ministerstvo X", "zmluv_90d": 3, "obci_90d": 2,
+                    "objem_90d": 100000, "median_dotacie": 50000,
+                    "posledna_zmluva": "2026-09-05"}])
+
+
+ob = pe.pre_obec(_Sb(), {"email": "a@b.sk", "token": t}, None)
+assert ob["odhlasovaci_odkaz"] == odk
+assert pe.pre_obec(_Sb(), {"email": "a@b.sk", "token": None}, None)["odhlasovaci_odkaz"] is None
+popis = ob["bloky"][0]["popis"]
+assert popis == "Za 90 dní: 3 podpísané zmluvy s 2 obcami · naposledy 5. 9. 2026", popis
+assert "podpísal" not in popis and "Rozdelil" not in ob["bloky"][0]["zvyraznene"]
+assert "„odhlásiť“" in ob["odhlasenie"]
+print("T6) pre_obec OK")
+
+
+# T7) pre_dodavatela: skloňovanie v predmete, nazov sektora, dátum, uvodzovky.
+class _QD(_Q):
+    def gte(self, *a, **k): return self
+    def eq(self, *a, **k): return self
+
+
+class _SbD:
+    def __init__(self, n): self.n = n
+    def table(self, nazov):
+        riadok = {"subject": "Upratovanie škôl", "authority_name": "Obec X", "mesto": "X",
+                  "kraj": "Košický kraj", "price_total": 1000, "effective_to": "2027-03-31",
+                  "odhad_vyhlasenia": "2026-12-01", "sector": "UPRATOVANIE",
+                  "dni_do_konca": 120}
+        return _QD([dict(riadok) for _ in range(self.n)])
+
+
+for n, ocak in [(1, "1 nová príležitosť"), (2, "2 nové príležitosti"),
+                (5, "5 nových príležitostí")]:
+    ob = pe.pre_dodavatela(_SbD(n), {"email": "a@b.sk", "sektor": "UPRATOVANIE",
+                                     "kraj": "Košický kraj"}, date(2026, 10, 5))
+    assert ob["titulok"] == ocak, ob["titulok"]
+assert "v sektore upratovanie" in ob["uvod"] and "UPRATOVANIE" not in ob["uvod"]
+assert "31. 3. 2027" in ob["bloky"][0]["zvyraznene"]
+assert 'samo“.' in ob["odhlasenie"] and '"' not in ob["odhlasenie"]
+ob2 = pe.pre_dodavatela(_SbD(1), {"email": "a@b.sk"}, date(2026, 10, 5))
+assert "vo vašich sektoroch" in ob2["uvod"] and "celé Slovensko" in ob2["uvod"]
+print("T7) pre_dodavatela OK")

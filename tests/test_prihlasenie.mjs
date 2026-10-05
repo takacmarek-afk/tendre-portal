@@ -1,4 +1,4 @@
-// Test prihlasovacej cesty. Spusti:  node public/test/test_prihlasenie.mjs
+// Test prihlasovacej cesty. Spusti:  node tests/test_prihlasenie.mjs
 //
 // PRECO TENTO TEST EXISTUJE: 16. 9. 2026 sa na portal nedalo prihlasit
 // ani mne, ani Markovi. E-maily odchadzali spravne — padalo az spracovanie

@@ -45,6 +45,7 @@ import re
 import sys
 import time
 from datetime import date, datetime, timedelta, timezone
+from urllib.parse import quote
 
 import requests
 from supabase import create_client
@@ -59,6 +60,7 @@ ODOSIELATEL = os.getenv("ODOSIELATEL",
                         "PredTendrom.sk <noreply@predtendrom.sk>")
 ODKAZ_APP = "https://predtendrom.sk/app.html"
 ODKAZ_OBCE = "https://predtendrom.sk/obce.html"
+ODKAZ_ODBER_OBCE = "https://predtendrom.sk/odber-obce"
 
 # Resend na free plane zvlada 2 e-maily za sekundu. Drzim sa pod tym.
 PAUZA_S = 0.6
@@ -80,6 +82,68 @@ KANDIDATOV_NA_VYBER = 60
 # skutocne bezi. 6, nie 7: rezerva pred tyzdennym cyklom, aby hodinovy posun
 # medzi behmi nikdy nevynechal riadny termin.
 MIN_DNI_TYZDENNE = 6
+
+
+# ── SPOLOCNE POMOCNE FUNKCIE PRE TEXTY ──────────────────────────────────────
+
+# Nazvy sektorov do e-mailu (rovnake ako POPIS_SEKTORA v public/app.html —
+# pri zmene tam zmenit aj tu). Surovy kod ako "UPRATOVANIE" sa nikdy nesmie
+# dostat k cloveku.
+SEKTOR_NAZOV = {
+    "STAVEBNE_PRACE": "stavebné práce", "STRECHY_IZOLACIE": "strechy, zateplenie",
+    "OKNA_DVERE_POVRCHY": "okná, dvere, povrchy",
+    "ELEKTROINSTALACIE": "elektroinštalácie",
+    "KURENIE_VODA_PLYN": "kúrenie, voda, plyn",
+    "ZELEN_ZIMNA_UDRZBA": "zeleň, zimná údržba",
+    "UPRATOVANIE": "upratovanie", "DOPRAVA_MECHANIZACIA": "doprava, mechanizácia",
+    "STRAVOVANIE": "stravovanie", "OSTRAHA": "ostraha", "IT_TECHNIKA": "IT technika",
+    "TLAC_KANCELARIA": "tlač, kancelária",
+    "PASPORTIZACIA_SPRAVA_BUDOV": "pasportizácia, správa budov",
+    "DOTACIE_NFP": "dotácie",
+}
+
+
+def _sektor_text(kod) -> str:
+    """Zrozumitelny nazov sektora. Neznamy kod sa nezobrazi surovy, ale ako
+    male pismena bez podciarkovnikov (radsej mierne neobratne nez 'UPRATOVANIE')."""
+    if not kod:
+        return ""
+    return SEKTOR_NAZOV.get(kod) or str(kod).replace("_", " ").lower()
+
+
+def _sklon(n, jedna, dve_az_styri, pat_a_viac) -> str:
+    """Slovenske skloňovanie po cislovke: 1 -> jedna, 2-4 -> dve_az_styri,
+    ostatne (0, 5 a viac) -> pat_a_viac."""
+    try:
+        n = int(n)
+    except (TypeError, ValueError):
+        return pat_a_viac
+    if n == 1:
+        return jedna
+    if 2 <= n <= 4:
+        return dve_az_styri
+    return pat_a_viac
+
+
+def _datum_sk(v) -> str:
+    """ISO datum (aj s casom) -> '31. 3. 2027'. Nerozpoznatelny vstup sa vrati
+    nezmeneny, prazdny ako '—'."""
+    if not v:
+        return "—"
+    try:
+        d = datetime.fromisoformat(str(v)[:10])
+    except ValueError:
+        return str(v)
+    return f"{d.day}. {d.month}. {d.year}"
+
+
+def odkaz_odberu_obce(token, akcia) -> "str | None":
+    """Odkaz na potvrdenie/odhlasenie odberu obce (stranka odber-obce vola
+    RPC potvrd_odber_obce / odhlas_odber_obce, migracia 63). None, ked riadok
+    nema token (stary riadok pred migraciou) — odkaz sa vtedy vynecha."""
+    if not token:
+        return None
+    return f"{ODKAZ_ODBER_OBCE}?t={quote(str(token), safe='')}&akcia={akcia}"
 
 
 # ── HTML ────────────────────────────────────────────────────────────────────
@@ -123,7 +187,8 @@ def _bezpecne_text(t):
             .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
 
 
-def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie):
+def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie,
+          odhlasovaci_odkaz=None):
     """Jednoduchy a spolahlivy e-mail. Ziadne stlpce, ziadne obrazky.
 
     Tabulkovy layout a inline styly su tu zamerne: Outlook a Gmail ignoruju
@@ -136,6 +201,10 @@ def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie):
     ale je to presne ten tvar chyby, ktora vybuchne az ked niekto neskor
     do titulku posle nazov zakazky z registra. Funkcia je preto bezpecna
     sama od seba a volajuci si nic pamatat nemusi.
+
+    `odhlasovaci_odkaz` (nepovinny): odkaz na odhlasenie odberu obce
+    (odkaz_odberu_obce(token, "odhlasit")). Ak je zadany, v pateke pribudne
+    riadok "Odhlásiť odber: <odkaz>". Musi viest na predtendrom.sk.
     """
     t = _bezpecne
     casti = []
@@ -154,6 +223,14 @@ def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie):
     # Ziadna hodnota z databazy sa sem nedostane.
     if not str(cta_url).startswith("https://predtendrom.sk"):
         raise ValueError(f"Odkaz v e-maile musi viest na predtendrom.sk, dostal som {cta_url!r}")
+
+    odhlasit_html = ""
+    if odhlasovaci_odkaz:
+        if not str(odhlasovaci_odkaz).startswith("https://predtendrom.sk"):
+            raise ValueError("Odhlasovaci odkaz musi viest na predtendrom.sk, "
+                             f"dostal som {odhlasovaci_odkaz!r}")
+        odk = _bezpecne(odhlasovaci_odkaz)
+        odhlasit_html = f'Odhlásiť odber: <a href="{odk}" style="color:#1a56c4;">{odk}</a><br>'
 
     return f"""<!doctype html>
 <html lang="sk"><body style="margin:0;padding:0;background:#f5f6f8;">
@@ -182,6 +259,7 @@ def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie):
         Údaje pochádzajú z Centrálneho registra zmlúv a zo služby Slovensko.Digital.
         Majú informatívny charakter, pred rozhodnutím si ich overte v zdroji.<br><br>
         {odhlasenie}<br>
+        {odhlasit_html}
         LoveHome s.r.o., Černyševského 40, 851 01 Bratislava, IČO 47 586 362
       </div>
     </td></tr>
@@ -302,25 +380,50 @@ def pre_dodavatela(sb, o, dnes):
                 (f"{_eur(z.get('price_total'))} · "
                  if _cislo_kladne(z.get("price_total"))
                  else "Rámcová dohoda, súťaží sa o jednotkové ceny · ")
-                + f"zmluva končí {z.get('effective_to') or '—'}"),
+                + f"zmluva končí {_datum_sk(z.get('effective_to'))}"),
         })
 
-    kde_text = o.get("kraj") or "celom Slovensku"
-    co_text = o.get("sektor") or "vašich sektoroch"
+    kde_text = o.get("kraj") or "celé Slovensko"
+    co_text = (f"v sektore {_sektor_text(o['sektor'])}" if o.get("sektor")
+               else "vo vašich sektoroch")
+    n = len(zmluvy)
     return {
-        "titulok": f"{len(zmluvy)} nových príležitostí",
-        "uvod": (f"Od posledného e-mailu pribudlo v {co_text} "
+        "titulok": (f"{n} " + _sklon(n, "nová príležitosť", "nové príležitosti",
+                                     "nových príležitostí")),
+        "uvod": (f"Od posledného e-mailu pribudlo {co_text} "
                  f"({kde_text}) toto. Pri každej zákazke zostáva "
                  f"aspoň 90 dní do konca zmluvy, takže je na čo sa pripraviť."),
         "bloky": bloky,
         "cta_text": "Otvoriť portál",
         "cta_url": ODKAZ_APP,
         "odhlasenie": ('Filtre a odhlásenie nájdete v portáli po prihlásení, '
-                       'v paneli „Nech vám to chodí samo".'),
+                       'v paneli „Nech vám to chodí samo“.'),
     }
 
 
 # ── OBCE ────────────────────────────────────────────────────────────────────
+
+def _odhlasenie_obce(o) -> str:
+    """Veta o odhlaseni. S odkazom (token z odber_obce) je odpoved e-mailom
+    len alternativa; bez tokenu ostava povodna veta."""
+    if o.get("token"):
+        return ('Odhlásiť sa môžete aj odpoveďou na tento e-mail '
+                'so slovom „odhlásiť“.')
+    return ('Odhlásiť sa môžete odpoveďou na tento e-mail '
+            'so slovom „odhlásiť“.')
+
+
+def _popis_programu(p) -> str:
+    """'Za 90 dní: 3 podpísané zmluvy s 2 obcami · naposledy 5. 9. 2026'.
+    Neutralna formulacia (poskytovatel moze byt ministerstvo, urad aj
+    agentura — bez slovesa v minulom case, ktore by sa rodovo nezhodovalo)."""
+    zmluv = p.get("zmluv_90d") or 0
+    obci = p.get("obci_90d") or 0
+    zmluvy = _sklon(zmluv, "podpísaná zmluva", "podpísané zmluvy", "podpísaných zmlúv")
+    obciam = "obcou" if obci == 1 else "obcami"
+    return (f"Za 90 dní: {zmluv} {zmluvy} s {obci} {obciam}"
+            f" · naposledy {_datum_sk(p.get('posledna_zmluva'))}")
+
 
 def pre_obec(sb, o, dnes):
     """Ktore programy prave teraz rozdavaju peniaze obciam."""
@@ -341,10 +444,8 @@ def pre_obec(sb, o, dnes):
     for p in programy:
         bloky.append({
             "titul": p.get("poskytovatel"),
-            "popis": (f"Za 90 dní podpísal {p.get('zmluv_90d') or 0} zmlúv "
-                      f"s {p.get('obci_90d') or 0} obcami"
-                      f" · naposledy {p.get('posledna_zmluva') or '—'}"),
-            "zvyraznene": (f"Rozdelil {_eur(p.get('objem_90d'))}, "
+            "popis": _popis_programu(p),
+            "zvyraznene": (f"Spolu {_eur(p.get('objem_90d'))}, "
                            f"typicky {_eur(p.get('median_dotacie'))} na obec"),
         })
 
@@ -357,8 +458,8 @@ def pre_obec(sb, o, dnes):
         "bloky": bloky,
         "cta_text": "Pozrieť podrobnosti a sprostredkovateľov",
         "cta_url": ODKAZ_OBCE,
-        "odhlasenie": ('Odhlásiť sa môžete odpoveďou na tento e-mail '
-                       'so slovom „odhlásiť".'),
+        "odhlasenie": _odhlasenie_obce(o),
+        "odhlasovaci_odkaz": odkaz_odberu_obce(o.get("token"), "odhlasit"),
     }
 
 
@@ -433,7 +534,8 @@ def pripraveny_na_dalsi(o: dict, ma_pro: bool = True) -> bool:
 
 # ── ODOSIELANIE ─────────────────────────────────────────────────────────────
 
-def posli(kluc, komu, predmet, html, nasucho):
+def posli(kluc, komu, predmet, html, nasucho, text=None):
+    """`text` (nepovinny): textova alternativa e-mailu (multipart)."""
     if nasucho:
         log.info("NASUCHO -> %s | %s | %s znakov HTML", komu, predmet, len(html))
         return True
@@ -441,8 +543,9 @@ def posli(kluc, komu, predmet, html, nasucho):
         r = requests.post(RESEND_URL, timeout=30,
                           headers={"Authorization": f"Bearer {kluc}",
                                    "Content-Type": "application/json"},
-                          json={"from": ODOSIELATEL, "to": [komu],
-                                "subject": predmet, "html": html})
+                          json=dict({"from": ODOSIELATEL, "to": [komu],
+                                     "subject": predmet, "html": html},
+                                    **({"text": text} if text else {})))
     except requests.RequestException as e:
         log.error("%s: siet zlyhala (%s)", komu, type(e).__name__)
         return False
@@ -602,7 +705,8 @@ def main():
             posli_webhook(o["webhook_url"], obsah, args.nasucho)
 
         html = _obal(obsah["titulok"], obsah["uvod"], obsah["bloky"],
-                     obsah["cta_text"], obsah["cta_url"], obsah["odhlasenie"])
+                     obsah["cta_text"], obsah["cta_url"], obsah["odhlasenie"],
+                     odhlasovaci_odkaz=obsah.get("odhlasovaci_odkaz"))
         predmet = f"PredTendrom.sk — {obsah['titulok']}"
 
         if posli(kluc, komu, predmet, html, args.nasucho):

@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://predtendrom.sk/index.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/cennik.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/obce.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/zdroje.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/starosta.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/prvych-100-dni.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/trh.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/servis.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/obce/index.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/obce/kraj-banskobystricky.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/obce/kraj-bratislavsky.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/obce/kraj-kosicky.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/obce/kraj-nitriansky.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/obce/kraj-presovsky.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/obce/kraj-trenciansky.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/obce/kraj-trnavsky.html</loc><lastmod>2026-09-30</lastmod></url>
-  <url><loc>https://predtendrom.sk/obce/kraj-zilinsky.html</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/cennik</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/obce</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/zdroje</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/starosta</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/prvych-100-dni</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/servis</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/obce/</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/obce/kraj-banskobystricky</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/obce/kraj-bratislavsky</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/obce/kraj-kosicky</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/obce/kraj-nitriansky</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/obce/kraj-presovsky</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/obce/kraj-trenciansky</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/obce/kraj-trnavsky</loc><lastmod>2026-09-30</lastmod></url>
+  <url><loc>https://predtendrom.sk/obce/kraj-zilinsky</loc><lastmod>2026-09-30</lastmod></url>
 </urlset>

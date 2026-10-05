@@ -199,7 +199,7 @@ assert kod == 0
 mp.vrat_spat()
 
 # 7) Chybajuci org nazov (embed sa nepodaril / organizacia zmazana) sa
-#    nezhodi beh — pouzije sa zastupny text "vášho tímu" v predmete/obsahu.
+#    nezhodi beh — predmet/obsah bez nazvu ("Pozvánka do tímu v PredTendrom.sk").
 mp = _Monkeypatch()
 mp.setattr(pp, "posli", lambda kluc, komu, predmet, html, nasucho: True)
 riadky = [{
@@ -213,5 +213,14 @@ print(f"7) chybajuci nazov firmy -> kod={kod}, sent_at nastavene={riadky[0]['sen
 assert kod == 0
 assert riadky[0]["sent_at"] is not None
 mp.vrat_spat()
+
+# 8) Predmet a obsah bez nazvu firmy nemaju "vášho tímu" ani prazdne uvodzovky.
+assert pp._predmet(None) == "Pozvánka do tímu v PredTendrom.sk"
+assert pp._predmet("") == "Pozvánka do tímu v PredTendrom.sk"
+assert pp._predmet("Firma s.r.o.") == "Pozvánka do tímu firmy Firma s.r.o. — PredTendrom.sk"
+h8 = pp._pozvanka_html(None, "tok")
+assert "vášho tímu" not in h8 and "„“" not in h8
+assert "Boli ste pozvaní do tímu na" in h8
+assert "do tímu firmy „Firma s.r.o.“" in pp._pozvanka_html("Firma s.r.o.", "tok")
 
 print("VSETKY TESTY PRESLI (main)")

@@ -37,7 +37,7 @@ from datetime import date, datetime, timedelta
 from collections import defaultdict
 
 import generuj_obce_podstranky as obce_podstranky
-from generuj_obce_podstranky import _slug, _suma, _cislo, _datum, VSETKY_KRAJE, LOKAL_KRAJA
+from generuj_obce_podstranky import _slug, _suma, _cislo, _datum, _tvar, _e, VSETKY_KRAJE, LOKAL_KRAJA
 
 log = logging.getLogger("generuj_zmluvy_podstranky")
 
@@ -119,11 +119,11 @@ HLAVICKA = """<!doctype html>
 <title>{titul}</title>
 <meta name="description" content="{popis}">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="https://predtendrom.sk/konciace-zmluvy/{sektor_slug}/{kraj_slug}.html">
+<link rel="canonical" href="https://predtendrom.sk/konciace-zmluvy/{cesta}">
 <meta property="og:title" content="{titul}">
 <meta property="og:description" content="{popis}">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://predtendrom.sk/konciace-zmluvy/{sektor_slug}/{kraj_slug}.html">
+<meta property="og:url" content="https://predtendrom.sk/konciace-zmluvy/{cesta}">
 <meta property="og:locale" content="sk_SK">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{titul}">
@@ -142,7 +142,7 @@ HLAVICKA = """<!doctype html>
 
 <header class="border-b border-line bg-white/95">
   <div class="max-w-[900px] mx-auto flex items-center justify-between h-16 px-5">
-    <a href="../../index.html" class="flex items-center gap-2">
+    <a href="/" class="flex items-center gap-2">
       <svg width="19" height="19" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
         <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
         <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
@@ -152,7 +152,7 @@ HLAVICKA = """<!doctype html>
       </svg>
       <span class="font-serif italic text-[18px] text-ink">predtendrom</span>
     </a>
-    <a href="../../cennik.html" class="text-[13px] text-slate2 hover:text-ink">Cenník</a>
+    <a href="/cennik" class="text-[13px] text-slate2 hover:text-ink">Cenník</a>
   </div>
 </header>
 """
@@ -161,13 +161,38 @@ PATICKA = """
 <footer class="border-t border-line mt-16">
   <div class="max-w-[900px] mx-auto px-5 py-8 text-[12px] text-slate2">
     Dáta z Centrálneho registra zmlúv. Aktualizované pravidelne, naposledy {aktualizovane}.
-    <a href="../../zdroje.html" class="text-accent hover:underline">Ako to počítame</a>
+    <a href="/zdroje" class="text-accent hover:underline">Ako to počítame</a>
     · <a href="mailto:info@predtendrom.sk" class="text-accent hover:underline">info@predtendrom.sk</a>
   </div>
 </footer>
 </body>
 </html>
 """
+
+
+def _popis_stranky(agregat_row, sektor_info, lokal):
+    """Meta description stranky sektor x kraj. Spravne sklonovanie poctu
+    (1 zmluva / 2-4 zmluvy / 5+ zmlus), pri 0 zmluvach iná veta a ked chyba
+    suma, veta o "spolu" sa vynecha uplne (audit 5.10.2026, C5)."""
+    pocet = agregat_row["pocet"]
+    nazov = sektor_info["nazov"]
+    if not pocet:
+        return (
+            f"V {lokal} kraji sa momentálne neblíži ku koncu žiadna zmluva na {nazov}. "
+            f"Sledujte, ktoré sa uvoľnia — z Centrálneho registra zmlúv."
+        )
+    zmluvy = _tvar(pocet, "zmluva", "zmluvy", "zmlúv")
+    sloveso = _tvar(pocet, "sa blíži", "sa blížia", "sa blíži")
+    suma = _suma(agregat_row["objem_eur"])
+    spolu = f", spolu {suma}" if suma != "—" else ""
+    dalsia = (
+        "Kto ju má teraz a kedy sa uvoľní"
+        if int(pocet) == 1 else "Kto ich má teraz a kedy sa uvoľnia"
+    )
+    return (
+        f"{_cislo(pocet)} {zmluvy} na {nazov} v {lokal} kraji {sloveso} ku koncu{spolu}. "
+        f"{dalsia} — z Centrálneho registra zmlúv."
+    )
 
 
 def _vygeneruj_stranku(sector, agregat_row):
@@ -181,10 +206,10 @@ def _vygeneruj_stranku(sector, agregat_row):
     if agregat_row["teaser"]:
         riadky_teaser = "\n".join(
             f"""      <div class="rounded-lg border border-line bg-white p-4">
-        <div class="text-[14px] font-medium">{t['authority_name']}</div>
+        <div class="text-[14px] font-medium">{_e(str(t['authority_name']).strip())}</div>
         <div class="mt-1 flex items-center justify-between text-[13px] text-slate2">
           <span>{_suma(t['price_total'])}</span>
-          <span>zmluva končí v {t['mesiac_konca']}</span>
+          <span>zmluva končí v {_e(t['mesiac_konca'])}</span>
         </div>
       </div>"""
             for t in agregat_row["teaser"]
@@ -201,10 +226,10 @@ def _vygeneruj_stranku(sector, agregat_row):
         # skutocnych datach by tu paywall neochranil (viz modulovy docstring).
         blok_zvysok = f"""
     <div class="mt-3 rounded-lg border border-dashed border-line bg-[#F3F0E6] p-5 text-center">
-      <p class="text-[14px] text-slate2">+ {_cislo(zvysok)} ďalších príležitostí v tomto kraji a sektore.</p>
-      <a href="../../prihlasenie.html?utm_source=seo_{sektor_slug}_{kraj_slug}&utm_medium=organic&utm_campaign=programmatic_seo"
+      <p class="text-[14px] text-slate2">+ {_cislo(zvysok)} {_tvar(zvysok, 'ďalšia príležitosť', 'ďalšie príležitosti', 'ďalších príležitostí')} v tomto kraji a sektore.</p>
+      <a href="/prihlasenie?utm_source=seo_{sektor_slug}_{kraj_slug}&utm_medium=organic&utm_campaign=programmatic_seo"
          class="mt-3 inline-block rounded-md bg-accent text-white text-[13px] font-medium px-4 py-2 hover:bg-accentDark">
-        Zobraziť všetky (zadarmo, bez karty)
+        Zobraziť všetky (14 dní zadarmo, bez karty)
       </a>
     </div>"""
     else:
@@ -215,15 +240,12 @@ def _vygeneruj_stranku(sector, agregat_row):
     # kraji"). "nazov_nom" rieši rovnaky problem pre sektor (OSTRAHA malo
     # v nazov ulozeny akuzativ "ostrahu", ktory v title cital ako "Ostrahu").
     titul = f"Končiace zmluvy — {sektor_info['nazov_nom'].capitalize()} v {lokal} kraji | PredTendrom.sk"
-    popis = (
-        f"{_cislo(agregat_row['pocet'])} zmlúv na {sektor_info['nazov']} v {lokal} kraji sa blíži ku koncu, "
-        f"spolu {_suma(agregat_row['objem_eur'])}. Kto ich má teraz a kedy sa uvoľnia — z Centrálneho registra zmlúv."
-    )
+    popis = _popis_stranky(agregat_row, sektor_info, lokal)
 
     telo = f"""
 <section class="max-w-[900px] mx-auto px-5 pt-10 pb-8">
   <p class="inline-block text-[12px] font-semibold text-accent bg-accent/10 rounded-full px-3 py-1">
-    {kraj} · {sektor_info['nazov']}
+    {_e(kraj)} · {sektor_info['nazov_nom']}
   </p>
   <h1 class="mt-5 text-[28px] sm:text-[34px] font-bold leading-tight tracking-tight">
     Komu v {lokal} kraji čoskoro skončí zmluva na {sektor_info['nazov_2']}
@@ -235,7 +257,7 @@ def _vygeneruj_stranku(sector, agregat_row):
   <div class="mt-8 grid grid-cols-2 gap-3">
     <div class="rounded-lg border border-line bg-white p-4">
       <div class="text-[22px] font-semibold font-mono">{_cislo(agregat_row['pocet'])}</div>
-      <div class="text-[12px] text-slate2 mt-1">končiacich zmlúv</div>
+      <div class="text-[12px] text-slate2 mt-1">{_tvar(agregat_row['pocet'], 'končiaca zmluva', 'končiace zmluvy', 'končiacich zmlúv')}</div>
     </div>
     <div class="rounded-lg border border-line bg-white p-4">
       <div class="text-[22px] font-semibold font-mono">{_suma(agregat_row['objem_eur'])}</div>
@@ -253,7 +275,7 @@ def _vygeneruj_stranku(sector, agregat_row):
 
     aktualizovane = _datum(date.today().isoformat())
     return (
-        HLAVICKA.format(titul=titul, popis=popis, sektor_slug=sektor_slug, kraj_slug=kraj_slug)
+        HLAVICKA.format(titul=titul, popis=popis, cesta=f"{sektor_slug}/{kraj_slug}")
         + telo
         + PATICKA.format(aktualizovane=aktualizovane)
     )
@@ -262,10 +284,10 @@ def _vygeneruj_stranku(sector, agregat_row):
 def _vygeneruj_index_sektora(sector, agregaty):
     sektor_info = SEKTORY_SEO[sector]
     polozky = "\n".join(
-        f"""    <a href="./{_slug(r['kraj'])}.html"
+        f"""    <a href="/konciace-zmluvy/{sektor_info['slug']}/{_slug(r['kraj'])}"
        class="block rounded-lg border border-line bg-white p-4 hover:border-accent transition">
-      <div class="text-[15px] font-semibold">{r['kraj']}</div>
-      <div class="text-[13px] text-slate2 mt-1">{_cislo(r['pocet'])} zmlúv · {_suma(r['objem_eur'])}</div>
+      <div class="text-[15px] font-semibold">{_e(r['kraj'])}</div>
+      <div class="text-[13px] text-slate2 mt-1">{_cislo(r['pocet'])} {_tvar(r['pocet'], 'zmluva', 'zmluvy', 'zmlúv')}{'' if _suma(r['objem_eur']) == '—' else ' · ' + _suma(r['objem_eur'])}</div>
     </a>"""
         for r in sorted(agregaty, key=lambda r: r["pocet"], reverse=True)
     )
@@ -289,7 +311,9 @@ def _vygeneruj_index_sektora(sector, agregaty):
             # OPRAVA (audit 29.9.2026): prazdny kraj_slug davel rozbity canonical
             # ".../ostraha/.html" (chybajuci "index"). Rovnaky vzor ako subor sam:
             # tato stranka sa fyzicky vola index.html.
-            sektor_slug=sektor_info["slug"], kraj_slug="index",
+            # U25 (5.10.2026): canonical bez .html (Cloudflare .html presmeruje 308);
+            # index sektora je adresa /konciace-zmluvy/<sektor>/ (koncove lomitko).
+            cesta=f"{sektor_info['slug']}/",
         )
         + telo
         + PATICKA.format(aktualizovane=_datum(date.today().isoformat()))
@@ -299,8 +323,10 @@ def _vygeneruj_index_sektora(sector, agregaty):
 def _zapis_sitemap(vsetky_kombinacie):
     baza = "https://predtendrom.sk"
     dnes = date.today().isoformat()
-    urls = [f"/konciace-zmluvy/{s}/index.html" for s in {k[0] for k in vsetky_kombinacie}] + [
-        f"/konciace-zmluvy/{sektor_slug}/{kraj_slug}.html" for sektor_slug, kraj_slug in vsetky_kombinacie
+    # U25 (5.10.2026): adresy BEZ .html (Cloudflare .html presmeruje 308);
+    # index sektora ma koncove lomitko.
+    urls = [f"/konciace-zmluvy/{s}/" for s in sorted({k[0] for k in vsetky_kombinacie})] + [
+        f"/konciace-zmluvy/{sektor_slug}/{kraj_slug}" for sektor_slug, kraj_slug in vsetky_kombinacie
     ]
     polozky = "\n".join(f"  <url><loc>{baza}{u}</loc><lastmod>{dnes}</lastmod></url>" for u in urls)
     xml = (

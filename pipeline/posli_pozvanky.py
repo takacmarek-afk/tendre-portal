@@ -48,18 +48,28 @@ log = logging.getLogger("pozvanky")
 ODKAZ_PRIHLASENIE = "https://predtendrom.sk/prihlasenie.html"
 
 
-def _pozvanka_html(nazov_firmy: str, token: str) -> str:
+def _predmet(nazov_firmy) -> str:
+    """Predmet pozvanky. Bez nazvu firmy (embed sa nepodaril / nazov je
+    prazdny) neostane v texte diera typu 'do tímu vášho tímu'."""
+    if nazov_firmy:
+        return f"Pozvánka do tímu firmy {nazov_firmy} — PredTendrom.sk"
+    return "Pozvánka do tímu v PredTendrom.sk"
+
+
+def _pozvanka_html(nazov_firmy, token: str) -> str:
     """Obsah je zamerne kratky — jedna vec na spravenie, jedno tlacidlo.
     _obal() escapuje nazov_firmy aj tak, ale posiela sa uz orezany a z
     dovereneho zdroja (organizations.nazov, nie cudzi CRZ text)."""
+    nazov_firmy = (nazov_firmy or "").strip()
+    kam = (f"do tímu firmy „{nazov_firmy}“" if nazov_firmy else "do tímu")
     return _obal(
         titulok="Pozvánka do tímu",
-        uvod=(f"Boli ste pozvaní do organizácie „{nazov_firmy}“ na "
+        uvod=(f"Boli ste pozvaní {kam} na "
               f"PredTendrom.sk. Kliknutím na tlačidlo nižšie sa prihlásite "
               f"(alebo si vytvoríte prístup, ak ešte účet nemáte) a "
               f"pripojíte sa k tímu."),
         bloky=[{
-            "titul": nazov_firmy,
+            "titul": nazov_firmy or "Tím v PredTendrom.sk",
             "popis": ("Po prihlásení uvidíte presne to isté, čo zvyšok "
                       "tímu — spoločné sledované firmy aj nastavenia "
                       "odberu."),
@@ -128,10 +138,9 @@ def main():
             vyprsane += 1
             continue
 
-        nazov_firmy = ((inv.get("organizations") or {}).get("nazov")
-                       or "vášho tímu")
+        nazov_firmy = ((inv.get("organizations") or {}).get("nazov") or "").strip()
         html = _pozvanka_html(nazov_firmy, token)
-        predmet = f"Pozvánka do tímu {nazov_firmy} — PredTendrom.sk"
+        predmet = _predmet(nazov_firmy)
 
         if posli(kluc, email, predmet, html, args.nasucho):
             poslane += 1

@@ -1,3 +1,4 @@
+// Spusti z korena repa:  node tests/test_relevancia.js
 // Testuje REALNY kod z public/app.html (nie reimplementaciu) — vytiahne
 // cisté JS bloky (platneIco, num, blok "OSOBNA RELEVANCIA") a spusti ich vo
 // vm kontexte s minimalnym mockom el()/supabase. Rovnaky duch ako pytest
@@ -6,7 +7,7 @@ const fs = require('fs');
 const vm = require('vm');
 const assert = require('assert');
 
-const html = fs.readFileSync(require('path').join(__dirname, 'app.html'), 'utf-8');
+const html = fs.readFileSync(require('path').join(__dirname, '..', 'public', 'app.html'), 'utf-8');
 
 function vyrez(zac, kon, label) {
   const i = html.indexOf(zac);

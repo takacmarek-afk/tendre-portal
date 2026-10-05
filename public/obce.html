@@ -7,11 +7,11 @@
 <title>Peniaze pre obce — PredTendrom.sk</title>
 <meta name="description" content="Kto práve teraz rozdáva peniaze obciam a mestám. Z Centrálneho registra zmlúv, bez registrácie.">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="https://predtendrom.sk/obce.html">
+<link rel="canonical" href="https://predtendrom.sk/obce">
 <meta property="og:title" content="Peniaze pre obce — PredTendrom.sk">
 <meta property="og:description" content="Kto práve teraz rozdáva peniaze obciam a mestám. Z Centrálneho registra zmlúv, bez registrácie.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://predtendrom.sk/obce.html">
+<meta property="og:url" content="https://predtendrom.sk/obce">
 <meta property="og:locale" content="sk_SK">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Peniaze pre obce — PredTendrom.sk">
@@ -177,7 +177,7 @@
   <div class="mt-6 flex flex-col gap-2 text-[13px]">
     <a href="./trh.html"
        class="inline-flex items-center gap-1.5 font-semibold text-accent hover:underline">
-      Máte konkrétnu potrebu? Vypíšte dopyt a poradcovia sa vám ozvú →
+      Máte konkrétnu potrebu? Vypíšte dopyt a poradcovia sa vám môžu ozvať →
     </a>
     <a href="./servis.html"
        class="inline-flex items-center gap-1.5 text-slate2 hover:text-ink hover:underline">
@@ -394,19 +394,23 @@
       a názov obce. Bez registrácie a bez hesla.
     </p>
     <p class="mt-2 text-[13px] text-white/50 max-w-[600px]">
-      Systém už beží &mdash; zapíšeme si vás a prvý prehľad vám príde
-      do týždňa.
+      Zapíšeme si vás, pošleme vám potvrdzovací e-mail a po kliknutí
+      na odkaz v ňom vám začneme posielať prehľady.
     </p>
 
-    <form id="odber" class="mt-6 flex flex-col sm:flex-row gap-3 max-w-[640px]">
-      <input id="o-obec" type="text" required placeholder="Obec Revúcka Lehota"
-             autocomplete="organization"
+    <form id="odber" class="mt-6 flex flex-col sm:flex-row gap-3 max-w-[640px]" novalidate>
+      <input id="o-obec" type="text" required maxlength="200" placeholder="Obec Revúcka Lehota"
+             aria-label="Názov obce" autocomplete="organization"
              class="flex-1 rounded-md px-4 py-3 text-[15px] text-ink
                     focus:outline-none focus:ring-2 focus:ring-white/60">
-      <input id="o-email" type="email" required placeholder="starosta@obec.sk"
-             autocomplete="email"
+      <input id="o-email" type="email" required maxlength="254" placeholder="starosta@obec.sk"
+             aria-label="E-mail" autocomplete="email"
              class="flex-1 rounded-md px-4 py-3 text-[15px] text-ink
                     focus:outline-none focus:ring-2 focus:ring-white/60">
+      <!-- Honeypot: ludia ho nevidia, boty ho vyplnia. -->
+      <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
+        <input type="text" name="web" id="o-web" tabindex="-1" autocomplete="off">
+      </div>
       <button id="o-btn" type="submit"
               class="bg-white text-ink font-semibold px-6 py-3 rounded-md
                      hover:bg-white/90 transition text-[15px] whitespace-nowrap">
@@ -461,7 +465,7 @@
         </div>
         <div class="px-4 pb-4 text-[11px] leading-relaxed text-slate2 border-t border-line pt-3">
           Údaje z Centrálneho registra zmlúv. Majú informatívny charakter.<br>
-          Odhlásiť sa dá odpoveďou na tento e-mail.
+          Odhlásiť sa dá odkazom v e-maile.
         </div>
       </div>
       <p class="mt-2 text-[12px] text-white/50">
@@ -471,7 +475,7 @@
     </div>
     <p class="mt-5 text-[12px] leading-relaxed text-white/45 max-w-[600px]">
       E-mail použijeme výhradne na posielanie tohto prehľadu. Nikomu ho
-      nepredávame. Odhlásiť sa dá odpoveďou na ktorýkoľvek e-mail.
+      nepredávame. Odhlásiť sa dá odkazom v každom e-maile.
       Prevádzkovateľ: LoveHome s.r.o., IČO 47 586 362.
     </p>
   </div>
@@ -701,6 +705,11 @@ async function nacitajSprostredkovatelov() {
 }
 
 // ── Odber ────────────────────────────────────────────────────────────────
+// Double opt-in (migracia 63): adresa zacne dostavat prehlady az po kliknuti
+// na odkaz v potvrdzovacom e-maile. Rovnaka hlaska aj pre 409 (adresa uz je
+// v zozname) — nesmie prezradit, ci adresa v zozname je.
+const HLASKA_POTVRDENIE = 'Poslali sme vám potvrdzovací e-mail. Kliknite v ňom na odkaz '
+  + '— až potom vám začneme posielať prehľady. Ak ho nevidíte, pozrite si aj priečinok Spam.';
 el('odber').addEventListener('submit', async (e) => {
   e.preventDefault();
   const btn = el('o-btn');
@@ -714,8 +723,23 @@ el('odber').addEventListener('submit', async (e) => {
     hlaska.classList.remove('hidden');
   }
 
-  if (!email.includes('@') || !obec) {
+  // Honeypot vyplneny = bot: tvarime sa, ze odoslanie prebehlo, nic neposielame.
+  if (el('o-web').value) {
+    el('odber').classList.add('hidden');
+    povedz(HLASKA_POTVRDENIE, false);
+    return;
+  }
+
+  if (!email || !obec) {
     povedz('Vyplňte názov obce aj e-mail, prosím.', true);
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length < 5 || email.length > 254) {
+    povedz('Skontrolujte prosím e-mailovú adresu.', true);
+    return;
+  }
+  if (obec.length > 200) {
+    povedz('Názov obce je príliš dlhý. Skráťte ho prosím.', true);
     return;
   }
 
@@ -735,16 +759,17 @@ el('odber').addEventListener('submit', async (e) => {
 
     if (r.ok) {
       el('odber').classList.add('hidden');
-      povedz('Zapísali sme si vás. Prvý prehľad dostanete, hneď ako vyjde.', false);
+      povedz(HLASKA_POTVRDENIE, false);
     } else if (r.status === 409) {
-      // Unikatny index na e-mail. Nie je to chyba uzivatela.
+      // Unikatny index na e-mail. Nie je to chyba uzivatela a NESMIE sa to
+      // dat poznat od uspechu (inak by sa dalo zistit, kto je v zozname).
       el('odber').classList.add('hidden');
-      povedz('Túto adresu už máme zapísanú. Nič viac netreba.', false);
+      povedz(HLASKA_POTVRDENIE, false);
     } else {
+      // Aj 400/401/403/54000 (limity DB, zaplava) — vseobecna hlaska.
       btn.disabled = false;
       btn.textContent = povodny;
-      povedz('Nepodarilo sa to zapísať. Skúste to znova o chvíľu, '
-             + 'alebo napíšte na info@predtendrom.sk.', true);
+      povedz('Odoslať sa nepodarilo. Skúste to prosím o chvíľu, alebo zavolajte.', true);
     }
   } catch (err) {
     btn.disabled = false;

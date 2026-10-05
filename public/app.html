@@ -115,7 +115,7 @@
 <body class="font-sans text-ink bg-[#F3F0E6] min-h-screen">
 
 <div id="nacitavam" class="min-h-screen flex items-center justify-center">
-  <div class="text-[14px] text-slate2">Načítavam...</div>
+  <div class="text-[14px] text-slate2" role="status">Načítavam…</div>
 </div>
 
 <!-- ══ CHYBA ═════════════════════════════════════════════════ -->
@@ -157,16 +157,18 @@
         zadarmo a platobnú kartu nepotrebujeme.
       </p>
 
+      <p id="onb-sprava" class="hidden mt-4 rounded-md bg-[#F3F0E6] border border-line px-3.5 py-2.5 text-[13px] leading-relaxed text-ink"></p>
+
       <form id="form-org" class="mt-6 space-y-4">
         <div>
           <label for="nazov" class="block text-[13px] font-semibold mb-1.5">Názov firmy</label>
-          <input id="nazov" required
+          <input id="nazov" required maxlength="200" autocomplete="organization"
                  class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                         focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
         </div>
         <div>
           <label for="ico" class="block text-[13px] font-semibold mb-1.5">IČO</label>
-          <input id="ico" required inputmode="numeric" placeholder="12345678"
+          <input id="ico" required inputmode="numeric" maxlength="20" placeholder="12345678"
                  class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                         focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
           <p class="mt-1.5 text-[12px] text-slate2">
@@ -216,7 +218,7 @@
              nevedela. target=_blank, aby neopustili rozrobenu appku. -->
         <a href="./obce.html" target="_blank" rel="noopener" class="text-[13px] text-slate2 hover:text-ink hidden sm:inline"
            title="Bezplatný prehľad dotácií pre obce a mestá — pošlite ho starostovi, ktorého poznáte">Pre obce</a>
-        <button id="odhlasit" class="text-[13px] text-slate2 hover:text-ink">Odhlásiť</button>
+        <button id="odhlasit" class="text-[13px] text-slate2 hover:text-ink">Odhlásiť sa</button>
       </div>
     </div>
   </header>
@@ -225,9 +227,9 @@
        Funguje nezavisle od otvoreneho obdobia - slot na testovanie platby
        teraz, aj buduce ostre pouzitie po jeho skonceni. -->
   <!-- Moj vyber: prvy krok po registracii a tlacidlo "Zmenit" (P1.3). -->
-  <div id="modal-vyber" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
+  <div id="modal-vyber" role="dialog" aria-modal="true" aria-labelledby="modal-vyber-nadpis" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
     <div class="bg-white rounded-lg border border-line w-full max-w-[520px] p-6 max-h-[85vh] overflow-y-auto">
-      <h2 class="text-[19px] font-serif font-semibold">Čo vás zaujíma?</h2>
+      <h2 id="modal-vyber-nadpis" class="text-[19px] font-serif font-semibold">Čo vás zaujíma?</h2>
       <p class="mt-2 text-[14px] leading-relaxed text-slate2">
         Vyberte kraje, sektory a veľkosť zákaziek. Podľa toho vám prehľad
         vyfiltrujeme a zoradíme. Výber môžete kedykoľvek zmeniť alebo vypnúť.
@@ -250,18 +252,18 @@
     </div>
   </div>
 
-  <div id="modal-predplatne" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
+  <div id="modal-predplatne" role="dialog" aria-modal="true" aria-labelledby="modal-predplatne-nadpis" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
     <div class="bg-white rounded-lg border border-line w-full max-w-[420px] p-6">
       <div class="flex items-center justify-between mb-1">
-        <h2 class="text-[17px] font-serif font-semibold">Predplatné</h2>
-        <button id="modal-predplatne-zavriet" class="text-slate2 hover:text-ink text-[20px] leading-none">&times;</button>
+        <h2 id="modal-predplatne-nadpis" class="text-[17px] font-serif font-semibold">Predplatné</h2>
+        <button id="modal-predplatne-zavriet" aria-label="Zavrieť" class="text-slate2 hover:text-ink text-[20px] leading-none">&times;</button>
       </div>
       <p class="text-[13px] leading-relaxed text-slate2 mb-4">
-        Vyberte si úroveň a zaplaťte kartou cez Stripe. Predplatné
-        sa aktivuje hneď po potvrdení platby. Potrebujete Team úroveň
+        Vyberte si plán a zaplaťte kartou cez Stripe. Predplatné
+        sa aktivuje hneď po potvrdení platby. Potrebujete plán Team
         (viac používateľov, financie dodávateľa)? Napíšte nám na
         <a class="text-accent hover:underline" href="mailto:info@predtendrom.sk?subject=Z%C3%A1ujem%20o%20Team">info@predtendrom.sk</a>
-        — plné porovnanie všetkých úrovní je na
+        — plné porovnanie všetkých plánov je na
         <a class="text-accent hover:underline" href="./cennik.html" target="_blank" rel="noopener">cenníku</a>.
       </p>
       <p id="modal-predplatne-aktualny" class="text-[14px] font-semibold mb-2"></p>
@@ -282,14 +284,14 @@
        najnovsie-prve, plus jednoduchy rocny trend nad tym istym zoznamom —
        ziadna nova SQL, `contracts` uz ma RLS pre kazdeho prihlaseneho
        s aktivnym pristupom (nie len Pro). -->
-  <div id="modal-profil" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
+  <div id="modal-profil" role="dialog" aria-modal="true" aria-labelledby="modal-profil-nazov" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
     <div class="bg-white rounded-lg border border-line w-full max-w-[640px] max-h-[85vh] flex flex-col">
       <div class="flex items-start justify-between gap-3 px-6 pt-6 pb-1">
         <div>
           <h2 id="modal-profil-nazov" class="text-[17px] font-serif font-semibold leading-snug"></h2>
           <p id="modal-profil-ico" class="text-[12px] text-slate2 mt-0.5"></p>
         </div>
-        <button id="modal-profil-zavriet" class="text-slate2 hover:text-ink text-[20px] leading-none">&times;</button>
+        <button id="modal-profil-zavriet" aria-label="Zavrieť" class="text-slate2 hover:text-ink text-[20px] leading-none">&times;</button>
       </div>
       <p id="modal-profil-suhrn" class="text-[13px] text-slate2 px-6 py-2"></p>
       <div id="modal-profil-trend" class="px-6 pb-3 flex items-end gap-1 h-[44px]"></div>
@@ -419,13 +421,13 @@
             </p>
           </div>
           <div class="flex flex-col sm:flex-row gap-2 lg:shrink-0">
-            <select id="o-sektor"
+            <select id="o-sektor" aria-label="Sektor"
                     class="border border-white/20 bg-white/10 text-white rounded-md
                            px-3 py-2 text-[14px] focus:outline-none focus:border-white/60"></select>
-            <select id="o-kraj"
+            <select id="o-kraj" aria-label="Kraj"
                     class="border border-white/20 bg-white/10 text-white rounded-md
                            px-3 py-2 text-[14px] focus:outline-none focus:border-white/60"></select>
-            <select id="o-frekvencia"
+            <select id="o-frekvencia" aria-label="Ako často chcete prehľad"
                     class="border border-white/20 bg-white/10 text-white rounded-md
                            px-3 py-2 text-[14px] focus:outline-none focus:border-white/60">
               <option value="tyzdenne">týždenne</option>
@@ -453,7 +455,7 @@
             zoradíme príležitosti nižšie tak, aby tie najbližšie k vášmu odboru
             a cenovej hladine boli hore
           </label>
-          <input id="o-moje-ico" type="text" inputmode="numeric" placeholder="12345678"
+          <input id="o-moje-ico" type="text" inputmode="numeric" maxlength="20" placeholder="12345678"
                  class="w-full sm:max-w-xs border border-white/20 bg-white/10 text-white rounded-md
                         px-3 py-2 text-[14px] placeholder:text-white/40
                         focus:outline-none focus:border-white/60">
@@ -539,7 +541,7 @@
               <input id="f-jeCas" type="checkbox" checked
                      class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
               <span>Len tie, kde ešte je čas
-                <span class="block text-[11px] text-slate2">skryje zákazky, kde tender už asi beží</span>
+                <span class="block text-[11px] text-slate2">skryje zákazky, kde tender už pravdepodobne beží</span>
               </span>
             </label>
           </div>
@@ -563,7 +565,7 @@
           <div class="flex items-center gap-3">
             <button id="f-reset" class="text-[13px] text-slate2 hover:text-ink">Zrušiť filtre</button>
             <button id="export-z" class="text-[13px] font-semibold text-accent hover:text-accentDark">
-              Export Excel
+              Export do Excelu
             </button>
           </div>
         </div>
@@ -620,7 +622,7 @@
     <div id="dotacie" class="hidden">
       <p class="text-[14px] leading-relaxed text-slate2 mb-5 max-w-3xl">
         Obce a školy, ktoré už dostali peniaze. Na to, na čo ich dostali,
-        musia vyhlásiť verejné obstarávanie — zvyčajne pol roka až rok a pol
+        spravidla musia vyhlásiť verejné obstarávanie — zvyčajne pol roka až rok a pol
         po podpise zmluvy o príspevku. Tu ich vidíte skôr, než sa tender objaví.
       </p>
 
@@ -679,7 +681,7 @@
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
           <span id="pocet-dot" class="text-[13px] text-slate2"></span>
           <button id="export-d" class="text-[13px] font-semibold text-accent hover:text-accentDark">
-            Export Excel
+            Export do Excelu
           </button>
         </div>
       </div>
@@ -709,8 +711,8 @@
         </div>
       </div>
       <p class="mt-4 text-[12px] leading-relaxed text-slate2 max-w-3xl">
-        Okno je odhad, nie istota. Projekt sa môže odložiť, zrušiť, alebo
-        si ho obec zrealizuje vlastnými kapacitami. Kraj určujeme z názvu
+        Okno je odhad, nie istota. Projekt sa môže odložiť, zrušiť
+        alebo si ho obec zrealizuje vlastnými kapacitami. Kraj určujeme z názvu
         prijímateľa — pri prijímateľoch bez rozpoznateľnej obce zostáva prázdny.
       </p>
     </div>
@@ -755,7 +757,7 @@
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
           <span id="pocet-zia" class="text-[13px] text-slate2"></span>
-          <button id="export-zi" class="text-[13px] font-semibold text-accent">Export Excel</button>
+          <button id="export-zi" class="text-[13px] font-semibold text-accent">Export do Excelu</button>
         </div>
       </div>
 
@@ -837,7 +839,7 @@
             <input id="u-jeCas" type="checkbox" checked
                    class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
             <span>Len tie, kde ešte je čas
-              <span class="block text-[11px] text-slate2">skryje zmluvy, ktoré končia do 90 dní &mdash; tam súťaž už asi beží</span>
+              <span class="block text-[11px] text-slate2">skryje zmluvy, ktoré končia do 90 dní &mdash; tam súťaž už pravdepodobne beží</span>
             </span>
           </label>
         </div>
@@ -857,7 +859,7 @@
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
           <span id="pocet-uvo" class="text-[13px] text-slate2"></span>
-          <button id="export-u" class="text-[13px] font-semibold text-accent">Export Excel</button>
+          <button id="export-u" class="text-[13px] font-semibold text-accent">Export do Excelu</button>
         </div>
       </div>
 
@@ -944,7 +946,7 @@
           <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
             <span id="pocet-dod" class="text-[13px] text-slate2"></span>
             <button id="export-f" class="text-[13px] font-semibold text-accent hover:text-accentDark">
-              Export Excel
+              Export do Excelu
             </button>
           </div>
         </div>
@@ -1106,6 +1108,7 @@
           spoločné sledované firmy aj nastavenia odberu.
         </p>
         <div id="team-clenovia" class="mt-4 divide-y divide-line"></div>
+        <p id="team-hlaska" class="hidden mt-3 text-[13px]" role="status"></p>
       </div>
 
       <!-- OPRAVA 22.9.2026 (zivy audit): zobrazi sa ownerovi bez Team
@@ -1113,7 +1116,7 @@
       <div id="team-pozvat-zamknute" class="hidden bg-white border border-line rounded-lg p-6 mb-5">
         <h2 class="text-[17px] font-serif font-semibold">Pozvať kolegu</h2>
         <p class="mt-2 text-[14px] leading-relaxed text-slate2">
-          Pozývanie kolegov do spoločnej organizácie je súčasťou úrovne Team.
+          Pozývanie kolegov do spoločnej organizácie je súčasťou plánu Team.
           Napíšte nám na
           <a class="text-accent hover:underline" href="mailto:info@predtendrom.sk?subject=Z%C3%A1ujem%20o%20Team">info@predtendrom.sk</a>.
         </p>
@@ -1125,7 +1128,7 @@
       <div id="team-pozvat-panel" class="hidden bg-white border border-line rounded-lg p-6 mb-5">
         <h2 class="text-[17px] font-serif font-semibold">Pozvať kolegu</h2>
         <form id="form-pozvat" class="mt-3 flex flex-col sm:flex-row gap-2">
-          <input id="pozvat-email" type="email" required placeholder="kolega@vasafirma.sk"
+          <input id="pozvat-email" type="email" required maxlength="254" aria-label="E-mail kolegu" placeholder="kolega@vasafirma.sk"
                  class="flex-1 border border-line rounded-md px-3.5 py-2.5 text-[15px]
                         focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
           <button type="submit" id="btn-pozvat"
@@ -1157,8 +1160,8 @@
       <p class="text-[14px] leading-relaxed text-slate2 mb-5 max-w-2xl">
         Obce, ktoré na <a href="/trh.html" target="_blank" rel="noopener"
         class="text-accent hover:underline font-semibold">Trhu dopytov</a>
-        (verejná burza pre obce a poradcov) hľadajú pomoc s konkrétnou súťažou
-        alebo dotáciou. Odpovedať môžete priamo tam — ak si tam ešte nezaložili
+        (verejná platforma pre obce a poradcov) hľadajú pomoc s konkrétnou súťažou
+        alebo dotáciou. Odpovedať môžete priamo tam — ak tam ešte nemáte založený
         profil poradcu, urobíte to zadarmo v pár sekundách.
       </p>
       <div id="dopyty-prazdno" class="hidden bg-white border border-line rounded-lg p-10 text-center">
@@ -1181,8 +1184,8 @@
         <p class="mt-2 text-[14px] leading-relaxed text-slate2">
           Posledných 30 dní, unikátne návštevy (jedna osoba prekliknutá cez
           viac stránok sa počíta raz). Bez cookies, bez sledovania
-          jednotlivých návštevníkov naprieč viacerými návštevami. Tvoje
-          vlastné prihlásené prehliadanie appky sa sem nezapočítava.
+          jednotlivých návštevníkov naprieč viacerými návštevami. Vaše
+          vlastné prihlásené prehliadanie aplikácie sa sem nezapočítava.
         </p>
         <p class="mt-4 text-[14px] text-ink">
           Spolu: <strong id="stat-celkom">—</strong> unikátnych návštev
@@ -1367,18 +1370,90 @@ const PREDSTIH_DNI = {
   '6-12': [180, 365],
 };
 
+/** Datum v LOKALNOM case prehliadaca, v tvare YYYY-MM-DD. toISOString()
+ *  by pocitalo v UTC, takze medzi 0:00 a 2:00 miestneho casu by "dnes"
+ *  ukazovalo vcerajsok (audit 5. 10. 2026, U21). */
+function dnesLokalne(d = new Date()) {
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const den = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${den}`;
+}
+
 /** Datum o `n` dni od dnes, v tvare YYYY-MM-DD pre PostgREST. */
 function oDni(n) {
   const d = new Date();
   d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+  return dnesLokalne(d);
 }
 
+/** Skloňovanie po číslovke: 1 -> jeden, 2-4 -> dvaAzStyri, ostatne (aj 0) -> pat.
+ *  Rovnaka logika ako tvar() v prvych-100-dni.html. */
+function tvar(n, jeden, dvaAzStyri, pat) {
+  const a = Math.abs(Number(n));
+  if (a === 1) return jeden;
+  if (a >= 2 && a <= 4) return dvaAzStyri;
+  return pat;
+}
+
+/** Kontrola IČO: 8 cislic + kontrolna cislica (modulo 11).
+ *  Rovnaky algoritmus ako _ico_platne() v DB (migracia 63). */
+function icoPlatne(ico) {
+  if (!/^\d{8}$/.test(String(ico ?? ''))) return false;
+  const c = String(ico).split('').map(Number);
+  let sucet = 0;
+  for (let i = 0; i < 7; i++) sucet += c[i] * (8 - i);
+  return (11 - (sucet % 11)) % 10 === c[7];
+}
+
+/** Z vstupu necha len cislice (medzery, "SK" a pod. odpadnu), ako robi aj DB. */
+function ocistiIco(v) {
+  return String(v ?? '').replace(/\D/g, '');
+}
+
+const SPRAVA_ULOZENIE = 'Nepodarilo sa to teraz uložiť. Skúste to prosím znova.';
+const SPRAVA_NACITANIE = 'Údaje sa nepodarilo načítať. Obnovte stránku alebo to skúste o chvíľu.';
+
 const SPRAVY = {
-  ICO_NEPLATNE: 'IČO musí mať osem číslic. Skontrolujte ho, prosím.',
-  UZ_V_FIRME:   'Tento účet už patrí do firmy. Obnovte stránku.',
+  ICO_NEPLATNE: 'IČO nemá správny tvar alebo kontrolnú číslicu. Skontrolujte ho, prosím.',
+  NAZOV_DLHY:   'Názov firmy je príliš dlhý (najviac 200 znakov).',
   NEPRIHLASENY: 'Prihlásenie vypršalo. Prihláste sa znova.',
 };
+
+// ── Modalne okna: otvorenie/zatvorenie, Esc, vratenie fokusu ──────────────
+const MODALY = ['modal-vyber', 'modal-predplatne', 'modal-profil'];
+const fokusPredModalom = {};
+
+function otvorModal(id) {
+  fokusPredModalom[id] = document.activeElement;
+  ukaz(id);
+  el(id).classList.add('flex');
+  const prvy = el(id).querySelector('button, [href], input, select, textarea');
+  if (prvy) prvy.focus();
+}
+
+function zavriModal(id) {
+  el(id).classList.add('hidden');
+  el(id).classList.remove('flex');
+  const kam = fokusPredModalom[id];
+  fokusPredModalom[id] = null;
+  if (kam && typeof kam.focus === 'function' && document.contains(kam)) kam.focus();
+}
+
+document.addEventListener('keydown', (e) => {
+  const otvoreny = MODALY.find(id => el(id) && !el(id).classList.contains('hidden'));
+  if (!otvoreny) return;
+  if (e.key === 'Escape') { zavriModal(otvoreny); return; }
+  if (e.key === 'Tab') {
+    // Fokus ostava vnutri okna.
+    const prvky = [...el(otvoreny).querySelectorAll('button, [href], input, select, textarea')]
+      .filter(x => !x.disabled && x.offsetParent !== null);
+    if (!prvky.length) return;
+    const prvy = prvky[0], posledny = prvky[prvky.length - 1];
+    if (!el(otvoreny).contains(document.activeElement)) { e.preventDefault(); prvy.focus(); }
+    else if (e.shiftKey && document.activeElement === prvy) { e.preventDefault(); posledny.focus(); }
+    else if (!e.shiftKey && document.activeElement === posledny) { e.preventDefault(); prvy.focus(); }
+  }
+});
 
 // Kraje aj sektory su pevne zoznamy. Zamerne sa nedotahuju z databazy:
 // PostgREST nema DISTINCT, takze by to bol dalsi dopyt pre osem hodnot,
@@ -1549,7 +1624,7 @@ function ktoToMa(r) {
   const casti = [];
   if (r.dodavatel_od) casti.push(`od ${dSk(r.dodavatel_od)}`);
   const n = num(r.dodavatel_zmluv_celkom);
-  if (!Number.isNaN(n) && n > 1) casti.push(`${n} zmlúv so štátom`);
+  if (!Number.isNaN(n) && n > 1) casti.push(`${n} ${tvar(n, 'zmluva', 'zmluvy', 'zmlúv')} so štátom`);
   // POZOR NA POPIS: `historicky_pocet` je pocet zmluv, ktore v tomto sektore
   // obstaral URAD — nie kolkata je to zmluva tohto dodavatela. Povodny text
   // "13. zmluva u tohto uradu" bol pri dodavatelovi s dvoma zmluvami so statom
@@ -1612,7 +1687,9 @@ function odznakSanca(farba, text, title) {
 function typickyCyklus(r) {
   const d = num(r.typicka_dlzka_dni);
   if (Number.isNaN(d) || d <= 0) return '';
-  const text = d >= 60 ? `${Math.round(d / 30.44)} mesiacov` : `${Math.round(d)} dní`;
+  const text = d >= 60
+    ? `${Math.round(d / 30.44)} ${tvar(Math.round(d / 30.44), 'mesiac', 'mesiace', 'mesiacov')}`
+    : `${Math.round(d)} ${tvar(Math.round(d), 'deň', 'dni', 'dní')}`;
   return `<div class="text-[11px] text-slate2 mt-1 whitespace-nowrap"
                title="Medián dĺžky doterajších zmlúv tohto úradu v tomto sektore. Nie je to predpoveď, len história.">
             typický cyklus u úradu: ${text}
@@ -1666,7 +1743,7 @@ function crmStavSelect(typ, contractId, stavMap) {
     .map(([v, t]) => `<option value="${v}" ${v === aktualny ? 'selected' : ''}>${bezpecne(t)}</option>`)
     .join('');
   return `
-    <select data-crm-stav="${typ}" data-crm-id="${contractId}"
+    <select data-crm-stav="${typ}" data-crm-id="${contractId}" aria-label="Váš stav príležitosti"
             class="mt-2 text-[11px] font-medium rounded px-1.5 py-1 border
                    focus:outline-none focus:border-accent ${farbaStavCrm(aktualny)}"
             title="Váš vlastný stav tejto príležitosti — vidíte len vy vo vašej firme.">
@@ -1727,7 +1804,7 @@ function riadok(r, benchmark, sanca, mojIco, stavMap) {
                   title="Pri stavbe koniec zmluvy neznamená ďalšiu súťaž. Pre stavebné firmy je silnejší signál v záložke Dotácie.">stavba sa neopakuje</div>`
           : neskoro
           ? `<div class="text-[11px] font-semibold text-amber-800 bg-amber-50
-                        rounded px-1.5 py-0.5 mt-1 inline-block">tender už asi beží</div>`
+                        rounded px-1.5 py-0.5 mt-1 inline-block">tender už pravdepodobne beží</div>`
           : (r.odhad_vyhlasenia
               ? `<div class="text-[12px] mt-1 whitespace-nowrap">tender ~ ${bezpecne(dSk(r.odhad_vyhlasenia))}</div>`
               : '')}
@@ -1799,9 +1876,7 @@ function poznamkaDodatky(r) {
   if (n <= 0) return '';
   return `<div class="text-[11px] text-slate2 mt-1"
      title="Dodatok často mení sumu. Spojiť ho s touto zmluvou presne nedokážeme, preto sumu overte v CRZ.">
-     ${n === 1 ? 'k tejto zmluve je v CRZ 1 dodatok' :
-       n < 5 ? `k tejto zmluve sú v CRZ ${n} dodatky` :
-               `k tejto zmluve je v CRZ ${n} dodatkov`}, suma sa mohla zmeniť</div>`;
+     k tejto zmluve ${tvar(n, 'je', 'sú', 'je')} v CRZ ${n} ${tvar(n, 'dodatok', 'dodatky', 'dodatkov')}, suma sa mohla zmeniť</div>`;
 }
 
 function riadokDotacie(r, stavMap) {
@@ -1869,7 +1944,7 @@ function oknoDotacie(r) {
               okno je otvorené
             </span>
             <div class="text-[12px] mt-1 whitespace-nowrap">do ${bezpecne(dSk(r.okno_do))}</div>
-            <div class="text-[11px]">zostáva ${doKonca} dní</div>`;
+            <div class="text-[11px]">${tvar(doKonca, 'zostáva', 'zostávajú', 'zostáva')} ${doKonca} ${tvar(doKonca, 'deň', 'dni', 'dní')}</div>`;
   }
   return `<span class="text-[13px]">${bezpecne(dSk(r.okno_od)) || '—'}</span><br>
           <span class="text-[12px]">až ${bezpecne(dSk(r.okno_do)) || '—'}</span>`;
@@ -1897,7 +1972,7 @@ function riadokZiadatela(r) {
       <td data-popis="Dotáciu čakáme" class="px-4 py-4 align-top text-[14px] text-slate2">
         <span class="font-medium whitespace-nowrap">${bezpecne(dSk(r.ocakavane))}</span>
         ${!Number.isNaN(doDotacie) && doDotacie > 0
-          ? `<div class="text-[11px] mt-0.5">o ${doDotacie} dní</div>`
+          ? `<div class="text-[11px] mt-0.5">o ${doDotacie} ${tvar(doDotacie, 'deň', 'dni', 'dní')}</div>`
           : (!Number.isNaN(doDotacie)
               ? `<div class="text-[11px] mt-0.5 text-amber-800">okno už beží</div>` : '')}
         <div class="text-[11px] mt-0.5">rozsah ${bezpecne(dSk(r.okno_od))} – ${bezpecne(dSk(r.okno_do))}</div>
@@ -1939,7 +2014,7 @@ function stitokKonkurencie(pocetPonuk) {
   if (!jeSlabaKonkurencia(pocetPonuk)) return '';
   const n = num(pocetPonuk);
   return `<span class="inline-block text-[11px] font-semibold px-1.5 py-0.5 rounded
-               bg-emerald-50 text-emerald-800" title="Posledná súťaž mala len ${n} ${n === 1 ? 'ponuku' : 'ponuky'} — konkurencia tu bola slabá.">
+               bg-emerald-50 text-emerald-800" title="Posledná súťaž mala len ${n} ${tvar(n, 'ponuku', 'ponuky', 'ponúk')} — konkurencia tu bola slabá.">
             slabá konkurencia
           </span>`;
 }
@@ -1947,7 +2022,7 @@ function stitokKonkurencie(pocetPonuk) {
 function mesiaceText(m) {
   const n = num(m);
   if (Number.isNaN(n) || n <= 0) return '';
-  if (n % 12 === 0) { const r = n / 12; return `${r} ${r === 1 ? 'rok' : r < 5 ? 'roky' : 'rokov'}`; }
+  if (n % 12 === 0) { const r = n / 12; return `${r} ${tvar(r, 'rok', 'roky', 'rokov')}`; }
   return `${Math.round(n)} mes.`;
 }
 
@@ -1956,7 +2031,7 @@ function poslednaSutaz(r) {
   if (!u) return '';
   const casti = [];
   if (u.hodnota != null) casti.push(`za ${suma(u.hodnota)}`);
-  if (u.pocet_ponuk != null) casti.push(`${u.pocet_ponuk} ${u.pocet_ponuk === 1 ? 'ponuka' : u.pocet_ponuk < 5 ? 'ponuky' : 'ponúk'}`);
+  if (u.pocet_ponuk != null) casti.push(`${u.pocet_ponuk} ${tvar(u.pocet_ponuk, 'ponuka', 'ponuky', 'ponúk')}`);
   if (u.podpisane) casti.push(`podpísané ${datumKratky(u.podpisane)}`);
   return `<div class="text-[12px] mt-1">
             <span class="text-slate2">posledná súťaž (ÚVO):</span>
@@ -2019,11 +2094,11 @@ function riadokUvo(r, typ) {
   if (typ === 'koncia' || typ === 'vysledky') {
     const dni = dniOdDnes(r.koniec);
     const ponuky = r.pocet_ponuk != null
-      ? ` · ${r.pocet_ponuk} ${r.pocet_ponuk === 1 ? 'ponuka' : r.pocet_ponuk < 5 ? 'ponuky' : 'ponúk'}` : '';
+      ? ` · ${r.pocet_ponuk} ${tvar(r.pocet_ponuk, 'ponuka', 'ponuky', 'ponúk')}` : '';
     const koniec = r.koniec
       ? `<span class="font-medium whitespace-nowrap">${datumKratky(r.koniec)}</span>
          ${r.koniec_odhad ? '<div class="text-[11px] mt-0.5">odhad</div>' : ''}
-         ${!Number.isNaN(dni) && dni > 0 ? `<div class="text-[11px] mt-0.5">o ${cislo(dni)} dní</div>` : ''}`
+         ${!Number.isNaN(dni) && dni > 0 ? `<div class="text-[11px] mt-0.5">o ${cislo(dni)} ${tvar(dni, 'deň', 'dni', 'dní')}</div>` : ''}`
       : '<span class="text-slate2">neuvedený</span>';
     return `
     <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
@@ -2062,7 +2137,7 @@ function riadokUvo(r, typ) {
         ${typ === 'vyhlasene'
           ? (r.lehota_ponuk
               ? `<span class="font-medium whitespace-nowrap">${new Date(r.lehota_ponuk).toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                 ${!Number.isNaN(dniL) && dniL >= 0 ? `<div class="text-[11px] mt-0.5">o ${cislo(dniL)} dní</div>` : ''}`
+                 ${!Number.isNaN(dniL) && dniL >= 0 ? `<div class="text-[11px] mt-0.5">o ${cislo(dniL)} ${tvar(dniL, 'deň', 'dni', 'dní')}</div>` : ''}`
               : '—')
           : `<span class="whitespace-nowrap">${datumKratky(r.publikovane)}</span>`}
       </td>
@@ -2115,7 +2190,7 @@ function riadokDodavatela(r, sledovane, jePro) {
           // samotna je odteraz Start+, ale sledovanie ostava vyslovne Growth
           // podla cennik.html) — tlacidlo, ktore by aj tak zlyhalo na RLS,
           // nahradzame ticho tymto oznacenim, nie mrtvym/rozbitym tlacidlom.
-          ? `<span class="text-[11px] text-slate2" title="Sledovanie firiem je súčasťou úrovne Growth a vyššie.">Sledovanie od Growth</span>`
+          ? `<span class="text-[11px] text-slate2" title="Sledovanie firiem je súčasťou plánu Growth a vyššie.">Sledovanie od Growth</span>`
           : ''}
       </td>
     </tr>`;
@@ -2140,14 +2215,29 @@ const EXPORT_STROP = 50000;   // poistka proti nekonecnemu cyklu
  * Stiahne VSETKY riadky dopytu. `stavQ` musi dopyt postavit ZNOVA pri
  * kazdom volani — objekt dopytu v supabase-js je jednorazovy a druhe
  * `.range()` na tom istom objekte by sa neuplatnilo.
+ *
+ * `kluc` je JEDINECNY stlpec tabulky (primarny kluc). Pridava sa ako
+ * posledne zoradenie, inak by pri strankovani po 1 000 a radeni podla
+ * neunikatneho stlpca (skore, suma...) mohli riadky na hranici stranok
+ * zdvojit alebo vypadnut (audit 5. 10. 2026, U18). Pre istotu sa
+ * vysledok este deduplikuje podla toho istého kluca.
  */
-async function stahniVsetko(stavQ) {
+async function stahniVsetko(stavQ, kluc) {
   const vsetko = [];
+  const videne = new Set();
   for (let od = 0; od < EXPORT_STROP; od += EXPORT_KROK) {
-    const { data, error } = await stavQ().range(od, od + EXPORT_KROK - 1);
+    let q = stavQ();
+    if (kluc) q = q.order(kluc, { ascending: true });
+    const { data, error } = await q.range(od, od + EXPORT_KROK - 1);
     if (error) throw error;
     const davka = data ?? [];
-    vsetko.push(...davka);
+    for (const r of davka) {
+      if (kluc && r[kluc] != null) {
+        if (videne.has(r[kluc])) continue;
+        videne.add(r[kluc]);
+      }
+      vsetko.push(r);
+    }
     if (davka.length < EXPORT_KROK) break;
   }
   return vsetko;
@@ -2165,36 +2255,79 @@ function dopelnOdkaz(riadky) {
     : { ...r, odkaz: `${CRZ_ZMLUVA}${r.contract_id}/` });
 }
 
-/** Obali export: zablokuje tlacidlo, ukaze stav a chybu nezahltne. */
+/** Obali export: zablokuje tlacidlo, ukaze stav a chybu nezahltne.
+ *  `praca` vrati false, ked nebolo co exportovat (prazdny vysledok). */
 async function sExportom(tlacidloId, praca) {
   const b = el(tlacidloId);
   const povodne = b.textContent;
   b.disabled = true;
   b.textContent = 'Pripravujem…';
   try {
-    await praca();
-    b.textContent = 'Stiahnuté \u2713';
-    setTimeout(() => { b.textContent = povodne; }, 1500);
+    const stiahnute = await praca();
+    if (stiahnute === false) {
+      b.textContent = 'Pre zvolené filtre nie sú žiadne záznamy.';
+      setTimeout(() => { b.textContent = povodne; }, 4000);
+    } else {
+      b.textContent = 'Stiahnuté \u2713';
+      setTimeout(() => { b.textContent = povodne; }, 1500);
+    }
   } catch (e) {
     console.error(e);
     // Chyba exportu sa NESMIE stratit v konzole. Zakaznik, ktoremu sa
     // subor nestiahol, musi vediet preco.
-    b.textContent = 'Export zlyhal';
+    b.textContent = 'Export zlyhal. Skúste to znova.';
     setTimeout(() => { b.textContent = povodne; }, 4000);
   } finally {
     b.disabled = false;
   }
 }
 
+// Slovenske hlavicky stlpcov v exporte. Neznamy stlpec ostane pod svojim
+// povodnym nazvom (export robi select *, takze nove stlpce sa nestratia).
+const HLAVICKY_EXPORTU = {
+  contract_id: 'ID zmluvy v CRZ', contract_id_alt: 'Druhé ID zmluvy v CRZ',
+  skore: 'Sila signálu', subject: 'Predmet zmluvy', sector: 'Sektor',
+  authority_name: 'Obstarávateľ', authority_cin: 'IČO obstarávateľa',
+  price_total: 'Hodnota (€)', cena_neuvedena: 'Cena neuvedená',
+  effective_from: 'Zmluva od', effective_to: 'Zmluva končí',
+  odhad_vyhlasenia: 'Odhad vyhlásenia tendra', dni_do_konca: 'Dní do konca zmluvy',
+  mesto: 'Mesto', kraj: 'Kraj', supplier_name: 'Súčasný dodávateľ',
+  dodavatel_od: 'Dodávateľ od', dodavatel_zmluv_celkom: 'Zmlúv dodávateľa so štátom',
+  historicky_pocet: 'Zákaziek úradu v sektore', typicka_dlzka_dni: 'Typická dĺžka zmluvy úradu (dni)',
+  odkaz: 'Odkaz na zmluvu v CRZ',
+  prijimatel: 'Prijímateľ', poskytovatel: 'Poskytovateľ', ucel: 'Účel', suma: 'Suma (€)',
+  sektor_odhad: 'Odhad sektora', podpisane: 'Podpísané', okno_od: 'Okno tendra od',
+  okno_do: 'Okno tendra do', strany_vymenene: 'Strany v CRZ vymenené',
+  ma_dodatky: 'Počet dodatkov', je_dodatok: 'Je dodatok',
+  obec: 'Obec', sprostredkovatel: 'Kto píše žiadosť', cena_sluzby: 'Cena služby (€)',
+  najate: 'Najala', ocakavane: 'Dotáciu čakáme',
+  oznamenie_id: 'ID oznámenia', vestnik: 'Vestník', typ: 'Typ', typ_oznamenia: 'Typ oznámenia',
+  zakazka_id: 'ID zákazky', obstaravatel_ico: 'IČO obstarávateľa',
+  obstaravatel_nazov: 'Obstarávateľ', nuts: 'NUTS (miesto plnenia)', nazov: 'Názov zákazky',
+  cast_id: 'Časť', cast_nazov: 'Názov časti', cpv: 'CPV', sektor: 'Sektor', druh: 'Druh',
+  vitaz_ico: 'IČO víťaza', vitaz_nazov: 'Víťaz', hodnota: 'Cena (€)', mena: 'Mena',
+  predpokladana_hodnota: 'Predpokladaná hodnota (€)', pocet_ponuk: 'Počet ponúk',
+  trvanie_mesiace: 'Trvanie (mesiace)', koniec: 'Koniec zmluvy', koniec_odhad: 'Koniec je odhad',
+  zmluva_cislo: 'Číslo zmluvy', crz_url: 'Odkaz na CRZ', url: 'Odkaz na ÚVO',
+  publikovane: 'Zverejnené', lehota_ponuk: 'Lehota na ponuky', created_at: 'Vytvorené',
+  supplier_cin: 'IČO dodávateľa', dodavatel: 'Dodávateľ', hlavny_sektor: 'Hlavný sektor',
+  zmluv: 'Zmlúv', objem_eur: 'Objem (€)', priemerna_zmluva_eur: 'Priemerná zmluva (€)',
+  uradov: 'Úradov', sektorov: 'Sektorov', zmluv_s_navysenim: 'Zmlúv s navýšením',
+  podiel_zmluv_s_navysenim: 'Podiel zmlúv s navýšením', priemerne_navysenie_pct: 'Priemerné navýšenie (%)',
+  prva_zmluva: 'Prvá zmluva', posledna_zmluva: 'Posledná zmluva', refreshed_at: 'Prepočítané',
+};
+
+/** Vrati true, ked sa subor stiahol, false ked nebolo co exportovat. */
 function exportExcel(nazov, riadky) {
-  if (!riadky?.length) return;
+  if (!riadky?.length) return false;
   const hlavicky = Object.keys(riadky[0]);
+  const hlavickySk = hlavicky.map(h => HLAVICKY_EXPORTU[h] ?? h);
 
   // Vyvezeny subor je dalsia rozmnozenina odvodeneho produktu, takze podla
   // bodu 4.3 a 4.9 podmienok pouzivania datasetu musi nest oznacenie zdroja,
   // oznamenie o upravach a datum. Preto tie riadky nad hlavickou tabulky —
   // rovnaky text ako predtym pri CSV exporte, len teraz ako riadky listu.
-  const dnes = new Date().toISOString().slice(0, 10);
+  const dnes = dnesLokalne();
   const list = XLSX.utils.aoa_to_sheet([
     [`PredTendrom.sk — export ${dnes}`],
     ['Zdroj údajov: Služby Slovensko.Digital, s.r.o. a Centrálny register zmlúv'],
@@ -2203,7 +2336,7 @@ function exportExcel(nazov, riadky) {
     [`Podmienky: https://ekosystem.slovensko.digital/podmienky | Dátum spracovania: ${dnes}`],
     ['Údaje majú len informatívny charakter a nie sú právne záväzné.'],
     [],
-    hlavicky,
+    hlavickySk,
     ...riadky.map(r => hlavicky.map(h => r[h] ?? '')),
   ]);
 
@@ -2213,6 +2346,7 @@ function exportExcel(nazov, riadky) {
   const nazovListu = (nazov.replace(/[\\/?*[\]:]/g, ' ').trim() || 'List1').slice(0, 31);
   XLSX.utils.book_append_sheet(zosit, list, nazovListu);
   XLSX.writeFile(zosit, `${nazov}-${dnes}.xlsx`);
+  return true;
 }
 
 // ── ZALOZKY ─────────────────────────────────────────────────────────────
@@ -2313,13 +2447,9 @@ function otvorPredplatneModal(supabase, aktualnyPlan) {
   const btn = el('modal-predplatne-zaplatit');
   btn.disabled = false;
   btn.textContent = 'Zaplatiť';
-  ukaz('modal-predplatne');
-  el('modal-predplatne').classList.add('flex');
+  otvorModal('modal-predplatne');
 
-  el('modal-predplatne-zavriet').onclick = () => {
-    el('modal-predplatne').classList.add('hidden');
-    el('modal-predplatne').classList.remove('flex');
-  };
+  el('modal-predplatne-zavriet').onclick = () => zavriModal('modal-predplatne');
 
   btn.onclick = async () => {
     const zvolene = document.querySelector('input[name="predplatne-volba"]:checked')?.value;
@@ -2373,7 +2503,7 @@ function suplTyzdenTrend(riadky) {
   return roky.map(rok => {
     const n = podlaRoka.get(rok);
     const vyska = Math.max(4, Math.round((n / max) * 36));
-    return `<div class="flex flex-col items-center justify-end h-full" title="${rok}: ${n} zmlúv">
+    return `<div class="flex flex-col items-center justify-end h-full" title="${rok}: ${n} ${tvar(n, 'zmluva', 'zmluvy', 'zmlúv')}">
               <div class="w-5 bg-accent/70 rounded-t" style="height:${vyska}px"></div>
               <div class="text-[10px] text-slate2 mt-1">${rok.slice(2)}</div>
             </div>`;
@@ -2477,12 +2607,8 @@ async function otvorProfilDodavatela(supabase, ico, nazov, jeTeam) {
   el('modal-profil-prazdny').classList.add('hidden');
   el('modal-profil-financie').innerHTML = '';
   el('modal-profil-financie').classList.add('hidden');
-  ukaz('modal-profil');
-  el('modal-profil').classList.add('flex');
-  el('modal-profil-zavriet').onclick = () => {
-    el('modal-profil').classList.add('hidden');
-    el('modal-profil').classList.remove('flex');
-  };
+  otvorModal('modal-profil');
+  el('modal-profil-zavriet').onclick = () => zavriModal('modal-profil');
 
   // Nezavisle od histórie zmlúv nižšie (iný zdroj dát, iná tabuľka) — beží
   // súbežne, nie sekvenčne. Bez jeTeam ostáva sekcia skrytá (nastavené
@@ -2514,7 +2640,7 @@ async function otvorProfilDodavatela(supabase, ico, nazov, jeTeam) {
   // Audit 19.9.2026 to reálne odhalil (32 vs. 27 pri tej istej firme).
   el('modal-profil-suhrn').textContent = riadky.length >= PROFIL_LIMIT
     ? `Prvých ${cislo(PROFIL_LIMIT)} záznamov v CRZ (najnovšie), spolu aspoň ${suma(objem)}`
-    : `${cislo(riadky.length)} ${riadky.length === 1 ? 'záznam' : riadky.length < 5 ? 'záznamy' : 'záznamov'} v CRZ, spolu ${suma(objem)} · môže sa mierne líšiť od súčtu v zozname Dodávatelia (tam sú dodatky a duplicitné zverejnenia zlúčené, tu vidíte každý záznam registra zvlášť)`;
+    : `${cislo(riadky.length)} ${tvar(riadky.length, 'záznam', 'záznamy', 'záznamov')} v CRZ, spolu ${suma(objem)} · môže sa mierne líšiť od súčtu v zozname Dodávatelia (tam sú dodatky a duplicitné zverejnenia zlúčené, tu vidíte každý záznam registra zvlášť)`;
   el('modal-profil-trend').innerHTML = suplTyzdenTrend(riadky);
   el('modal-profil-riadky').innerHTML = riadky.map(riadokProfil).join('');
 }
@@ -2567,7 +2693,7 @@ function odznakPredplatneho(sub, zadarmo = false) {
     p.className = 'hidden';
   } else if (trialAktivny) {
     const dniOstava = Math.max(1, Math.ceil((trialKonci - new Date()) / 86400000));
-    o.textContent = `Skúška — ${dniOstava} ${dniOstava === 1 ? 'deň' : dniOstava < 5 ? 'dni' : 'dní'}`;
+    o.textContent = `Skúška — ${dniOstava} ${tvar(dniOstava, 'deň', 'dni', 'dní')}`;
     o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-amber-100 text-amber-800';
     p.textContent = (PLANY[sub.plan] || sub.plan || '').toUpperCase();
     p.className = 'text-[12px] font-semibold px-2.5 py-1 rounded hidden sm:inline bg-ink text-white';
@@ -2581,7 +2707,10 @@ function odznakPredplatneho(sub, zadarmo = false) {
   return { jePro, aktivny };
 }
 
-function obrazovkaTrialVycerpany(supabase) {
+// Spolocna obrazovka pre firmu, ktorej sa nedá zalozit skuska ani pripojit
+// automaticky. Kazda varianta MUSI povedat, co sa da urobit dalej (U5) —
+// nikdy slepa ulicka. Texty su pevne, ziadna hodnota z DB sa sem nevklada.
+function obrazovkaBezPristupu(supabase, { nadpis, odseky, predmet }) {
   el('onboarding').innerHTML = `
     <div class="w-full max-w-[460px]">
       <div class="text-center mb-8">
@@ -2599,41 +2728,75 @@ function obrazovkaTrialVycerpany(supabase) {
       <div class="bg-white border border-line rounded-lg p-7 text-center">
         <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 text-[22px]
                     flex items-center justify-center mx-auto mb-5">&#9203;</div>
-        <h1 class="text-[19px] font-serif font-semibold">Táto firma už prístup má</h1>
-        <p class="mt-3 text-[14px] leading-relaxed text-slate2">
-          Podľa IČO, ktoré ste zadali, je vaša firma u nás už zaregistrovaná.
-          Celá firma zdieľa jedno predplatné.
-        </p>
-        <p class="mt-4 text-[14px] leading-relaxed text-slate2">
-          Požiadajte kolegu, ktorý ho zakladal, aby vás pridal. Ak si nie ste
-          istí, kto to bol, napíšte nám a nájdeme to.
-        </p>
-        <a href="mailto:info@predtendrom.sk?subject=Predplatne%20PredTendrom"
+        <h1 class="text-[19px] font-serif font-semibold">${nadpis}</h1>
+        ${odseky.map((o, i) => `<p class="${i === 0 ? 'mt-3' : 'mt-4'} text-[14px] leading-relaxed text-slate2">${o}</p>`).join('')}
+        <a href="mailto:info@predtendrom.sk?subject=${predmet}"
            class="inline-block mt-6 bg-accent text-white font-semibold
                   px-6 py-3 rounded-md hover:bg-accentDark transition">
           Napísať nám
         </a>
+        <p class="mt-4">
+          <button id="onb-ine-ico" class="text-[13px] text-slate2 hover:text-ink underline underline-offset-2">Zadať iné IČO</button>
+        </p>
       </div>
       <p class="text-center mt-5">
         <button id="odhlasit-3" class="text-[13px] text-slate2 hover:text-ink">Odhlásiť sa</button>
       </p>
     </div>`;
+  // Bez clenstva appka po obnoveni znova ukaze formular s IČO.
+  el('onb-ine-ico').addEventListener('click', () => location.reload());
   el('odhlasit-3').addEventListener('click', async () => {
     await supabase.auth.signOut();
     location.replace(PRIHLASENIE);
   });
 }
 
-function onboarding(supabase) {
+// FIRMA_UZ_EXISTUJE (K1): firma s tym IČO uz ucet ma. Nikoho k nej nepripajame
+// automaticky — pristup da len vlastnik pozvankou.
+function obrazovkaFirmaUzExistuje(supabase) {
+  obrazovkaBezPristupu(supabase, {
+    nadpis: 'Táto firma už prístup má',
+    odseky: [
+      'Firma s týmto IČO už v PredTendrom.sk má účet. Prístup vám môže dať '
+        + 'vlastník účtu — pošle vám pozvánku (pozývanie kolegov je v pláne Team).',
+      'Ak neviete, kto to je, napíšte nám na '
+        + '<a class="text-accent hover:underline" href="mailto:info@predtendrom.sk">info@predtendrom.sk</a> '
+        + 'a pomôžeme.',
+    ],
+    predmet: 'Pristup%20k%20firme%20v%20PredTendrom.sk',
+  });
+}
+
+// TRIAL_VYCERPANY: firma s tym IČO uz skusku mala a teraz nema ucet, ktory by
+// ju mohol "zdedit". Neposielame na kolegu — nie je koho poziadat.
+function obrazovkaTrialVycerpany(supabase) {
+  obrazovkaBezPristupu(supabase, {
+    nadpis: 'Skúška pre túto firmu skončila',
+    odseky: [
+      'Firma s týmto IČO už skúšku PredTendrom.sk využila a nikto z nej teraz '
+        + 'nemá platné predplatné. Novú skúšku pre ňu už spustiť nevieme.',
+      'Ak chcete pokračovať, napíšte nám na '
+        + '<a class="text-accent hover:underline" href="mailto:info@predtendrom.sk">info@predtendrom.sk</a> '
+        + '— povieme vám, ako ďalej. Ak ste IČO zadali omylom, môžete zadať iné.',
+    ],
+    predmet: 'Predplatne%20PredTendrom',
+  });
+}
+
+function onboarding(supabase, sprava) {
   skry('nacitavam');
   ukaz('onboarding');
+
+  // Sprava z neprijatej pozvanky (viz start()) — pevny text, nie kod z DB.
+  if (sprava?.text) {
+    el('onb-sprava').textContent = sprava.text;
+    ukaz('onb-sprava');
+  }
 
   el('form-org').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = el('btn-org'), chyba = el('chyba-org');
     chyba.classList.add('hidden');
-    btn.disabled = true;
-    btn.textContent = 'Zakladám...';
 
     function zlyhalo(text) {
       chyba.textContent = text;
@@ -2642,17 +2805,32 @@ function onboarding(supabase) {
       btn.textContent = 'Vytvoriť prístup';
     }
 
+    // Klientska kontrola PRED volanim RPC, aby chyba prisla hned (U14, U15).
+    // Server ju zopakuje — toto je len rychla spatna vazba.
+    const nazov = el('nazov').value.trim();
+    const ico = ocistiIco(el('ico').value);
+    if (!nazov) { el('nazov').value = ''; return zlyhalo('Zadajte názov firmy.'); }
+    if (nazov.length > 200) return zlyhalo(SPRAVY.NAZOV_DLHY);
+    if (!icoPlatne(ico)) return zlyhalo(SPRAVY.ICO_NEPLATNE);
+
+    btn.disabled = true;
+    btn.textContent = 'Zakladám…';
+
     const { data, error } = await supabase.rpc('zaloz_organizaciu', {
-      p_nazov: el('nazov').value.trim(),
-      p_ico:   el('ico').value.trim()
+      p_nazov: nazov,
+      p_ico:   ico
     });
 
-    if (error) return zlyhalo('Nepodarilo sa: ' + error.message);
-    if (!data)  return zlyhalo('Neočakávaná odpoveď servera.');
-    if (data.ok) return location.reload();
+    if (error) {
+      console.error(error);
+      return zlyhalo(SPRAVA_ULOZENIE);
+    }
+    if (!data)  return zlyhalo(SPRAVA_ULOZENIE);
+    if (data.ok || data.kod === 'UZ_V_FIRME') return location.reload();
 
+    if (data.kod === 'FIRMA_UZ_EXISTUJE') return obrazovkaFirmaUzExistuje(supabase);
     if (data.kod === 'TRIAL_VYCERPANY') return obrazovkaTrialVycerpany(supabase);
-    zlyhalo(SPRAVY[data.kod] ?? ('Nepodarilo sa: ' + data.kod));
+    zlyhalo(SPRAVY[data.kod] ?? SPRAVA_ULOZENIE);
   });
 }
 
@@ -2663,8 +2841,8 @@ function onboarding(supabase) {
 // #ico). Chybny vstup sa nezapise (ticho, ako pri webhooku) — radsej ziadna
 // personalizacia nez zly lookup v `dodavatelia`.
 function platneIco(v) {
-  const t = String(v ?? '').trim();
-  return /^\d{8}$/.test(t) ? t : '';
+  const t = ocistiIco(v);
+  return icoPlatne(t) ? t : '';
 }
 
 async function nastavOdber(supabase, sektory, email, onZmena, jePro = false) {
@@ -2733,6 +2911,14 @@ async function nastavOdber(supabase, sektory, email, onZmena, jePro = false) {
   if (typeof onZmena === 'function') await onZmena(existujuci ?? null);
 
   btn.addEventListener('click', async () => {
+    // Chybne vyplnene IČO sa NESMIE ticho ulozit ako prazdne a zaroven
+    // napisat "Zapisali sme si to" (audit 5. 10. 2026, U14) — povieme to a
+    // nic neukladame.
+    const surovoIco = el('o-moje-ico').value.trim();
+    if (surovoIco && !platneIco(surovoIco)) {
+      ukazHlasku('IČO nemá správny tvar. Skontrolujte ho, prosím.');
+      return;
+    }
     btn.disabled = true;
     const povodny = btn.textContent;
     btn.textContent = 'Ukladám…';
@@ -2758,7 +2944,8 @@ async function nastavOdber(supabase, sektory, email, onZmena, jePro = false) {
     btn.disabled = false;
     if (error) {
       btn.textContent = povodny;
-      ukazHlasku('Nepodarilo sa uložiť: ' + error.message);
+      console.error(error);
+      ukazHlasku(SPRAVA_ULOZENIE);
       return;
     }
     const ulozeny = {
@@ -2813,29 +3000,84 @@ async function nastavTeam(supabase, rola, jeTeam) {
     'takac.marek@gmail.com': { meno: 'Marek Takáč', email: 'info@predtendrom.sk' },
   };
 
+  // Moje user_id — vlastnik nesmie odobrat sam seba (tlacidlo sa nekresli).
+  let mojeId = null;
+  if (jeOwner) {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      mojeId = user?.id ?? null;
+    } catch (e) { /* bez id sa tlacidlo neukaze pri nikom */ mojeId = null; }
+  }
+  let zoznamClenov = [];
+
   async function nacitajClenov() {
     const { data, error } = await supabase.rpc('moji_kolegovia');
     if (error) {
+      console.error(error);
       el('team-clenovia').innerHTML =
         '<p class="text-[13px] text-red-700 py-2">Členov sa nepodarilo načítať.</p>';
       return;
     }
     const zoznam = data ?? [];
+    zoznamClenov = zoznam;
     el('team-clenovia').innerHTML = (zoznam.map(c => {
       const skryty = SKRYTE_EMAILY[(c.email || '').toLowerCase()];
       const riadokEmail = skryty
         ? `<a href="mailto:${skryty.email}" class="hover:underline">${bezpecne(skryty.meno)}</a>`
         : bezpecne(c.email);
+      // "Odobrať" vidi len vlastnik, pri nikom okrem clenov (nie pri sebe
+      // ani pri inom vlastnikovi) — DB to aj tak vynuti (odober_clena_firmy).
+      const mozeOdobrat = jeOwner && mojeId && c.user_id && c.user_id !== mojeId && c.rola !== 'owner';
       return `
-      <div class="py-2.5">
-        <p class="text-[14px] text-ink">${riadokEmail}</p>
-        <p class="text-[12px] text-slate2">${c.rola === 'owner' ? 'vlastník' : 'člen'} · od ${datumKratky(c.created_at)}</p>
+      <div class="py-2.5 flex items-center justify-between gap-3">
+        <div>
+          <p class="text-[14px] text-ink">${riadokEmail}</p>
+          <p class="text-[12px] text-slate2">${c.rola === 'owner' ? 'vlastník' : 'člen'} · od ${datumKratky(c.created_at)}</p>
+        </div>
+        ${mozeOdobrat ? `<button type="button" data-odober="${bezpecne(c.user_id)}"
+                class="text-[13px] font-semibold text-red-700 hover:text-red-900 whitespace-nowrap">Odobrať</button>` : ''}
       </div>
     `;
     }).join('')) || '<p class="text-[13px] text-slate2 py-2">Zatiaľ len vy.</p>';
   }
 
   await nacitajClenov();
+
+  // Odobratie clena firmy (K1). Potvrdenie + kontrola chyby, nezvratna akcia.
+  const SPRAVY_ODOBRATIA = {
+    LEN_VLASTNIK: 'Člena môže odobrať len vlastník firmy.',
+    SEBA_NIE: 'Seba z firmy odobrať nemôžete.',
+    NIE_JE_CLEN: 'Tento používateľ už nie je členom firmy.',
+    VLASTNIKA_NIE: 'Vlastníka firmy odobrať nemožno.',
+  };
+  function ukazHlaskuTim(text, jeChyba) {
+    const h = el('team-hlaska');
+    h.textContent = text;
+    h.className = 'mt-3 text-[13px] ' + (jeChyba ? 'text-red-700' : 'text-slate2');
+  }
+  if (jeOwner) {
+    el('team-clenovia').addEventListener('click', async (e) => {
+      const tl = e.target.closest('[data-odober]');
+      if (!tl) return;
+      const id = tl.dataset.odober;
+      const clen = zoznamClenov.find(c => c.user_id === id);
+      const kto = clen?.email || 'tohto používateľa';
+      if (!confirm(`Naozaj chcete odobrať používateľa ${kto} z firmy? Stratí prístup k údajom firmy.`)) return;
+      tl.disabled = true;
+      const { data, error } = await supabase.rpc('odober_clena_firmy', { p_user_id: id });
+      if (error) {
+        console.error(error);
+        tl.disabled = false;
+        return ukazHlaskuTim(SPRAVA_ULOZENIE, true);
+      }
+      if (data?.ok) {
+        ukazHlaskuTim('Člen bol odobratý z firmy.', false);
+      } else {
+        ukazHlaskuTim(SPRAVY_ODOBRATIA[data?.kod] ?? SPRAVA_ULOZENIE, true);
+      }
+      await nacitajClenov();
+    });
+  }
 
   // Formular na pozvanie a cakajuce pozvanky vidi len owner — clenovia
   // zoznam kolegov vyssie vidia vzdy, to je cely zmysel Timu.
@@ -2882,7 +3124,7 @@ async function nastavTeam(supabase, rola, jeTeam) {
     NEPLATNY_EMAIL: 'Táto e-mailová adresa nevyzerá platne.',
     BEZ_FIRMY: 'Váš účet nie je priradený k žiadnej firme.',
     LEN_OWNER: 'Pozvať kolegu môže len vlastník organizácie.',
-    VYZADUJE_TEAM: 'Pozývanie kolegov je súčasťou úrovne Team.',
+    VYZADUJE_TEAM: 'Pozývanie kolegov je súčasťou plánu Team.',
     UZ_CLEN: 'Táto osoba je už členom vášho tímu.',
   };
 
@@ -2891,7 +3133,7 @@ async function nastavTeam(supabase, rola, jeTeam) {
     hlaska.classList.add('hidden');
     btn.disabled = true;
     const povodny = btn.textContent;
-    btn.textContent = 'Odosielam...';
+    btn.textContent = 'Odosielam…';
 
     const email = el('pozvat-email').value.trim();
     const { data, error } = await supabase.rpc('pozvi_clena', { p_email: email });
@@ -2900,10 +3142,13 @@ async function nastavTeam(supabase, rola, jeTeam) {
     btn.textContent = povodny;
     hlaska.classList.remove('hidden');
 
-    if (error) return ukazHlaskuPozvat('Nepodarilo sa: ' + error.message, true);
+    if (error) {
+      console.error(error);
+      return ukazHlaskuPozvat('Pozvánku sa teraz nepodarilo odoslať. Skúste to prosím znova.', true);
+    }
     if (!data?.ok) {
       return ukazHlaskuPozvat(
-        SPRAVY_POZVANIA[data?.kod] ?? ('Nepodarilo sa: ' + data?.kod), true);
+        SPRAVY_POZVANIA[data?.kod] ?? 'Pozvánku sa teraz nepodarilo odoslať. Skúste to prosím znova.', true);
     }
 
     el('pozvat-email').value = '';
@@ -3072,6 +3317,9 @@ async function nastavDopyty(supabase) {
            class="mt-3 inline-block text-[13px] font-semibold text-accent hover:underline">
           Odpovedať cez Trh dopytov →
         </a>
+        <p class="mt-1 text-[12px] text-slate2">
+          Odpovedať môžete po vytvorení bezplatného profilu poradcu.
+        </p>
       </div>`;
   }
 
@@ -3108,6 +3356,24 @@ async function nastavDopyty(supabase) {
   });
 }
 
+// Jednorazova hlaska nad obsahom (vysledok pozvanky, chyba pri sledovani...).
+// typ: 'ok' (tmava), 'info' (neutralna), 'chyba' (cervena). Text je vzdy
+// pevny retazec z tohto suboru, nikdy kod ani text chyby z DB.
+function ukazBanner(typ, text) {
+  const b = el('pozvanka-banner');
+  const zavriet = el('pozvanka-banner-zavriet');
+  const farby = {
+    ok:    ['bg-ink text-white', 'hover:text-white/80'],
+    info:  ['bg-white text-ink border border-line', 'hover:text-accent'],
+    chyba: ['bg-red-50 text-red-800 border border-red-200', 'hover:text-red-900'],
+  }[typ] ?? ['bg-white text-ink border border-line', 'hover:text-accent'];
+  b.className = 'mb-5 rounded-lg px-4 py-3 flex items-center justify-between gap-3 ' + farby[0];
+  el('pozvanka-banner-text').textContent = text;
+  zavriet.className = 'text-[13px] font-semibold underline underline-offset-2 whitespace-nowrap ' + farby[1];
+  zavriet.onclick = () => b.classList.add('hidden');
+  if (typ === 'chyba') b.scrollIntoView?.({ block: 'nearest' });
+}
+
 // ── DASHBOARD ───────────────────────────────────────────────────────────
 async function dashboard(supabase, rola, spravaPozvanky) {
   const [{ data: org }, { data: sub }, { data: zadarmo }] = await Promise.all([
@@ -3135,15 +3401,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
   // Vysledok prijatia pozvanky (viz start()). Ziadny trvaly zapis, len
   // jednorazova hlaska pre TOTO nacitanie stranky.
-  if (spravaPozvanky) {
-    const b = el('pozvanka-banner');
-    b.className = 'mb-5 rounded-lg px-4 py-3 flex items-center justify-between gap-3 ' +
-      (spravaPozvanky.typ === 'ok' ? 'bg-ink text-white' : 'bg-red-50 text-red-800 border border-red-200');
-    el('pozvanka-banner-text').textContent = spravaPozvanky.text;
-    el('pozvanka-banner-zavriet').className = 'text-[13px] font-semibold underline underline-offset-2 whitespace-nowrap ' +
-      (spravaPozvanky.typ === 'ok' ? 'hover:text-white/80' : 'hover:text-red-900');
-    el('pozvanka-banner-zavriet').addEventListener('click', () => b.classList.add('hidden'));
-  }
+  if (spravaPozvanky) ukazBanner(spravaPozvanky.typ, spravaPozvanky.text);
   // Sledovanie konkretnych ICO konkurencie. Nacitane raz pri starte, pouziva
   // ho tlacidlo v tabulke Dodavatelia aj panel nad nou.
   const sledovaneIco = new Map();
@@ -3194,8 +3452,11 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // priamo vnutri synchronnej filtreZmluv().
   let sledovaneIdsAktivne = null;
 
-  skry('nacitavam');
-  ukaz('app');
+  // U1 (audit 5. 10. 2026): spinner "Nacitavam" ostava, kym nie su zalozky
+  // a obsah pripravene (skryva sa az na konci dashboard()). Predtym sa
+  // schoval hned a zakaznik 1-2 s pozeral na prazdnu stranku.
+  // Modalne okno "Moj vyber" sa preto otvara az po zobrazeni appky (viz koniec).
+  let otvorVyberNeskor = null;
 
   const sektory = Object.entries(POPIS_SEKTORA).sort((a, b) => a[1].localeCompare(b[1], 'sk'));
   naplnSelect('f-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
@@ -3397,8 +3658,30 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     sledovaneIdsAktivne = error ? [] : [...new Set((data ?? []).map(x => x.contract_id))];
   }
 
+  // Radenie zoznamu (aj exportu). Hore, aby ho videl aj export.
+  const RADENIE_Z = {
+    moje:    ['skore', false],   // + osobné poradie v zoradPodlaRelevancie()
+    signal:  ['skore', false],
+    tender:  ['odhad_vyhlasenia', true],
+    hodnota: ['price_total', false],
+    konci:   ['effective_to', true],
+  };
+  const RADENIE_D = {
+    nove: ['podpisane', false],
+    okno: ['okno_do', true],
+    suma: ['suma', false],
+  };
+
+  // Cislo poziadavky pre kazdy zoznam (audit 5. 10. 2026, U17). Rychla
+  // zmena filtrov spusti viac dopytov naraz; odpoved staršieho dopytu,
+  // ktora dorazi neskor, sa zahodi, aby neprepisala novsiu.
+  const poziadavka = { zmluvy: 0, dotacie: 0, ziadatelia: 0, uvo: 0, dodavatelia: 0 };
+
   async function nacitajZmluvy() {
+    const moje = ++poziadavka.zmluvy;
+    el('pocet').textContent = 'Načítavam…';
     await osviezSledovaneIdy();
+    if (moje !== poziadavka.zmluvy) return;
     let q = filtreZmluv(
       supabase.from('opportunities').select(STLPCE_Z, { count: 'exact' }));
 
@@ -3412,6 +3695,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       const skryte = await filtreZmluv(
         supabase.from('opportunities').select('contract_id', { count: 'exact', head: true }))
         .lt('dni_do_konca', DNI_TENDER_UZ_BEZI);
+      if (moje !== poziadavka.zmluvy) return;
       if (!skryte.error) skrytych = skryte.count ?? 0;
     }
 
@@ -3432,21 +3716,16 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     //
     // Zmiesanie sektorov riesi filter na sektor a novy filter PREDSTIH,
     // nie predvolene zoradenie.
-    const RADENIE = {
-      moje:    ['skore', false],   // + osobné poradie v zoradPodlaRelevancie()
-      signal:  ['skore', false],
-      tender:  ['odhad_vyhlasenia', true],
-      hodnota: ['price_total', false],
-      konci:   ['effective_to', true],
-    };
-    const [stlpec, vzostupne] = RADENIE[el('f-radenie').value] ?? RADENIE.signal;
+    const [stlpec, vzostupne] = RADENIE_Z[el('f-radenie').value] ?? RADENIE_Z.signal;
 
     const { data, count, error } = await q
       .order(stlpec, { ascending: vzostupne, nullsFirst: false })
       .order('skore', { ascending: false })
       .limit(zobrazene.zmluvy);
+    if (moje !== poziadavka.zmluvy) return;
     if (error) {
-      el('pocet').textContent = 'Chyba: ' + error.message;
+      console.error(error);
+      el('pocet').textContent = SPRAVA_NACITANIE;
       return;
     }
     posledne.zmluvy = data ?? [];
@@ -3463,6 +3742,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
         .select('contract_id, porovnavacia_cena, zaklad, median_cena, odchylka_pct, ' +
                 'vzoriek, q1, q3, rozptyl, spolahlivy')
         .in('contract_id', ids);
+      if (moje !== poziadavka.zmluvy) return;
       if (!bq.error) benchmark = new Map((bq.data ?? []).map(x => [x.contract_id, x]));
 
       // Sanca na vyhru (#13): rovnaky vzor ako benchmark vyssie, ale Growth+
@@ -3473,6 +3753,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
         const sq = await supabase.from('sanca_na_vyhru')
           .select('contract_id, supplier_cin, top_dodavatel_cin, top_dodavatel_pravnicky')
           .in('contract_id', ids);
+        if (moje !== poziadavka.zmluvy) return;
         if (!sq.error) sanca = new Map((sq.data ?? []).map(x => [x.contract_id, x]));
       }
     }
@@ -3490,6 +3771,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
         .in('obstaravatel_ico', ciny).not('sektor', 'is', null)
         .order('podpisane', { ascending: false, nullsFirst: false })
         .limit(3000);
+      if (moje !== poziadavka.zmluvy) return;
       if (!uq.error) {
         for (const u of uq.data ?? []) {
           const k = `${u.obstaravatel_ico}|${u.sektor}`;
@@ -3511,12 +3793,12 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const podla = POPIS_RADENIA[el('f-radenie').value] ?? '';
     const zaklad = c > posledne.zmluvy.length
       ? `${cislo(c)} záznamov, zobrazujeme prvých ${cislo(posledne.zmluvy.length)} ${podla}`
-      : `${cislo(c)} ${c === 1 ? 'záznam' : c < 5 ? 'záznamy' : 'záznamov'}`;
+      : `${cislo(c)} ${tvar(c, 'záznam', 'záznamy', 'záznamov')}`;
     // Skryte riadky musia byt VIDIET ako cislo. Ticho odfiltrovana sestina
     // databazy je presne ten druh "pomoci", ktory zakaznik objavi az vtedy,
     // ked mu nieco chyba — a vtedy prestane verit celemu zvysku.
     el('pocet').textContent = jeCas && skrytych > 0
-      ? `${zaklad} · ${cislo(skrytych)} skrytých, kde tender už asi beží`
+      ? `${zaklad} · ${cislo(skrytych)} skrytých, kde tender už pravdepodobne beží`
       : zaklad;
     nastavViac('zmluvy', 'viac-z-obal', 'viac-z-stav', c, posledne.zmluvy.length);
   }
@@ -3546,6 +3828,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   }
 
   async function nacitajDotacie() {
+    const moje = ++poziadavka.dotacie;
+    el('pocet-dot').textContent = 'Načítavam…';
     let q = supabase.from('subsidies')
       .select('contract_id, prijimatel, poskytovatel, ucel, suma, sektor_odhad, ' +
               'podpisane, okno_od, okno_do, mesto, kraj, odkaz, strany_vymenene, '
@@ -3553,19 +3837,16 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
     q = filtreDotacii(q);
 
-    const RADENIE_D = {
-      nove: ['podpisane', false],
-      okno: ['okno_do', true],
-      suma: ['suma', false],
-    };
     const [stlpecD, vzostupneD] = RADENIE_D[el('d-radenie').value] ?? RADENIE_D.nove;
 
     const { data, count, error } = await q
       .order(stlpecD, { ascending: vzostupneD, nullsFirst: false })
       .order('suma', { ascending: false })
       .limit(zobrazene.dotacie);
+    if (moje !== poziadavka.dotacie) return;
     if (error) {
-      el('pocet-dot').textContent = 'Chyba: ' + error.message;
+      console.error(error);
+      el('pocet-dot').textContent = SPRAVA_NACITANIE;
       return;
     }
     posledne.dotacie = data ?? [];
@@ -3583,7 +3864,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const stavText = POPIS_STAVU[el('d-stav').value];
     const zakladD = c > posledne.dotacie.length
       ? `${cislo(c)} dotácií, zobrazujeme prvých ${cislo(posledne.dotacie.length)} ${POPIS_D[el('d-radenie').value] ?? ''}`
-      : `${cislo(c)} ${c === 1 ? 'dotácia' : c < 5 ? 'dotácie' : 'dotácií'}`;
+      : `${cislo(c)} ${tvar(c, 'dotácia', 'dotácie', 'dotácií')}`;
     el('pocet-dot').textContent = stavText
       ? `${zakladD} — ${stavText}`
       : zakladD;
@@ -3600,6 +3881,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   }
 
   async function nacitajZiadatelov() {
+    const moje = ++poziadavka.ziadatelia;
+    el('pocet-zia').textContent = 'Načítavam…';
     let q = supabase.from('obce_ziadatelia')
       .select('contract_id, obec, mesto, kraj, sprostredkovatel, cena_sluzby, ' +
               'najate, okno_od, ocakavane, okno_do, odkaz', { count: 'exact' });
@@ -3611,8 +3894,10 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const { data, count, error } = await q
       .order('najate', { ascending: false, nullsFirst: false })
       .limit(zobrazene.ziadatelia);
+    if (moje !== poziadavka.ziadatelia) return;
     if (error) {
-      el('pocet-zia').textContent = 'Chyba: ' + error.message;
+      console.error(error);
+      el('pocet-zia').textContent = SPRAVA_NACITANIE;
       return;
     }
     posledne.ziadatelia = data ?? [];
@@ -3622,7 +3907,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const c = count ?? posledne.ziadatelia.length;
     el('pocet-zia').textContent = c > posledne.ziadatelia.length
       ? `${cislo(c)} obcí, zobrazujeme prvých ${cislo(posledne.ziadatelia.length)} od najnovšie najatej`
-      : `${cislo(c)} ${c === 1 ? 'obec' : c < 5 ? 'obce' : 'obcí'}`;
+      : `${cislo(c)} ${tvar(c, 'obec', 'obce', 'obcí')}`;
     nastavViac('ziadatelia', 'viac-zi-obal', 'viac-zi-stav', c, posledne.ziadatelia.length);
   }
 
@@ -3670,12 +3955,15 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   }
 
   async function nacitajUvo() {
+    const moje = ++poziadavka.uvo;
+    el('pocet-uvo').textContent = 'Načítavam…';
     const typ = el('u-typ').value;
     el('hlavicka-u').innerHTML = UVO_HLAVICKA[typ].map((h, i) =>
       `<th class="px-4 py-3${i === 2 ? ' text-right whitespace-nowrap' : i === 3 ? ' whitespace-nowrap' : ''}">${h}</th>`).join('');
     const { data, count, error } = await filtreUvo(
       supabase.from(tabulkaUvo(typ)).select('*', { count: 'exact' }), typ)
       .limit(zobrazene.uvo);
+    if (moje !== poziadavka.uvo) return;
     if (error) {
       el('pocet-uvo').textContent = 'Túto vrstvu sa nepodarilo načítať.';
       return;
@@ -3687,7 +3975,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const c = count ?? posledne.uvo.length;
     let text = c > posledne.uvo.length
       ? `${cislo(c)} záznamov, zobrazujeme prvých ${cislo(posledne.uvo.length)}`
-      : `${cislo(c)} ${c === 1 ? 'záznam' : c < 5 ? 'záznamy' : 'záznamov'}`;
+      : `${cislo(c)} ${tvar(c, 'záznam', 'záznamy', 'záznamov')}`;
     el('u-jeCas-obal').classList.toggle('hidden', typ !== 'koncia');
     const uVysl = typ === 'koncia' || typ === 'vysledky';
     el('u-malo-ponuk-obal').classList.toggle('hidden', !uVysl);
@@ -3703,7 +3991,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       sq = sVyberom(sq, { nuts: 'nuts', sektor: 'sektor' }, kraj, sektor);
       if (t) sq = sq.or(`nazov.ilike.*${t}*,obstaravatel_nazov.ilike.*${t}*,vitaz_nazov.ilike.*${t}*`);
       const skr = await sq;
-      if (!skr.error && skr.count) text += ` · ${cislo(skr.count)} skrytých, kde súťaž už asi beží`;
+      if (moje !== poziadavka.uvo) return;
+      if (!skr.error && skr.count) text += ` · ${cislo(skr.count)} skrytých, kde súťaž už pravdepodobne beží`;
     }
     if (typ === 'koncia') text += ' · stavebné práce tu nie sú, stavba sa neopakuje';
     el('pocet-uvo').textContent = text;
@@ -3762,12 +4051,20 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     if (sledovaneIco.has(ico)) {
       const { error } = await supabase.from('sledovane_ico')
         .delete().eq('org_id', orgId).eq('ico', ico);
-      if (error) { ukazHlasku('Nepodarilo sa odstrániť sledovanie: ' + error.message); return; }
+      if (error) {
+        console.error(error);
+        ukazBanner('chyba', 'Sledovanie sa nepodarilo odstrániť. Skúste to prosím znova.');
+        return;
+      }
       sledovaneIco.delete(ico);
     } else {
       const { error } = await supabase.from('sledovane_ico')
         .insert({ org_id: orgId, ico, nazov: nazov || null });
-      if (error) { ukazHlasku('Nepodarilo sa uložiť sledovanie: ' + error.message); return; }
+      if (error) {
+        console.error(error);
+        ukazBanner('chyba', 'Sledovanie sa nepodarilo uložiť. Skúste to prosím znova.');
+        return;
+      }
       sledovaneIco.set(ico, nazov || null);
     }
     if (posledne.dodavatelia.length) {
@@ -3878,6 +4175,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   }
 
   async function nacitajDodavatelov() {
+    const moje = ++poziadavka.dodavatelia;
+    el('pocet-dod').textContent = 'Načítavam…';
     let q = supabase.from('dodavatelia')
       .select('supplier_cin, dodavatel, hlavny_sektor, zmluv, objem_eur, uradov, ' +
               'sektorov, priemerna_zmluva_eur, prva_zmluva, posledna_zmluva',
@@ -3888,8 +4187,10 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
     const { data, count, error } = await q
       .order(radenie, { ascending: false, nullsFirst: false }).limit(zobrazene.dodavatelia);
+    if (moje !== poziadavka.dodavatelia) return;
     if (error) {
-      el('pocet-dod').textContent = 'Chyba: ' + error.message;
+      console.error(error);
+      el('pocet-dod').textContent = SPRAVA_NACITANIE;
       return;
     }
     posledne.dodavatelia = data ?? [];
@@ -3901,7 +4202,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const c = count ?? posledne.dodavatelia.length;
     el('pocet-dod').textContent = c > posledne.dodavatelia.length
       ? `${cislo(c)} firiem, zobrazujeme prvých ${cislo(posledne.dodavatelia.length)}`
-      : `${cislo(c)} ${c === 1 ? 'firma' : c < 5 ? 'firmy' : 'firiem'}`;
+      : `${cislo(c)} ${tvar(c, 'firma', 'firmy', 'firiem')}`;
     el('pocet-f').textContent = `(${cislo(c)})`;
     nastavViac('dodavatelia', 'viac-f-obal', 'viac-f-stav', c, posledne.dodavatelia.length);
   }
@@ -3921,8 +4222,11 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   ]);
 
   if (pz.error) {
+    console.error(pz.error);
     el('prazdny-h').textContent = 'Dáta sa nepodarilo načítať';
-    el('prazdny-p').textContent = pz.error.message;
+    el('prazdny-p').textContent = SPRAVA_NACITANIE;
+    skry('nacitavam');
+    ukaz('app');
     ukaz('prazdny');
     return;
   }
@@ -3940,6 +4244,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const { count } = await supabase.from('contracts')
       .select('*', { count: 'exact', head: true });
     el('pocet-zmluv').textContent = (count ?? 0).toLocaleString('sk-SK');
+    skry('nacitavam');
+    ukaz('app');
     ukaz('prazdny');
     return;
   }
@@ -4032,8 +4338,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   el('export-u').addEventListener('click', () => sExportom('export-u', async () => {
     const typ = el('u-typ').value;
     const riadky = await stahniVsetko(() => filtreUvo(
-      supabase.from(tabulkaUvo(typ)).select('*'), typ));
-    exportExcel(`sutaze-uvo-${typ}`, riadky);
+      supabase.from(tabulkaUvo(typ)).select('*'), typ), 'id');
+    return exportExcel(`sutaze-uvo-${typ}`, riadky);
   }));
 
   const prekresliZi = pozdrz(odznova('ziadatelia', nacitajZiadatelov));
@@ -4043,8 +4349,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   el('export-zi').addEventListener('click', () => sExportom('export-zi', async () => {
     const riadky = await stahniVsetko(() => filtreZiadatelov(
       supabase.from('obce_ziadatelia').select('*'))
-      .order('najate', { ascending: false, nullsFirst: false }));
-    exportExcel('obce-ziadaju-o-dotaciu', dopelnOdkaz(riadky));
+      .order('najate', { ascending: false, nullsFirst: false }), 'contract_id');
+    return exportExcel('obce-ziadaju-o-dotaciu', dopelnOdkaz(riadky));
   }));
 
   function reset() {
@@ -4073,19 +4379,26 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
   el('export-z').addEventListener('click', () => sExportom('export-z', async () => {
     await osviezSledovaneIdy();
+    // Radenie podla volby na obrazovke (rovnaka tabulka RADENIE_Z ako pri
+    // zobrazeni). "Relevantne pre mna" je osobne poradie skladane az v
+    // prehliadaci, preto sa exportuje podla sily signalu.
+    const [stlpecE, vzostupneE] = RADENIE_Z[el('f-radenie').value] ?? RADENIE_Z.signal;
     const riadky = await stahniVsetko(() => {
       let q = filtreZmluv(supabase.from('opportunities').select('*'));
       if (el('f-jeCas').checked) q = q.gte('dni_do_konca', DNI_TENDER_UZ_BEZI);
-      return q.order('skore', { ascending: false, nullsFirst: false });
-    });
-    exportExcel('konciace-zmluvy', dopelnOdkaz(riadky));
+      return q.order(stlpecE, { ascending: vzostupneE, nullsFirst: false })
+              .order('skore', { ascending: false, nullsFirst: false });
+    }, 'contract_id');
+    return exportExcel('konciace-zmluvy', dopelnOdkaz(riadky));
   }));
 
   el('export-d').addEventListener('click', () => sExportom('export-d', async () => {
+    const [stlpecDE, vzostupneDE] = RADENIE_D[el('d-radenie').value] ?? RADENIE_D.nove;
     const riadky = await stahniVsetko(() => filtreDotacii(
       supabase.from('subsidies').select('*'))
-      .order('suma', { ascending: false, nullsFirst: false }));
-    exportExcel('dotacie', dopelnOdkaz(riadky));
+      .order(stlpecDE, { ascending: vzostupneDE, nullsFirst: false })
+      .order('suma', { ascending: false, nullsFirst: false }), 'contract_id');
+    return exportExcel('dotacie', dopelnOdkaz(riadky));
   }));
 
   // OPRAVA 22.9.2026 (zivy audit): zalozka Dodavatelia (vratane cenoveho
@@ -4125,14 +4438,10 @@ async function dashboard(supabase, rola, spravaPozvanky) {
           <span>${bezpecne(t)}</span>
         </label>`).join('');
       el('mv-chyba').classList.add('hidden');
-      ukaz('modal-vyber');
-      el('modal-vyber').classList.add('flex');
+      otvorModal('modal-vyber');
     };
 
-    const zavriVyber = () => {
-      el('modal-vyber').classList.add('hidden');
-      el('modal-vyber').classList.remove('flex');
-    };
+    const zavriVyber = () => zavriModal('modal-vyber');
 
     const obnovPanel = () => {
       const maObsah = mojVyber && (mojVyber.kraje?.length || mojVyber.sektory?.length ||
@@ -4151,7 +4460,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       const { error } = await supabase.from('nastavenia_pouzivatela')
         .upsert(riadok, { onConflict: 'user_id' });
       if (error) {
-        el('mv-chyba').textContent = 'Nepodarilo sa uložiť: ' + error.message;
+        console.error(error);
+        el('mv-chyba').textContent = SPRAVA_ULOZENIE;
         el('mv-chyba').classList.remove('hidden');
         return false;
       }
@@ -4205,8 +4515,9 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     el('btn-moj-vyber')?.addEventListener('click', otvorVyber);
 
     obnovPanel();
-    // Prvý krok po registrácii: kto ešte nemá uložený výber, dostane okno.
-    if (tabulkaJe && !mojVyber && aktivny) otvorVyber();
+    // Prvý krok po registrácii: kto ešte nemá uložený výber, dostane okno
+    // (otvorí sa az po zobrazeni appky na konci dashboard()).
+    if (tabulkaJe && !mojVyber && aktivny) otvorVyberNeskor = otvorVyber;
   }
 
   if (aktivny) {
@@ -4246,10 +4557,11 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     napojViac('viac-f', 'dodavatelia', nacitajDodavatelov);
     el('export-f').addEventListener('click',
       () => sExportom('export-f', async () => {
+        const radenieE = el('s-radenie').value || 'objem_eur';
         const riadky = await stahniVsetko(() => filtreDodavatelov(
           supabase.from('dodavatelia').select('*'))
-          .order('objem_eur', { ascending: false, nullsFirst: false }));
-        exportExcel('dodavatelia', riadky);
+          .order(radenieE, { ascending: false, nullsFirst: false }), 'supplier_cin');
+        return exportExcel('dodavatelia', riadky);
       }));
     await nacitajDodavatelov();
   } else {
@@ -4300,7 +4612,12 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     console.error('Štatistiky sa nepodarilo nacitat:', e);
   }
 
+  // Vsetko je pripravene — az teraz schovame spinner a ukazeme appku
+  // (pred nastavZalozky(), ktora meria sirku zaloziek).
+  skry('nacitavam');
+  ukaz('app');
   nastavZalozky(mameZmluvy ? 'obsah' : 'dotacie');
+  if (otvorVyberNeskor) otvorVyberNeskor();
 }
 
 async function start() {
@@ -4319,11 +4636,15 @@ async function start() {
   // Ked Supabase v adrese poslal chybu (najcastejsie "odkaz uz bol
   // pouzity alebo vyprsal"), neprehltnem ju. Pouzivatel musi vidiet
   // DOVOD, inak si vyziada dalsi odkaz a skonci v tom istom kruhu.
+  //
+  // Audit 5. 10. 2026 (U4/U7, V5): prihlasenie.html zobrazuje LEN pevne
+  // kody (odkaz_neplati, ina_pozvanka, ina_chyba); volny text zo Supabase
+  // (error_description) sa neposiela a nikdy sa nezobrazi.
   const chybaOdkazu = chybaZOdkazu();
   if (chybaOdkazu) {
     vycistiAdresu();
     return location.replace(
-      PRIHLASENIE + '?chyba=' + encodeURIComponent(chybaOdkazu));
+      PRIHLASENIE + (PRIHLASENIE.includes('?') ? '&' : '?') + 'chyba=odkaz_neplati');
   }
 
   let { data: { session } } = await supabase.auth.getSession();
@@ -4350,14 +4671,31 @@ async function start() {
   // prijmi_pozvanku() prave pripojila.
   let spravaPozvanky = null;
   if (TOKEN_POZVANKY) {
-    const { data: p } = await supabase.rpc('prijmi_pozvanku', { p_token: TOKEN_POZVANKY });
+    const { data: p, error: chybaPozvanky } =
+      await supabase.rpc('prijmi_pozvanku', { p_token: TOKEN_POZVANKY });
+    if (chybaPozvanky) console.error(chybaPozvanky);
     if (p?.ok) {
       spravaPozvanky = { typ: 'ok', text: 'Pripojili ste sa k tímu.' };
-    } else if (p?.kod && p.kod !== 'UZ_MAS_FIRMU') {
-      // UZ_MAS_FIRMU nie je chyba, ktoru treba hlasit — pouzivatel uz
-      // clenom nejakej organizacie je, pozvanka sa jednoducho nepouzije.
+    } else if (p?.kod === 'INY_EMAIL') {
+      // Pozvanka patri inej adrese, nez s akou je clovek prihlaseny.
+      // prihlasenie.html by prihlaseneho hned poslalo spat do appky, takze
+      // ho najprv odhlasime a nechame prihlasit spravnou adresou (token
+      // pozvanky ostane v adrese). Surovy kod sa nikdy nezobrazi.
+      await supabase.auth.signOut();
+      return location.replace(PRIHLASENIE
+        + (PRIHLASENIE.includes('?') ? '&' : '?') + 'chyba=ina_pozvanka'
+        + '&pozvanka=' + encodeURIComponent(TOKEN_POZVANKY));
+    } else if (p?.kod === 'UZ_MAS_FIRMU') {
+      // Nie je to chyba, len pozvanku nepouzijeme. Ak clovek uz firmu ma
+      // (nizsie sa dostane do appky), povieme mu to jednou vetou.
+      spravaPozvanky = { typ: 'info',
+        text: 'Pozvánku sme nepoužili — už máte prístup k firme.' };
+    } else if (p?.kod === 'POZVANKA_NEPLATNA' || p?.kod === 'POZVANKA_VYPRSANA') {
       spravaPozvanky = { typ: 'chyba',
-        text: 'Pozvánka už nie je platná (kód: ' + p.kod + ').' };
+        text: 'Pozvánka už neplatí — bola použitá alebo vypršala. Požiadajte vlastníka firmy o novú.' };
+    } else if (p?.kod || chybaPozvanky) {
+      spravaPozvanky = { typ: 'chyba',
+        text: 'Pozvánku sa nepodarilo prijať. Požiadajte vlastníka firmy, aby vám poslal novú.' };
     }
   }
 
@@ -4365,8 +4703,13 @@ async function start() {
     .from('memberships').select('org_id, rola').limit(1);
   if (error) throw error;
 
-  if (!clenstva || clenstva.length === 0) onboarding(supabase);
-  else await dashboard(supabase, clenstva[0].rola, spravaPozvanky);
+  if (!clenstva || clenstva.length === 0) {
+    // Bez firmy sa sprava o neprijatej pozvanke ukaze priamo na onboardingu
+    // (typ 'info' pri UZ_MAS_FIRMU sem nepride — clen uz firmu ma).
+    onboarding(supabase, spravaPozvanky?.typ === 'chyba' ? spravaPozvanky : null);
+  } else {
+    await dashboard(supabase, clenstva[0].rola, spravaPozvanky);
+  }
 }
 
 // Ziadna chyba nesmie skoncit prazdnou obrazovkou. Pouzivatel musi vzdy

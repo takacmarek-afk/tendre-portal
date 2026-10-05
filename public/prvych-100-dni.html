@@ -7,11 +7,11 @@
 <title>Prvých 100 dní: čo ste zdedili — PredTendrom.sk</title>
 <meta name="description" content="Vyhľadajte si obec a zistite, koľko zmlúv sa jej v najbližších 12 mesiacoch končí, koľko dotácií ešte beží a koľko firiem jej doteraz písalo žiadosti. Bez registrácie, zadarmo.">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="https://predtendrom.sk/prvych-100-dni.html">
+<link rel="canonical" href="https://predtendrom.sk/prvych-100-dni">
 <meta property="og:title" content="Prvých 100 dní: čo ste zdedili — PredTendrom.sk">
 <meta property="og:description" content="Vyhľadajte si obec a zistite, koľko zmlúv sa jej v najbližších 12 mesiacoch končí a koľko dotácií ešte beží.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://predtendrom.sk/prvych-100-dni.html">
+<meta property="og:url" content="https://predtendrom.sk/prvych-100-dni">
 <meta property="og:locale" content="sk_SK">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Prvých 100 dní: čo ste zdedili — PredTendrom.sk">
@@ -162,7 +162,7 @@
   </p>
   <p class="mt-3 text-[13px] text-slate2">
     Nie sme štátny orgán ani s ním prepojení.
-    Hľadáte zákazky ako dodávateľ? <a href="./index.html" class="text-accent hover:underline">Druhá časť portálu</a>.
+    Hľadáte zákazky ako dodávateľ? <a href="./index.html" class="text-accent hover:underline">PredTendrom.sk pre dodávateľov</a>.
   </p>
 </footer>
 
@@ -205,9 +205,26 @@ function tvar(n, jeden, dvaAzStyri, pat) {
 
 function el(id) { return document.getElementById(id); }
 
+// U8: pri priamom odkaze ?nazov= sa vyhladavanie skryje; ked sa obec nenajde
+// (alebo nacitanie zlyha), vratime ho spat, aby sa dalo hladat znova.
+const NADPIS_HLADANIE = 'Prvých 100 dní: čo ste zdedili';
+function ukazHladanie(predvyplnit) {
+  el('nadpis-hladanie').textContent = NADPIS_HLADANIE;
+  el('uvod-hladanie').classList.remove('hidden');
+  el('hladanie-form').classList.remove('hidden');
+  if (predvyplnit && !el('hladanie-vstup').value) el('hladanie-vstup').value = predvyplnit;
+}
+
+// Escapovanie kazdej hodnoty z URL / DB / vstupu pred vlozenim do innerHTML
+// (rovnaky vzor ako bezpecne() v app.html a trh.html; uvodzovky sa escapuju
+// kvoli hodnotam v atributoch).
+const bezpecne = (t) => String(t ?? '')
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
 function karta(cislo, popis) {
   return `<div class="border border-line rounded-md p-6 bg-white">
-    <p class="suhrn-cislo font-bold text-ink font-serif">${cislo}</p>
+    <p class="suhrn-cislo font-bold text-ink font-serif">${bezpecne(cislo)}</p>
     <p class="mt-1 text-[14px] text-slate2">${popis}</p>
   </div>`;
 }
@@ -218,7 +235,7 @@ function karta(cislo, popis) {
 function pripravTlac(nazov, s) {
   el('tlac-prehlad').innerHTML = `
     <p class="text-[12px] font-mono uppercase tracking-wider text-accent">PredTendrom.sk &mdash; prehľad pre zastupiteľstvo</p>
-    <h1 class="mt-2 font-serif text-[26px] font-bold text-ink">${nazov}${s.kraj ? ` (${s.kraj})` : ''}</h1>
+    <h1 class="mt-2 font-serif text-[26px] font-bold text-ink">${bezpecne(nazov)}${s.kraj ? ` (${bezpecne(s.kraj)})` : ''}</h1>
     <p class="mt-1 text-[13px] text-slate2">Vygenerované ${dSk(new Date())}</p>
     <div class="mt-6 grid grid-cols-2 gap-4">
       ${karta(s.pocet_konciacich, `${tvar(s.pocet_konciacich, 'zmluva sa končí', 'zmluvy sa končia', 'zmlúv sa končí')} do 12 mesiacov, spolu cca ${eur(s.objem_konciacich)}`)}
@@ -237,22 +254,24 @@ function pripravTlac(nazov, s) {
 }
 
 async function zobrazSuhrn(nazov, kraj) {
-  el('vysledok').innerHTML = `<p class="text-slate2">Načítavam súhrn pre ${nazov}&hellip;</p>`;
+  el('vysledok').innerHTML = `<p class="text-slate2">Načítavam súhrn pre ${bezpecne(nazov)}&hellip;</p>`;
   let riadky;
   try {
     riadky = await volajRpc('prvych_100_dni_suhrn', { p_nazov: nazov, p_kraj: kraj || null });
   } catch (e) {
     el('vysledok').innerHTML = `<p class="text-slate2">Súhrn sa nepodarilo načítať. Skúste to prosím znova, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a>.</p>`;
+    ukazHladanie(nazov);
     return;
   }
   const s = (riadky && riadky[0]) || null;
   if (!s || !s.najdena) {
-    el('vysledok').innerHTML = `<p class="text-slate2">Pre „${nazov}“ sme v našich dátach nič nenašli. Skúste presnejší názov, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a> a pozrieme sa spolu.</p>`;
+    el('vysledok').innerHTML = `<p class="text-slate2">Pre „${bezpecne(nazov)}“ sme v našich dátach nič nenašli. Skúste presnejší názov, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a> a pozrieme sa spolu.</p>`;
+    ukazHladanie(nazov);
     return;
   }
   poslednyVysledok = { nazov, s };
   el('vysledok').innerHTML = `
-    <h2 class="font-serif text-[22px] font-bold text-ink">${nazov}${s.kraj ? ` <span class="text-slate2 font-sans text-[15px] font-normal">(${s.kraj})</span>` : ''}</h2>
+    <h2 class="font-serif text-[22px] font-bold text-ink">${bezpecne(nazov)}${s.kraj ? ` <span class="text-slate2 font-sans text-[15px] font-normal">(${bezpecne(s.kraj)})</span>` : ''}</h2>
     <div class="mt-4 grid sm:grid-cols-2 gap-4">
       ${karta(s.pocet_konciacich, `${tvar(s.pocet_konciacich, 'zmluva sa končí', 'zmluvy sa končia', 'zmlúv sa končí')} do 12 mesiacov, spolu cca ${eur(s.objem_konciacich)}`)}
       ${karta(s.pocet_dotacii_bezi, `${tvar(s.pocet_dotacii_bezi, 'dotácia ešte beží', 'dotácie ešte bežia', 'dotácií ešte beží')} alebo je otvorené jej okno, spolu cca ${eur(s.objem_dotacii_bezi)}`)}
@@ -313,16 +332,16 @@ async function nacitajPoradcov(nazov, kraj) {
     return;
   }
   if (!riadky || riadky.length === 0) {
-    box.innerHTML = `Pre túto obec sme v Centrálnom registri zmlúv nenašli žiadnu firmu, ktorá by jej písala žiadosti o dotácie alebo viedla projekt. Celý zoznam naprieč všetkými obcami je na <a href="./obce.html" class="text-accent hover:underline">obce.html</a>.`;
+    box.innerHTML = `Pre túto obec sme v Centrálnom registri zmlúv nenašli žiadnu firmu, ktorá by jej písala žiadosti o dotácie alebo viedla projekt. Celý zoznam naprieč všetkými obcami je <a href="./obce.html" class="text-accent hover:underline">na stránke Peniaze pre obce</a>.`;
     return;
   }
   const polozky = riadky.map(r => `<li class="py-1.5 border-b border-line last:border-0">
-    <span class="text-ink">${r.sprostredkovatel}</span>
+    <span class="text-ink">${bezpecne(r.sprostredkovatel)}</span>
     <span class="text-slate2"> — ${tvar(r.zmluv, 'zmluva', 'zmluvy', 'zmlúv')}${r.posledna_zmluva ? `, naposledy ${dSk(new Date(r.posledna_zmluva))}` : ''}</span>
   </li>`).join('');
   box.innerHTML = `
     <ul class="mt-1">${polozky}</ul>
-    <p class="mt-2 text-[12px] text-slate2">Len fakty z verejných zmlúv (Centrálny register zmlúv) — žiadne skóre úspešnosti. Celý zoznam naprieč všetkými obcami je na <a href="./obce.html" class="text-accent hover:underline">obce.html</a>.</p>
+    <p class="mt-2 text-[12px] text-slate2">Len fakty z verejných zmlúv (Centrálny register zmlúv) — žiadne skóre úspešnosti. Celý zoznam naprieč všetkými obcami je <a href="./obce.html" class="text-accent hover:underline">na stránke Peniaze pre obce</a>.</p>
   `;
 }
 
@@ -330,13 +349,13 @@ let poslednyVysledok = null;
 
 function zobrazKandidatov(zoznam, povodnyText) {
   const polozky = zoznam.map(o =>
-    `<button type="button" data-nazov="${o.nazov.replace(/"/g, '&quot;')}" data-kraj="${(o.kraj || '').replace(/"/g, '&quot;')}"
+    `<button type="button" data-nazov="${bezpecne(o.nazov)}" data-kraj="${bezpecne(o.kraj || '')}"
        class="kandidat-btn block w-full text-left border border-line rounded-md px-4 py-3 hover:border-accent transition">
-       ${o.nazov}${o.kraj ? ` <span class="text-slate2 text-[13px]">(${o.kraj})</span>` : ''}
+       ${bezpecne(o.nazov)}${o.kraj ? ` <span class="text-slate2 text-[13px]">(${bezpecne(o.kraj)})</span>` : ''}
      </button>`
   ).join('');
   el('vysledok').innerHTML = `
-    <p class="text-slate2">Pre „${povodnyText}“ sme našli viacero zhôd. Vyberte tú vašu:</p>
+    <p class="text-slate2">Pre „${bezpecne(povodnyText)}“ sme našli viacero zhôd. Vyberte svoju obec:</p>
     <div class="mt-3 space-y-2">${polozky}</div>
   `;
   document.querySelectorAll('.kandidat-btn').forEach(btn => {
@@ -357,7 +376,7 @@ el('hladanie-form').addEventListener('submit', async (e) => {
     return;
   }
   if (!kandidati || kandidati.length === 0) {
-    el('vysledok').innerHTML = `<p class="text-slate2">Pre „${text}“ sme v našich dátach nič nenašli. Skúste presnejší názov, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a> a pozrieme sa spolu.</p>`;
+    el('vysledok').innerHTML = `<p class="text-slate2">Pre „${bezpecne(text)}“ sme v našich dátach nič nenašli. Skúste presnejší názov, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a> a pozrieme sa spolu.</p>`;
     return;
   }
   if (kandidati.length === 1) {
@@ -377,9 +396,9 @@ el('hladanie-form').addEventListener('submit', async (e) => {
 // starostu ostava len pre organicke navstevy cez vyhladavacie pole.
 (function () {
   const params = new URLSearchParams(location.search);
-  const nazov = (params.get('nazov') || '').trim();
+  const nazov = (params.get('nazov') || '').trim().slice(0, 200);
   if (!nazov) return;
-  const kraj = (params.get('kraj') || '').trim();
+  const kraj = (params.get('kraj') || '').trim().slice(0, 100);
 
   el('nadpis-hladanie').textContent = `${nazov}: dotácie, zmluvy, poradcovia`;
   el('uvod-hladanie').classList.add('hidden');

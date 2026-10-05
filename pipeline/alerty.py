@@ -62,7 +62,8 @@ from supabase import create_client
 import obce
 import regiony
 import register_obci
-from posli_email import _obal, _eur, posli, ODKAZ_OBCE
+from posli_email import (_obal, _eur, _datum_sk, posli, ODKAZ_OBCE,
+                         odkaz_odberu_obce)
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)-7s %(name)-9s %(message)s",
@@ -191,7 +192,7 @@ def pre_odberatela(sb, o, podla_okresu, uz_poslane):
             "titul": u["obec_nazov"],
             "popis": popis,
             "zvyraznene": (f"Získala {_eur(u['suma'])}"
-                           f"{' · podpísané ' + u['podpisane'] if u.get('podpisane') else ''}"),
+                           f"{' · podpísané ' + _datum_sk(u['podpisane']) if u.get('podpisane') else ''}"),
         })
 
     return {
@@ -202,8 +203,11 @@ def pre_odberatela(sb, o, podla_okresu, uz_poslane):
         "bloky": bloky,
         "cta_text": "Pozrieť otvorené výzvy a programy",
         "cta_url": ODKAZ_OBCE,
-        "odhlasenie": ('Odhlásiť sa môžete odpoveďou na tento e-mail '
-                       'so slovom „odhlásiť".'),
+        "odhlasenie": ('Odhlásiť sa môžete aj odpoveďou na tento e-mail '
+                       'so slovom „odhlásiť“.' if o.get("token") else
+                       'Odhlásiť sa môžete odpoveďou na tento e-mail '
+                       'so slovom „odhlásiť“.'),
+        "odhlasovaci_odkaz": odkaz_odberu_obce(o.get("token"), "odhlasit"),
         "_contract_ids": [u["contract_id"] for u in vybrane],
     }
 
@@ -237,7 +241,7 @@ def main():
     dnes = date.today()
 
     try:
-        odberatelia = (sb.table("odber_obce").select("email, obec, kraj")
+        odberatelia = (sb.table("odber_obce").select("email, obec, kraj, token")
                          .eq("potvrdeny", True).execute().data or [])
     except Exception as e:
         log.error("Tabulka odber_obce sa necitala: %s", e)
@@ -285,7 +289,8 @@ def main():
             continue
 
         html = _obal(obsah["titulok"], obsah["uvod"], obsah["bloky"],
-                     obsah["cta_text"], obsah["cta_url"], obsah["odhlasenie"])
+                     obsah["cta_text"], obsah["cta_url"], obsah["odhlasenie"],
+                     odhlasovaci_odkaz=obsah.get("odhlasovaci_odkaz"))
         predmet = f"PredTendrom.sk — {obsah['titulok']}"
 
         if posli(kluc, komu, predmet, html, args.nasucho):

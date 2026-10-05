@@ -5,13 +5,13 @@
 <script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Urobíme to za vás — PredTendrom.sk</title>
-<meta name="description" content="Pre obce, ktoré na dotáciu nemajú kapacitu ani po zjednodušení portálu. Napíšte nám, čo potrebujete, ozveme sa.">
+<meta name="description" content="Pre menšie obce, ktoré na dotáciu nemajú kapacitu. Napíšte nám, čo potrebujete, ozveme sa.">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="https://predtendrom.sk/servis.html">
+<link rel="canonical" href="https://predtendrom.sk/servis">
 <meta property="og:title" content="Urobíme to za vás — PredTendrom.sk">
-<meta property="og:description" content="Pre obce, ktoré na dotáciu nemajú kapacitu ani po zjednodušení portálu. Napíšte nám, čo potrebujete, ozveme sa.">
+<meta property="og:description" content="Pre menšie obce, ktoré na dotáciu nemajú kapacitu. Napíšte nám, čo potrebujete, ozveme sa.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://predtendrom.sk/servis.html">
+<meta property="og:url" content="https://predtendrom.sk/servis">
 <meta property="og:locale" content="sk_SK">
 <meta name="twitter:card" content="summary_large_image">
 <meta property="og:image" content="https://predtendrom.sk/og-image.png">
@@ -62,15 +62,15 @@
   </h1>
   <p class="mt-4 text-[15px] leading-relaxed text-slate2 max-w-[600px]">
     Časť obcí nemá ani starostu na plný úväzok, nieto ešte niekoho, kto
-    stihne sledovať výzvy a písať žiadosti. Pre tento najmenej vybavený
-    segment ponúkame priamu pomoc — nie softvér, ale reálnych ľudí, ktorí
+    stihne sledovať výzvy a písať žiadosti. Pre menšie obce
+    ponúkame priamu pomoc — nie softvér, ale reálnych ľudí, ktorí
     vám poradia alebo žiadosť pripravia s vami.
   </p>
   <p class="mt-3 text-[13px] leading-relaxed text-slate2 max-w-[600px]">
-    Toto je doplnok k <a href="./trh.html" class="text-accent hover:underline">trhu poradcov</a>,
+    Toto je doplnok k <a href="./trh.html" class="text-accent hover:underline">Trhu dopytov</a>,
     nie náhrada — ak si viete predstaviť spoluprácu so súkromným poradcom,
-    skúste najprv tam. Táto stránka je pre situácie, keď si to obec sama
-    nevie ani začať riešiť.
+    skúste najprv tam. Táto stránka je pre situácie, keď na to obec
+    nemá kapacitu.
   </p>
 </section>
 
@@ -114,7 +114,7 @@
     <div class="grid sm:grid-cols-2 gap-4">
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="s-obec">Názov obce</label>
-        <input id="s-obec" type="text" required autocomplete="organization" placeholder="Obec Revúcka Lehota"
+        <input id="s-obec" type="text" required maxlength="200" autocomplete="organization" placeholder="Obec Revúcka Lehota"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
@@ -122,7 +122,7 @@
         <label class="block text-[13px] font-semibold mb-1.5" for="s-kraj">Kraj (nepovinné)</label>
         <select id="s-kraj" class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px] bg-white
                                    focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
-          <option value="">Nevybraté</option>
+          <option value="">Vyberte kraj</option>
         </select>
       </div>
     </div>
@@ -130,13 +130,13 @@
     <div class="grid sm:grid-cols-2 gap-4">
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="s-ico">IČO (nepovinné)</label>
-        <input id="s-ico" type="text" placeholder="00123456"
+        <input id="s-ico" type="text" maxlength="20" placeholder="00123456"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="s-email">Kontaktný e-mail</label>
-        <input id="s-email" type="email" required autocomplete="email" placeholder="starosta@obec.sk"
+        <input id="s-email" type="email" required maxlength="254" autocomplete="email" placeholder="starosta@obec.sk"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
@@ -144,14 +144,14 @@
 
     <div>
       <label class="block text-[13px] font-semibold mb-1.5" for="s-telefon">Telefón (nepovinné)</label>
-      <input id="s-telefon" type="text" placeholder="+421 900 000 000"
+      <input id="s-telefon" type="tel" maxlength="40" autocomplete="tel" placeholder="+421 900 000 000"
              class="w-full sm:w-1/2 border border-line rounded-md px-3.5 py-2.5 text-[15px]
                     focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
     </div>
 
     <div>
       <label class="block text-[13px] font-semibold mb-1.5" for="s-popis">S čím potrebujete pomôcť</label>
-      <textarea id="s-popis" rows="4" required placeholder="Napr. potrebujeme pomôcť s výberom vhodnej dotácie a napísaním žiadosti na zateplenie škôlky…"
+      <textarea id="s-popis" rows="4" required maxlength="4000" placeholder="Napr. potrebujeme pomôcť s výberom vhodnej dotácie a napísaním žiadosti na zateplenie škôlky…"
                 class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                        focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"></textarea>
     </div>
@@ -168,8 +168,13 @@
         Súhlasím, že ak nám neviete pomôcť priamo, môže sa táto žiadosť
         (až po vašom schválení) zverejniť ako dopyt na
         <a href="./trh.html" class="text-accent hover:underline" target="_blank" rel="noopener">Trhu dopytov</a>,
-        kde ju uvidí najviac 5 overených firiem z vášho kraja. Nepovinné.
+        kde na ňu môže odpovedať najviac 5 firiem. Nepovinné.
       </label>
+    </div>
+
+    <!-- Honeypot: ludia ho nevidia, boty ho vyplnia. -->
+    <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
+      <input type="text" name="web" id="s-web" tabindex="-1" autocomplete="off">
     </div>
 
     <button type="submit" id="s-btn"
@@ -181,7 +186,7 @@
   </form>
 
   <p class="mt-4 text-[12px] leading-relaxed text-slate2">
-    Odoslaním súhlasíte, že vás na uvedený kontakt oslovíme ohľadom vašej žiadosti.
+    Odoslaním súhlasíte, že vás na uvedený kontakt oslovíme v súvislosti s vašou žiadosťou.
     Údaje nepredávame tretím stranám. Prevádzkovateľ: LoveHome s.r.o., IČO 47 586 362.
   </p>
 </section>
@@ -189,7 +194,7 @@
 <footer class="wrap py-10 border-t border-line">
   <p class="text-[13px] text-slate2">
     Hľadáte skôr priestor, kde si obce a poradcovia nájdu jeden druhého?
-    Skúste <a href="./trh.html" class="text-accent hover:underline">trh dopytov</a>.
+    Skúste <a href="./trh.html" class="text-accent hover:underline">Trh dopytov</a>.
   </p>
   <p class="mt-3 text-[13px] text-slate2">
     Sledujte nás:
@@ -224,6 +229,31 @@ el('form-servis').addEventListener('submit', async (e) => {
     return;
   }
 
+  // Honeypot vyplneny = bot: tvarime sa, ze odoslanie prebehlo, nic neposielame.
+  if (el('s-web').value) {
+    el('form-servis').classList.add('hidden');
+    el('stav-uspech').classList.remove('hidden');
+    return;
+  }
+
+  const obec = el('s-obec').value.trim();
+  const ico = el('s-ico').value.trim();
+  const email = el('s-email').value.trim();
+  const telefon = el('s-telefon').value.trim();
+  const popis = el('s-popis').value.trim();
+  const ukazChybu = (t) => { chyba.textContent = t; chyba.classList.remove('hidden'); };
+
+  if (!obec || !popis) { ukazChybu('Vyplňte prosím názov obce a to, s čím potrebujete pomôcť.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length < 5 || email.length > 254) {
+    ukazChybu('Skontrolujte prosím e-mailovú adresu.'); return;
+  }
+  if (telefon && (telefon.length < 5 || telefon.length > 40)) {
+    ukazChybu('Skontrolujte prosím telefónne číslo.'); return;
+  }
+  if (obec.length > 200 || popis.length > 4000 || ico.length > 20) {
+    ukazChybu('Niektorý údaj je príliš dlhý. Skráťte ho prosím.'); return;
+  }
+
   btn.disabled = true;
   const povodny = btn.textContent;
   btn.textContent = 'Odosielam…';
@@ -238,12 +268,12 @@ el('form-servis').addEventListener('submit', async (e) => {
         Prefer: 'return=minimal',
       },
       body: JSON.stringify({
-        obec: el('s-obec').value.trim(),
+        obec: obec,
         kraj: el('s-kraj').value || null,
-        ico: el('s-ico').value.trim() || null,
-        kontakt_email: el('s-email').value.trim(),
-        kontakt_telefon: el('s-telefon').value.trim() || null,
-        popis: el('s-popis').value.trim(),
+        ico: ico || null,
+        kontakt_email: email,
+        kontakt_telefon: telefon || null,
+        popis: popis,
         suhlas_zverejnit: el('s-suhlas-zverejnit').checked,
       }),
     });
@@ -254,15 +284,15 @@ el('form-servis').addEventListener('submit', async (e) => {
     } else {
       btn.disabled = false;
       btn.textContent = povodny;
-      chyba.textContent = 'Nepodarilo sa to odoslať. Skúste to znova o chvíľu, '
-        + 'alebo napíšte na info@predtendrom.sk.';
+      chyba.textContent = 'Odoslať sa nepodarilo. Skúste to prosím o chvíľu, alebo nám zavolajte, '
+        + 'prípadne napíšte na info@predtendrom.sk.';
       chyba.classList.remove('hidden');
     }
   } catch (err) {
     btn.disabled = false;
     btn.textContent = povodny;
-    chyba.textContent = 'Nepodarilo sa to odoslať. Skúste to znova o chvíľu, '
-      + 'alebo napíšte na info@predtendrom.sk.';
+    chyba.textContent = 'Odoslať sa nepodarilo. Skúste to prosím o chvíľu, alebo nám zavolajte, '
+      + 'prípadne napíšte na info@predtendrom.sk.';
     chyba.classList.remove('hidden');
   }
 });

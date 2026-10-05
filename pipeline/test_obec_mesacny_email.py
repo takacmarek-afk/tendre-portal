@@ -89,10 +89,10 @@ def test_obsah_konciace_zmluvy_a_dotacie():
     suhrn = {"pocet_konciacich": 3, "objem_konciacich": 45000,
              "pocet_dotacii_bezi": 2, "objem_dotacii_bezi": 120000}
     obsah = _obsah(obec, suhrn, [])
-    assert "Seňa" in obsah["titulok"]
+    assert obsah["titulok"] == "Novinky pre obec Seňa"
     assert len(obsah["bloky"]) == 2
-    assert "3 zmlúv" in obsah["bloky"][0]["popis"]
-    assert "2 dotácií" in obsah["bloky"][1]["popis"]
+    assert "3 zmluvy sa končia" in obsah["bloky"][0]["popis"]
+    assert "2 dotácie, ktoré ešte bežia" in obsah["bloky"][1]["popis"]
     # Odhlasenie je cez odpoved na e-mail, nie cez odkaz mimo predtendrom.sk
     # (rovnaka poistka ako _obal() v posli_email.py).
     assert "odpovedzte" in obsah["odhlasenie"]

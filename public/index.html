@@ -38,6 +38,24 @@
      obrazovke ma tabulka min-w-[560px] a nic inak nehovori, ze je co
      odscrolovat. Trieda sa pripina/odopina z JS len ked je realne co
      skryvat, aby na sirokej obrazovke fade nic neorezaval. */
+  /* Mobilna hlavicka (audit 5.10.2026, U23): na 375 px sa logo, "Prihlasit sa",
+     CTA a ikona menu nezmestili — ikona bola nalepena na logo. Len pod sm
+     (640 px); desktop sa nemeni. Ikona menu ide na koniec riadku, logo sa
+     nezmensuje a odkaz "Prihlasit sa" sa pod 430 px presuva do menu. */
+  @media (max-width: 639px) {
+    .hdr-row { gap: .5rem; }
+    .hdr-logo { flex-shrink: 0; gap: .375rem; }
+    .hdr-logo span { font-size: 17px; }
+    .hdr-actions { gap: .5rem; min-width: 0; }
+    #mmenu-btn { order: 3; margin-left: .125rem; padding: .375rem; flex-shrink: 0; }
+  }
+  @media (max-width: 429px) {
+    .hdr-prihlasit { display: none; }
+  }
+  .mmenu-prihlasit { display: none; }
+  @media (max-width: 429px) {
+    .mmenu-prihlasit { display: block; }
+  }
   .ma-co-scrollovat {
     mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
     -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
@@ -54,12 +72,12 @@
      hneď na štarte je zbytočná kognitívna záťaž presne vo chvíli, keď má
      človek rozhodnúť, či vôbec ostane na stránke. Krížový odkaz pre obec
      nezmizol, len sa vrátil tam, kde bol predtým, než tento pruh pribudol:
-     sekcia „PRE OBCE A MESTÁ" nižšie na stránke. -->
+     sekcia „PRE OBCE A MESTÁ“ nižšie na stránke. -->
 
 <!-- ══════════════ NAV ══════════════ -->
 <header class="border-b border-line sticky top-0 bg-white/95 backdrop-blur z-40">
-  <div class="wrap flex items-center justify-between h-16">
-    <a href="#" class="flex items-center gap-2">
+  <div class="wrap hdr-row flex items-center justify-between h-16">
+    <a href="#" class="hdr-logo flex items-center gap-2">
       <svg width="20" height="20" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
         <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
         <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
@@ -85,13 +103,13 @@
            takmer nikto sa tam nedoscroloval. -->
       <a href="./obce.html" class="pl-6 border-l border-line text-accent font-medium hover:text-accentDark transition whitespace-nowrap">Pre obce a mestá &rarr;</a>
     </nav>
-    <div class="flex items-center gap-2 sm:gap-4">
+    <div class="hdr-actions flex items-center gap-2 sm:gap-4">
       <!-- Mobilne menu (audit 24.9.2026) — nav vyssie je hidden lg:flex,
            takze pod 1024px k nemu nebola vobec ziadna cesta (ani ku
            kotvam, ani k odkazu Pre obce). Tlacidlo aj panel testovane
            priamo na zivej strane cez injektovany JS pred nasadenim —
            na 375px sa nic nezalamalo (scrollWidth = viewport width). -->
-      <button id="mmenu-btn" type="button" class="lg:hidden p-1.5 -ml-1.5 text-ink"
+      <button id="mmenu-btn" type="button" class="lg:hidden p-1.5 text-ink"
               aria-expanded="false" aria-controls="mmenu-panel" aria-label="Otvoriť menu">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
           <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
@@ -102,7 +120,7 @@
            prihlasit. Teraz viditelne aj na mobile, len uzsie (mensi
            font, mensi padding na CTA), aby sa pri 375 px nic nezalamalo. -->
       <a href="./prihlasenie.html"
-         class="text-[13px] sm:text-[14px] text-slate2 hover:text-ink transition whitespace-nowrap">Prihlásiť sa</a>
+         class="hdr-prihlasit text-[13px] sm:text-[14px] text-slate2 hover:text-ink transition whitespace-nowrap">Prihlásiť sa</a>
       <a href="./prihlasenie.html" aria-label="Vyskúšať zadarmo" class="text-[13px] sm:text-[14px] font-semibold bg-ink text-white px-3 sm:px-4 py-2 rounded-md hover:bg-accent transition whitespace-nowrap">
         <span aria-hidden="true" class="sm:hidden">Skúsiť zadarmo</span>
         <span aria-hidden="true" class="hidden sm:inline">Vyskúšať zadarmo</span>
@@ -111,6 +129,7 @@
   </div>
   <div id="mmenu-panel" class="hidden lg:hidden border-t border-line bg-white">
     <nav class="wrap py-3 flex flex-col text-[15px] text-slate2">
+      <a href="./prihlasenie.html" class="mmenu-prihlasit py-2.5 border-b border-line text-ink font-medium hover:text-accent">Prihlásiť sa</a>
       <a href="#vrstvy" class="py-2.5 border-b border-line hover:text-ink">Čo sledujeme</a>
       <a href="#konkurencia" class="py-2.5 border-b border-line hover:text-ink">Konkurencia</a>
       <a href="#cena" class="py-2.5 border-b border-line hover:text-ink">Koľko to stojí</a>
@@ -295,8 +314,8 @@
       <h3 class="text-[21px] font-semibold leading-snug">Obec, ktorá dostala peniaze</h3>
       <p class="mt-4 text-[15px] leading-relaxed text-slate2">
         Keď obec podpíše zmluvu o dotácii na rekonštrukciu školy, na tú
-        rekonštrukciu <strong class="text-ink font-semibold">musí</strong>
-        vyhlásiť verejné obstarávanie. Nemá inú možnosť a má na to termín.
+        rekonštrukciu <strong class="text-ink font-semibold">spravidla musí</strong>
+        vyhlásiť verejné obstarávanie a má na to termín.
       </p>
       <p class="mt-4 text-[15px] leading-relaxed text-slate2">
         Tieto zmluvy sú verejné od prvého dňa. Tender z nich vzniká
@@ -401,7 +420,7 @@
           </tr>
           <tr class="border-b border-line/60">
             <td class="py-2.5 pr-4">Mesačné sledovanie tendrov</td>
-            <td class="py-2.5 pr-4">~20 €/mes.</td>
+            <td class="py-2.5 pr-4">20 €/mes.</td>
             <td class="py-2.5">Vyhlásené tendre</td>
           </tr>
           <tr class="border-b border-line/60">
@@ -471,10 +490,10 @@
       Cenník
     </span>
     <h2 class="font-serif mt-6 text-[28px] md:text-[38px] font-bold tracking-tight leading-tight">
-      Tri úrovne, podľa veľkosti vášho obchodu.
+      Tri plány podľa veľkosti vášho obchodu.
     </h2>
     <p class="mt-5 text-[17px] leading-relaxed text-slate2">
-      Start, Growth aj Team &mdash; presný rozsah každej úrovne je na stránke
+      Start, Growth aj Team &mdash; presný rozsah každého plánu je na stránke
       <a href="./cennik.html" class="text-accent hover:underline font-medium">cenníka</a>.
       Každý nový účet má prvých 14 dní zadarmo, bez platobnej karty.
     </p>
@@ -497,35 +516,37 @@
       </ul>
       <p class="mt-6 text-[13px] leading-relaxed text-slate2">
         Bez platobnej karty počas prvých 14 dní. Pri registrácii zadáte
-        e-mail a IČO firmy &mdash; podľa neho vám rovno zoradíme zoznam
-        podľa vašej histórie.
+        e-mail, názov firmy a IČO (IČO je povinné). Zoznam podľa vašej
+        vlastnej histórie zákaziek zoradíte voliteľným poľom „Vaše IČO"
+        v nastaveniach &mdash; patrí do plánu Growth a vyššie a funguje aj
+        počas skúšobnej doby.
       </p>
     </div>
 
     <div class="border border-line rounded-lg p-8 bg-[#F3F0E6]">
-      <h3 class="text-[19px] font-semibold">Čo patrí k vyšším úrovniam</h3>
+      <h3 class="text-[19px] font-semibold">Čo patrí k vyšším plánom</h3>
       <p class="mt-5 text-[15px] leading-relaxed text-slate2">
-        Týždenný e-mail je súčasťou každej úrovne, od Start vyššie. Len
-        to, čo je nové od minule, filtrované na váš sektor a kraj, s
-        krátkym vysvetlením, čo z tej dotácie pravdepodobne bude za
-        zákazku.
+        Týždenný e-mail je súčasťou každého plánu, od Start vyššie. Len
+        to, čo je nové od minule, filtrované na váš sektor a kraj. Pri
+        každej príležitosti v ňom nájdete predmet zákazky, úrad, sumu
+        a dátum, kedy zmluva končí.
       </p>
       <p class="mt-4 text-[15px] leading-relaxed text-slate2">
-        Dôvod je jednoduchý: v malej firme nie je „pozerať tendrový portál"
+        Dôvod je jednoduchý: v malej firme nie je „pozerať tendrový portál“
         nikoho úlohou. Kým sa treba prihlásiť, nestane sa to.
       </p>
       <p class="mt-5 text-[15px] leading-relaxed text-ink font-medium">
-        Profily dodávateľov a cenový benchmark sektora máte od úrovne Start.
+        Profily dodávateľov a cenový benchmark sektora máte od plánu Start.
         Denný prehľad, Slack/Teams a sledovanie firiem patria v
         <a href="./cennik.html" class="text-accent hover:underline">cenníku</a>
-        k úrovniam Growth a Team.
+        k plánom Growth a Team.
       </p>
       <!-- ══ UKÁŽKA E-MAILU ══
            Kto si niečo zapína, má vidieť, čo mu príde. Štruktúra je presne
            taká, akú skladá posli_email.py — nadpis, položky s hodnotou
            a koncom zmluvy, tlačidlo, pätička so zdrojom a odhlásením.
 
-           Obsah je ZÁMERNE popisný, nie konkrétny: „Mesto vo vašom kraji"
+           Obsah je ZÁMERNE popisný, nie konkrétny: „Mesto vo vašom kraji“
            si nikto nespletie so skutočným záznamom z registra. Vymyslený
            názov obce so vymyslenou sumou by vyzeral ako reálne dáta
            a to je presne to, čo na tomto portáli nechceme. -->
@@ -689,7 +710,7 @@
       <h3 class="text-[16px] font-semibold">Odhad nie je istota</h3>
       <p class="mt-2 text-[15px] leading-relaxed text-slate2">
         Okno, kedy tender očakávame, je výpočet z dátumov v zmluvách. Projekt
-        sa môže odložiť, zrušiť, alebo si ho úrad zrealizuje sám.
+        sa môže odložiť, zrušiť alebo si ho úrad zrealizuje sám.
       </p>
     </div>
   </div>
@@ -725,7 +746,7 @@
         </li>
         <li class="flex gap-3 text-[15px] text-slate2">
           <span class="text-accent font-bold mt-px">&#10003;</span>
-          Jedno predplatné pre celú firmu
+          Jedno predplatné pre firmu (viac používateľov v pláne Team)
         </li>
       </ul>
 
@@ -841,9 +862,9 @@
         <h3 class="text-[14px] font-semibold">Ochrana osobných údajov</h3>
         <p class="mt-3 text-[13px] leading-relaxed text-slate2">
           Prevádzkovateľom je LoveHome s.r.o., IČO 47586362. Pri registrácii
-          spracúvame vašu e-mailovú adresu. Ak si dobrovoľne uložíte vlastné
-          IČO v nastaveniach (na zoradenie zoznamu podľa vašej histórie),
-          spracúvame aj to. Údaje používame výlučne na poskytovanie služby
+          spracúvame vašu e-mailovú adresu, názov firmy a IČO firmy (IČO je
+          povinné). Ak si v nastaveniach zadáte aj voliteľné „Vaše IČO"
+          (na zoradenie zoznamu podľa vašej histórie), spracúvame aj to. Údaje používame výlučne na poskytovanie služby
           a komunikáciu s vami. Právnym základom je
           plnenie zmluvy podľa čl. 6 ods. 1 písm. b) GDPR. Údaje uchovávame
           po dobu trvania účtu a 24 mesiacov po jeho zrušení. Neposkytujeme

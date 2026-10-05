@@ -1,0 +1,15 @@
+# Bezpecnostne hlavicky (audit 5. 10. 2026, K2) — Cloudflare Pages/Workers assets.
+# CSP je postavena podla SKUTOCNEHO pouzitia v public/*.html a *.js:
+#  - Supabase (REST/auth/functions): kcpgqchdyhbvssybbaaz.supabase.co
+#  - supabase-js a xlsx sa nacitavaju ako ES moduly z cdn.jsdelivr.net (app.html, prihlasenie.html)
+#  - Google Fonts (fonts.googleapis.com + fonts.gstatic.com)
+#  - Google Tag Manager / GA4 (consent-analytics.js)
+#  - Platba (Stripe Checkout) ide len presmerovanim (location.href), ziadny Stripe.js ani formular -> CSP ju neovplyvnuje
+# Vsetky stranky pouzivaju inline <script> a inline styly, preto 'unsafe-inline'.
+# Plna ochrana pred XSS by vyzadovala nonce/hash (refaktor inline skriptov).
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://www.googletagmanager.com https://*.google-analytics.com https://*.googletagmanager.com https://www.google.com https://*.doubleclick.net; connect-src 'self' https://kcpgqchdyhbvssybbaaz.supabase.co wss://kcpgqchdyhbvssybbaaz.supabase.co https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.doubleclick.net https://www.google.com; frame-src https://www.googletagmanager.com https://td.doubleclick.net; worker-src 'self' blob:; manifest-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(self)

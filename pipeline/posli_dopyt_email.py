@@ -41,24 +41,25 @@ EMAIL_RE = re.compile(r"[^@\s,;<>\"]+@[^@\s,;<>\"]+\.[A-Za-z]{2,}")
 
 # Rovnake popisky ako TERMIN_POPIS/ROZPOCET_POPIS v public/trh.html (P3.3,
 # migracia 55_dopyt_kontakt_a_sablony.sql) — pri zmene tam zmenit aj tu.
+# (Texty su pre cloveka, preto s diakritikou.)
 TERMIN_POPIS = {
-    "co_najskor": "co najskor", "do_1_mesiaca": "do 1 mesiaca",
-    "do_3_mesiacov": "do 3 mesiacov", "neviem": "neviem / flexibilne",
+    "co_najskor": "čo najskôr", "do_1_mesiaca": "do 1 mesiaca",
+    "do_3_mesiacov": "do 3 mesiacov", "neviem": "neviem / flexibilné",
 }
 ROZPOCET_POPIS = {
-    "do_5000": "do 5 000 eur", "5000_20000": "5 000 - 20 000 eur",
-    "20000_100000": "20 000 - 100 000 eur", "nad_100000": "nad 100 000 eur",
+    "do_5000": "do 5 000 €", "5000_20000": "5 000 – 20 000 €",
+    "20000_100000": "20 000 – 100 000 €", "nad_100000": "nad 100 000 €",
     "neviem": "neviem",
 }
 
 
 def _detaily_dopytu(dopyt) -> str:
-    """'Termin: ... . Rozpocet: ...' — len tie casti, ktore su vyplnene."""
+    """'Termín: ... · Rozpočet: ...' — len tie casti, ktore su vyplnene."""
     casti = []
     if dopyt.get("termin"):
-        casti.append("Termin: " + TERMIN_POPIS.get(dopyt["termin"], dopyt["termin"]))
+        casti.append("Termín: " + TERMIN_POPIS.get(dopyt["termin"], dopyt["termin"]))
     if dopyt.get("rozpocet"):
-        casti.append("Rozpocet: " + ROZPOCET_POPIS.get(dopyt["rozpocet"], dopyt["rozpocet"]))
+        casti.append("Rozpočet: " + ROZPOCET_POPIS.get(dopyt["rozpocet"], dopyt["rozpocet"]))
     return " · ".join(casti)
 
 
@@ -88,28 +89,28 @@ def _poradcovia_pre_dopyt(sb, dopyt) -> list:
 
 
 def _obsah_pre_poradcu(dopyt) -> dict:
-    typ_text = {"zmluva": "Koncici sa zmluva", "dotacia": "Dotacia", "ine": "Ine"}.get(
-        dopyt.get("typ"), "Vseobecny dopyt")
-    kde = dopyt.get("kraj") or "kraj neuvedeny"
+    typ_text = {"zmluva": "Končiaca zmluva", "dotacia": "Dotácia", "ine": "Iné"}.get(
+        dopyt.get("typ"), "Všeobecný dopyt")
+    kde = dopyt.get("kraj") or "kraj neuvedený"
     popis = dopyt.get("popis") or ""
     detaily = _detaily_dopytu(dopyt)
     if detaily:
         popis = f"{popis} ({detaily})" if popis else detaily
     return {
-        "titulok": f"Novy dopyt: {dopyt.get('obec_nazov') or 'obec'}",
-        "uvod": (f"{dopyt.get('obec_nazov') or 'Obec'} ({kde}) prave vypisala "
-                 f"novy dopyt na Trhu dopytov. Reagovat moze najviac 5 firiem, "
-                 f"takze cim skor, tym lepsie."),
+        "titulok": f"Nový dopyt: {dopyt.get('obec_nazov') or 'obec'}",
+        "uvod": (f"{dopyt.get('obec_nazov') or 'Obec'} ({kde}) práve vypísala "
+                 f"nový dopyt na Trhu dopytov. Na tento dopyt môže odpovedať "
+                 f"najviac 5 poradcov."),
         "bloky": [{
-            "titul": dopyt.get("nazov") or "(bez nazvu)",
+            "titul": dopyt.get("nazov") or "(bez názvu)",
             "popis": popis,
             "zvyraznene": typ_text,
         }],
-        "cta_text": "Otvorit Trh dopytov",
+        "cta_text": "Otvoriť Trh dopytov",
         "cta_url": ODKAZ_TRH,
-        "odhlasenie": ("Tento e-mail suvisi s vasim profilom poradcu na "
-                       "Trhu dopytov. Profil mozete kedykolvek upravit "
-                       "alebo deaktivovat po prihlaseni na trh.html."),
+        "odhlasenie": ("Tento e-mail súvisí s vaším profilom poradcu na "
+                       "Trhu dopytov. Profil môžete kedykoľvek upraviť "
+                       "alebo deaktivovať po prihlásení na Trhu dopytov."),
     }
 
 
@@ -156,12 +157,13 @@ def posli_poradcom(sb, kluc, nasucho, obmedz_na=None) -> tuple:
 # ── SMER 2: NOVA REAKCIA -> OBEC ────────────────────────────────────────────
 
 def _obsah_pre_obec(dopyt_nazov, poradca, sprava) -> dict:
+    meno_poradcu = (poradca.get("nazov") or "z Trhu dopytov").strip()
     kontakt_bity = [x for x in (poradca.get("kontakt_email"),
                                 poradca.get("kontakt_telefon")) if x]
     return {
-        "titulok": "Firma reagovala na váš dopyt",
-        "uvod": (f'{poradca.get("nazov") or "Poradca"} reagoval(a) na váš '
-                 f'dopyt „{dopyt_nazov}".'),
+        "titulok": "Nová odpoveď na váš dopyt",
+        "uvod": (f'Na váš dopyt „{dopyt_nazov}“ odpovedal poradca '
+                 f'{meno_poradcu}' + ("" if meno_poradcu.endswith(".") else ".")),
         "bloky": [{
             "titul": poradca.get("nazov") or "Poradca",
             "popis": (sprava or "")[:400],

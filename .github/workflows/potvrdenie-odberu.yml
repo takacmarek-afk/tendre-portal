@@ -1,0 +1,74 @@
+name: Potvrdenie odberu
+
+# ══════════════════════════════════════════════════════════════════════════
+#  AUDIT 5.10.2026, V1 (double opt-in pre odber obci).
+#  Kazdych 15 minut posle potvrdzovaci e-mail kazdej adrese z odber_obce,
+#  ktora este nie je potvrdena a este nedostala potvrdzovaci e-mail
+#  (max. 200 e-mailov na beh, len riadky mladsie nez 3 dni). Tyzdenny e-mail
+#  a alerty citaju len potvrdeny=true, takze prehlady zacnu chodit az po
+#  kliknuti na odkaz. Podrobnosti v pipeline/posli_potvrdenie_odberu.py
+#  a v supabase/63_audit_5_10_bezpecnost.sql (oddiel 4).
+#
+#  Ziadne nove tajomstva — pouziva presne tie iste tri (SUPABASE_URL,
+#  SUPABASE_SERVICE_ROLE_KEY, RESEND_API_KEY), co uz ma servis-email.yml.
+#  PRVE SPUSTENIE: rucne (workflow_dispatch) s nasucho=true.
+# ══════════════════════════════════════════════════════════════════════════
+
+on:
+  workflow_dispatch:
+    inputs:
+      nasucho:
+        description: "Nasucho — nic neposielat, len vypisat (nechaj true, kym si neistý)"
+        type: boolean
+        default: true
+      komu:
+        description: "Poslat len na tuto adresu (na test). Prazdne = vsetkym cakajucim."
+        type: string
+        default: ""
+
+  schedule:
+    - cron: "*/15 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: potvrdenie-odberu
+  cancel-in-progress: false
+
+jobs:
+  posli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Poslat potvrdzovacie e-maily pre odber obci
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EVENT: ${{ github.event_name }}
+          NASUCHO: ${{ inputs.nasucho }}
+          KOMU: ${{ inputs.komu }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$NASUCHO" = "true" ]; then
+            ARGS+=(--nasucho)
+          fi
+          if [ -n "${KOMU:-}" ]; then
+            ARGS+=(--komu "$KOMU")
+          fi
+          echo "Spustam: python posli_potvrdenie_odberu.py ${ARGS[*]-}"
+          python posli_potvrdenie_odberu.py "${ARGS[@]}"

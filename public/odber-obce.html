@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Odber prehľadov — PredTendrom.sk</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="./config.js"></script>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="font-sans text-ink bg-[#F3F0E6] min-h-screen flex items-center justify-center p-5">
+
+<!--
+  Potvrdenie / odhlasenie odberu prehladov pre obce (double opt-in, migracia 63).
+  Odkaz v e-maile nesie nahodny token: ?t=<uuid>&akcia=potvrdit|odhlasit.
+  Akcia sa vykona az po kliknuti na tlacidlo — bezpecnostne skenery e-mailov
+  odkazy otvaraju samy a adresa by sa inak potvrdila/odhlasila bez vedomia
+  cloveka. Stranka zamerne nenacitava analytiku (consent-analytics.js, navstevy):
+  token je sucast adresy a nema sa dostat do statistik.
+-->
+
+<div class="w-full max-w-[460px] text-center">
+
+  <a href="./index.html" class="flex items-center justify-center gap-2">
+    <svg width="24" height="24" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+      <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+      <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+      <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+      <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+      <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+    </svg>
+    <span class="font-serif italic text-[22px] text-ink">predtendrom</span>
+  </a>
+
+  <div class="mt-10 bg-white border border-line rounded-lg p-9">
+    <h1 class="mt-4 text-[20px] font-semibold" id="titul">Odber prehľadov</h1>
+    <p class="mt-3 text-[15px] leading-relaxed text-slate2" id="text" role="status" aria-live="polite">
+      Načítavam…
+    </p>
+
+    <div class="mt-7 flex flex-col sm:flex-row gap-3 justify-center" id="akcie">
+      <button type="button" id="akcia-tlacidlo"
+         class="inline-flex justify-center items-center bg-ink text-white font-semibold text-[14px] px-5 py-3 rounded-md hover:bg-accent transition whitespace-nowrap">
+        Pokračovať
+      </button>
+    </div>
+
+    <p class="mt-7 text-[13px] text-slate2">
+      Ak niečo nefunguje, napíšte nám na
+      <a href="mailto:info@predtendrom.sk" class="text-accent hover:underline">info@predtendrom.sk</a>.
+    </p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var titul = document.getElementById('titul');
+  var text = document.getElementById('text');
+  var akcie = document.getElementById('akcie');
+  var tlacidlo = document.getElementById('akcia-tlacidlo');
+  var q = new URLSearchParams(location.search);
+  var token = (q.get('t') || '').trim();
+  var akcia = q.get('akcia') || '';
+  var cfg = window.CONFIG || {};
+
+  var AKCIE = {
+    potvrdit: {
+      rpc: 'potvrd_odber_obce',
+      titul: 'Potvrdiť odber prehľadov',
+      text: 'Kliknutím potvrdíte, že chcete dostávať prehľady o peniazoch pre obce na túto e-mailovú adresu.',
+      tlacidlo: 'Potvrdiť odber',
+      hotovoTitul: 'Hotovo',
+      hotovo: 'Hotovo. Adresu sme potvrdili — prvý prehľad dostanete, hneď ako vyjde.'
+    },
+    odhlasit: {
+      rpc: 'odhlas_odber_obce',
+      titul: 'Odhlásiť odber prehľadov',
+      text: 'Kliknutím sa odhlásite a už vám nebudeme posielať žiadne ďalšie prehľady.',
+      tlacidlo: 'Odhlásiť odber',
+      hotovoTitul: 'Odhlásené',
+      hotovo: 'Odhlásili sme vás. Žiadne ďalšie e-maily vám neposielame.'
+    }
+  };
+
+  function koniec(t, p) {
+    titul.textContent = t;
+    text.textContent = p;
+    akcie.style.display = 'none';
+  }
+
+  function neplatny() {
+    koniec('Odkaz už neplatí', 'Odkaz už neplatí alebo bol použitý. Napíšte nám prosím na info@predtendrom.sk.');
+  }
+
+  var a = Object.prototype.hasOwnProperty.call(AKCIE, akcia) ? AKCIE[akcia] : null;
+  if (!a || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(token)) {
+    koniec('Neplatný odkaz', 'V odkaze chýba platný kód. Skúste ho skopírovať z e-mailu celý, alebo nám napíšte na info@predtendrom.sk.');
+    return;
+  }
+
+  titul.textContent = a.titul;
+  text.textContent = a.text;
+  tlacidlo.textContent = a.tlacidlo;
+
+  tlacidlo.addEventListener('click', function () {
+    tlacidlo.disabled = true;
+    tlacidlo.style.opacity = '0.5';
+    fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/' + a.rpc, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': cfg.SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + cfg.SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ p_token: token })
+    }).then(function (r) { return r.ok ? r.json() : false; })
+      .then(function (d) {
+        if (d === true) { koniec(a.hotovoTitul, a.hotovo); }
+        else { neplatny(); }
+      })
+      .catch(function () {
+        tlacidlo.disabled = false;
+        tlacidlo.style.opacity = '';
+        text.textContent = 'Nepodarilo sa spojiť so serverom. Skúste to prosím o chvíľu znova.';
+      });
+  });
+})();
+</script>
+</body>
+</html>

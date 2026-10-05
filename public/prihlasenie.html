@@ -151,10 +151,15 @@
         platobnej karty.
       </p>
 
-      <form id="login" class="mt-6 space-y-4">
+      <!-- onsubmit="return false": ak sa formular odosle este pred dokoncenim
+           nacitania skriptu (pomala siet), prehliadac by urobil nativny GET
+           a stratil ?pozvanka / ?dalej. Skutocne odoslanie spracuje skript;
+           ak ho pouzivatel stihol vyvolat predtym, zapamata sa v
+           window.__ptCaka a skript ho dokonci hned po inicializacii. -->
+      <form id="login" class="mt-6 space-y-4" novalidate onsubmit="window.__ptCaka = true; return false;">
         <div>
           <label for="email" class="block text-[13px] font-semibold mb-1.5">Pracovný e-mail</label>
-          <input id="email" type="email" required autocomplete="email"
+          <input id="email" type="email" required maxlength="254" autocomplete="email" inputmode="email"
                  class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                         focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
         </div>
@@ -188,6 +193,14 @@
 
   </div>
 
+  <!-- Obec alebo poradca nema tu co hladat (onboarding firmy) — odkaz na
+       vlastne prihlasenie do Trhu dopytov. Skryva ho skript, ak uz je
+       zvoleny ciel trh.html alebo je v adrese pozvanka/servisny token. -->
+  <p id="trh-odkaz" class="text-center text-[14px] text-ink mt-5 leading-relaxed">
+    Ste obec alebo poradca?
+    <a href="./prihlasenie.html?dalej=trh.html" class="text-accent font-semibold underline hover:text-accentDark">Prihláste sa na Trhu dopytov.</a>
+  </p>
+
   <p id="pata-text" class="text-center text-[12px] text-slate2 mt-6 leading-relaxed">
     Služba je určená podnikateľským subjektom.<br>
     Prevádzkovateľ: LoveHome s.r.o., IČO 47586362
@@ -213,14 +226,39 @@ function ukazChybu(text) {
 // Chyba, ktoru sem poslala app.html, ked odkaz z e-mailu neplatil.
 // Bez tohto pouzivatel len znova skoncil na prihlasovacej stranke,
 // nevedel preco, vyziadal si dalsi odkaz a zopakoval to dokola.
+//
+// Audit 5.10.2026 (V5): hodnota ?chyba= sa NIKDY nezobrazuje — kto by poslal
+// odkaz s vlastnym textom, mohol by na nasej domene vydavat falosne "oficialne"
+// hlasky (phishing). Zobrazuju sa len pevne hlasky podla znamych kodov;
+// neznamy kod dostane vseobecnu hlasku.
+const CHYBY_Z_ADRESY = {
+  odkaz_neplati: 'Ten odkaz už neplatí — platí len najnovší. Pošlite si nový '
+    + 'a kliknite na ten posledný e-mail.',
+  ina_pozvanka: 'Táto pozvánka bola poslaná na iný e-mail, než ktorým ste sa '
+    + 'prihlásili. Prihláste sa e-mailom, na ktorý pozvánka prišla.',
+  ina_chyba: 'Prihlásenie sa nepodarilo. Skúste to znova.',
+};
+const VSEOBECNA_CHYBA = 'Prihlásenie sa nepodarilo. Skúste to znova.';
 const zAdresy = new URLSearchParams(location.search).get('chyba');
 if (zAdresy) {
-  ukazChybu(/expired|invalid|not found/i.test(zAdresy)
-    ? 'Ten odkaz už neplatí. Platí len jeden, a to ten NAJNOVŠÍ — '
-      + 'keď si necháte poslať odkaz druhýkrát, prvý prestane fungovať. '
-      + 'Vyžiadajte si nový a kliknite na ten posledný e-mail.'
-    : zAdresy);
-  history.replaceState({}, document.title, location.pathname);
+  const kod = zAdresy.trim().toLowerCase();
+  let hlaska;
+  if (Object.prototype.hasOwnProperty.call(CHYBY_Z_ADRESY, kod)) {
+    hlaska = CHYBY_Z_ADRESY[kod];
+  } else if (/expired|invalid|not found/i.test(zAdresy)) {
+    // Spatna kompatibilita: starsia app.html posielala surovy anglicky text
+    // zo Supabase ("Email link is invalid or has expired"). Text sa len
+    // klasifikuje, nikdy sa nezobrazi.
+    hlaska = CHYBY_Z_ADRESY.odkaz_neplati;
+  } else {
+    hlaska = VSEOBECNA_CHYBA;
+  }
+  ukazChybu(hlaska);
+  // Odstrani sa len ?chyba= — ?pozvanka, ?servis a ?dalej musia prezit.
+  const bezChyby = new URLSearchParams(location.search);
+  bezChyby.delete('chyba');
+  const zvysok = bezChyby.toString();
+  history.replaceState({}, document.title, location.pathname + (zvysok ? '?' + zvysok : ''));
 }
 
 // Token z pozvanky do timu (viz app.html a supabase/26_team_pozvanky.sql).
@@ -253,6 +291,37 @@ if (DALEJ_PARAM === 'trh.html') {
   const pata = document.getElementById('pata-text');
   if (pata) pata.innerHTML = 'Trh dopytov je bezplatný, pre obce aj poradcov.<br>Prevádzkovateľ: LoveHome s.r.o., IČO 47586362';
 }
+
+// Odkaz "Ste obec alebo poradca?" nema zmysel, ak uz je zvoleny Trh dopytov
+// alebo prichadza pozvanka / servisny token (tie maju vlastny banner a ciel).
+if (DALEJ_PARAM === 'trh.html' || TOKEN_POZVANKY || TOKEN_SERVIS) {
+  const trhOdkaz = document.getElementById('trh-odkaz');
+  if (trhOdkaz) trhOdkaz.classList.add('hidden');
+}
+
+// Preklad chyby z Supabase na slovensku hlasku — surovy (anglicky) text
+// error.message sa pouzivatelovi nikdy neukazuje.
+function hlaskaOdoslania(error) {
+  const text = String((error && (error.message || '')) || '');
+  const kod = String((error && error.code) || '');
+  const stav = error && error.status;
+  if (stav === 429 || /rate.?limit|too many|after \d+ seconds?|security purposes/i.test(text)
+      || /rate_limit/i.test(kod)) {
+    return 'Odkaz sme vám už posielali. Počkajte minútu a skúste to znova.';
+  }
+  if (/email_address_invalid|validation_failed/i.test(kod)
+      || /invalid.*email|email.*invalid|unable to validate email|valid email/i.test(text)) {
+    return 'Skontrolujte, prosím, tvar e-mailu.';
+  }
+  if (stav === 0 || /AuthRetryableFetchError|AuthUnknownError/i.test(String(error && error.name))
+      || /fetch|network|failed to|load failed|timeout|offline/i.test(text)) {
+    return 'Skontrolujte pripojenie a skúste to znova.';
+  }
+  return 'Odkaz sa nepodarilo odoslať. Skúste to prosím o chvíľu.';
+}
+
+// Zjednodusena kontrola tvaru: nieco@nieco.nieco, bez medzier.
+const TVAR_EMAILU = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
   ukazChybu('Aplikácia nie je nastavená: v súbore config.js chýba anon kľúč.');
@@ -336,23 +405,38 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
     // princip ako pri pozvanke vyssie.
   }
 
-  document.getElementById('login').addEventListener('submit', async (e) => {
-    e.preventDefault();
+  async function odosliOdkaz() {
     chyba.classList.add('hidden');
+
+    const email = document.getElementById('email').value.trim();
+    if (!email) {
+      ukazChybu('Zadajte, prosím, e-mail.');
+      return;
+    }
+    if (email.length > 254 || !TVAR_EMAILU.test(email)) {
+      ukazChybu('Skontrolujte, prosím, tvar e-mailu.');
+      return;
+    }
+
     tlacidlo.disabled = true;
     tlacidlo.textContent = 'Odosielam...';
 
-    const email = document.getElementById('email').value.trim();
     const cielovaAdresa = new URL(CIELOVA_STRANKA, location.href);
     if (TOKEN_POZVANKY) cielovaAdresa.searchParams.set('pozvanka', TOKEN_POZVANKY);
     if (TOKEN_SERVIS) cielovaAdresa.searchParams.set('servis', TOKEN_SERVIS);
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: cielovaAdresa.href }
-    });
+
+    let error = null;
+    try {
+      ({ error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: cielovaAdresa.href }
+      }));
+    } catch (e) {
+      error = e || { message: 'network' };
+    }
 
     if (error) {
-      ukazChybu('Nepodarilo sa odoslať: ' + error.message);
+      ukazChybu(hlaskaOdoslania(error));
       tlacidlo.disabled = false;
       tlacidlo.textContent = 'Poslať odkaz na prihlásenie';
       return;
@@ -365,7 +449,21 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
     document.getElementById('poslane-na').textContent = email;
     formular.classList.add('hidden');
     hotovo.classList.remove('hidden');
+  }
+
+  // Inline onsubmit="return false" vo formulari natívne odoslanie vzdy
+  // zruší; skutocne odoslanie robi az tento listener.
+  document.getElementById('login').addEventListener('submit', (e) => {
+    e.preventDefault();
+    odosliOdkaz();
   });
+
+  // Formular sa mohol odoslat este pred nacitanim skriptu (pomala siet) —
+  // dokoncime to teraz, ak nas nepresmerovava prihlaseny stav.
+  if (window.__ptCaka && !session) {
+    window.__ptCaka = false;
+    odosliOdkaz();
+  }
 
   document.getElementById('znova').addEventListener('click', () => location.reload());
 }

@@ -33,7 +33,7 @@ import os
 import re
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from supabase import create_client
 
@@ -47,6 +47,11 @@ log = logging.getLogger("servis-email")
 ODKAZ_PRIHLASENIE = "https://predtendrom.sk/prihlasenie.html"
 EMAIL_RE = re.compile(r"[^@\s,;<>\"]+@[^@\s,;<>\"]+\.[A-Za-z]{2,}")
 
+# Poistka (audit 5.10.2026, K3): schvaleny dopyt starsi nez toto sa uz
+# neposiela — stary neodoslany riadok by inak po case mohol "ozit". DB od
+# migracie 63 anonymovi nedovoli nastavit `schvaleny`, toto je navyse.
+MAX_VEK_DNI = 60
+
 
 def _platny_email(e) -> bool:
     return bool(e) and bool(EMAIL_RE.fullmatch(str(e).strip()))
@@ -58,13 +63,28 @@ def _odkaz(token) -> str:
     return f"{ODKAZ_PRIHLASENIE}?servis={token}&dalej=trh.html"
 
 
+def _ma_sa_poslat(sd, teraz) -> bool:
+    """Poistka: len `schvaleny` je presne True a riadok nie je starsi nez
+    MAX_VEK_DNI dni. Chybajuci/necitatelny created_at = neposielat."""
+    if sd.get("schvaleny") is not True:
+        return False
+    try:
+        vytvoreny = datetime.fromisoformat(str(sd.get("created_at")).replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if vytvoreny.tzinfo is None:
+        vytvoreny = vytvoreny.replace(tzinfo=timezone.utc)
+    return teraz - vytvoreny <= timedelta(days=MAX_VEK_DNI)
+
+
 def _obsah(sd) -> dict:
-    obec = sd.get("obec") or "vašu obec"
+    obec = (sd.get("obec") or "").strip()
+    od_obce = f" za obec {obec}" if obec else ""
     return {
         "titulok": "Váš dopyt je pripravený na zverejnenie",
-        "uvod": (f"Dobrý deň, {obec}. Vašu žiadosť o pomoc sme si prečítali "
-                 "a je pripravená na zverejnenie ako dopyt na Trhu dopytov, "
-                 "kde ju uvidia poradcovia vo vašom kraji."),
+        "uvod": (f"Dobrý deň, žiadosť o pomoc, ktorú ste nám poslali{od_obce}, "
+                 "sme si prečítali a je pripravená na zverejnenie ako dopyt "
+                 "na Trhu dopytov, kde ju uvidia poradcovia vo vašom kraji."),
         "bloky": [{
             "titul": "Dokončite jedným klikom",
             "popis": ("Prihláste sa rovnakým e-mailom, na aký prišla táto "
@@ -105,17 +125,24 @@ def main():
         return 1
 
     sb = create_client(url, servis)
+    teraz = datetime.now(timezone.utc)
 
     riadky = (sb.table("servisne_dopyty")
-                .select("id, obec, kontakt_email, token")
+                .select("id, obec, kontakt_email, token, schvaleny, created_at")
                 .eq("suhlas_zverejnit", True)
                 .eq("schvaleny", True)
+                .gte("created_at", (teraz - timedelta(days=MAX_VEK_DNI)).isoformat())
                 .is_("email_poslany_at", "null")
                 .is_("prevzaty_at", "null")
                 .execute().data or [])
 
     poslane = zlyhane = preskocene = 0
     for sd in riadky:
+        if not _ma_sa_poslat(sd, teraz):
+            log.info("Servisny dopyt %s: neschvaleny alebo starsi nez %s dni, "
+                     "preskakujem.", sd["id"], MAX_VEK_DNI)
+            preskocene += 1
+            continue
         komu = (sd.get("kontakt_email") or "").strip()
         if not _platny_email(komu):
             log.warning("Servisny dopyt %s: neplatny kontakt_email, preskakujem.", sd["id"])

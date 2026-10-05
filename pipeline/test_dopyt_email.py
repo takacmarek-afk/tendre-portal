@@ -28,24 +28,29 @@ def test_platny_email():
 # ── _obsah_pre_poradcu ──────────────────────────────────────────────────
 
 def test_obsah_pre_poradcu_typy():
-    for typ, ocakavany_text in [("zmluva", "Koncici sa zmluva"),
-                                 ("dotacia", "Dotacia"),
-                                 ("ine", "Ine"),
-                                 (None, "Vseobecny dopyt"),
-                                 ("neznamy", "Vseobecny dopyt")]:
+    for typ, ocakavany_text in [("zmluva", "Končiaca zmluva"),
+                                 ("dotacia", "Dotácia"),
+                                 ("ine", "Iné"),
+                                 (None, "Všeobecný dopyt"),
+                                 ("neznamy", "Všeobecný dopyt")]:
         d = {"obec_nazov": "Seňa", "kraj": "Košický kraj", "typ": typ,
              "nazov": "Potrebujeme poradcu", "popis": "test"}
         obsah = _obsah_pre_poradcu(d)
         assert obsah["bloky"][0]["zvyraznene"] == ocakavany_text
-        assert "Seňa" in obsah["titulok"]
+        assert obsah["titulok"] == "Nový dopyt: Seňa"
         assert obsah["cta_url"] == "https://predtendrom.sk/trh.html"
+        assert obsah["cta_text"] == "Otvoriť Trh dopytov"
+        assert "práve vypísala" in obsah["uvod"]
+        assert "Na tento dopyt môže odpovedať najviac 5 poradcov." in obsah["uvod"]
+        assert "overen" not in obsah["uvod"]
+        assert "po prihlásení na Trhu dopytov" in obsah["odhlasenie"]
 
 
 def test_obsah_pre_poradcu_bez_kraja():
     d = {"obec_nazov": "Testovacia obec", "kraj": None, "typ": "ine",
          "nazov": "X", "popis": None}
     obsah = _obsah_pre_poradcu(d)
-    assert "kraj neuvedeny" in obsah["uvod"]
+    assert "kraj neuvedený" in obsah["uvod"]
 
 
 # ── _detaily_dopytu / termin+rozpocet v popise (P3.3) ───────────────────
@@ -53,7 +58,8 @@ def test_obsah_pre_poradcu_bez_kraja():
 def test_detaily_dopytu_oba_vyplnene():
     d = {"termin": "do_1_mesiaca", "rozpocet": "5000_20000"}
     text = _detaily_dopytu(d)
-    assert "do 1 mesiaca" in text
+    assert "Termín: do 1 mesiaca" in text
+    assert "Rozpočet: 5 000 – 20 000 €" in text
     assert "20 000" in text
     assert "·" in text
 
@@ -70,14 +76,14 @@ def test_obsah_pre_poradcu_pridava_detaily_do_popisu():
     obsah = _obsah_pre_poradcu(d)
     popis = obsah["bloky"][0]["popis"]
     assert popis.startswith("Pôvodný popis")
-    assert "co najskor" in popis
+    assert "čo najskôr" in popis
 
 
 def test_obsah_pre_poradcu_detaily_bez_povodneho_popisu():
     d = {"obec_nazov": "Seňa", "kraj": "Košický kraj", "typ": "ine",
          "nazov": "X", "popis": None, "termin": None, "rozpocet": "do_5000"}
     obsah = _obsah_pre_poradcu(d)
-    assert obsah["bloky"][0]["popis"] == "Rozpocet: do 5 000 eur"
+    assert obsah["bloky"][0]["popis"] == "Rozpočet: do 5 000 €"
 
 
 # ── _obsah_pre_obec ─────────────────────────────────────────────────────
@@ -91,6 +97,9 @@ def test_obsah_pre_obec_orezanie_spravy():
     assert "p@firma.sk" in obsah["bloky"][0]["zvyraznene"]
     assert "0900123456" in obsah["bloky"][0]["zvyraznene"]
     assert "Môj dopyt" in obsah["uvod"]
+    assert obsah["uvod"] == ('Na váš dopyt „Môj dopyt“ odpovedal poradca Poradca s.r.o.')
+    assert obsah["titulok"] == "Nová odpoveď na váš dopyt"
+    assert "reagoval" not in obsah["uvod"]
 
 
 def test_obsah_pre_obec_bez_kontaktov():

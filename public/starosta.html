@@ -7,11 +7,11 @@
 <title>Pre starostov a obce — PredTendrom.sk</title>
 <meta name="description" content="Čo ste v obci zdedili, ktoré zmluvy sa končia, kde sú dotácie a ako získať viac ponúk na súťaž. Bez registrácie, bez hesla — alebo nám jednoducho zavolajte.">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="https://predtendrom.sk/starosta.html">
+<link rel="canonical" href="https://predtendrom.sk/starosta">
 <meta property="og:title" content="Pre starostov a obce — PredTendrom.sk">
 <meta property="og:description" content="Čo ste v obci zdedili, ktoré zmluvy sa končia, kde sú dotácie a ako získať viac ponúk na súťaž.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://predtendrom.sk/starosta.html">
+<meta property="og:url" content="https://predtendrom.sk/starosta">
 <meta property="og:locale" content="sk_SK">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Pre starostov a obce — PredTendrom.sk">
@@ -129,7 +129,7 @@
        class="block rounded-lg border-2 border-line bg-white p-5 hover:border-accent transition">
       <div class="text-[17px] font-semibold">Som nový starosta</div>
       <p class="mt-1.5 text-[14px] leading-relaxed text-slate2">
-        Prvýkrát vo funkcii a chcem vedieť, čo som po predchodcovi zdedil.
+        Som vo funkcii prvýkrát a chcem vedieť, čo obec po predchádzajúcom vedení prevzala.
       </p>
     </a>
     <a href="#znovu"
@@ -143,7 +143,7 @@
        class="block rounded-lg border-2 border-line bg-white p-5 hover:border-accent transition">
       <div class="text-[17px] font-semibold">Sme malá obec bez úradníkov</div>
       <p class="mt-1.5 text-[14px] leading-relaxed text-slate2">
-        Na toto všetko nemáme kapacitu — najradšej by som len zavolal.
+        Na toto všetko nemáme kapacitu — najradšej by sme len zavolali.
       </p>
     </a>
   </div>
@@ -158,7 +158,7 @@
   <div class="wrap py-6">
     <div class="grid sm:grid-cols-4 gap-4 text-[13px] leading-relaxed text-slate2">
       <div class="flex gap-2"><span class="text-accent font-bold shrink-0">&#10003;</span>Vaše údaje nepredávame</div>
-      <div class="flex gap-2"><span class="text-accent font-bold shrink-0">&#10003;</span>Dopyt vidí najviac 5 firiem</div>
+      <div class="flex gap-2"><span class="text-accent font-bold shrink-0">&#10003;</span>Na váš dopyt môže odpovedať najviac 5 firiem.</div>
       <div class="flex gap-2"><span class="text-accent font-bold shrink-0">&#10003;</span>Nie sme štátny orgán ani s ním prepojení</div>
       <div class="flex gap-2"><span class="text-accent font-bold shrink-0">&#10003;</span>Každý údaj má odkaz na zdroj</div>
     </div>
@@ -206,8 +206,8 @@
   <p class="obsah-p mt-4 text-slate2 max-w-[640px]">
     Čím viac firiem obec osloví pred súťažou, tým lepšiu cenu spravidla
     dostane &mdash; to je celý princíp prieskumu trhu. Vypíšte dopyt na
-    Trhu dopytov (funguje už dnes, zadarmo) a uvidí ho až
-    <strong class="text-ink">5 firiem</strong> vo vašom kraji.
+    Trhu dopytov (funguje už dnes, zadarmo). Na váš dopyt môže
+    odpovedať <strong class="text-ink">najviac 5 firiem</strong>.
   </p>
   <div class="mt-5">
     <a href="./trh.html"
@@ -231,7 +231,7 @@
     <div id="benchmark-text" class="mt-1.5 text-[15px] text-ink"></div>
     <div class="mt-2 text-[13px] text-slate2">
       Presný rozsah cien a ďalšie sektory nájdete v
-      <a href="./cennik.html" class="text-accent hover:underline">plnej appke</a> (od plánu Start).
+      <a href="./cennik.html" class="text-accent hover:underline">plnej verzii portálu</a> (od plánu Start).
     </div>
   </div>
 </section>
@@ -245,7 +245,7 @@
     Najjednoduchšie je zavolať
   </h2>
   <p class="obsah-p mt-4 text-slate2 max-w-[640px]">
-    Viem, že na toto všetko nemusíte mať čas ani chuť. Zavolajte, alebo
+    Viem, že na toto všetko nemusíte mať čas ani chuť. Zavolajte alebo
     napíšte pár viet, čo potrebujete &mdash; ozveme sa a povieme vám,
     či a ako vieme pomôcť. Úvodná konzultácia je zadarmo.
   </p>
@@ -276,23 +276,27 @@
       <div id="zv-pola" class="space-y-3">
         <div>
           <label class="block text-[13px] font-semibold mb-1" for="zv-meno">Meno</label>
-          <input id="zv-meno" type="text" required autocomplete="name"
+          <input id="zv-meno" type="text" required maxlength="120" autocomplete="name"
                  class="w-full border border-line rounded-md px-3 py-2 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
         </div>
         <div>
           <label class="block text-[13px] font-semibold mb-1" for="zv-obec">Obec</label>
-          <input id="zv-obec" type="text" required autocomplete="organization"
+          <input id="zv-obec" type="text" required maxlength="200" autocomplete="organization"
                  class="w-full border border-line rounded-md px-3 py-2 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
         </div>
         <div>
           <label class="block text-[13px] font-semibold mb-1" for="zv-telefon">Telefón</label>
-          <input id="zv-telefon" type="text" required autocomplete="tel" placeholder="+421 900 000 000"
+          <input id="zv-telefon" type="tel" required minlength="5" maxlength="40" autocomplete="tel" placeholder="+421 900 000 000"
                  class="w-full border border-line rounded-md px-3 py-2 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
         </div>
         <div>
           <label class="block text-[13px] font-semibold mb-1" for="zv-cas">Najlepší čas zavolať (nepovinné)</label>
-          <input id="zv-cas" type="text" placeholder="napr. popoludní po 14:00"
+          <input id="zv-cas" type="text" maxlength="200" placeholder="napr. popoludní po 14:00"
                  class="w-full border border-line rounded-md px-3 py-2 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+        </div>
+        <!-- Honeypot: ludia ho nevidia, boty ho vyplnia. -->
+        <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
+          <input type="text" name="web" id="zv-web" tabindex="-1" autocomplete="off">
         </div>
         <button type="submit" id="zv-btn"
                 class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md hover:bg-accentDark transition disabled:opacity-50 text-[14px]">
@@ -392,6 +396,33 @@
       return;
     }
 
+    // Honeypot vyplneny = bot: tvarime sa, ze odoslanie prebehlo, nic neposielame.
+    if (el('zv-web') && el('zv-web').value) {
+      el('zv-pola').classList.add('hidden');
+      el('zv-uspech').classList.remove('hidden');
+      return;
+    }
+
+    const meno = el('zv-meno').value.trim();
+    const obec = el('zv-obec').value.trim();
+    const telefon = el('zv-telefon').value.trim();
+    const cas = el('zv-cas').value.trim();
+    if (!meno || !obec || !telefon) {
+      chyba.textContent = 'Vyplňte prosím meno, obec a telefón.';
+      chyba.classList.remove('hidden');
+      return;
+    }
+    if (telefon.length < 5 || telefon.length > 40 || !/\d/.test(telefon)) {
+      chyba.textContent = 'Skontrolujte prosím telefónne číslo.';
+      chyba.classList.remove('hidden');
+      return;
+    }
+    if (meno.length > 120 || obec.length > 200 || cas.length > 200) {
+      chyba.textContent = 'Niektorý údaj je príliš dlhý. Skráťte ho prosím.';
+      chyba.classList.remove('hidden');
+      return;
+    }
+
     btn.disabled = true;
     const povodny = btn.textContent;
     btn.textContent = 'Odosielam…';
@@ -406,10 +437,10 @@
           Prefer: 'return=minimal',
         },
         body: JSON.stringify({
-          meno: el('zv-meno').value.trim(),
-          obec: el('zv-obec').value.trim(),
-          telefon: el('zv-telefon').value.trim(),
-          najlepsi_cas: el('zv-cas').value.trim() || null,
+          meno: meno,
+          obec: obec,
+          telefon: telefon,
+          najlepsi_cas: cas || null,
         }),
       });
 
@@ -419,13 +450,13 @@
       } else {
         btn.disabled = false;
         btn.textContent = povodny;
-        chyba.textContent = 'Nepodarilo sa to odoslať. Skúste to znova, alebo zavolajte priamo.';
+        chyba.textContent = 'Odoslať sa nepodarilo. Skúste to prosím o chvíľu, alebo zavolajte.';
         chyba.classList.remove('hidden');
       }
     } catch (err) {
       btn.disabled = false;
       btn.textContent = povodny;
-      chyba.textContent = 'Nepodarilo sa to odoslať. Skúste to znova, alebo zavolajte priamo.';
+      chyba.textContent = 'Odoslať sa nepodarilo. Skúste to prosím o chvíľu, alebo zavolajte.';
       chyba.classList.remove('hidden');
     }
   });

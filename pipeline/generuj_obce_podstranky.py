@@ -26,6 +26,7 @@ bol nutny.
 """
 import os
 import re
+from html import escape as _html_escape
 import logging
 import unicodedata
 from datetime import date
@@ -90,11 +91,27 @@ def _cislo(x):
     return "—" if x is None else f"{int(x):,}".replace(",", " ")
 
 
+def _tvar(n, jeden, dva_az_styri, pat):
+    """Slovenska trojtvarova mnozina: 1 zmluva / 2-4 zmluvy / 0 a 5+ zmlus
+    (rovnaky princip ako tvar() v public/prvych-100-dni.html)."""
+    n = abs(int(n))
+    if n == 1:
+        return jeden
+    if 2 <= n <= 4:
+        return dva_az_styri
+    return pat
+
+
+def _e(t):
+    """Escapovanie hodnoty z DB pred vlozenim do HTML sablony."""
+    return _html_escape(str(t if t is not None else ""), quote=True)
+
+
 def _datum(iso: str) -> str:
-    """'2026-09-16' -> '16.9.2026', rovnaky format ako zvysok webu."""
+    """'2026-09-16' -> '16. 9. 2026', slovensky format s medzerami."""
     try:
         y, m, d = iso.split("-")
-        return f"{int(d)}.{int(m)}.{y}"
+        return f"{int(d)}. {int(m)}. {y}"
     except Exception:
         return iso
 
@@ -108,11 +125,11 @@ HLAVICKA = """<!doctype html>
 <title>{titul}</title>
 <meta name="description" content="{popis}">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="https://predtendrom.sk/obce/{cesta}.html">
+<link rel="canonical" href="https://predtendrom.sk/obce/{cesta}">
 <meta property="og:title" content="{titul}">
 <meta property="og:description" content="{popis}">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://predtendrom.sk/obce/{cesta}.html">
+<meta property="og:url" content="https://predtendrom.sk/obce/{cesta}">
 <meta property="og:locale" content="sk_SK">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{titul}">
@@ -131,7 +148,7 @@ HLAVICKA = """<!doctype html>
 
 <header class="border-b border-line bg-white/95">
   <div class="max-w-[900px] mx-auto flex items-center justify-between h-16 px-5">
-    <a href="../starosta.html" class="flex items-center gap-2">
+    <a href="/starosta" class="flex items-center gap-2">
       <svg width="19" height="19" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
         <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
         <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
@@ -142,7 +159,7 @@ HLAVICKA = """<!doctype html>
       <span class="font-serif italic text-[18px] text-ink">Obecný prehľad</span>
       <span class="text-[12px] text-slate2 hidden sm:inline">od PredTendrom.sk</span>
     </a>
-    <a href="../obce.html" class="text-[13px] text-slate2 hover:text-ink">Pre obce a mestá</a>
+    <a href="/obce" class="text-[13px] text-slate2 hover:text-ink">Pre obce a mestá</a>
   </div>
 </header>
 """
@@ -151,7 +168,7 @@ PATICKA = """
 <footer class="border-t border-line mt-16">
   <div class="max-w-[900px] mx-auto px-5 py-8 text-[12px] text-slate2">
     Dáta z Centrálneho registra zmlúv. Aktualizované pravidelne, naposledy {aktualizovane}.
-    <a href="../zdroje.html" class="text-accent hover:underline">Ako to počítame</a>
+    <a href="/zdroje" class="text-accent hover:underline">Ako to počítame</a>
     · <a href="mailto:info@predtendrom.sk" class="text-accent hover:underline">info@predtendrom.sk</a>
   </div>
 </footer>
@@ -174,7 +191,7 @@ def _vygeneruj_stranku_kraja(row, spolu_sprostredkovatelia):
     if sprostredkovatelia_v_kraji:
         riadky_sprostr = "\n".join(
             f"""      <tr class="border-b border-line last:border-0">
-        <td class="py-2.5 pr-3 text-[14px]">{s['sprostredkovatel']}</td>
+        <td class="py-2.5 pr-3 text-[14px]">{_e(s['sprostredkovatel'])}</td>
         <td class="py-2.5 px-3 text-[14px] text-right whitespace-nowrap">{_cislo(s.get('obci'))}</td>
         <td class="py-2.5 pl-3 text-[14px] text-right whitespace-nowrap">{_suma(s.get('median_ceny'))}</td>
       </tr>"""
@@ -212,7 +229,7 @@ def _vygeneruj_stranku_kraja(row, spolu_sprostredkovatelia):
     telo = f"""
 <section class="max-w-[900px] mx-auto px-5 pt-10 pb-8">
   <p class="inline-block text-[12px] font-semibold text-accent bg-accent/10 rounded-full px-3 py-1">
-    {kraj} · bez registrácie
+    {_e(kraj)} · bez registrácie
   </p>
   <h1 class="mt-5 text-[28px] sm:text-[34px] font-bold leading-tight tracking-tight">
     Kto v {lokal} kraji dáva obciam peniaze
@@ -242,14 +259,14 @@ def _vygeneruj_stranku_kraja(row, spolu_sprostredkovatelia):
   </div>
 
   <p class="mt-6 text-[14px] leading-relaxed text-slate2 max-w-[640px]">
-    Najčastejší poskytovatelia v tomto kraji: {row.get('top_poskytovatelia') or '—'}.
+    Najčastejší poskytovatelia v tomto kraji: {_e(row.get('top_poskytovatelia') or '—')}.
   </p>
 
   <div class="mt-8 rounded-lg border border-line bg-[#F3F0E6] p-5">
     <p class="text-[14px] text-slate2">
       Toto je len súhrn za kraj. Kompletný, priebežne aktualizovaný prehľad
       (na čo sa dáva, kto aktívne rozdáva teraz, otvorené výzvy) je na
-      <a href="../obce.html" class="text-accent hover:underline font-medium">hlavnej stránke pre obce</a>,
+      <a href="/obce" class="text-accent hover:underline font-medium">hlavnej stránke pre obce</a>,
       zadarmo a bez prihlásenia.
     </p>
   </div>
@@ -267,9 +284,9 @@ def _vygeneruj_stranku_kraja(row, spolu_sprostredkovatelia):
 
 def _vygeneruj_index(riadky):
     polozky = "\n".join(
-        f"""    <a href="./kraj-{_slug(r['kraj'])}.html"
+        f"""    <a href="/obce/kraj-{_slug(r['kraj'])}"
        class="block rounded-lg border border-line bg-white p-4 hover:border-accent transition">
-      <div class="text-[15px] font-semibold">{r['kraj']}</div>
+      <div class="text-[15px] font-semibold">{_e(r['kraj'])}</div>
       <div class="text-[13px] text-slate2 mt-1">{_cislo(r['obci'])} obcí · {_suma(r['objem_eur'])}</div>
     </a>"""
         for r in riadky
@@ -293,10 +310,10 @@ def _vygeneruj_index(riadky):
             titul="Dotácie pre obce podľa kraja | PredTendrom.sk",
             popis="Prehľad dotácií pre obce a mestá za všetkých 8 krajov Slovenska — z Centrálneho registra zmlúv.",
             # OPRAVA (audit 29.9.2026): povodne slug="" davalo rozbity canonical
-            # "obce/kraj-.html" (neexistujuca stranka). "cesta" je teraz cely
-            # nazov suboru bez pripony, aby ta ista HLAVICKA sedela aj pre
-            # kraj-*.html aj pre tento index.html.
-            cesta="index",
+            # "obce/kraj-.html" (neexistujuca stranka). "cesta" je cesta bez
+            # pripony .html (U25, 5.10.2026: Cloudflare .html presmeruje 308);
+            # index je adresa /obce/ (prazdna cesta).
+            cesta="",
         )
         + telo
         + PATICKA.format(aktualizovane=_datum(date.today().isoformat()))
@@ -341,9 +358,13 @@ def vygeneruj(riadky_kraj, riadky_sprostredkovatelia, vystup_dir=VYSTUP_DIR):
 # vymazal. Doplnene starosta/prvych-100-dni/trh/servis (chybali uplne — audit
 # ich oznacil ako "vstupnu branu pre kampan"). prihlasenie.html odobrane —
 # prihlasovacia stranka nema byt vo vyhladavacom indexe (SEO odporucanie).
+#
+# U25 (5.10.2026): adresy BEZ .html (Cloudflare .html presmeruje 308 na adresu
+# bez pripony, Google by dostaval presmerovania); domovska je "/". trh.html
+# vyzaduje prihlasenie, preto v sitemap nie je.
 STATICKE_STRANKY = [
-    "/index.html", "/cennik.html", "/obce.html", "/zdroje.html",
-    "/starosta.html", "/prvych-100-dni.html", "/trh.html", "/servis.html",
+    "/", "/cennik", "/obce", "/zdroje",
+    "/starosta", "/prvych-100-dni", "/servis",
 ]
 
 
@@ -354,8 +375,8 @@ def _zapis_sitemap(riadky_kraj, vystup_dir):
     nez rucne udrziavat diff."""
     baza = "https://predtendrom.sk"
     dnes = date.today().isoformat()
-    urls = list(STATICKE_STRANKY) + ["/obce/index.html"] + [
-        f"/obce/kraj-{_slug(r['kraj'])}.html" for r in riadky_kraj
+    urls = list(STATICKE_STRANKY) + ["/obce/"] + [
+        f"/obce/kraj-{_slug(r['kraj'])}" for r in riadky_kraj
     ]
     polozky = "\n".join(
         f"  <url><loc>{baza}{u}</loc><lastmod>{dnes}</lastmod></url>" for u in urls

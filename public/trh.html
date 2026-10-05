@@ -5,16 +5,16 @@
 <script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Trh dopytov obce ↔ poradcovia — PredTendrom.sk</title>
-<meta name="description" content="Obce tu vypisujú, s čím potrebujú pomôcť (dotácia, zmluva, iné), a poradcovia na to reagujú priamo. Základné profily sú zadarmo.">
-<link rel="canonical" href="https://predtendrom.sk/trh.html">
+<meta name="description" content="Obce tu vypisujú, s čím potrebujú pomôcť (dotácia, zmluva, iné), a poradcovia na to odpovedajú priamo. Základné profily sú zadarmo.">
+<!-- Audit 5.10.2026 (U25): stranka je za prihlasenim, do indexu nepatri. -->
+<meta name="robots" content="noindex">
 <meta property="og:title" content="Trh dopytov obce ↔ poradcovia — PredTendrom.sk">
-<meta property="og:description" content="Obce tu vypisujú, s čím potrebujú pomôcť (dotácia, zmluva, iné), a poradcovia na to reagujú priamo. Základné profily sú zadarmo.">
+<meta property="og:description" content="Obce tu vypisujú, s čím potrebujú pomôcť (dotácia, zmluva, iné), a poradcovia na to odpovedajú priamo. Základné profily sú zadarmo.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://predtendrom.sk/trh.html">
 <meta property="og:locale" content="sk_SK">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Trh dopytov obce ↔ poradcovia — PredTendrom.sk">
-<meta name="twitter:description" content="Obce tu vypisujú, s čím potrebujú pomôcť (dotácia, zmluva, iné), a poradcovia na to reagujú priamo. Základné profily sú zadarmo.">
+<meta name="twitter:description" content="Obce tu vypisujú, s čím potrebujú pomôcť (dotácia, zmluva, iné), a poradcovia na to odpovedajú priamo. Základné profily sú zadarmo.">
 <meta property="og:image" content="https://predtendrom.sk/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -54,7 +54,7 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
         0905 438 454
       </a>
-      <button id="odhlasit" class="hidden text-[13px] text-slate2 hover:text-ink">Odhlásiť</button>
+      <button id="odhlasit" class="hidden text-[13px] text-slate2 hover:text-ink">Odhlásiť sa</button>
     </div>
   </div>
 </header>
@@ -63,30 +63,55 @@
 
   <div id="stav-nacitavam" class="text-[14px] text-slate2">Načítavam…</div>
 
-  <div id="stav-chyba" class="hidden rounded-lg border border-line bg-white p-5 text-[14px] text-slate2"></div>
+  <div id="stav-chyba" role="alert" class="hidden rounded-lg border border-line bg-white p-5 text-[14px] text-slate2">
+    <p id="stav-chyba-text"></p>
+    <!-- Audit 5.10.2026 (U6): chybova obrazovka nesmie byt slepa ulicka -->
+    <button type="button" id="stav-chyba-dalej" class="hidden mt-4 bg-accent text-white font-semibold px-5 py-2.5 rounded-md text-[14px] hover:bg-accentDark transition">Pokračovať na Trh dopytov</button>
+  </div>
+
+  <!-- Audit 5.10.2026 (V7): pozvanka do obce sa neprijima automaticky pri nacitani. -->
+  <div id="sekcia-pozvanka" role="dialog" aria-labelledby="pozvanka-nadpis" class="hidden rounded-lg border border-line bg-white p-5 max-w-[520px]">
+    <h1 id="pozvanka-nadpis" class="text-[20px] font-bold tracking-tight">Pozvánka do účtu obce</h1>
+    <p id="pozvanka-text" class="mt-2 text-[14px] leading-relaxed text-slate2"></p>
+    <div class="mt-4 flex items-center gap-4">
+      <button type="button" id="pozvanka-prijat" class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md text-[14px] hover:bg-accentDark transition disabled:opacity-50">Prijať pozvánku</button>
+      <button type="button" id="pozvanka-odist" class="text-[13px] text-slate2 hover:text-ink">Nie, odísť</button>
+    </div>
+  </div>
 
   <!-- ══════════════ VÝBER ROLY (prvá návšteva) ══════════════ -->
   <div id="sekcia-vyber" class="hidden">
-    <h1 class="text-[24px] font-bold tracking-tight">Vitajte na trhu dopytov</h1>
+    <h1 class="text-[24px] font-bold tracking-tight">Vitajte na Trhu dopytov</h1>
     <p class="mt-2 text-[14px] leading-relaxed text-slate2 max-w-[560px]">
       Obce tu vypisujú, s čím potrebujú pomôcť (dotácia, zmluva, iné), a poradcovia
-      na to reagujú priamo. Založte si jeden z dvoch typov účtu — kontaktné údaje
+      na to odpovedajú priamo. Založte si jeden z dvoch typov účtu — kontaktné údaje
       si kedykoľvek neskôr upravíte priamo tu, vo svojom účte.
     </p>
+
+    <!-- Audit 5.10.2026 (U3/U2): firemny pouzivatel PredTendrom.sk (ma clenstvo
+         vo firme) sem pride z aplikacie — vysvetlime mu, kde je a ako sa vrati. -->
+    <div id="firma-box" class="hidden mt-5 rounded-lg border border-line bg-white p-4 max-w-[560px]">
+      <p class="text-[13px] leading-relaxed text-slate2">
+        Ste prihlásený ako firemný používateľ PredTendrom.sk. Na Trhu dopytov
+        môžete odpovedať ako poradca — založte si bezplatný profil poradcu.
+        Do aplikácie sa vrátite tlačidlom nižšie.
+      </p>
+      <a href="./app.html" class="mt-3 inline-block text-[13px] font-semibold text-accent hover:underline">&larr; Späť do aplikácie</a>
+    </div>
 
     <div class="mt-6 grid sm:grid-cols-2 gap-4">
       <button id="btn-som-obec" class="text-left border border-line rounded-lg bg-white p-5 hover:border-accent transition">
         <div class="text-[15px] font-semibold">Som obec alebo mesto</div>
         <p class="mt-1.5 text-[13px] leading-relaxed text-slate2">
-          Vypíšem, s čím potrebujem pomôcť, a poradcovia sa mi ozvú. Zadarmo,
-          bez overovania — stačí sa self-deklarovať.
+          Vypíšem, s čím potrebujem pomôcť, a poradcovia sa mi môžu ozvať.
+          Zadarmo a bez overovania.
         </p>
       </button>
       <button id="btn-som-poradca" class="text-left border border-line rounded-lg bg-white p-5 hover:border-accent transition">
         <div class="text-[15px] font-semibold">Som poradca / konzultant</div>
         <p class="mt-1.5 text-[13px] leading-relaxed text-slate2">
           Založím si profil zadarmo a budem vidieť dopyty od obcí vo svojich krajoch,
-          na ktoré viem reagovať.
+          na ktoré viem odpovedať.
         </p>
       </button>
     </div>
@@ -96,31 +121,31 @@
   <div id="sekcia-obec-registracia" class="hidden">
     <button id="obec-reg-spat" class="text-[13px] text-slate2 hover:text-ink">&larr; Späť na výber</button>
     <h1 class="mt-3 text-[22px] font-bold tracking-tight">Účet obce</h1>
-    <p class="mt-2 text-[14px] text-slate2">Žiadne overovanie — zadajte údaje o svojej obci.</p>
+    <p class="mt-2 text-[14px] text-slate2">Zadarmo a bez overovania — zadajte údaje o svojej obci.</p>
 
     <form id="form-obec-reg" class="mt-6 space-y-4 max-w-[480px]">
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="or-nazov">Názov obce</label>
-        <input id="or-nazov" type="text" required placeholder="Obec Revúcka Lehota"
+        <input id="or-nazov" type="text" required maxlength="200" placeholder="Obec Revúcka Lehota"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="or-kraj">Kraj</label>
-        <select id="or-kraj" class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px] bg-white
+        <select id="or-kraj" required class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px] bg-white
                                     focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
-          <option value="">Nevybraté</option>
+          <option value="">Vyberte kraj</option>
         </select>
       </div>
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="or-ico">IČO (nepovinné)</label>
-        <input id="or-ico" type="text" placeholder="00123456"
+        <input id="or-ico" type="text" maxlength="20" placeholder="00123456"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="or-email">Kontaktný e-mail (nepovinné)</label>
-        <input id="or-email" type="email" placeholder="starosta@obec.sk"
+        <input id="or-email" type="email" maxlength="254" placeholder="starosta@obec.sk"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
@@ -129,7 +154,7 @@
                      hover:bg-accentDark transition disabled:opacity-50">
         Založiť účet obce
       </button>
-      <p id="or-chyba" class="hidden text-[13px] text-red-700"></p>
+      <p id="or-chyba" role="alert" class="hidden text-[13px] text-red-700"></p>
     </form>
   </div>
 
@@ -138,32 +163,32 @@
     <button id="poradca-reg-spat" class="text-[13px] text-slate2 hover:text-ink">&larr; Späť na výber</button>
     <h1 class="mt-3 text-[22px] font-bold tracking-tight">Profil poradcu</h1>
     <p class="mt-2 text-[14px] text-slate2">
-      Základný profil je zadarmo. Vidno v ňom vaše kraje pôsobenia, obce vás
-      podľa toho vedia nájsť a osloviť.
+      Základný profil je zadarmo. Podľa krajov pôsobenia vám ukážeme dopyty od obcí.
+      Obec uvidí vaše meno a kontakt až vtedy, keď jej na dopyt odpoviete.
     </p>
 
     <form id="form-poradca-reg" class="mt-6 space-y-4 max-w-[480px]">
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="pr-nazov">Meno / názov firmy</label>
-        <input id="pr-nazov" type="text" required placeholder="Ján Poradca s.r.o."
+        <input id="pr-nazov" type="text" required maxlength="200" placeholder="Ján Poradca s.r.o."
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="pr-email">Kontaktný e-mail</label>
-        <input id="pr-email" type="email" required placeholder="info@poradca.sk"
+        <input id="pr-email" type="email" required maxlength="254" placeholder="info@poradca.sk"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="pr-telefon">Telefón (nepovinné)</label>
-        <input id="pr-telefon" type="text" placeholder="+421 900 000 000"
+        <input id="pr-telefon" type="text" maxlength="40" placeholder="+421 900 000 000"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="pr-popis">Krátky popis (nepovinné)</label>
-        <textarea id="pr-popis" rows="3" placeholder="S čím obciam pomáhate, prípadne skúsenosti"
+        <textarea id="pr-popis" rows="3" maxlength="4000" placeholder="S čím obciam pomáhate, prípadne skúsenosti"
                   class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                          focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"></textarea>
       </div>
@@ -176,7 +201,7 @@
                      hover:bg-accentDark transition disabled:opacity-50">
         Založiť profil poradcu
       </button>
-      <p id="pr-chyba" class="hidden text-[13px] text-red-700"></p>
+      <p id="pr-chyba" role="alert" class="hidden text-[13px] text-red-700"></p>
     </form>
   </div>
 
@@ -190,23 +215,24 @@
     <form id="form-uprava-obec" class="hidden mt-3 space-y-3 border border-line rounded-lg bg-white p-5 max-w-[420px]">
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="uo-email">Kontaktný e-mail</label>
-        <input id="uo-email" type="email" placeholder="starosta@obec.sk"
+        <input id="uo-email" type="email" maxlength="254" placeholder="starosta@obec.sk"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="uo-telefon">Telefón (nepovinné)</label>
-        <input id="uo-telefon" type="text" placeholder="+421 900 000 000"
+        <input id="uo-telefon" type="text" maxlength="40" placeholder="+421 900 000 000"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
       <div>
         <label class="block text-[13px] font-semibold mb-1.5">Ako vás majú firmy radšej kontaktovať?</label>
-        <div class="flex flex-wrap gap-4 text-[14px]">
+        <div role="radiogroup" aria-label="Preferovaný spôsob kontaktu" class="flex flex-wrap gap-4 text-[14px]">
           <label class="flex items-center gap-1.5"><input type="radio" name="uo-pref" value="email" class="rounded-full border-line">E-mailom</label>
           <label class="flex items-center gap-1.5"><input type="radio" name="uo-pref" value="telefon" class="rounded-full border-line">Telefonicky</label>
-          <label class="flex items-center gap-1.5"><input type="radio" name="uo-pref" value="hocijaky" class="rounded-full border-line">Je mi to jedno</label>
+          <label class="flex items-center gap-1.5"><input type="radio" name="uo-pref" value="hocijaky" class="rounded-full border-line">Na spôsobe nezáleží</label>
         </div>
+        <p class="mt-1.5 text-[12px] leading-relaxed text-slate2">Poradcovia váš telefón ani e-mail nevidia. Odpovedajú správou na Trhu dopytov a vy sa rozhodnete, komu sa ozvete.</p>
       </div>
       <p class="text-[12px] text-slate2">Kraj a IČO tu meniť nejde — pri zmene napíšte na info@predtendrom.sk.</p>
       <div class="flex items-center gap-3">
@@ -217,7 +243,7 @@
         </button>
         <button type="button" id="uo-zrusit" class="text-[13px] text-slate2 hover:text-ink">Zrušiť</button>
       </div>
-      <p id="uo-chyba" class="hidden text-[13px] text-red-700"></p>
+      <p id="uo-chyba" role="alert" class="hidden text-[13px] text-red-700"></p>
     </form>
 
     <!-- ══ Pozvat kolegu (P3.2 C, 58_pozvat_kolegu.sql) — len vlastnik ══ -->
@@ -239,7 +265,7 @@
                   class="text-[12px] font-semibold text-accent hover:underline shrink-0">Kopírovať</button>
         </div>
       </div>
-      <p id="tim-chyba" class="hidden mt-2 text-[13px] text-red-700"></p>
+      <p id="tim-chyba" role="alert" class="hidden mt-2 text-[13px] text-red-700"></p>
     </div>
 
     <div class="mt-6 flex items-center justify-between">
@@ -256,7 +282,7 @@
          presne znenie zo zadania — Marek ich 28.9.2026 v chate schvalil
          ("texty povazuj za schvalene"). Menit ich len na jednom mieste
          nizsie v JS (WD_TEXTY). -->
-    <div id="wizard-dopyt" class="hidden mt-4 border border-line rounded-lg bg-white p-5">
+    <div id="wizard-dopyt" role="dialog" aria-label="Nový dopyt" class="hidden mt-4 border border-line rounded-lg bg-white p-5">
 
       <div id="wd-krok1">
         <p class="text-[13px] font-semibold text-slate2 mb-3">Krok 1 z 3 — s čím potrebujete pomôcť?</p>
@@ -270,13 +296,13 @@
         <div class="space-y-4">
           <div>
             <label class="block text-[13px] font-semibold mb-1.5" for="wd-nazov">Čoho sa to týka</label>
-            <input id="wd-nazov" type="text" required
+            <input id="wd-nazov" type="text" required maxlength="200"
                    class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                           focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
           </div>
           <div>
             <label class="block text-[13px] font-semibold mb-1.5" for="wd-popis">Podrobnosti (nepovinné)</label>
-            <textarea id="wd-popis" rows="3" placeholder="Čo presne riešite, rozsah…"
+            <textarea id="wd-popis" rows="3" maxlength="4000" placeholder="Čo presne riešite, rozsah…"
                       class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                              focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"></textarea>
           </div>
@@ -309,6 +335,7 @@
                   class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md text-[14px] hover:bg-accentDark transition">
             Ďalej
           </button>
+          <p id="wd-chyba2" role="alert" class="hidden text-[13px] text-red-700"></p>
         </div>
       </div>
 
@@ -318,23 +345,24 @@
         <div class="space-y-4">
           <div>
             <label class="block text-[13px] font-semibold mb-1.5" for="wd-email">Kontaktný e-mail</label>
-            <input id="wd-email" type="email" required placeholder="starosta@obec.sk"
+            <input id="wd-email" type="email" required maxlength="254" placeholder="starosta@obec.sk"
                    class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                           focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
           </div>
           <div>
             <label class="block text-[13px] font-semibold mb-1.5" for="wd-telefon">Telefón (nepovinné)</label>
-            <input id="wd-telefon" type="text" placeholder="+421 900 000 000"
+            <input id="wd-telefon" type="text" maxlength="40" placeholder="+421 900 000 000"
                    class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                           focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
           </div>
           <div>
             <label class="block text-[13px] font-semibold mb-1.5">Ako vás majú firmy radšej kontaktovať?</label>
-            <div class="flex flex-wrap gap-4 text-[14px]">
+            <div role="radiogroup" aria-label="Preferovaný spôsob kontaktu" class="flex flex-wrap gap-4 text-[14px]">
               <label class="flex items-center gap-1.5"><input type="radio" name="wd-pref" value="email" checked class="rounded-full border-line">E-mailom</label>
               <label class="flex items-center gap-1.5"><input type="radio" name="wd-pref" value="telefon" class="rounded-full border-line">Telefonicky</label>
-              <label class="flex items-center gap-1.5"><input type="radio" name="wd-pref" value="hocijaky" class="rounded-full border-line">Je mi to jedno</label>
+              <label class="flex items-center gap-1.5"><input type="radio" name="wd-pref" value="hocijaky" class="rounded-full border-line">Na spôsobe nezáleží</label>
             </div>
+            <p class="mt-1.5 text-[12px] leading-relaxed text-slate2">Poradcovia váš telefón ani e-mail nevidia. Odpovedajú správou na Trhu dopytov a vy sa rozhodnete, komu sa ozvete.</p>
           </div>
 
           <div id="wd-potvrdenie" class="border-t border-line pt-4 text-[13px] leading-relaxed text-slate2"></div>
@@ -347,7 +375,7 @@
             </button>
             <button type="button" id="wd-zrusit" class="text-[13px] text-slate2 hover:text-ink">Zrušiť</button>
           </div>
-          <p id="wd-chyba" class="hidden text-[13px] text-red-700"></p>
+          <p id="wd-chyba" role="alert" class="hidden text-[13px] text-red-700"></p>
         </div>
       </div>
     </div>
@@ -365,19 +393,19 @@
     <form id="form-uprava-poradca" class="hidden mt-3 space-y-3 border border-line rounded-lg bg-white p-5 max-w-[480px]">
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="up-email">Kontaktný e-mail</label>
-        <input id="up-email" type="email" required placeholder="info@poradca.sk"
+        <input id="up-email" type="email" required maxlength="254" placeholder="info@poradca.sk"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="up-telefon">Telefón (nepovinné)</label>
-        <input id="up-telefon" type="text" placeholder="+421 900 000 000"
+        <input id="up-telefon" type="text" maxlength="40" placeholder="+421 900 000 000"
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
       <div>
         <label class="block text-[13px] font-semibold mb-1.5" for="up-popis">Krátky popis (nepovinné)</label>
-        <textarea id="up-popis" rows="3" placeholder="S čím obciam pomáhate, prípadne skúsenosti"
+        <textarea id="up-popis" rows="3" maxlength="4000" placeholder="S čím obciam pomáhate, prípadne skúsenosti"
                   class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                          focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent"></textarea>
       </div>
@@ -393,7 +421,7 @@
         </button>
         <button type="button" id="up-zrusit" class="text-[13px] text-slate2 hover:text-ink">Zrušiť</button>
       </div>
-      <p id="up-chyba" class="hidden text-[13px] text-red-700"></p>
+      <p id="up-chyba" role="alert" class="hidden text-[13px] text-red-700"></p>
     </form>
 
     <div class="mt-6 flex items-center justify-between flex-wrap gap-3">
@@ -440,6 +468,55 @@ const bezpecne = (t) => String(t ?? '')
 
 const PRIHLASENIE = './prihlasenie.html?dalej=trh.html';
 
+// Audit 5.10.2026 (C2): chyby z databaze (RPC) prichadzaju bez diakritiky a
+// v tykani. Pouzivatelovi sa NIKDY neukazuje surovy text — vzdy prejde cez
+// prelozChybu(). Neznama sprava dostane vseobecnu hlasku.
+const VSEOBECNA_CHYBA = 'Niečo sa nepodarilo. Skúste to prosím znova.';
+const CHYBY_DB = {
+  'Nie si prihlaseny.': 'Nie ste prihlásený. Prihláste sa znova.',
+  'Najprv sa prihlas.': 'Najprv sa prihláste.',
+  'Zadaj nazov obce.': 'Zadajte názov obce.',
+  'Uz mas zalozeny obecny ucet.': 'Účet obce už máte založený.',
+  'Zadaj nazov a kontaktny e-mail.': 'Zadajte názov a kontaktný e-mail.',
+  'Uz mas zalozeny profil poradcu.': 'Profil poradcu už máte založený.',
+  'Nemas obecny ucet. Najprv si ho zaloz.': 'Najprv si založte účet obce.',
+  'Nemas obecny ucet.': 'Nemáte účet obce.',
+  'Zadaj, co potrebujes.': 'Napíšte, čo potrebujete.',
+  'Neznamy typ.': 'Neznámy typ dopytu.',
+  'Nemas profil poradcu. Najprv si ho zaloz.': 'Najprv si založte profil poradcu.',
+  'Nemas profil poradcu.': 'Nemáte profil poradcu.',
+  'Napis spravu.': 'Napíšte správu.',
+  'Sprava je prilis dlha.': 'Správa je príliš dlhá.',
+  'Tento dopyt uz nie je otvoreny.': 'Tento dopyt už nie je otvorený.',
+  'Na tento dopyt uz odpovedalo maximalny pocet poradcov (5).':
+    'Na tento dopyt už odpovedalo najviac poradcov (5). Skúste iný dopyt.',
+  'Zadaj kontaktny e-mail.': 'Zadajte kontaktný e-mail.',
+  'Neznamy preferovany sposob kontaktu.': 'Neznámy spôsob kontaktu.',
+  'Pozvat kolegu smie len vlastnik obecneho uctu.': 'Kolegov môže pozývať len vlastník účtu obce.',
+  'Odobrat clena smie len vlastnik obecneho uctu.': 'Člena môže odobrať len vlastník účtu obce.',
+  'Uz mas pristup k obecnemu uctu (vlastnemu alebo cudziemu).': 'K účtu obce už máte prístup.',
+  'Pozvanka neplati - bola uz pouzita, alebo jej vyprsala platnost.':
+    'Pozvánka už neplatí — bola použitá alebo vypršala. Požiadajte o nový odkaz.',
+  'Prilis vela poziadaviek. Skuste to prosim neskor.': 'Príliš veľa požiadaviek. Skúste to prosím neskôr.',
+};
+function prelozChybu(msg) {
+  const m = String(msg ?? '').trim();
+  return Object.prototype.hasOwnProperty.call(CHYBY_DB, m) ? CHYBY_DB[m] : VSEOBECNA_CHYBA;
+}
+
+// Audit 5.10.2026 (U11/U15): spolocna kontrola vstupov vo formularoch.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function chybaEmail(hodnota, povinny) {
+  const v = String(hodnota ?? '').trim();
+  if (!v) return povinny ? 'Zadajte kontaktný e-mail.' : null;
+  return EMAIL_RE.test(v) ? null : 'Zadajte e-mail v tvare meno@domena.sk.';
+}
+function chybaTelefon(hodnota) {
+  const v = String(hodnota ?? '').trim();
+  if (!v) return null;
+  return v.length >= 5 ? null : 'Telefónne číslo je príliš krátke. Zadajte ho celé, alebo pole nechajte prázdne.';
+}
+
 // Jediny zdroj pravdy pre kraje — rovnake nazvy ako pipeline/regiony.py,
 // aby sa dopyty dali filtrovat/porovnavat s tym, co uz appka pozna.
 const KRAJE = [
@@ -485,7 +562,7 @@ const SABLONY_MAP = Object.fromEntries(SABLONY.map(s => [s.id, s]));
 // upravitelne texty, nie roztrusene v HTML, keby sa niekedy v buducnosti
 // menili.
 const WD_TEXTY = {
-  potvrdenie: 'Váš dopyt uvidí najviac 5 overených firiem z vášho kraja. ' +
+  potvrdenie: 'Na váš dopyt môže odpovedať najviac 5 firiem. ' +
     'Ozvú sa vám zvyčajne do 3 pracovných dní. Nič nepodpisujete a k ničomu ' +
     'sa nezaväzujete. Dopyt môžete kedykoľvek uzavrieť jedným klikom.',
   pravnyOdkaz: 'Ako presne dopyt súvisí s obstarávaním?',
@@ -501,14 +578,22 @@ function datum(iso) {
 const VSETKY_SEKCIE = [
   'stav-nacitavam', 'stav-chyba', 'sekcia-vyber',
   'sekcia-obec-registracia', 'sekcia-poradca-registracia',
-  'sekcia-obec', 'sekcia-poradca',
+  'sekcia-obec', 'sekcia-poradca', 'sekcia-pozvanka',
 ];
 function ukazLen(id) {
   for (const x of VSETKY_SEKCIE) el(x).classList.add('hidden');
   el(id).classList.remove('hidden');
 }
-function ukazChybu(text) {
-  el('stav-chyba').textContent = text;
+// dalej = true pridá tlačidlo „Pokračovať na Trh dopytov“ (U6: žiadna slepá uličná obrazovka).
+function ukazChybu(text, dalej) {
+  el('stav-chyba-text').textContent = text;
+  const tlacidlo = el('stav-chyba-dalej');
+  if (dalej) {
+    tlacidlo.classList.remove('hidden');
+    tlacidlo.onclick = () => nacitajRolu();
+  } else {
+    tlacidlo.classList.add('hidden');
+  }
   ukazLen('stav-chyba');
 }
 
@@ -553,12 +638,24 @@ el('form-obec-reg').addEventListener('submit', async (e) => {
   const btn = el('or-btn');
   const chyba = el('or-chyba');
   chyba.classList.add('hidden');
+
+  const nazovObce = el('or-nazov').value.trim();
+  const krajObce = el('or-kraj').value;
+  const chybaVstupu = !nazovObce ? 'Zadajte názov obce.'
+    : !krajObce ? 'Vyberte kraj.'
+    : chybaEmail(el('or-email').value, false);
+  if (chybaVstupu) {
+    chyba.textContent = chybaVstupu;
+    chyba.classList.remove('hidden');
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = 'Zakladám…';
 
   const { error } = await supabase.rpc('zaloz_obec_ucet', {
-    p_nazov: el('or-nazov').value.trim(),
-    p_kraj: el('or-kraj').value || null,
+    p_nazov: nazovObce,
+    p_kraj: krajObce,
     p_ico: el('or-ico').value.trim() || null,
     p_kontakt_email: el('or-email').value.trim() || null,
   });
@@ -567,7 +664,7 @@ el('form-obec-reg').addEventListener('submit', async (e) => {
   btn.textContent = 'Založiť účet obce';
 
   if (error) {
-    chyba.textContent = error.message || 'Nepodarilo sa založiť účet.';
+    chyba.textContent = prelozChybu(error.message);
     chyba.classList.remove('hidden');
     return;
   }
@@ -601,13 +698,23 @@ el('form-poradca-reg').addEventListener('submit', async (e) => {
   const btn = el('pr-btn');
   const chyba = el('pr-chyba');
   chyba.classList.add('hidden');
+
+  const nazovPoradcu = el('pr-nazov').value.trim();
+  const chybaVstupu = !nazovPoradcu ? 'Zadajte meno alebo názov firmy.'
+    : chybaEmail(el('pr-email').value, true) || chybaTelefon(el('pr-telefon').value);
+  if (chybaVstupu) {
+    chyba.textContent = chybaVstupu;
+    chyba.classList.remove('hidden');
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = 'Zakladám…';
 
   const kraje = [...document.querySelectorAll('.pr-kraj:checked')].map(c => c.value);
 
   const { error } = await supabase.rpc('zaloz_poradcu_profil', {
-    p_nazov: el('pr-nazov').value.trim(),
+    p_nazov: nazovPoradcu,
     p_kontakt_email: el('pr-email').value.trim(),
     p_kontakt_telefon: el('pr-telefon').value.trim() || null,
     p_popis: el('pr-popis').value.trim() || null,
@@ -618,7 +725,7 @@ el('form-poradca-reg').addEventListener('submit', async (e) => {
   btn.textContent = 'Založiť profil poradcu';
 
   if (error) {
-    chyba.textContent = error.message || 'Nepodarilo sa založiť profil.';
+    chyba.textContent = prelozChybu(error.message);
     chyba.classList.remove('hidden');
     return;
   }
@@ -631,7 +738,8 @@ function vykresliReakciu(r) {
   return `<div class="mt-2 border-t border-line pt-2">
     <div class="text-[13px] font-semibold">${bezpecne(p?.nazov ?? 'Poradca')}</div>
     <div class="text-[12px] text-slate2">
-      ${p?.kontakt_email ? bezpecne(p.kontakt_email) : ''}${p?.kontakt_telefon ? ' · ' + bezpecne(p.kontakt_telefon) : ''}
+      ${p ? (p.kontakt_email ? bezpecne(p.kontakt_email) : '') + (p.kontakt_telefon ? ' · ' + bezpecne(p.kontakt_telefon) : '')
+          : 'Kontakt na poradcu sa nepodarilo načítať.'}
     </div>
     <p class="mt-1 text-[13px] leading-relaxed">${bezpecne(r.sprava)}</p>
   </div>`;
@@ -660,7 +768,7 @@ function vykresliDopytObec(d, reakcie) {
     ${d.stav === 'otvoreny' ? `<button class="btn-zatvorit mt-3 text-[12px] font-semibold text-slate2 hover:text-ink" data-dopyt="${d.id}">Zatvoriť dopyt</button>` : ''}
     <div class="mt-2">
       <div class="text-[11px] font-semibold uppercase tracking-wider text-slate2">
-        ${reakcie.length ? `Reakcie (${reakcie.length})` : 'Zatiaľ žiadna reakcia'}
+        ${reakcie.length ? `Odpovede (${reakcie.length})` : 'Zatiaľ žiadna odpoveď'}
       </div>
       ${reakcie.map(vykresliReakciu).join('')}
     </div>
@@ -696,10 +804,16 @@ async function nacitajTim() {
 
   for (const btn of el('tim-zoznam').querySelectorAll('.btn-odobrat-clena')) {
     btn.addEventListener('click', async () => {
+      if (!confirm('Naozaj odobrať tohto člena? Stratí prístup k účtu obce.')) return;
+      el('tim-chyba').classList.add('hidden');
       btn.disabled = true;
       btn.textContent = 'Odoberám…';
-      await supabase.rpc('odober_clena', { p_clen_id: btn.dataset.clen });
+      const { error: chybaOdobratia } = await supabase.rpc('odober_clena', { p_clen_id: btn.dataset.clen });
       await nacitajTim();
+      if (chybaOdobratia) {
+        el('tim-chyba').textContent = prelozChybu(chybaOdobratia.message);
+        el('tim-chyba').classList.remove('hidden');
+      }
     });
   }
 }
@@ -737,9 +851,23 @@ async function nacitajDopytyObce(obecId) {
 
   for (const btn of el('obec-dopyty').querySelectorAll('.btn-zatvorit')) {
     btn.addEventListener('click', async () => {
+      if (!confirm('Naozaj zatvoriť dopyt? Poradcovia naň už nebudú môcť odpovedať.')) return;
       btn.disabled = true;
       btn.textContent = 'Zatváram…';
-      await supabase.rpc('zatvor_dopyt', { p_dopyt_id: btn.dataset.dopyt });
+      const { error: chybaZatvorenia } = await supabase.rpc('zatvor_dopyt', { p_dopyt_id: btn.dataset.dopyt });
+      if (chybaZatvorenia) {
+        btn.disabled = false;
+        btn.textContent = 'Zatvoriť dopyt';
+        let hlaska = btn.parentElement.querySelector('.zatvorit-chyba');
+        if (!hlaska) {
+          hlaska = document.createElement('p');
+          hlaska.className = 'zatvorit-chyba mt-1.5 text-[12px] text-red-700';
+          hlaska.setAttribute('role', 'alert');
+          btn.insertAdjacentElement('afterend', hlaska);
+        }
+        hlaska.textContent = prelozChybu(chybaZatvorenia.message);
+        return;
+      }
       await nacitajDopytyObce(obecId);
     });
   }
@@ -785,7 +913,7 @@ async function ukazObecDashboard(obecId) {
       btn.textContent = '+ Pozvať kolegu';
 
       if (chybaRpc || !kod) {
-        chyba.textContent = chybaRpc?.message || 'Nepodarilo sa vytvoriť pozvánku.';
+        chyba.textContent = chybaRpc ? prelozChybu(chybaRpc.message) : 'Pozvánku sa nepodarilo vytvoriť. Skúste to prosím znova.';
         chyba.classList.remove('hidden');
         return;
       }
@@ -816,6 +944,14 @@ async function ukazObecDashboard(obecId) {
     const btn = el('uo-btn');
     const chyba = el('uo-chyba');
     chyba.classList.add('hidden');
+
+    const chybaVstupu = chybaEmail(el('uo-email').value, false) || chybaTelefon(el('uo-telefon').value);
+    if (chybaVstupu) {
+      chyba.textContent = chybaVstupu;
+      chyba.classList.remove('hidden');
+      return;
+    }
+
     btn.disabled = true;
     btn.textContent = 'Ukladám…';
 
@@ -829,7 +965,7 @@ async function ukazObecDashboard(obecId) {
     btn.textContent = 'Uložiť';
 
     if (chybaRpc) {
-      chyba.textContent = chybaRpc.message || 'Nepodarilo sa uložiť zmenu.';
+      chyba.textContent = prelozChybu(chybaRpc.message);
       chyba.classList.remove('hidden');
       return;
     }
@@ -873,7 +1009,14 @@ async function ukazObecDashboard(obecId) {
   el('wd-krok1-zrusit').onclick = () => el('wizard-dopyt').classList.add('hidden');
   el('wd-krok2-spat').onclick = () => wdUkazKrok(1);
   el('wd-krok2-dalej').onclick = () => {
-    if (!el('wd-nazov').value.trim()) { el('wd-nazov').focus(); return; }
+    const chyba2 = el('wd-chyba2');
+    chyba2.classList.add('hidden');
+    if (!el('wd-nazov').value.trim()) {
+      chyba2.textContent = 'Napíšte, čoho sa dopyt týka.';
+      chyba2.classList.remove('hidden');
+      el('wd-nazov').focus();
+      return;
+    }
     wdUkazKrok(3);
   };
   el('wd-krok3-spat').onclick = () => wdUkazKrok(2);
@@ -889,6 +1032,7 @@ async function ukazObecDashboard(obecId) {
     const prefRadio = document.querySelector(`input[name="wd-pref"][value="${prefVychodzi}"]`);
     if (prefRadio) prefRadio.checked = true;
     el('wd-chyba').classList.add('hidden');
+    el('wd-chyba2').classList.add('hidden');
     el('wd-potvrdenie').innerHTML = `
       <p>${bezpecne(WD_TEXTY.potvrdenie)}</p>
       <details class="mt-2">
@@ -901,10 +1045,19 @@ async function ukazObecDashboard(obecId) {
 
   el('wd-btn').onclick = async () => {
     const email = el('wd-email').value.trim();
-    if (!email) { el('wd-email').focus(); return; }
     const btn = el('wd-btn');
     const chyba = el('wd-chyba');
     chyba.classList.add('hidden');
+
+    // U11/U15: tlacidlo je type="button", natívna validácia tu nebeží.
+    const chybaVstupu = !el('wd-nazov').value.trim() ? 'Napíšte, čoho sa dopyt týka.'
+      : chybaEmail(email, true) || chybaTelefon(el('wd-telefon').value);
+    if (chybaVstupu) {
+      if (!el('wd-nazov').value.trim()) wdUkazKrok(2);
+      chyba.textContent = chybaVstupu;
+      chyba.classList.remove('hidden');
+      return;
+    }
     btn.disabled = true;
     btn.textContent = 'Zverejňujem…';
 
@@ -921,7 +1074,7 @@ async function ukazObecDashboard(obecId) {
     if (chybaKontakt) {
       btn.disabled = false;
       btn.textContent = 'Zverejniť dopyt';
-      chyba.textContent = chybaKontakt.message || 'Nepodarilo sa uložiť kontakt.';
+      chyba.textContent = prelozChybu(chybaKontakt.message);
       chyba.classList.remove('hidden');
       return;
     }
@@ -939,7 +1092,7 @@ async function ukazObecDashboard(obecId) {
     btn.textContent = 'Zverejniť dopyt';
 
     if (chybaDopyt) {
-      chyba.textContent = chybaDopyt.message || 'Nepodarilo sa zverejniť dopyt.';
+      chyba.textContent = prelozChybu(chybaDopyt.message);
       chyba.classList.remove('hidden');
       return;
     }
@@ -964,7 +1117,7 @@ function vykresliDopytPoradca(d) {
           ${d.kraj ? bezpecne(d.kraj) + ' · ' : ''}${d.typ ? bezpecne(TYP_POPIS[d.typ] ?? d.typ) + ' · ' : ''}${datum(d.created_at)}
         </div>
       </div>
-      ${uzReagoval ? '<span class="text-[11px] font-semibold text-accent bg-accent/10 rounded-full px-2 py-0.5 whitespace-nowrap">reagovali ste</span>' : ''}
+      ${uzReagoval ? '<span class="text-[11px] font-semibold text-accent bg-accent/10 rounded-full px-2 py-0.5 whitespace-nowrap">odpovedali ste</span>' : ''}
     </div>
     <div class="mt-2 text-[14px] font-medium">${bezpecne(d.nazov)}</div>
     ${d.popis ? `<p class="mt-1 text-[13px] leading-relaxed text-slate2">${bezpecne(d.popis)}</p>` : ''}
@@ -976,10 +1129,10 @@ function vykresliDopytPoradca(d) {
 
     <div class="mt-3">
       <button class="btn-reagovat text-[12px] font-semibold text-accent hover:underline" data-dopyt="${d.id}">
-        ${uzReagoval ? 'Upraviť svoju reakciu' : 'Reagovať'}
+        ${uzReagoval ? 'Upraviť svoju odpoveď' : 'Odpovedať'}
       </button>
       <form class="form-reagovat hidden mt-2 space-y-2" data-dopyt="${d.id}">
-        <textarea rows="2" required placeholder="Krátka správa obci…"
+        <textarea rows="2" required maxlength="4000" aria-label="Správa obci" placeholder="Krátka správa obci…"
                   class="w-full border border-line rounded-md px-3 py-2 text-[13px]
                          focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">${bezpecne(poslReagovaneMap[d.id] ?? '')}</textarea>
         <div class="flex items-center gap-3">
@@ -1021,17 +1174,25 @@ function vykresliZoznamDopytov() {
       chybaEl.classList.add('hidden');
       submitBtn.disabled = true;
 
+      const sprava = textarea.value.trim();
+      if (!sprava) {
+        chybaEl.textContent = 'Napíšte správu.';
+        chybaEl.classList.remove('hidden');
+        submitBtn.disabled = false;
+        return;
+      }
+
       const { error } = await supabase.rpc('reaguj_na_dopyt', {
-        p_dopyt_id: dopytId, p_sprava: textarea.value.trim(),
+        p_dopyt_id: dopytId, p_sprava: sprava,
       });
 
       submitBtn.disabled = false;
       if (error) {
-        chybaEl.textContent = error.message || 'Nepodarilo sa odoslať.';
+        chybaEl.textContent = prelozChybu(error.message);
         chybaEl.classList.remove('hidden');
         return;
       }
-      poslReagovaneMap[dopytId] = textarea.value.trim();
+      poslReagovaneMap[dopytId] = sprava;
       vykresliZoznamDopytov();
     });
   }
@@ -1082,6 +1243,14 @@ async function ukazPoradcaDashboard(poradcaId) {
     const btn = el('up-btn');
     const chyba = el('up-chyba');
     chyba.classList.add('hidden');
+
+    const chybaVstupu = chybaEmail(el('up-email').value, true) || chybaTelefon(el('up-telefon').value);
+    if (chybaVstupu) {
+      chyba.textContent = chybaVstupu;
+      chyba.classList.remove('hidden');
+      return;
+    }
+
     btn.disabled = true;
     btn.textContent = 'Ukladám…';
 
@@ -1098,7 +1267,7 @@ async function ukazPoradcaDashboard(poradcaId) {
     btn.textContent = 'Uložiť';
 
     if (chybaRpc) {
-      chyba.textContent = chybaRpc.message || 'Nepodarilo sa uložiť zmenu.';
+      chyba.textContent = prelozChybu(chybaRpc.message);
       chyba.classList.remove('hidden');
       return;
     }
@@ -1154,7 +1323,72 @@ async function nacitajRolu() {
   if (eO || eP) { ukazChybu('Nepodarilo sa načítať váš účet. Skúste obnoviť stránku.'); return; }
   if (obecId) { await ukazObecDashboard(obecId); return; }
   if (poradcaId) { await ukazPoradcaDashboard(poradcaId); return; }
+
+  // U3/U2: firemny pouzivatel (clenstvo vo firme, rovnako ako to cita app.html)
+  // dostane na vybere roly vysvetlenie a cestu spat do aplikacie.
+  let jeFiremny = false;
+  try {
+    const { data: clenstva, error: eM } = await supabase.from('memberships').select('org_id').limit(1);
+    jeFiremny = !eM && Array.isArray(clenstva) && clenstva.length > 0;
+  } catch (e) { jeFiremny = false; }
+  el('firma-box').classList.toggle('hidden', !jeFiremny);
   ukazLen('sekcia-vyber');
+}
+
+// V7: pozvanka do obce sa uz neprijima automaticky pri nacitani — najprv
+// sa ukaze potvrdenie, RPC prijmi_obec_pozvanku sa vola az po kliku.
+async function ukazPotvrdeniePozvanky(kod, pokracuj) {
+  ukazLen('stav-nacitavam');
+  let nazovObce = null;
+  let mamObec = false;
+  let mamPoradcu = false;
+  try {
+    const [r1, r2, r3] = await Promise.all([
+      supabase.rpc('nazov_obec_pozvanky', { p_kod: kod }),
+      supabase.rpc('moj_obec_id'),
+      supabase.rpc('moj_poradca_id'),
+    ]);
+    if (r1.data?.ok && r1.data.nazov) nazovObce = String(r1.data.nazov);
+    mamObec = !!r2.data;
+    mamPoradcu = !!r3.data;
+  } catch (e) { /* vseobecny text nizsie */ }
+
+  const vysvetlenie = ' Účet na Trhu dopytov je buď účet obce, alebo profil poradcu.';
+
+  if (mamObec) {
+    ukazChybu(prelozChybu('Uz mas pristup k obecnemu uctu (vlastnemu alebo cudziemu).') +
+      ' Pozvánku nie je potrebné prijímať.' + vysvetlenie, true);
+    return;
+  }
+
+  el('pozvanka-text').innerHTML = (nazovObce
+    ? 'Pozvali vás do účtu obce <strong>' + bezpecne(nazovObce) + '</strong>. Prijať pozvánku?'
+    : 'Pozvali vás do účtu obce. Prijať pozvánku?') +
+    (mamPoradcu
+      ? '<span class="block mt-2 text-[13px]">Pozor: už máte profil poradcu.' + bezpecne(vysvetlenie) +
+        ' Po prijatí pozvánky uvidíte účet obce a svoj poradcovský panel nie.</span>'
+      : '');
+
+  const btnPrijat = el('pozvanka-prijat');
+  btnPrijat.disabled = false;
+  btnPrijat.textContent = 'Prijať pozvánku';
+  ukazLen('sekcia-pozvanka');
+  btnPrijat.focus();
+
+  el('pozvanka-odist').onclick = () => {
+    if (mamPoradcu) { nacitajRolu(); return; }
+    location.replace('./starosta.html');
+  };
+  btnPrijat.onclick = async () => {
+    btnPrijat.disabled = true;
+    btnPrijat.textContent = 'Prijímam…';
+    const { error: chybaPozvanky } = await supabase.rpc('prijmi_obec_pozvanku', { p_kod: kod });
+    if (chybaPozvanky) {
+      ukazChybu('Pozvánku sa nepodarilo prijať. ' + prelozChybu(chybaPozvanky.message) + vysvetlenie, true);
+      return;
+    }
+    await pokracuj();
+  };
 }
 
 // ── Prihlásenie a štart ──────────────────────────────────────────────────
@@ -1184,6 +1418,14 @@ async function start() {
   const kodPozvanky = new URLSearchParams(location.search).get('pozvanka');
   const sluzbaToken = new URLSearchParams(location.search).get('servis');
 
+  // U7: expirovany/neplatny magic link — Supabase vrati chybu v hash-i
+  // (#error=access_denied&error_code=otp_expired&...) alebo v query. Zistit
+  // PRED history.replaceState, ten adresu zmaze.
+  const hashParametre = new URLSearchParams(location.hash.replace(/^#/, ''));
+  const queryParametre = new URLSearchParams(location.search);
+  const odkazChyba = ['error', 'error_code', 'error_description']
+    .some((k) => hashParametre.has(k) || queryParametre.has(k));
+
   supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   naplnKrajSelect();
   naplnKrajeCheckboxy('pr-kraje', 'pr-kraj');
@@ -1200,7 +1442,9 @@ async function start() {
     if (kodPozvanky) dalsieParams.set('pozvanka', kodPozvanky);
     if (sluzbaToken) dalsieParams.set('servis', sluzbaToken);
     const qs = dalsieParams.toString();
-    return location.replace(PRIHLASENIE + (qs ? '&' + qs : ''));
+    // Pevny kod, nikdy volny text z adresy (prihlasenie.html zobrazuje len znamé kody).
+    const chybaQs = odkazChyba ? '&chyba=odkaz_neplati' : '';
+    return location.replace(PRIHLASENIE + chybaQs + (qs ? '&' + qs : ''));
   }
 
   sessia = session;
@@ -1211,20 +1455,26 @@ async function start() {
     location.replace(PRIHLASENIE);
   });
 
-  if (kodPozvanky) {
-    const { error: chybaPozvanky } = await supabase.rpc('prijmi_obec_pozvanku', { p_kod: kodPozvanky });
-    if (chybaPozvanky) {
-      ukazChybu('Pozvánku sa nepodarilo prijať: ' +
-        (chybaPozvanky.message || 'skúste to znova, alebo požiadajte o nový odkaz.'));
-      return;
+  // U24: Esc zatvori otvoreny formular / sprievodcu dopytu.
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    for (const id of ['wizard-dopyt', 'form-uprava-obec', 'form-uprava-poradca']) el(id).classList.add('hidden');
+  });
+
+  const pokracuj = async () => {
+    if (sluzbaToken) {
+      await zurcitVstupZoServisu(sluzbaToken);
+    } else {
+      await nacitajRolu();
     }
+  };
+
+  if (kodPozvanky) {
+    await ukazPotvrdeniePozvanky(kodPozvanky, pokracuj);
+    return;
   }
 
-  if (sluzbaToken) {
-    await zurcitVstupZoServisu(sluzbaToken);
-  } else {
-    await nacitajRolu();
-  }
+  await pokracuj();
 }
 
 start().catch((e) => {
