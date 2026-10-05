@@ -2289,9 +2289,11 @@ const PREDPLATNE_CHYBY = {
 function otvorPredplatneModal(supabase, aktualnyPlan) {
   const zoznam = el('modal-predplatne-plany');
   // Audit P1.2: pri aktívnom Growth bol predvolený Start. Predvolený je
-  // teraz aktuálny plán (mesačne), inak prvá možnosť.
+  // teraz aktuálny plán (mesačne). Vlna 71 (test Team/Poradca): ak
+  // aktuálny plán nie je medzi samoobslužnými možnosťami (napr. Team,
+  // Poradca), neznačkovať nijakú možnosť ako predvolenú — inak to
+  // vyzeralo, akoby mal zákazník vybraný Start.
   let predvolene = PREDPLATNE_PLANY.findIndex(p => p.plan === aktualnyPlan);
-  if (predvolene < 0) predvolene = 0;
   const nazovPlanu = (window.PLANY?.plany || {})[aktualnyPlan]?.nazov;
   el('modal-predplatne-aktualny').textContent = nazovPlanu ? `Váš plán: ${nazovPlanu}` : '';
   zoznam.innerHTML = PREDPLATNE_PLANY.map((p, i) => `
