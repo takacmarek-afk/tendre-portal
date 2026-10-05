@@ -26,14 +26,16 @@ on:
         type: string
         default: ""
 
-  schedule:
-    - cron: "*/15 * * * *"
+  # Planovany beh PRESIEL do dopyty-email.yml (ten sa planuje spolahlivo,
+  # tento sa nespustil). Tu zostalo len rucne spustenie (nasucho / komu).
+  # schedule:
+  #   - cron: "*/15 * * * *"
 
 permissions:
   contents: read
 
 concurrency:
-  group: potvrdenie-odberu
+  group: dopyty-email   # rovnaka skupina ako planovany beh v dopyty-email.yml (ziadne dvojite odoslanie)
   cancel-in-progress: false
 
 jobs:

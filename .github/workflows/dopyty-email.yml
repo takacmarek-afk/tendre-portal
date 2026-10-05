@@ -84,3 +84,20 @@ jobs:
           fi
           echo "Spustam: python posli_dopyt_email.py ${ARGS[*]-}"
           python posli_dopyt_email.py "${ARGS[@]}"
+
+      # POTVRDENIE ODBERU PRE OBCE (double opt-in, 5.10.2026): samostatny
+      # workflow potvrdenie-odberu.yml sa na planovany cron nespustil ani po
+      # niekolkych hodinach (novy workflow, GitHub planovac ho nezobral), kym
+      # tento beh kazdych 15 minut bezi spolahlivo. Preto sa potvrdzovacie
+      # e-maily posielaju aj tu, a to LEN z planovaneho behu. Rucne spustenie
+      # (nasucho/komu) zostava v potvrdenie-odberu.yml. Nezavisly krok:
+      # zlyhanie dopytov nezastavi potvrdenia. Skript posle len riadkom
+      # s potvrdzovaci_email_at IS NULL, takze nic neposle dvakrat.
+      - name: Poslat potvrdzovacie e-maily pre odber obci (len plan)
+        if: ${{ always() && github.event_name == 'schedule' }}
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: python posli_potvrdenie_odberu.py
