@@ -496,7 +496,7 @@ def _nacitaj_org(sb, plany=PRO_PLANY) -> "set | None":
         return None
     try:
         subs = sb.table("subscriptions").select(
-            "org_id, plan, stav, trial_konci").execute().data or []
+            "org_id, plan, stav, trial_konci, obdobie_konci").execute().data or []
     except Exception as e:
         log.warning("Tabulka subscriptions sa necitala: %s", e)
         return set()
@@ -506,6 +506,14 @@ def _nacitaj_org(sb, plany=PRO_PLANY) -> "set | None":
         if plany is not None and s.get("plan") not in plany:
             continue
         aktivne = s.get("stav") == "aktivne"
+        if aktivne and s.get("obdobie_konci"):
+            # Vlna 83 (migracia 68): zaplatene obdobie ma koniec; po nom
+            # pristup (a teda aj e-maily) konci. NULL = rucne pridelene bez konca.
+            try:
+                oc = datetime.fromisoformat(str(s["obdobie_konci"]).replace("Z", "+00:00"))
+                aktivne = oc > teraz
+            except ValueError:
+                aktivne = False
         if not aktivne and s.get("stav") == "trial":
             tc = s.get("trial_konci")
             if tc:

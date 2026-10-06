@@ -16,7 +16,7 @@ window.PLANY = {
   "plany": {
     "start":   { "nazov": "Start",   "mesiac": 34,  "rok": 340 },
     "growth":  { "nazov": "Growth",  "mesiac": 89,  "rok": 890 },
-    "team":    { "nazov": "Team",    "mesiac": 249, "rok": 2490 },
+    "team":    { "nazov": "Team",    "mesiac": 89,  "rok": 890, "dalsiPouzivatelMesiac": 29, "dalsiPouzivatelRok": 290 },
     "poradca": { "nazov": "Poradca", "mesiac": 59,  "rok": 590 }
   }
 };

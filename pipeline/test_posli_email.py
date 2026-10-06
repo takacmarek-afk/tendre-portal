@@ -405,6 +405,18 @@ assert pe._nacitaj_pro_org(sb_plany) == {"o-growth", "o-team"}, pe._nacitaj_pro_
 assert pe._nacitaj_org_s_pristupom(sb_plany) == {"o-growth", "o-team", "o-start"}
 print("25) plany growth/team su Pro, start ma pristup, skoncena skuska nie")
 
+# 25b) Vlna 83 (migracia 68): zaplatene obdobie ma koniec. Vyprsane 'aktivne' nema
+#      pristup (ani e-maily); NULL obdobie_konci = rucne pridelene bez konca.
+sb_obdobie = _FalosnySbPro({
+    "subscriptions": [
+        {"org_id": "o-plati", "plan": "growth", "stav": "aktivne", "trial_konci": None, "obdobie_konci": pred(-10)},
+        {"org_id": "o-vyprsalo", "plan": "growth", "stav": "aktivne", "trial_konci": None, "obdobie_konci": pred(1)},
+        {"org_id": "o-bez-konca", "plan": "team", "stav": "aktivne", "trial_konci": None, "obdobie_konci": None},
+    ],
+}, False)
+assert pe._nacitaj_pro_org(sb_obdobie) == {"o-plati", "o-bez-konca"}, pe._nacitaj_pro_org(sb_obdobie)
+print("25b) vyprsane zaplatene obdobie nema pristup")
+
 # 26) posli(): reply_to na info@ a List-Unsubscribe len pre nas vlastny odkaz
 zachytene = {}
 class _R:

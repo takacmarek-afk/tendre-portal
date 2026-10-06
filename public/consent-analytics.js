@@ -265,7 +265,7 @@
   var CENY = {
     "start:mesiac": 34, "start:rok": 340,
     "growth:mesiac": 89, "growth:rok": 890,
-    "team:mesiac": 249, "team:rok": 2490
+    "team:mesiac": 89, "team:rok": 890
   };
   window.ptZaciatokPlatby = function (plan, obdobie) {
     var hodnota = CENY[plan + ":" + obdobie] || 0;

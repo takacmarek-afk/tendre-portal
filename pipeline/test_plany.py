@@ -60,12 +60,32 @@ def test_ceny_v_cenniku():
 
 
 def test_ceny_v_databaze():
-    sql = (KOREN / "supabase" / "50_plany_14_dni.sql").read_text(encoding="utf-8")
+    # Team: od vlny 83 ma zakladnu cenu v migracii 68 (Growth + priplatok
+    # za dalsieho pouzivatela); ostatne plany ostavaju v migracii 50.
+    migracie = {"team": "68_plany_a_pristup.sql"}
     for kod, p in plany()["plany"].items():
+        subor = migracie.get(kod, "50_plany_14_dni.sql")
+        sql = (KOREN / "supabase" / subor).read_text(encoding="utf-8")
         for obdobie in ("mesiac", "rok"):
             assert re.search(rf"\('{kod}',\s*'{obdobie}',\s*{p[obdobie]}\.00\)", sql), \
-                f"50_plany_14_dni.sql: {kod}/{obdobie} nesedí s plany.js"
+                f"{subor}: {kod}/{obdobie} nesedí s plany.js"
+    sql = (KOREN / "supabase" / "50_plany_14_dni.sql").read_text(encoding="utf-8")
     assert f"interval '{plany()['skusobneDni']} days'" in sql
+
+
+def test_team_dalsi_pouzivatel_a_start_limit():
+    t = plany()["plany"]["team"]
+    cennik = _stranky()["cennik.html"]
+    assert f"+ {t['dalsiPouzivatelMesiac']}&nbsp;€ / mesiac za každého ďalšieho používateľa" in cennik
+    assert f"({t['dalsiPouzivatelRok']}&nbsp;€ ročne)" in cennik
+    assert "Prioritná podpora" not in cennik, "cenník: nedefinovaná 'Prioritná podpora'"
+    assert "2 kraje a 2 sektory" in cennik, "cenník: Start nemá 2 kraje a 2 sektory"
+    assert "1 kraj a 1 sektor" not in cennik
+    assert "2 kraje a 2 sektory" in _stranky()["app.html"]
+    assert "1 kraj a 1 sektor" not in _stranky()["app.html"]
+    op = (PUB / "obchodne-podmienky.html").read_text(encoding="utf-8")
+    assert "neobnovuje automaticky" in op, "OP: predplatné sa neobnovuje automaticky"
+    assert "automaticky obnovuje" not in op
 
 
 def test_ziadne_podkopavanie_ceny():

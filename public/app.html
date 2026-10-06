@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>PredTendrom.sk</title>
+<title>Prehľad príležitostí – PredTendrom.sk</title>
 <script src="./config.js"></script>
 <script src="./plany.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -271,9 +271,14 @@
   <div id="modal-vyber" role="dialog" aria-modal="true" aria-labelledby="modal-vyber-nadpis" class="hidden fixed inset-0 z-50 items-center justify-center bg-black/40 px-4">
     <div class="bg-white rounded-lg border border-line w-full max-w-[520px] p-6 max-h-[85vh] overflow-y-auto">
       <h2 id="modal-vyber-nadpis" class="text-[19px] font-serif font-semibold">Čo vás zaujíma?</h2>
-      <p class="mt-2 text-[14px] leading-relaxed text-slate2">
+      <p id="mv-uvod" class="mt-2 text-[14px] leading-relaxed text-slate2">
         Vyberte kraje, sektory a veľkosť zákaziek. Podľa toho vám prehľad
         vyfiltrujeme a zoradíme. Výber môžete kedykoľvek zmeniť alebo vypnúť.
+      </p>
+      <p id="mv-uvod-start" class="hidden mt-2 text-[14px] leading-relaxed text-slate2">
+        Plán Start obsahuje <strong>2 kraje a 2 sektory</strong>. Vyberte aspoň
+        jeden kraj a jeden sektor (najviac po dvoch) — v appke uvidíte príležitosti
+        a dotácie z nich. Výber môžete kedykoľvek zmeniť; širší prehľad dáva Growth.
       </p>
       <p class="mt-5 text-[13px] font-semibold">Kraje</p>
       <div id="mv-kraje" class="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[14px]"></div>
@@ -381,6 +386,23 @@
       </p>
     </div>
 
+    <!-- Vlna 83: skusobne alebo zaplatene obdobie skoncilo. Appka sa
+         nezobrazi, zakaznik vidi, co sa stalo a co moze urobit dalej. -->
+    <div id="skoncene" class="hidden bg-white border border-line rounded-lg p-10 text-center max-w-2xl mx-auto">
+      <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-800 text-[20px]
+                  flex items-center justify-center mx-auto mb-5">&#8987;</div>
+      <h2 id="skoncene-h" class="text-[20px] font-serif font-semibold">Skúška skončila</h2>
+      <p id="skoncene-p" class="mt-3 text-[14px] leading-relaxed text-slate2 max-w-md mx-auto"></p>
+      <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
+        <button id="skoncene-plat" class="hidden inline-flex justify-center items-center bg-ink text-white
+                font-semibold text-[14px] px-5 py-3 rounded-md hover:bg-accent transition">Vybrať plán a pokračovať</button>
+        <a href="./cennik.html" class="inline-flex justify-center items-center border border-line text-ink
+                font-semibold text-[14px] px-5 py-3 rounded-md hover:border-accent transition">Pozrieť cenník</a>
+      </div>
+      <p id="skoncene-vlastnik" class="hidden mt-5 text-[13px] text-slate2"></p>
+      <p class="mt-5 text-[12px] text-slate2">Otázky? <a class="underline" href="mailto:info@predtendrom.sk">info@predtendrom.sk</a></p>
+    </div>
+
     <!-- MOJ VYBER (audit 27. 9. 2026, P1.3): kraje, sektory a velkost
          zakaziek z prveho prihlasenia. Predvoleny filter a radenie
          "relevantne pre mna" vo vsetkych zalozkach, da sa vypnut. -->
@@ -393,6 +415,10 @@
       </label>
       <button id="mv-zmenit" class="text-[13px] font-semibold text-accent hover:text-accentDark">Zmeniť</button>
     </div>
+    <!-- Vlna 83: plan Start vidi len svoj vyber (2 kraje + 2 sektory). Pocet
+         skrytych prilezitosti prichadza z start_skryte_pocty() (migracia 68). -->
+    <div id="start-zamknute" class="hidden mb-4 rounded-lg px-4 py-3 text-[13px] leading-relaxed"
+         style="background:#F3F0E6;border:1px solid #E3DDC8"></div>
 
     <!-- Prepinac vrstiev -->
     <div id="zalozky" class="hidden flex items-center gap-1 mb-6 border-b border-line overflow-x-auto">
@@ -1963,7 +1989,9 @@ function riadokDotacie(r, stavMap) {
           : ''}</div>
         ${poznamkaDodatky(r)}
         ${kde ? `<div class="text-[12px] text-slate2 mt-1">${bezpecne(kde)}</div>` : ''}
-        ${r.podpisane ? `<div class="text-[11px] text-slate2 mt-1">podpísaná ${bezpecne(dSk(r.podpisane))}</div>` : ''}
+        ${r.podpisane ? (odPodpisu < 0
+          ? `<div class="text-[11px] text-slate2 mt-1" title="V Centrálnom registri zmlúv je pri tejto zmluve dátum podpisu v budúcnosti — pravdepodobne preklep alebo zápis vopred.">dátum v registri: ${bezpecne(dSk(r.podpisane))} (budúci)</div>`
+          : `<div class="text-[11px] text-slate2 mt-1">podpísaná ${bezpecne(dSk(r.podpisane))}</div>`) : ''}
         ${stavMap ? crmStavSelect('dotacia', r.contract_id, stavMap) : ''}
       </td>
       <td data-popis="Na čo" data-blok class="px-4 py-4 align-top max-w-[380px]">
@@ -2097,12 +2125,25 @@ function poslednaSutaz(r) {
   if (u.hodnota != null) casti.push(`za ${suma(u.hodnota)}`);
   if (u.pocet_ponuk != null) casti.push(`${u.pocet_ponuk} ${tvar(u.pocet_ponuk, 'ponuka', 'ponuky', 'ponúk')}`);
   if (u.podpisane) casti.push(`podpísané ${datumKratky(u.podpisane)}`);
+  // Audit 6. 10. 2026 (A2): ak ma rovnaky obstaravatel v tom istom sektore
+  // v UVO zmluvu podpisanu po zaciatku sucasnej zmluvy, zakazka bola pravdepodobne uz
+  // vysutazena. Parovanie je hrube (obstaravatel + sektor), preto otaznik.
+  // Zaciatok sucasnej zmluvy ~ koniec minus typicka dlzka cyklu (opportunities
+  // nema datum podpisu). Bez oboch udajov stitok nedavame.
+  const dlzka = num(r.typicka_dlzka_dni);
+  const koniecMs = r.effective_to ? Date.parse(String(r.effective_to).slice(0, 10)) : NaN;
+  const podpisUvoMs = u.podpisane ? Date.parse(String(u.podpisane).slice(0, 10)) : NaN;
+  const vysutazene = Number.isFinite(dlzka) && dlzka > 0 && Number.isFinite(koniecMs) &&
+    Number.isFinite(podpisUvoMs) && podpisUvoMs > koniecMs - dlzka * 86400000;
   return `<div class="text-[12px] mt-1">
             <span class="text-slate2">posledná súťaž (ÚVO):</span>
             <span class="font-medium">${bezpecne(u.vitaz_nazov) || '—'}</span>
             ${casti.length ? `<span class="text-slate2"> · ${casti.join(' · ')}</span>` : ''}
             ${u.url ? `<a href="${bezpecne(u.url)}" target="_blank" rel="noopener"
                           class="text-accent hover:text-accentDark hover:underline whitespace-nowrap"> ↗</a>` : ''}
+            ${vysutazene ? `<div class="mt-1"><span class="inline-block text-[11px] font-semibold px-1.5 py-0.5 rounded"
+                  style="background:#FEF3C7;color:#92400E"
+                  title="Rovnaký obstarávateľ má v tomto sektore v ÚVO zmluvu podpísanú po začiatku súčasnej zmluvy. Zákazka už mohla byť vysúťažená — overte pred prípravou ponuky.">už vysúťažené?</span></div>` : ''}
             ${jeSlabaKonkurencia(u.pocet_ponuk) ? `<div class="mt-1">${stitokKonkurencie(u.pocet_ponuk)}</div>` : ''}
           </div>`;
 }
@@ -2471,7 +2512,7 @@ const PREDPLATNE_PLANY = ['start', 'growth'].flatMap(plan => {
 // zistit rozdiel medzi Start a Growth. Skratene z cennik.html bullet
 // zoznamov, jeden riadok na plan.
 const PREDPLATNE_POPIS = {
-  start:  '1 kraj a 1 sektor, týždenný e-mail, cenový benchmark, export do Excelu.',
+  start:  '2 kraje a 2 sektory, týždenný e-mail, cenový benchmark, export do Excelu.',
   growth: 'Celé Slovensko, všetky sektory, denný e-mail, Slack/Teams, neobmedzené sledovanie firiem podľa IČO.',
 };
 
@@ -2739,19 +2780,33 @@ function odznakPredplatneho(sub, zadarmo = false) {
   const proPlany = ['trial', 'pro', 'growth', 'team', 'admin'];
   const trialKonci = sub?.trial_konci ? new Date(sub.trial_konci) : null;
   const trialAktivny = sub?.stav === 'trial' && trialKonci && trialKonci > new Date();
-  const aktivny = zadarmo || sub?.stav === 'aktivne' || trialAktivny;
+  // Vlna 83 (migracia 68): zaplateny pristup trva len do obdobie_konci
+  // (platba je jednorazova, nie automaticke predplatne). NULL = rucne
+  // pridelene bez konca. Zrkadli _predplatne_aktivne() v databaze.
+  const obdobieKonci = sub?.obdobie_konci ? new Date(sub.obdobie_konci) : null;
+  const zaplateneAktivne = sub?.stav === 'aktivne' && (!obdobieKonci || obdobieKonci > new Date());
+  const predplatneAktivne = zaplateneAktivne || trialAktivny;
+  // Poradca vidi len dotacie, obce ziadajuce o dotaciu a dopyty od obci
+  // (ma_pristup_k_dotaciam), nie databazu zmluv - preto NIE je `aktivny`.
+  const jePoradca = !zadarmo && predplatneAktivne && sub?.plan === 'poradca';
+  const aktivny = zadarmo || (predplatneAktivne && sub?.plan !== 'poradca');
   const jePro = zadarmo || (aktivny && proPlany.includes(sub?.plan));
+  // Start = aktivny plan, ktory nie je Growth+ (vyber 2 kraje + 2 sektory).
+  const jeStart = !zadarmo && aktivny && !jePro;
+  // Predplatne skoncilo (skuska alebo zaplatene obdobie) - appka sa nezobrazi.
+  const skoncene = !zadarmo && !predplatneAktivne;
+  const skoncilaSkuska = skoncene && (!sub || sub.stav === 'trial' || sub.plan === 'trial');
 
   const o = el('odznak-trial');
   const p = el('odznak-plan');
 
-  if (zadarmo && !(sub?.stav === 'aktivne') && !trialAktivny) {
+  if (zadarmo && !zaplateneAktivne && !trialAktivny) {
     o.textContent = 'Testovacia prevádzka — plný prístup';
     o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-green-100 text-green-800';
     p.textContent = '';
     p.className = 'hidden';
-  } else if (!sub || !aktivny) {
-    o.textContent = 'Predplatné neaktívne';
+  } else if (!sub || !predplatneAktivne) {
+    o.textContent = skoncilaSkuska ? 'Skúška skončila' : 'Predplatné skončilo';
     o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-red-100 text-red-800';
     p.textContent = '';
     p.className = 'hidden';
@@ -2762,13 +2817,13 @@ function odznakPredplatneho(sub, zadarmo = false) {
     p.textContent = (PLANY[sub.plan] || sub.plan || '').toUpperCase();
     p.className = 'text-[12px] font-semibold px-2.5 py-1 rounded hidden sm:inline bg-ink text-white';
   } else {
-    o.textContent = 'Aktívne';
+    o.textContent = obdobieKonci ? `Aktívne do ${obdobieKonci.toLocaleDateString('sk-SK')}` : 'Aktívne';
     o.className = 'text-[13px] font-medium px-3 py-1 rounded-full bg-green-100 text-green-800';
     p.textContent = (PLANY[sub.plan] || sub.plan || '').toUpperCase();
     p.className = 'text-[12px] font-semibold px-2.5 py-1 rounded hidden sm:inline bg-ink text-white';
   }
 
-  return { jePro, aktivny };
+  return { jePro, aktivny, jePoradca, jeStart, skoncene, skoncilaSkuska };
 }
 
 // Spolocna obrazovka pre firmu, ktorej sa nedá zalozit skuska ani pripojit
@@ -4117,12 +4172,12 @@ function nastavDnes(supabase, ctx) {
 async function dashboard(supabase, rola, spravaPozvanky) {
   const [{ data: org }, { data: sub }, { data: zadarmo }] = await Promise.all([
     supabase.from('organizations').select('id, nazov').limit(1).maybeSingle(),
-    supabase.from('subscriptions').select('stav, trial_konci, plan').limit(1).maybeSingle(),
+    supabase.from('subscriptions').select('stav, trial_konci, plan, obdobie_konci').limit(1).maybeSingle(),
     supabase.rpc('je_zadarmo'),
   ]);
 
   el('nazov-firmy').textContent = org?.nazov ?? '';
-  const { jePro, aktivny } = odznakPredplatneho(sub, zadarmo === true);
+  const { jePro, aktivny, jePoradca, jeStart, skoncene, skoncilaSkuska } = odznakPredplatneho(sub, zadarmo === true);
   // Team-only podmnozina jePro — financny kontext dodavatela (RUZ). Zrkadli
   // presne ma_team() v databaze (supabase/35_ruz_financie.sql): 'trial' dava
   // Pro uroven, nie Team (viz komentar pri odznakPredplatneho vyssie), preto
@@ -4136,6 +4191,27 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const btnPredplatne = el('btn-predplatne');
     btnPredplatne.classList.remove('hidden');
     btnPredplatne.addEventListener('click', () => otvorPredplatneModal(supabase, sub?.plan));
+  }
+
+  // Vlna 83: skusobne alebo zaplatene obdobie skoncilo -> zrozumitelna
+  // obrazovka namiesto prazdnych tabuliek. Data by RLS aj tak nevratila.
+  if (skoncene) {
+    const smiePlatit = rola === 'owner' || rola === 'admin';
+    el('skoncene-h').textContent = skoncilaSkuska ? 'Skúška skončila' : 'Predplatné skončilo';
+    el('skoncene-p').textContent = skoncilaSkuska
+      ? 'Vaša skúšobná doba sa skončila. Údaje a nastavenia vašej firmy ostávajú uložené — po aktivácii plánu budete pokračovať presne tam, kde ste skončili.'
+      : 'Zaplatené obdobie sa skončilo a predplatné sa neobnovuje automaticky. Údaje a nastavenia vašej firmy ostávajú uložené — po úhrade budete pokračovať presne tam, kde ste skončili.';
+    if (smiePlatit) {
+      ukaz('skoncene-plat');
+      el('skoncene-plat').addEventListener('click', () => otvorPredplatneModal(supabase, sub?.plan));
+    } else {
+      el('skoncene-vlastnik').textContent = 'Plán môže aktivovať vlastník alebo admin vašej firmy — požiadajte ho o to.';
+      ukaz('skoncene-vlastnik');
+    }
+    skry('nacitavam');
+    ukaz('app');
+    ukaz('skoncene');
+    return;
   }
 
   // Vysledok prijatia pozvanky (viz start()). Ziadny trvaly zapis, len
@@ -4561,6 +4637,13 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     // (väčšina "Zmluva o poskytnutí dotácie") výber nesmie skryť.
     q = sVyberom(q, { kraj: 'kraj', sektor: 'sektor_odhad', sektorAjPrazdny: true }, kraj, sektor);
     if (text) q = q.or(`prijimatel.ilike.*${text}*,ucel.ilike.*${text}*`);
+
+    // Audit 6. 10. 2026 (A1): v CRZ su aj zmluvy s datumom podpisu v buducnosti
+    // (preklep alebo predpis). Pri radeni "najnovsie" by sa dostali navrch ako
+    // "podpisane 30. 10." - v tomto radeni ich preto nezobrazujeme (inak ostavaju).
+    if ((el('d-radenie').value || 'nove') === 'nove') {
+      q = q.or(`podpisane.is.null,podpisane.lte.${oDni(0)}`);
+    }
 
     // Stav okna. `okno_od` v buducnosti = tender sa este necaka, teda
     // skutocny predstih. Predvolene ukazujeme len tie.
@@ -5181,8 +5264,28 @@ async function dashboard(supabase, rola, spravaPozvanky) {
           <span>${bezpecne(t)}</span>
         </label>`).join('');
       el('mv-chyba').classList.add('hidden');
+      // Start: najviac 2 kraje a 2 sektory, "Zobrazit vsetko" nie je k dispozicii.
+      el('mv-uvod').classList.toggle('hidden', jeStart);
+      el('mv-uvod-start').classList.toggle('hidden', !jeStart);
+      el('mv-preskocit').classList.toggle('hidden', jeStart);
       otvorModal('modal-vyber');
     };
+
+    // Start: tretia zaskrtnuta polozka sa odskrtne s vysvetlenim.
+    if (jeStart) {
+      for (const [kontajner, meno, slovo] of [['mv-kraje', 'mv-kraj', 'kraje'], ['mv-sektory', 'mv-sektor', 'sektory']]) {
+        el(kontajner).addEventListener('change', (e) => {
+          const zvolene = document.querySelectorAll(`input[name="${meno}"]:checked`);
+          if (zvolene.length > 2) {
+            e.target.checked = false;
+            el('mv-chyba').textContent = `Plán Start obsahuje najviac 2 ${slovo === 'kraje' ? 'kraje' : 'sektory'}. Ak chcete viac, pozrite si plán Growth.`;
+            el('mv-chyba').classList.remove('hidden');
+          } else {
+            el('mv-chyba').classList.add('hidden');
+          }
+        });
+      }
+    }
 
     const zavriVyber = () => zavriModal('modal-vyber');
 
@@ -5190,8 +5293,9 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       const maObsah = mojVyber && (mojVyber.kraje?.length || mojVyber.sektory?.length ||
         (mojVyber.velkost && mojVyber.velkost !== 'vsetko'));
       el('moj-vyber').classList.toggle('hidden', !tabulkaJe);
-      el('mv-pouzit').classList.toggle('hidden', !maObsah);
-      el('mv-text').textContent = maObsah ? sPopisomVyberu() : 'nenastavený, zobrazujeme všetko';
+      el('mv-pouzit').classList.toggle('hidden', !maObsah || jeStart);
+      el('mv-text').textContent = maObsah ? sPopisomVyberu()
+        : (jeStart ? 'nenastavený — vyberte 2 kraje a 2 sektory' : 'nenastavený, zobrazujeme všetko');
       el('mv-zmenit').textContent = maObsah ? 'Zmeniť' : 'Nastaviť';
       // Predvolené radenie: s výberom "relevantné pre mňa", inak sila signálu.
       if (maObsah && el('f-radenie').value === 'signal') el('f-radenie').value = 'moje';
@@ -5204,7 +5308,9 @@ async function dashboard(supabase, rola, spravaPozvanky) {
         .upsert(riadok, { onConflict: 'user_id' });
       if (error) {
         console.error(error);
-        el('mv-chyba').textContent = SPRAVA_ULOZENIE;
+        el('mv-chyba').textContent = String(error.message || '').includes('START_LIMIT')
+          ? 'Plán Start obsahuje najviac 2 kraje a 2 sektory.'
+          : SPRAVA_ULOZENIE;
         el('mv-chyba').classList.remove('hidden');
         return false;
       }
@@ -5212,7 +5318,32 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       return true;
     };
 
+    // Start: kolko prilezitosti a dotacii je mimo jeho vyberu (RPC z migracie 68).
+    const nacitajStartZamknute = async () => {
+      if (!jeStart) return;
+      const box = el('start-zamknute');
+      try {
+        const { data, error } = await supabase.rpc('start_skryte_pocty');
+        const p = Number(data?.prilezitosti) || 0;
+        const d = Number(data?.dotacie) || 0;
+        if (error || !data?.start || (!p && !d)) { box.classList.add('hidden'); return; }
+        box.textContent = `Plán Start zobrazuje príležitosti a dotácie z vášho výberu (2 kraje a 2 sektory). ` +
+          `Mimo výberu je ešte ${cislo(p)} ${tvar(p, 'aktuálna príležitosť', 'aktuálne príležitosti', 'aktuálnych príležitostí')} ` +
+          `a ${cislo(d)} ${tvar(d, 'dotácia', 'dotácie', 'dotácií')}. `;
+        const a = document.createElement('a');
+        a.href = './cennik.html';
+        a.className = 'font-semibold text-accent underline underline-offset-2';
+        a.textContent = 'Growth ich odomkne →';
+        box.appendChild(a);
+        box.classList.remove('hidden');
+      } catch (e) {
+        console.error(e);
+        box.classList.add('hidden');
+      }
+    };
+
     const prekresliVsetko = () => {
+      nacitajStartZamknute();
       for (const k of Object.keys(zobrazene)) zobrazene[k] = LIMIT;
       if (mameZmluvy) nacitajZmluvy();
       if (mameDotacie) nacitajDotacie();
@@ -5225,6 +5356,11 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
     el('mv-ulozit').addEventListener('click', async () => {
       const zvol = n => [...document.querySelectorAll(`input[name="${n}"]:checked`)].map(x => x.value);
+      if (jeStart && (!zvol('mv-kraj').length || !zvol('mv-sektor').length)) {
+        el('mv-chyba').textContent = 'Vyberte aspoň jeden kraj a aspoň jeden sektor — inak by ste v pláne Start nič nevideli.';
+        el('mv-chyba').classList.remove('hidden');
+        return;
+      }
       const ok = await ulozVyber({
         kraje: zvol('mv-kraj'), sektory: zvol('mv-sektor'),
         velkost: document.querySelector('input[name="mv-velkost"]:checked')?.value || 'vsetko',
@@ -5262,7 +5398,10 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     obnovPanel();
     // Prvý krok po registrácii: kto ešte nemá uložený výber, dostane okno
     // (otvorí sa az po zobrazeni appky na konci dashboard()).
-    if (tabulkaJe && !mojVyber && aktivny) otvorVyberNeskor = otvorVyber;
+    // Start bez kraja alebo sektora nevidi nic (RLS), preto ho appka vypyta.
+    const chybaVyber = jeStart ? !(mojVyber?.kraje?.length && mojVyber?.sektory?.length) : !mojVyber;
+    if (tabulkaJe && aktivny && chybaVyber) otvorVyberNeskor = otvorVyber;
+    nacitajStartZamknute();
   }
 
   if (aktivny) {
@@ -5370,7 +5509,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const m = mojVyber;
     return !!(m && (m.kraje?.length || m.sektory?.length || (m.velkost && m.velkost !== 'vsetko')));
   };
-  dnes = nastavDnes(supabase, {
+  dnes = jePoradca ? { zneplatni() {}, priZobrazeni() {} } : nastavDnes(supabase, {
     firma: org?.nazov ?? '',
     orgId,
     aktivny,
@@ -5413,7 +5552,14 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     },
   });
 
-  nastavZalozky('dnes');
+  // Poradca (vlna 83): len dotacie, obce ziadajuce o dotaciu, dopyty od obci
+  // a tim. Databaza zmluv, ÚVO a dodavatelia su mimo jeho planu.
+  if (jePoradca) {
+    for (const k of ['dnes', 'obsah', 'sutaze', 'dodavatelia']) {
+      document.querySelector(`[data-zalozka="${k}"]`)?.remove();
+    }
+  }
+  nastavZalozky(jePoradca ? 'dotacie' : 'dnes');
   document.querySelector('[data-zalozka="dnes"]')?.addEventListener('click', () => dnes.priZobrazeni());
   dnes.priZobrazeni();
   if (otvorVyberNeskor) otvorVyberNeskor();
