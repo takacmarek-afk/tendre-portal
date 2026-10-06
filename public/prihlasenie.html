@@ -135,7 +135,7 @@
       <div id="servis-banner" class="hidden mb-5 bg-ink text-white rounded-lg px-4 py-3">
         <p class="text-[13px] leading-relaxed">
           Váš dopyt za <strong id="servis-obec"></strong> je pripravený na
-          zverejnenie. Prihláste sa rovnakým e-mailom, na aký prišla táto
+          zverejnenie. Prihláste sa rovnakým e-mailom, na ktorý prišla táto
           pozvánka, a dopyt sa vytvorí automaticky.
         </p>
       </div>
@@ -147,8 +147,8 @@
       <p id="uvod-text" class="mt-2 text-[14px] leading-relaxed text-slate2">
         Zadajte e-mail a pošleme vám odkaz na prihlásenie. Žiadne heslo si
         pamätať nemusíte. Ak u nás ešte účet nemáte, vytvorí sa automaticky
-        a celý portál uvidíte hneď. Prvých 14 dní je zadarmo a bez
-        platobnej karty.
+        a môžete začať hneď. Prvých 14 dní je zadarmo, s funkciami plánu
+        Growth, a bez platobnej karty.
       </p>
 
       <!-- onsubmit="return false": ak sa formular odosle este pred dokoncenim
@@ -173,6 +173,11 @@
                        hover:bg-accentDark transition disabled:opacity-50">
           Poslať odkaz na prihlásenie
         </button>
+
+        <p class="text-[12px] leading-relaxed text-slate2 text-center">
+          Prihlásením potvrdzujete <a href="./obchodne-podmienky.html" class="text-accent hover:underline">obchodné podmienky</a>
+          a berie sa na vedomie <a href="./index.html#ochrana-osobnych-udajov" class="text-accent hover:underline">ochrana osobných údajov</a>.
+        </p>
 
         <p id="chyba" class="text-[13px] text-red-700 hidden"></p>
       </form>
@@ -262,8 +267,10 @@ function ukazChybu(text) {
 // hlasky (phishing). Zobrazuju sa len pevne hlasky podla znamych kodov;
 // neznamy kod dostane vseobecnu hlasku.
 const CHYBY_Z_ADRESY = {
-  odkaz_neplati: 'Ten odkaz už neplatí — platí len najnovší. Pošlite si nový '
-    + 'a kliknite na ten posledný e-mail.',
+  odkaz_neplati: 'Ten odkaz už neplatí — platí len najnovší a len na jedno použitie. '
+    + 'Častá príčina: firemný e-mailový filter odkaz otvoril za vás. Pošlite si nový '
+    + 'odkaz a kliknite na ten posledný e-mail. Ak to nepomôže, v e-maile nájdete aj '
+    + 'číselný kód, ktorý môžete zadať namiesto odkazu.',
   ina_pozvanka: 'Táto pozvánka bola poslaná na iný e-mail, než ktorým ste sa '
     + 'prihlásili. Prihláste sa e-mailom, na ktorý pozvánka prišla.',
   ina_chyba: 'Prihlásenie sa nepodarilo. Skúste to znova.',
@@ -357,7 +364,7 @@ function hlaskaOdoslania(error) {
 const TVAR_EMAILU = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
-  ukazChybu('Aplikácia nie je nastavená: v súbore config.js chýba anon kľúč.');
+  ukazChybu('Aplikácia sa teraz nedá spustiť. Skúste to prosím neskôr, alebo napíšte na info@predtendrom.sk.');
   tlacidlo.disabled = true;
 } else {
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -531,7 +538,7 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
     }
 
     if (TS_KLUC && !tsToken) {
-      ukazChybu('Dokončite, prosím, krátke overenie, že nie ste robot, a skúste to znova.');
+      ukazChybu('Overenie, že nie ste robot, ešte nie je hotové. Počkajte chvíľu a skúste to znova. Ak sa nezobrazuje, vypnite pre túto stránku blokátor reklamy, alebo skúste iný prehliadač.');
       return;
     }
 

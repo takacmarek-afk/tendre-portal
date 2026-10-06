@@ -81,9 +81,45 @@ class _Query:
         return _Odpoved(self._data)
 
 
+class _Rpc:
+    def __init__(self, sb, nazov, args):
+        self.sb, self.nazov, self.args = sb, nazov, args
+
+    def execute(self):
+        sb = self.sb
+        sb.rpc_volania.append((self.nazov, self.args))
+        if self.nazov == "zaber_potvrdenie_odberu":
+            vybrane = []
+            for r in sb.riadky:
+                if r.get("potvrdeny") or (r.get("potvrdzovaci_pokusy") or 0) >= 3:
+                    continue
+                if r["created_at"] < pred(3):
+                    continue
+                if r.get("potvrdzovaci_email_at") and r["potvrdzovaci_email_at"] > pred(0.007):
+                    continue
+                em = self.args.get("p_email")
+                if em and r["email"].lower() != em.lower():
+                    continue
+                r["potvrdzovaci_email_at"] = TERAZ.isoformat()
+                r["potvrdzovaci_pokusy"] = (r.get("potvrdzovaci_pokusy") or 0) + 1
+                vybrane.append(dict(r))
+            return _Odpoved(vybrane)
+        if self.nazov == "vrat_potvrdenie_odberu":
+            for r in sb.riadky:
+                if r["id"] == self.args["p_id"]:
+                    r["potvrdzovaci_email_at"] = None
+                    r["potvrdzovaci_pokusy"] = max((r.get("potvrdzovaci_pokusy") or 0) - 1, 0)
+            return _Odpoved(None)
+        raise AssertionError(self.nazov)
+
+
 class _Sb:
     def __init__(self, riadky):
         self.riadky = riadky
+        self.rpc_volania = []
+
+    def rpc(self, nazov, args):
+        return _Rpc(self, nazov, args)
 
     def table(self, nazov):
         assert nazov == "odber_obce"
@@ -103,20 +139,25 @@ def _bez_spanku():
 
 # ── vyber riadkov ─────────────────────────────────────────────────────────
 
-def test_vyber_len_nepotvrdene_bez_emailu_a_cerstve():
+def test_vyber_pravidla_pokusov_a_veku():
     _bez_spanku()
     sb = _Sb([
         _riadok(1, "ok@obec.sk", TOKEN_A),
-        _riadok(2, "uz@obec.sk", TOKEN_B, potvrdzovaci_email_at=pred(1)),
+        # prvy e-mail pred dlhsou dobou (stratil sa) => dalsi pokus mozny
+        _riadok(2, "znova@obec.sk", TOKEN_B, potvrdzovaci_email_at=pred(1), potvrdzovaci_pokusy=1),
+        # pred 2 minutami => este pockat
+        _riadok(5, "caka@obec.sk", TOKEN_B, potvrdzovaci_email_at=(TERAZ - timedelta(minutes=2)).isoformat(), potvrdzovaci_pokusy=1),
+        # vycerpane pokusy
+        _riadok(6, "tri@obec.sk", TOKEN_B, potvrdzovaci_email_at=pred(1), potvrdzovaci_pokusy=3),
         _riadok(3, "potvrdeny@obec.sk", TOKEN_B, potvrdeny=True),
         _riadok(4, "stary@obec.sk", TOKEN_B, created_at=pred(4)),
     ])
     vybrane = pp.vyber_riadky(sb, TERAZ)
-    assert [r["id"] for r in vybrane] == [1]
+    assert sorted(r["id"] for r in vybrane) == [1, 2]
 
 
 def test_vyber_ma_limit_200():
-    sb = _Sb([_riadok(i, f"a{i}@obec.sk", TOKEN_A) for i in range(250)])
+    sb = _Sb([_riadok(i, f"a{i}@obec.sk", TOKEN_A, created_at=pred(1) if i else pred(1)) for i in range(250)])
     assert len(pp.vyber_riadky(sb, TERAZ)) == 200
     assert pp.MAX_NA_BEH == 200
 
@@ -159,6 +200,7 @@ def test_po_uspechu_nastavi_potvrdzovaci_email_at():
         pp.posli = orig
     assert (p, z, s) == (1, 0, 0)
     assert riadky[0]["potvrdzovaci_email_at"] is not None
+    assert riadky[0]["potvrdzovaci_pokusy"] == 1
     komu, predmet, html, text = poslane[0]
     assert komu == "ok@obec.sk"
     assert predmet == pp.PREDMET
@@ -177,9 +219,40 @@ def test_pri_chybe_odoslania_riadok_neoznaci():
     finally:
         pp.posli = orig
     assert (p, z, s) == (0, 1, 0)
+    # pokus sa vratil: ziadny cas, pocet pokusov spat na 0
     assert riadky[0]["potvrdzovaci_email_at"] is None
+    assert riadky[0]["potvrdzovaci_pokusy"] == 0
     # pri dalsom behu sa vyberie znova
     assert len(pp.vyber_riadky(_Sb(riadky), TERAZ)) == 1
+
+
+def test_druhy_beh_hned_po_prvom_neposle_znova():
+    _bez_spanku()
+    riadky = [_riadok(1, "ok@obec.sk", TOKEN_A)]
+    poslane = []
+    orig = pp.posli
+    pp.posli = lambda *a, **k: poslane.append(a) or True
+    try:
+        pp.posli_potvrdenia(_Sb(riadky), "kluc", False, teraz=TERAZ)
+        pp.posli_potvrdenia(_Sb(riadky), "kluc", False, teraz=TERAZ)
+    finally:
+        pp.posli = orig
+    assert len(poslane) == 1
+
+
+def test_komu_zaberie_len_danu_adresu():
+    _bez_spanku()
+    riadky = [_riadok(1, "a@obec.sk", TOKEN_A), _riadok(2, "b@obec.sk", TOKEN_B)]
+    sb = _Sb(riadky)
+    poslane = []
+    orig = pp.posli
+    pp.posli = lambda kluc, komu, *a, **k: poslane.append(komu) or True
+    try:
+        pp.posli_potvrdenia(sb, "kluc", False, obmedz_na="b@obec.sk", teraz=TERAZ)
+    finally:
+        pp.posli = orig
+    assert poslane == ["b@obec.sk"]
+    assert riadky[0]["potvrdzovaci_email_at"] is None   # a@ sa nezaberalo
 
 
 def test_nasucho_nic_nezapise():

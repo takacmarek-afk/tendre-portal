@@ -132,17 +132,27 @@ def posli_poradcom(sb, kluc, nasucho, obmedz_na=None) -> tuple:
             html = _obal(obsah["titulok"], obsah["uvod"], obsah["bloky"],
                          obsah["cta_text"], obsah["cta_url"], obsah["odhlasenie"])
             predmet = f"PredTendrom.sk — {obsah['titulok']}"
+            pokusov = uspesnych = 0
             for p in adresati:
                 komu = (p.get("kontakt_email") or "").strip()
                 if not _platny_email(komu):
                     continue
                 if obmedz_na and komu.lower() != obmedz_na.lower():
                     continue
+                pokusov += 1
                 if posli(kluc, komu, predmet, html, nasucho):
                     poslane += 1
+                    uspesnych += 1
                 else:
                     zlyhane += 1
                 time.sleep(PAUZA_S)
+            # Audit 6. 10. 2026 (B2): dopyt sa NEOZNACI ako notifikovany,
+            # ked islo o test na jednu adresu (--komu), alebo ked sa nepodarilo
+            # poslat ani jeden e-mail (vypadok Resendu) — zopakuje sa pri
+            # dalsom behu. Pri ciastocnom uspechu sa oznaci (inak by dostali
+            # e-mail dvakrat tí, ktorym uz prisiel).
+            if obmedz_na or (pokusov and not uspesnych):
+                continue
 
         if not nasucho:
             try:
@@ -207,8 +217,12 @@ def posli_obciam(sb, kluc, nasucho, obmedz_na=None) -> tuple:
                 poslane += 1
             else:
                 zlyhane += 1
+                time.sleep(PAUZA_S)
+                continue   # neoznacit — zopakuje sa pri dalsom behu
             time.sleep(PAUZA_S)
         else:
+            if obmedz_na:
+                continue   # test na jednu adresu nesmie oznacit cudzie reakcie
             log.info("Reakcia %s: obec bez pouzitelneho kontakt_email, "
                      "notifikaciu preskakujem.", r["id"])
 

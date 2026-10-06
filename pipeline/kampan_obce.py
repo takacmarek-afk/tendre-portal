@@ -370,7 +370,7 @@ def zostav(vlna, kontakt, starosta, data):
                     "blahoželám k zvoleniu. V Centrálnom registri zmlúv vidíme, že obec má"
                     + (f" od {kedy}" if kedy else "")
                     + f" zmluvu s firmou {d['sprostredkovatel']} na prípravu žiadosti o dotáciu."
-                    " Keď dotácia príde, obec bude musieť vybrať dodávateľa — a na to je dobré"
+                    " Ak obec dotáciu získa, bude musieť vybrať dodávateľa — a na to je dobré"
                     " byť pripravený včas.",
                     ["Na ", trh_link, " môžete vypísať, s čím budete potrebovať pomôcť, a môžu sa"
                      " vám ozvať poradcovia so skúsenosťami s obdobnými projektmi. Pre obce je to zadarmo."],
@@ -395,7 +395,7 @@ def zostav(vlna, kontakt, starosta, data):
                     uvod,
                     "blahoželám k zvoleniu. Prvé týždne v úrade sú hlavne o tom zistiť, čo obec má"
                     " podpísané a kedy to končí. S tým vám vieme pomôcť hneď.",
-                    f"{zdroj} {fakt} Ak ju chcete znova obstarávať, príprava zvyčajne trvá"
+                    f"{zdroj} {fakt} Ak by ste chceli túto zákazku obstarať znova, príprava zvyčajne trvá"
                     " 3 až 6 mesiacov.",
                     [f"Prehľad zmlúv a dotácií priamo pre {obec} je zadarmo a bez registrácie: ", obce_link],
                     ["Ak by ste na obstarávanie alebo žiadosť o dotáciu potrebovali pomoc, na ",
@@ -408,11 +408,11 @@ def zostav(vlna, kontakt, starosta, data):
     pocet = d.get("pocet") or 0
     slovo = "dotáciu" if pocet == 1 else ("dotácie" if 2 <= pocet <= 4 else "dotácií")
     return {"segment": seg,
-            "predmet": f"{obec} a dotácie: kto práve rozdáva peniaze obciam",
+            "predmet": f"{obec}: prehľad dotácií a zmlúv obce",
             "odstavce": [
                 uvod,
-                f"blahoželám k zvoleniu. Podľa Centrálneho registra zmlúv obec {obec} dostala"
-                f" {pocet} {slovo}" + (f" v celkovej sume {suma}" if suma else "") + ".",
+                f"blahoželám k zvoleniu. Podľa Centrálneho registra zmlúv {obec} dostala"
+                f" {pocet} {slovo}" + (f" v celkovej sume {suma}" if suma else "") + " (súčet zmlúv zverejnených v registri).",
                 [f"Prehľad dotácií a zmlúv pre {obec} uvidíte zadarmo a bez registrácie na ",
                  obce_link, "."],
                 podpis]}

@@ -17,6 +17,7 @@ function vyrez(zac, kon, label) {
 }
 
 const numFn = vyrez('function num(v) {', '\nfunction suma', 'num()');
+const ocistiIcoFn = vyrez('function icoPlatne(', '\n\nconst SPRAVA_ULOZENIE', 'icoPlatne()+ocistiIco()+cinKluc()');
 const platneIcoFn = vyrez('function platneIco(v) {', '\n\nasync function nastavOdber', 'platneIco()');
 const relevanciaBlok = vyrez(
   '// ── OSOBNA RELEVANCIA (#7, 17.9.2026) ──────────────────────────────────',
@@ -29,7 +30,7 @@ const sancaBlok = vyrez(
   'blok sanca na vyhru');
 
 // ── mock prostredie ─────────────────────────────────────────────────────
-const domHodnoty = { 'f-radenie': 'signal' };
+const domHodnoty = { 'f-radenie': 'moje' };
 function el(id) {
   return {
     get value() { return domHodnoty[id] ?? ''; },
@@ -55,10 +56,10 @@ function riadok(x) { return String(x.contract_id); }
 // (deklarovana skor v dashboard()) — nastavRelevanciu() ju len presmeruje
 // do riadok() (mockovaneho vyssie), takze tu staci prazdny mock.
 let stavPrilezitosti = null;
-const sandbox = { el, supabase, posledne, Math, console, riadok, stavPrilezitosti };
+const sandbox = { el, supabase, posledne, Math, console, riadok, stavPrilezitosti, jePro: true };
 vm.createContext(sandbox);
 vm.runInContext(
-  bezpecneFn + '\n' + numFn + '\n' + platneIcoFn + '\n' + relevanciaBlok + '\n' + sancaBlok,
+  bezpecneFn + '\n' + numFn + '\n' + ocistiIcoFn + '\n' + platneIcoFn + '\n' + relevanciaBlok + '\n' + sancaBlok,
   sandbox);
 
 let zlyhania = 0;
@@ -68,8 +69,8 @@ function over(popis, ok) {
 }
 
 // 1) platneIco: format
-over('platneIco akceptuje 8 cislic', sandbox.platneIco('12345678') === '12345678');
-over('platneIco orezava medzery', sandbox.platneIco('  12345678  ') === '12345678');
+over('platneIco akceptuje 8 cislic', sandbox.platneIco('12345679') === '12345679');
+over('platneIco orezava medzery', sandbox.platneIco('  12345679  ') === '12345679');
 over('platneIco odmieta 7 cislic', sandbox.platneIco('1234567') === '');
 over('platneIco odmieta pismena', sandbox.platneIco('1234567a') === '');
 over('platneIco odmieta prazdne', sandbox.platneIco('') === '');
@@ -104,7 +105,7 @@ sandbox.nastavRelevanciu(null).then(() => {
     { contract_id: 1, sector: 'STAVEBNICTVO', kraj: null, price_total: 50000, skore: 50 },
     { contract_id: 2, sector: 'IT', kraj: null, price_total: 195000, skore: 50 },
   ];
-  return sandbox.nastavRelevanciu({ sektor: null, kraj: null, moje_ico: '12345678' });
+  return sandbox.nastavRelevanciu({ sektor: null, kraj: null, moje_ico: '12345679' });
 }).then(() => {
   over('vlastna historia (sektor IT + cena blizko) vyhra pri rovnakom skore',
     posledne.zmluvy[0].contract_id === 2);

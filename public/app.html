@@ -450,9 +450,14 @@
           <span class="font-semibold text-white">Prehľad máte objednaný.</span>
           <span id="o-zhrnutie-filtre"></span>
         </p>
-        <button id="o-upravit"
-                class="text-[13px] font-semibold underline underline-offset-2
-                       hover:text-white/80 whitespace-nowrap">Zmeniť</button>
+        <span class="flex items-center gap-4 shrink-0">
+          <button id="o-upravit"
+                  class="text-[13px] font-semibold underline underline-offset-2
+                         hover:text-white/80 whitespace-nowrap">Zmeniť</button>
+          <button id="o-vypnut"
+                  class="text-[13px] font-semibold underline underline-offset-2
+                         hover:text-white/80 whitespace-nowrap">Vypnúť prehľad</button>
+        </span>
       </div>
 
       <div id="odber-detail" class="bg-ink text-white rounded-lg p-6">
@@ -1865,7 +1870,7 @@ function riadok(r, benchmark, sanca, mojIco, stavMap) {
           ? `<div class="text-[11px] font-semibold text-amber-800 bg-amber-50
                         rounded px-1.5 py-0.5 mt-1 inline-block">tender už pravdepodobne beží</div>`
           : (r.odhad_vyhlasenia
-              ? `<div class="text-[12px] mt-1 whitespace-nowrap">tender ~ ${bezpecne(dSk(r.odhad_vyhlasenia))}</div>`
+              ? `<div class="text-[12px] mt-1 whitespace-nowrap">tender približne ${bezpecne(dSk(r.odhad_vyhlasenia))}</div>`
               : '')}
         ${typickyCyklus(r)}
       </td>
@@ -2466,7 +2471,7 @@ const PREDPLATNE_PLANY = ['start', 'growth'].flatMap(plan => {
 // zistit rozdiel medzi Start a Growth. Skratene z cennik.html bullet
 // zoznamov, jeden riadok na plan.
 const PREDPLATNE_POPIS = {
-  start:  '1 kraj alebo 1–2 sektory, týždenný e-mail, cenový benchmark, export do Excelu.',
+  start:  '1 kraj a 1 sektor, týždenný e-mail, cenový benchmark, export do Excelu.',
   growth: 'Celé Slovensko, všetky sektory, denný e-mail, Slack/Teams, neobmedzené sledovanie firiem podľa IČO.',
 };
 
@@ -2917,7 +2922,7 @@ async function nastavOdber(supabase, sektory, email, onZmena, jePro = false) {
   }
 
   // Uz zapnuty odber sa nacita a panel sa prepne do stavu "mate zapnuty".
-  const { data: existujuci } = await supabase.from('odber')
+  let { data: existujuci } = await supabase.from('odber')
     .select('chce_email, sektor, kraj, frekvencia, webhook_url, moje_ico').limit(1).maybeSingle();
 
   // Oba stavy nastavuje kod, nie znackovanie. Keby text tlacidla zavisel
@@ -2961,6 +2966,28 @@ async function nastavOdber(supabase, sektory, email, onZmena, jePro = false) {
   el('o-upravit').addEventListener('click', () => {
     el('odber-zhrnutie').classList.add('hidden');
     el('odber-detail').classList.remove('hidden');
+  });
+
+  // Vypnutie e-mailoveho prehladu (audit 6. 10. 2026, A2): doteraz sa
+  // chce_email nikdy nenastavilo na false, takze sa z prehladu nedalo odhlasit.
+  el('o-vypnut').addEventListener('click', async () => {
+    const vyp = el('o-vypnut');
+    vyp.disabled = true;
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from('odber')
+      .update({ chce_email: false, updated_at: new Date().toISOString() })
+      .eq('user_id', user?.id);
+    vyp.disabled = false;
+    if (error) {
+      console.error(error);
+      ukazHlasku(SPRAVA_ULOZENIE);
+      return;
+    }
+    existujuci = { ...(existujuci ?? {}), chce_email: false };
+    el('odber-zhrnutie').classList.add('hidden');
+    el('odber-detail').classList.remove('hidden');
+    stavVypnute();
+    ukazHlasku('Prehľad sme vypli. Žiadne ďalšie e-maily s prehľadom nedostanete. Kedykoľvek ho môžete znova zapnúť.');
   });
 
   if (existujuci?.chce_email) stavZapnute(existujuci);
@@ -3160,7 +3187,7 @@ async function nastavTeam(supabase, rola, jeTeam) {
     el('team-cakajuce').innerHTML = zoznam.map(p => `
       <div class="py-2.5">
         <p class="text-[14px] text-ink">${bezpecne(p.email)}</p>
-        <p class="text-[12px] text-slate2">odoslaná ${datumKratky(p.created_at)} · platí do ${datumKratky(p.expires_at)}</p>
+        <p class="text-[12px] text-slate2">pozvaný ${datumKratky(p.created_at)} · čaká na prijatie · platí do ${datumKratky(p.expires_at)}</p>
       </div>
     `).join('');
   }
@@ -3211,7 +3238,7 @@ async function nastavTeam(supabase, rola, jeTeam) {
     }
 
     el('pozvat-email').value = '';
-    ukazHlaskuPozvat('Pozvánku sme zaradili na odoslanie — dorazí do pár minút.', false);
+    ukazHlaskuPozvat('Pozvánku sme zaradili na odoslanie. E-mail odchádza v dávkach, zvyčajne do hodiny. Ak by kolegovi nedorazil, pozrite si aj priečinok Spam, alebo nám napíšte na info@predtendrom.sk.', false);
     await nacitajCakajuce();
   });
 }
@@ -5394,7 +5421,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
 async function start() {
   if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
-    throw new Error('Súbor config.js chýba alebo v ňom nie je anon kľúč zo Supabase.');
+    throw new Error('Aplikácia sa teraz nedá spustiť (chýba konfigurácia).');
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -5446,6 +5473,14 @@ async function start() {
     const { data: p, error: chybaPozvanky } =
       await supabase.rpc('prijmi_pozvanku', { p_token: TOKEN_POZVANKY });
     if (chybaPozvanky) console.error(chybaPozvanky);
+    // Token nesmie ostat v adrese (obnovenie stranky by ukazalo zbytocnu chybu
+    // "Pozvanka uz neplati" a token by mohol odist do analytiky/referrera).
+    try {
+      const bezPozvanky = new URLSearchParams(location.search);
+      bezPozvanky.delete('pozvanka');
+      const zv = bezPozvanky.toString();
+      history.replaceState({}, document.title, location.pathname + (zv ? '?' + zv : ''));
+    } catch (e) { /* kozmetika */ }
     if (p?.ok) {
       spravaPozvanky = { typ: 'ok', text: 'Pripojili ste sa k tímu.' };
     } else if (p?.kod === 'INY_EMAIL') {

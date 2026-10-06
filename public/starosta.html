@@ -21,6 +21,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
 <script src="./config.js"></script>
+<script src="./formular.js" defer></script>
 <script>
 // ── Návštevnosť + UTM (audit P3.1, 28.9.2026) ───────────────────────────
 // Zhodné s obce.html — kampaň od 24.11.2026 vedie sem s UTM parametrami,
@@ -117,7 +118,7 @@
   </h1>
   <p class="obsah-p mt-4 text-slate2 max-w-[640px]">
     Zmluvy, ktoré sa vašej obci končia. Dotácie, ktoré bežia alebo sú
-    otvorené. Firmy a poradcovia, ktorí už s obcami podobnými tej vašej
+    otvorené. Firmy a poradcovia, ktorí už s obcami
     pracovali. Všetko z verejných zdrojov, zadarmo, bez hesla.
   </p>
 
@@ -298,6 +299,8 @@
         <div style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
           <input type="text" name="web" id="zv-web" tabindex="-1" autocomplete="off">
         </div>
+        <div id="ts-box" class="min-h-[1px]"></div>
+        <p class="text-[12px] leading-relaxed text-slate2">Údaje použijeme len na vybavenie tejto žiadosti. Viac v časti <a href="./index.html#ochrana-osobnych-udajov" class="text-accent hover:underline">Ochrana osobných údajov</a>.</p>
         <button type="submit" id="zv-btn"
                 class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md hover:bg-accentDark transition disabled:opacity-50 text-[14px]">
           Zavolajte mi
@@ -383,6 +386,7 @@
   const el = (id) => document.getElementById(id);
   const form = el('form-zavolajte');
   if (!form) return;
+  window.addEventListener('DOMContentLoaded', () => window.ptFormular && window.ptFormular.widget('#ts-box'));
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -428,29 +432,20 @@
     btn.textContent = 'Odosielam…';
 
     try {
-      const r = await fetch(`${cfg.SUPABASE_URL}/rest/v1/spatne_volania`, {
-        method: 'POST',
-        headers: {
-          apikey: cfg.SUPABASE_ANON_KEY,
-          Authorization: 'Bearer ' + cfg.SUPABASE_ANON_KEY,
-          'Content-Type': 'application/json',
-          Prefer: 'return=minimal',
-        },
-        body: JSON.stringify({
-          meno: meno,
-          obec: obec,
-          telefon: telefon,
-          najlepsi_cas: cas || null,
-        }),
+      const v = await window.ptFormular.posli('spatne_volanie', {
+        meno: meno,
+        obec: obec,
+        telefon: telefon,
+        najlepsi_cas: cas || null,
       });
 
-      if (r.ok) {
+      if (v.ok) {
         el('zv-pola').classList.add('hidden');
         el('zv-uspech').classList.remove('hidden');
       } else {
         btn.disabled = false;
         btn.textContent = povodny;
-        chyba.textContent = 'Odoslať sa nepodarilo. Skúste to prosím o chvíľu, alebo zavolajte.';
+        chyba.textContent = window.ptFormular.hlaska(v.kod, 'nám zavolajte');
         chyba.classList.remove('hidden');
       }
     } catch (err) {
@@ -505,7 +500,7 @@
 
         const jednotka = row.zaklad === 'zmluva' ? 'za zákazku' : 'mesačne';
         text.textContent =
-          `Obce na Slovensku platia za ${s.nazov} zvyčajne okolo ` +
+          `Verejní obstarávatelia na Slovensku platia za ${s.nazov} zvyčajne okolo ` +
           `${eur(row.median_cena)} ${jednotka} (medián z ${row.vzoriek} zmlúv).`;
         box.classList.remove('hidden');
         return;

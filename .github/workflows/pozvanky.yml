@@ -1,9 +1,9 @@
 name: Team pozvanky
 
 # ══════════════════════════════════════════════════════════════════════════
-#  STAV: PRIPRAVENE, ESTE NEZAPNUTE NAOSTRO — pred prvym ostrym behom over
-#  workflow_dispatch s nasucho=true, ci sa cakajuce pozvanky spravne najdu
-#  a HTML vyzera dobre (pozri log kroku), potom teda odkomentuj `schedule:`.
+#  STAV: ZAPNUTE (schedule od vlny 81). Plan Team je platena funkcia, takze
+#  pozvanok je malo; GitHub navyse planovane behy spusta nepravidelne, preto
+#  UI sluby "do hodiny", nie "do pat minut".
 #
 #  CO TOTO ROBI
 #  Owner v app.html zavola RPC pozvi_clena(email) (Team panel), ktora
@@ -29,8 +29,11 @@ on:
 
   # Kazdych 15 minut. Pozvanky nie su casovo kriticke ako denny digest,
   # ale owner ocakava, ze kolega dostane pozvanku v ramci minut, nie hodin.
-  # schedule:
-  #   - cron: "*/15 * * * *"
+  # Zapnute vo vlne 81 (6. 10. 2026): UI sluzby "Pozvat kolegu" inak sluby
+  # e-mail, ktory by nikdy neodisiel. Spusta sa tiez po kazdom pozvani
+  # owner-om rucne cez workflow_dispatch, ak treba urychlit.
+  schedule:
+    - cron: "*/15 * * * *"
 
 permissions:
   contents: read

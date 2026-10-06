@@ -21,6 +21,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
 <script src="./config.js"></script>
+<script src="./formular.js" defer></script>
 <script>
 // ── Návštevnosť ──────────────────────────────────────────────────────────
 // Vlastná mini-analytika namiesto Plausible (supabase/27_navstevnost.sql,
@@ -417,6 +418,7 @@
         Chcem to dostávať
       </button>
     </form>
+    <div id="ts-box" class="mt-3 min-h-[1px]"></div>
     <p id="o-hlaska" class="hidden mt-4 text-[14px]"></p>
 
     <!-- Ukazka e-mailu pre obce. Struktura sedi s tym, co sklada
@@ -451,7 +453,7 @@
           <div class="px-4 py-3">
             <div class="text-[13px] font-semibold leading-snug">Fond, ktorý dáva na vašu vec</div>
             <div class="text-[12px] text-slate2 mt-0.5">
-              Za 90 dní podpísal 12 zmlúv so 11 obcami
+              Za 90 dní podpísal 12 zmlúv s 11 obcami
             </div>
             <div class="text-[12px] font-semibold text-accent mt-1">
               Rozdelil 4 200 000 €, typicky 180 000 € na obec
@@ -470,7 +472,6 @@
       </div>
       <p class="mt-2 text-[12px] text-white/50">
         Žiadne obrázky, žiadne sledovacie pixely. Raz týždenne, nič medzitým.
-        Keď nebude nič nové, e-mail nepošleme.
       </p>
     </div>
     <p class="mt-5 text-[12px] leading-relaxed text-white/45 max-w-[600px]">
@@ -708,24 +709,10 @@ async function nacitajSprostredkovatelov() {
 // Double opt-in (migracia 63): adresa zacne dostavat prehlady az po kliknuti
 // na odkaz v potvrdzovacom e-maile. Rovnaka hlaska aj pre 409 (adresa uz je
 // v zozname) — nesmie prezradit, ci adresa v zozname je.
-const HLASKA_POTVRDENIE = 'Poslali sme vám potvrdzovací e-mail. Kliknite v ňom na odkaz '
-  + '— až potom vám začneme posielať prehľady. Ak ho nevidíte, pozrite si aj priečinok Spam.';
-// Hned po zapise popros server o potvrdzovaci e-mail (Supabase Edge Function
-// potvrd-odber-email). Nie je to nutne: ak zlyha, e-mail dopiska zalozny
-// planovany workflow. Odpoved sa zamerne nepouziva (neprezradzat, ci adresa
-// uz v zozname bola) a chyba nesmie rusit stranku.
-function posliPotvrdenieHned(email) {
-  try {
-    fetch(`${SUPABASE_URL}/functions/v1/potvrd-odber-email`, {
-      method: 'POST',
-      headers: { apikey: SUPABASE_ANON_KEY,
-                 Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-                 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-      keepalive: true,
-    }).catch(() => {});
-  } catch (e) { /* zalozna cesta to dorobi */ }
-}
+const HLASKA_POTVRDENIE = 'Ak adresa ešte nie je v zozname, poslali sme na ňu potvrdzovací e-mail. '
+  + 'Kliknite v ňom na odkaz — až potom vám začneme posielať prehľady. '
+  + 'Ak ho do pár minút nevidíte, pozrite si aj priečinok Spam.';
+window.addEventListener('DOMContentLoaded', () => window.ptFormular && window.ptFormular.widget('#ts-box'));
 
 el('odber').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -765,29 +752,17 @@ el('odber').addEventListener('submit', async (e) => {
   btn.textContent = 'Zapisujem…';
 
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/odber_obce`, {
-      method: 'POST',
-      headers: { apikey: SUPABASE_ANON_KEY,
-                 Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-                 'Content-Type': 'application/json',
-                 Prefer: 'return=minimal' },
-      body: JSON.stringify({ email, obec, zdroj: 'obce.html' }),
-    });
+    const v = await window.ptFormular.posli('odber_obce', { email, obec, zdroj: 'obce.html' });
 
-    if (r.ok) {
-      posliPotvrdenieHned(email);
-      el('odber').classList.add('hidden');
-      povedz(HLASKA_POTVRDENIE, false);
-    } else if (r.status === 409) {
-      // Unikatny index na e-mail. Nie je to chyba uzivatela a NESMIE sa to
-      // dat poznat od uspechu (inak by sa dalo zistit, kto je v zozname).
+    if (v.ok) {
+      // Odpoved je rovnaka, ci adresa v zozname uz bola, alebo nie
+      // (nesmie sa dat zistit, kto je v zozname).
       el('odber').classList.add('hidden');
       povedz(HLASKA_POTVRDENIE, false);
     } else {
-      // Aj 400/401/403/54000 (limity DB, zaplava) — vseobecna hlaska.
       btn.disabled = false;
       btn.textContent = povodny;
-      povedz('Odoslať sa nepodarilo. Skúste to prosím o chvíľu, alebo zavolajte.', true);
+      povedz(window.ptFormular.hlaska(v.kod, 'nám zavolajte'), true);
     }
   } catch (err) {
     btn.disabled = false;

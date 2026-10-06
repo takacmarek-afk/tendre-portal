@@ -202,8 +202,8 @@ def _popis_stranky(agregat_row, sektor_info, lokal):
     suma = _suma(agregat_row["objem_eur"])
     spolu = f", spolu {suma}" if suma != "—" else ""
     dalsia = (
-        "Kto ju má teraz a kedy sa uvoľní"
-        if int(pocet) == 1 else "Kto ich má teraz a kedy sa uvoľnia"
+        "Prehľad, kedy sa uvoľní"
+        if int(pocet) == 1 else "Prehľad, kedy sa uvoľnia"
     )
     return (
         f"{_cislo(pocet)} {zmluvy} na {nazov} v {lokal} kraji {sloveso} ku koncu{spolu}. "
@@ -247,7 +247,7 @@ def _vygeneruj_stranku(sector, agregat_row):
         # skutocnych datach by tu paywall neochranil (viz modulovy docstring).
         blok_zvysok = f"""
     <div class="mt-3 rounded-lg border border-dashed border-line bg-[#F3F0E6] p-5 text-center">
-      <p class="text-[14px] text-slate2">+ {_cislo(zvysok)} {_tvar(zvysok, 'ďalšia príležitosť', 'ďalšie príležitosti', 'ďalších príležitostí')} v tomto kraji a sektore.</p>
+      <p class="text-[14px] text-slate2">+ {_cislo(zvysok)} {_tvar(zvysok, 'ďalšia zmluva', 'ďalšie zmluvy', 'ďalších zmlúv')} v tomto kraji a sektore.</p>
       <a href="/prihlasenie?utm_source=seo_{sektor_slug}_{kraj_slug}&utm_medium=organic&utm_campaign=programmatic_seo"
          class="mt-3 inline-block rounded-md bg-accent text-white text-[13px] font-medium px-4 py-2 hover:bg-accentDark">
         Zobraziť všetky (14 dní zadarmo, bez karty)
@@ -255,6 +255,15 @@ def _vygeneruj_stranku(sector, agregat_row):
     </div>"""
     else:
         blok_zvysok = ""
+
+    # Pri stavbach koniec zmluvy spravidla neznamena novu sutaz (stavba sa
+    # dokonci), preto o tom tento sektor otvorene hovori (audit 6. 10. 2026).
+    if sector == "STAVEBNE_PRACE":
+        blok_zvysok += """
+    <p class="mt-4 text-[13px] leading-relaxed text-slate2">
+      Pri stavbách koniec zmluvy spravidla neznamená novú súťaž — stavba sa dokončí.
+      Silnejší signál sú dotácie obcí, ktoré ešte len prídu.
+    </p>"""
 
     # OPRAVA (audit 29.9.2026): "v {kraj}" pouzival nominativ po predlozke
     # "v", ktora vyzaduje lokal ("v Bratislavský kraj" -> "v Bratislavskom

@@ -24,7 +24,7 @@ SEK = zmluvy.SEKTORY_SEO["OSTRAHA"]
 # 1. Meta description: sklonovanie, chybajuca suma, nula
 p1 = zmluvy._popis_stranky(agregat(1, None), SEK, "trenčianskom")
 assert p1.startswith("1 zmluva na ostrahu v trenčianskom kraji sa blíži ku koncu."), p1
-assert "—" not in p1.split("Kto")[0] and "spolu" not in p1, p1
+assert "—" not in p1.split("Prehľad,")[0] and "spolu" not in p1, p1
 p2 = zmluvy._popis_stranky(agregat(2, 247697.0), SEK, "košickom")
 assert p2.startswith("2 zmluvy na ostrahu v košickom kraji sa blížia ku koncu, spolu 247 697 €."), p2
 p5 = zmluvy._popis_stranky(agregat(5, 636267.0), SEK, "žilinskom")
@@ -41,7 +41,7 @@ print("OK: datum a tvar")
 
 # 3. Cela stranka: "+ N dalsich", CTA, canonical bez .html, absolutne odkazy
 teaser = [{"authority_name": "Škola <b>x</b>", "price_total": None, "mesiac_konca": "auguste 2027"}] * 3
-for pocet, ocakavane in ((4, "ďalšia príležitosť"), (5, "ďalšie príležitosti"), (9, "ďalších príležitostí")):
+for pocet, ocakavane in ((4, "ďalšia zmluva"), (5, "ďalšie zmluvy"), (9, "ďalších zmlúv")):
     h = zmluvy._vygeneruj_stranku("OSTRAHA", agregat(pocet, 1000.0, teaser))
     assert f"+ {pocet - 3} {ocakavane}" in h, (pocet, ocakavane)
     assert "Zobraziť všetky (14 dní zadarmo, bez karty)" in h

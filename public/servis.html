@@ -19,6 +19,7 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
 <script src="./config.js"></script>
+<script src="./formular.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -177,6 +178,9 @@
       <input type="text" name="web" id="s-web" tabindex="-1" autocomplete="off">
     </div>
 
+    <div id="ts-box" class="min-h-[1px]"></div>
+    <p class="text-[12px] leading-relaxed text-slate2">Údaje použijeme len na vybavenie tejto žiadosti. Viac v časti <a href="./index.html#ochrana-osobnych-udajov" class="text-accent hover:underline">Ochrana osobných údajov</a>.</p>
+
     <button type="submit" id="s-btn"
             class="bg-accent text-white font-semibold px-6 py-3 rounded-md
                    hover:bg-accentDark transition disabled:opacity-50">
@@ -206,6 +210,7 @@
 <script>
 const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG ?? {};
 const el = (id) => document.getElementById(id);
+window.addEventListener('DOMContentLoaded', () => window.ptFormular && window.ptFormular.widget('#ts-box'));
 
 const KRAJE = [
   'Bratislavský kraj', 'Trnavský kraj', 'Trenčiansky kraj', 'Nitriansky kraj',
@@ -259,33 +264,23 @@ el('form-servis').addEventListener('submit', async (e) => {
   btn.textContent = 'Odosielam…';
 
   try {
-    const r = await fetch(`${SUPABASE_URL}/rest/v1/servisne_dopyty`, {
-      method: 'POST',
-      headers: {
-        apikey: SUPABASE_ANON_KEY,
-        Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json',
-        Prefer: 'return=minimal',
-      },
-      body: JSON.stringify({
-        obec: obec,
-        kraj: el('s-kraj').value || null,
-        ico: ico || null,
-        kontakt_email: email,
-        kontakt_telefon: telefon || null,
-        popis: popis,
-        suhlas_zverejnit: el('s-suhlas-zverejnit').checked,
-      }),
+    const v = await window.ptFormular.posli('servisny_dopyt', {
+      obec: obec,
+      kraj: el('s-kraj').value || null,
+      ico: ico || null,
+      kontakt_email: email,
+      kontakt_telefon: telefon || null,
+      popis: popis,
+      suhlas_zverejnit: el('s-suhlas-zverejnit').checked,
     });
 
-    if (r.ok) {
+    if (v.ok) {
       el('form-servis').classList.add('hidden');
       el('stav-uspech').classList.remove('hidden');
     } else {
       btn.disabled = false;
       btn.textContent = povodny;
-      chyba.textContent = 'Odoslať sa nepodarilo. Skúste to prosím o chvíľu, alebo nám zavolajte, '
-        + 'prípadne napíšte na info@predtendrom.sk.';
+      chyba.textContent = window.ptFormular.hlaska(v.kod, 'nám zavolajte, prípadne napíšte na info@predtendrom.sk');
       chyba.classList.remove('hidden');
     }
   } catch (err) {

@@ -10,8 +10,8 @@
 //
 //  BEZPECNOST
 //   - Verejne volatelna, preto robi len to, co by spravil aj cron: najde riadok
-//     odber_obce s TOUTO adresou, ktory je nepotvrdeny, este nedostal
-//     potvrdzovaci e-mail a je mladsi nez 3 dni. Poslat sa da najviac raz na
+//     odber_obce s TOUTO adresou, ktory je nepotvrdeny a este nema vycerpane
+//     pokusy (max. 3, aspon 10 minut medzi nimi) a je mladsi nez 3 dni. Poslat sa da najviac raz na
 //     riadok (riadok sa "zabere" atomicky pred odoslanim). Adresa, ktoru
 //     vyplnil niekto iny, dostane najviac jeden e-mail — rovnako ako pri crone.
 //   - Odpoved je vzdy rovnaka ({ok:true}), neprezradza, ci adresa v zozname je.
@@ -24,7 +24,6 @@
 // =============================================================================
 
 const POVOLENY_ORIGIN = "https://predtendrom.sk";
-const MAX_VEK_DNI = 3;
 const PREDMET = "Potvrďte odber prehľadov pre obce — PredTendrom.sk";
 
 const CORS = {
@@ -124,20 +123,14 @@ export async function obsluz(req: Request): Promise<Response> {
     Authorization: `Bearer ${servis}`,
     "Content-Type": "application/json",
   };
-  const hranica = new Date(Date.now() - MAX_VEK_DNI * 86400_000).toISOString();
-
   try {
-    // Atomicky "zabratie" riadku: len ten, kto ho zaberie, posiela e-mail.
-    const zabrat = await fetch(
-      `${url}/rest/v1/odber_obce?email=eq.${encodeURIComponent(email)}` +
-        `&potvrdeny=eq.false&potvrdzovaci_email_at=is.null` +
-        `&created_at=gte.${encodeURIComponent(hranica)}&select=id,email,token`,
-      {
-        method: "PATCH",
-        headers: { ...hlavicky, Prefer: "return=representation" },
-        body: JSON.stringify({ potvrdzovaci_email_at: new Date().toISOString() }),
-      },
-    );
+    // Atomicky "zaber" cez RPC (migracia 65): najviac 3 pokusy na riadok,
+    // medzi pokusmi aspon 10 minut. E-mail dostane len ten, kto riadok zabral.
+    const zabrat = await fetch(`${url}/rest/v1/rpc/zaber_potvrdenie_odberu`, {
+      method: "POST",
+      headers: hlavicky,
+      body: JSON.stringify({ p_email: email }),
+    });
     if (!zabrat.ok) {
       console.error("potvrd-odber-email: zabratie riadku zlyhalo", zabrat.status);
       return odpoved();
@@ -155,7 +148,7 @@ export async function obsluz(req: Request): Promise<Response> {
           method: "POST",
           headers: { Authorization: `Bearer ${resend}`, "Content-Type": "application/json" },
           body: JSON.stringify({
-            from: od, to: [komu], subject: PREDMET,
+            from: od, to: [komu], reply_to: "info@predtendrom.sk", subject: PREDMET,
             html: htmlEmailu(odkaz), text: textEmailu(odkaz),
           }),
         });
@@ -166,10 +159,10 @@ export async function obsluz(req: Request): Promise<Response> {
       }
       if (!poslane) {
         // Vratit riadok do stavu "caka", nech to zopakuje zalozny cron.
-        await fetch(`${url}/rest/v1/odber_obce?id=eq.${encodeURIComponent(String(r.id))}`, {
-          method: "PATCH",
+        await fetch(`${url}/rest/v1/rpc/vrat_potvrdenie_odberu`, {
+          method: "POST",
           headers: hlavicky,
-          body: JSON.stringify({ potvrdzovaci_email_at: null }),
+          body: JSON.stringify({ p_id: r.id }),
         }).catch(() => {});
       }
     }

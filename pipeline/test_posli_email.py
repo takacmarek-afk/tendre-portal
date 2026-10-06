@@ -391,6 +391,51 @@ vysledok = pe._nacitaj_pro_org(sb_platene)
 print(f"24) je_zadarmo=False -> Pro org = {sorted(vysledok)}")
 assert vysledok == {"org-aktivny-pro", "org-trial-plati"}
 
+# 25) Audit 6. 10. 2026 (B11): growth/team/admin su Pro uroven (ako SQL ma_pro_pre_org);
+#     start je pristup, ale nie Pro; skoncena skuska nema ziadny pristup.
+sb_plany = _FalosnySbPro({
+    "subscriptions": [
+        {"org_id": "o-growth", "plan": "growth", "stav": "aktivne", "trial_konci": None},
+        {"org_id": "o-team", "plan": "team", "stav": "aktivne", "trial_konci": None},
+        {"org_id": "o-start", "plan": "start", "stav": "aktivne", "trial_konci": None},
+        {"org_id": "o-trial-koniec", "plan": "trial", "stav": "trial", "trial_konci": pred(5)},
+    ],
+}, False)
+assert pe._nacitaj_pro_org(sb_plany) == {"o-growth", "o-team"}, pe._nacitaj_pro_org(sb_plany)
+assert pe._nacitaj_org_s_pristupom(sb_plany) == {"o-growth", "o-team", "o-start"}
+print("25) plany growth/team su Pro, start ma pristup, skoncena skuska nie")
+
+# 26) posli(): reply_to na info@ a List-Unsubscribe len pre nas vlastny odkaz
+zachytene = {}
+class _R:
+    status_code = 200
+    text = ""
+def _falosny_post(url, **kw):
+    zachytene.update(kw)
+    return _R()
+_orig_post = pe.requests.post
+pe.requests.post = _falosny_post
+try:
+    assert pe.posli("k", "a@b.sk", "pred", "<p>x</p>", False,
+                    odhlasit_url="https://predtendrom.sk/odber-obce?t=1&akcia=odhlasit_prehlad")
+    assert zachytene["json"]["reply_to"] == "info@predtendrom.sk"
+    assert zachytene["json"]["headers"]["List-Unsubscribe"].startswith("<https://predtendrom.sk/odber-obce?t=1")
+    zachytene.clear()
+    assert pe.posli("k", "a@b.sk", "pred", "<p>x</p>", False, odhlasit_url="https://zly.example/x")
+    assert "headers" not in zachytene["json"], "cudzi odkaz nesmie ist do hlavicky"
+    zachytene.clear()
+    assert pe.posli("k", "a@b.sk", "pred", "<p>x</p>", False)
+    assert zachytene["json"]["reply_to"] == "info@predtendrom.sk" and "headers" not in zachytene["json"]
+finally:
+    pe.requests.post = _orig_post
+print("26) reply_to + List-Unsubscribe")
+
+# 27) odhlasovaci odkaz v prehlade dodavatela
+assert "odhlasit_prehlad" in (pe.odkaz_odberu_obce("11111111-1111-1111-1111-111111111111", "odhlasit_prehlad") or "")
+assert "jedným klikom" in pe._odhlasenie_dodavatela({"odhlasovaci_token": "x"})
+assert "jedným klikom" not in pe._odhlasenie_dodavatela({})
+print("27) odhlasenie dodavatela")
+
 print("VSETKY TESTY PRESLI (Growth gating: _nacitaj_pro_org)")
 
 
@@ -489,7 +534,7 @@ for n, ocak in [(1, "1 nová príležitosť"), (2, "2 nové príležitosti"),
     assert ob["titulok"] == ocak, ob["titulok"]
 assert "v sektore upratovanie" in ob["uvod"] and "UPRATOVANIE" not in ob["uvod"]
 assert "31. 3. 2027" in ob["bloky"][0]["zvyraznene"]
-assert 'samo“.' in ob["odhlasenie"] and '"' not in ob["odhlasenie"]
+assert 'Vypnúť prehľad' in ob["odhlasenie"] and '"' not in ob["odhlasenie"]
 ob2 = pe.pre_dodavatela(_SbD(1), {"email": "a@b.sk"}, date(2026, 10, 5))
 assert "vo vašich sektoroch" in ob2["uvod"] and "celé Slovensko" in ob2["uvod"]
 print("T7) pre_dodavatela OK")

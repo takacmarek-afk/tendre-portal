@@ -149,6 +149,7 @@
                class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
                       focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
       </div>
+      <p class="text-[12px] leading-relaxed text-slate2">Údaje použijeme len na prevádzku účtu a vybavenie dopytov. Viac v časti <a href="./index.html#ochrana-osobnych-udajov" class="text-accent hover:underline">Ochrana osobných údajov</a>.</p>
       <button type="submit" id="or-btn"
               class="bg-accent text-white font-semibold px-6 py-3 rounded-md
                      hover:bg-accentDark transition disabled:opacity-50">
@@ -196,6 +197,7 @@
         <label class="block text-[13px] font-semibold mb-1.5">Kraje pôsobenia</label>
         <div id="pr-kraje" class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[14px]"></div>
       </div>
+      <p class="text-[12px] leading-relaxed text-slate2">Údaje použijeme len na prevádzku účtu a vybavenie dopytov. Viac v časti <a href="./index.html#ochrana-osobnych-udajov" class="text-accent hover:underline">Ochrana osobných údajov</a>.</p>
       <button type="submit" id="pr-btn"
               class="bg-accent text-white font-semibold px-6 py-3 rounded-md
                      hover:bg-accentDark transition disabled:opacity-50">
@@ -563,7 +565,7 @@ const SABLONY_MAP = Object.fromEntries(SABLONY.map(s => [s.id, s]));
 // menili.
 const WD_TEXTY = {
   potvrdenie: 'Na váš dopyt môže odpovedať najviac 5 firiem. ' +
-    'Ozvú sa vám zvyčajne do 3 pracovných dní. Nič nepodpisujete a k ničomu ' +
+    'Keď vám niektorá odpovie, pošleme vám e-mail. Nič nepodpisujete a k ničomu ' +
     'sa nezaväzujete. Dopyt môžete kedykoľvek uzavrieť jedným klikom.',
   pravnyOdkaz: 'Ako presne dopyt súvisí s obstarávaním?',
   pravnyText: 'Dopyt nie je verejné obstarávanie. Je to prieskum trhu, ktorý ' +
@@ -676,18 +678,21 @@ el('form-obec-reg').addEventListener('submit', async (e) => {
   // existuje, chybu tu len ticho zalogujeme do konzoly a pokracujeme, aby
   // obec neuviazla na chybovej hlaske kvoli niecomu, co uz nevie ovplyvnit.
   if (servisToken) {
-    try {
-      await supabase.rpc('vytvor_dopyt', {
-        p_nazov: 'Pomoc s obstarávaním (zo servisného formulára)',
-        p_popis: servisPopis || null,
-        p_typ: 'ine',
-      });
-      await supabase.rpc('oznac_servis_prevzaty', { p_token: servisToken });
-    } catch (e) {
-      console.error('Automaticke vytvorenie dopytu zo servisu zlyhalo:', e);
-    }
+    // Audit 6. 10. 2026 (B3): chyba vytvor_dopyt (RPC nehodi vynimku, vrati
+    // {error}) sa predtym nezachytila a servis sa aj tak oznacil "prevzaty".
+    const ok = await vytvorDopytZoServisu(servisToken, servisPopis);
     servisToken = null;
     servisPopis = null;
+    if (!ok) {
+      await nacitajRolu();
+      const dash = el('obec-podnadpis');
+      if (dash) {
+        dash.textContent = 'Účet obce sme založili, ale dopyt z vášho formulára sa nepodarilo vytvoriť. '
+          + 'Zadajte ho prosím znova v sekcii „Nový dopyt“, alebo nám napíšte na info@predtendrom.sk.';
+        dash.classList.add('text-red-700');
+      }
+      return;
+    }
   }
 
   await nacitajRolu();
@@ -1286,12 +1291,39 @@ async function ukazPoradcaDashboard(poradcaId) {
 // ignoruje (uz je niekde inde, prefill by nedaval zmysel) a pokracuje sa
 // bezne cez nacitajRolu(). Inak sa (pri platnom tokene) preskoci vyber roly
 // rovno na predvyplnenu registraciu obce.
+// Vytvori dopyt zo servisneho formulara a AZ POTOM oznaci servis ako prevzaty.
+// Vrati true, len ked sa dopyt naozaj vytvoril.
+async function vytvorDopytZoServisu(token, popis) {
+  try {
+    const { error } = await supabase.rpc('vytvor_dopyt', {
+      p_nazov: 'Pomoc s obstarávaním (zo servisného formulára)',
+      p_popis: popis || null,
+      p_typ: 'ine',
+    });
+    if (error) { console.error('vytvor_dopyt zo servisu zlyhal:', error); return false; }
+    const { error: e2 } = await supabase.rpc('oznac_servis_prevzaty', { p_token: token });
+    if (e2) console.error('oznac_servis_prevzaty zlyhal:', e2);
+    return true;
+  } catch (e) {
+    console.error('Automaticke vytvorenie dopytu zo servisu zlyhalo:', e);
+    return false;
+  }
+}
+
 async function zurcitVstupZoServisu(token) {
   const [{ data: obecId }, { data: poradcaId }] = await Promise.all([
     supabase.rpc('moj_obec_id'),
     supabase.rpc('moj_poradca_id'),
   ]);
-  if (obecId || poradcaId) { await nacitajRolu(); return; }
+  if (obecId) {
+    // Obec uz ucet ma: dopyt z formulara jej vytvorime rovno (predtym sa
+    // token ticho zahodil a dopyt sa stratil).
+    const { data: sd0, error: e0 } = await supabase.rpc('moj_servisny_dopyt', { p_token: token });
+    if (!e0 && sd0?.ok) await vytvorDopytZoServisu(token, sd0.popis || null);
+    await nacitajRolu();
+    return;
+  }
+  if (poradcaId) { await nacitajRolu(); return; }
 
   const { data: sd, error } = await supabase.rpc('moj_servisny_dopyt', { p_token: token });
   if (error || !sd?.ok) {
@@ -1407,7 +1439,7 @@ async function pockajNaSpracovanieOdkazu(sb) {
 
 async function start() {
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
-    ukazChybu('Aplikácia nie je nastavená: v súbore config.js chýba anon kľúč.');
+    ukazChybu('Aplikácia sa teraz nedá spustiť. Skúste to prosím neskôr, alebo napíšte na info@predtendrom.sk.');
     return;
   }
 

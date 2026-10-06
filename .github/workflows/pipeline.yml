@@ -66,11 +66,15 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           TIME_BUDGET_MIN: ${{ inputs.budget || '45' }}
           POVOLENY_POKLES: ${{ inputs.povoleny_pokles }}
+          # Vstupy workflowu idu cez env, nie priamo do shellu (injection).
+          IN_IBA_PREPOCET: ${{ inputs.iba_prepocet }}
+          IN_BOOTSTRAP: ${{ inputs.bootstrap }}
+          IN_BUDGET: ${{ inputs.budget || '300' }}
         run: |
-          if [ "${{ inputs.iba_prepocet }}" = "true" ]; then
+          if [ "$IN_IBA_PREPOCET" = "true" ]; then
             python main.py --iba-prepocet
-          elif [ "${{ inputs.bootstrap }}" = "true" ]; then
-            python main.py --bootstrap --budget "${{ inputs.budget || '300' }}"
+          elif [ "$IN_BOOTSTRAP" = "true" ]; then
+            python main.py --bootstrap --budget "$IN_BUDGET"
           else
             python main.py
           fi

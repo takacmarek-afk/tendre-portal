@@ -314,6 +314,16 @@ def _relevancia(z, o, profil):
     return b
 
 
+def _odhlasenie_dodavatela(o) -> str:
+    """Veta o vypnuti prehladu. S tokenom: odkaz nizsie jednym klikom; bez
+    tokenu (riadok pred migraciou 65) sa odkazuje na tlacidlo v portali."""
+    if o.get("odhlasovaci_token"):
+        return ('Prehľad vypnete jedným klikom na odkaz nižšie, alebo v portáli '
+                'v paneli „Nech vám to chodí samo“ (tlačidlo „Vypnúť prehľad“).')
+    return ('Prehľad vypnete v portáli po prihlásení, v paneli '
+            '„Nech vám to chodí samo“ (tlačidlo „Vypnúť prehľad“).')
+
+
 def pre_dodavatela(sb, o, dnes):
     """Co je nove v jeho sektore a kraji od posledneho e-mailu.
 
@@ -396,8 +406,9 @@ def pre_dodavatela(sb, o, dnes):
         "bloky": bloky,
         "cta_text": "Otvoriť portál",
         "cta_url": ODKAZ_APP,
-        "odhlasenie": ('Filtre a odhlásenie nájdete v portáli po prihlásení, '
-                       'v paneli „Nech vám to chodí samo“.'),
+        "odhlasenie": _odhlasenie_dodavatela(o),
+        "odhlasovaci_odkaz": odkaz_odberu_obce(o.get("odhlasovaci_token"),
+                                               "odhlasit_prehlad"),
     }
 
 
@@ -463,8 +474,12 @@ def pre_obec(sb, o, dnes):
     }
 
 
-def _nacitaj_pro_org(sb) -> "set | None":
-    """Mnozina org_id s Pro pristupom, nacitana naraz (nie RPC na kazdeho
+PRO_PLANY = ("trial", "pro", "growth", "team", "admin")
+
+
+def _nacitaj_org(sb, plany=PRO_PLANY) -> "set | None":
+    """Mnozina org_id s aktivnym pristupom v danych planoch (plany=None =
+    kazdy plan). Povodne len "Pro pristup", nacitana naraz (nie RPC na kazdeho
     odberatela zvlast). Rovnaka logika ako public.ma_pro_pre_org() /
     public.ma_pro() v 08_zadarmo.sql a 25_odber_pro_gating.sql — service_role
     v pipeline nema auth.uid(), preto sa pocita tu, nie cez RLS.
@@ -488,7 +503,7 @@ def _nacitaj_pro_org(sb) -> "set | None":
     teraz = datetime.now(timezone.utc)
     pro = set()
     for s in subs:
-        if s.get("plan") not in ("trial", "pro"):
+        if plany is not None and s.get("plan") not in plany:
             continue
         aktivne = s.get("stav") == "aktivne"
         if not aktivne and s.get("stav") == "trial":
@@ -502,6 +517,18 @@ def _nacitaj_pro_org(sb) -> "set | None":
         if aktivne and s.get("org_id"):
             pro.add(s["org_id"])
     return pro
+
+
+def _nacitaj_pro_org(sb) -> "set | None":
+    """Org_id s Growth+ urovnou (denna frekvencia, webhook). Zhodne s SQL
+    ma_pro_pre_org() (migracia 31): trial, pro, growth, team, admin."""
+    return _nacitaj_org(sb, PRO_PLANY)
+
+
+def _nacitaj_org_s_pristupom(sb) -> "set | None":
+    """Org_id s akymkolvek aktivnym pristupom (aj Start). Organizacia bez
+    neho (skuska skoncila, nezaplatila) uz e-maily dostavat nema."""
+    return _nacitaj_org(sb, None)
 
 
 def pripraveny_na_dalsi(o: dict, ma_pro: bool = True) -> bool:
@@ -534,8 +561,15 @@ def pripraveny_na_dalsi(o: dict, ma_pro: bool = True) -> bool:
 
 # ── ODOSIELANIE ─────────────────────────────────────────────────────────────
 
-def posli(kluc, komu, predmet, html, nasucho, text=None):
-    """`text` (nepovinny): textova alternativa e-mailu (multipart)."""
+REPLY_TO = "info@predtendrom.sk"
+
+
+def posli(kluc, komu, predmet, html, nasucho, text=None, odhlasit_url=None):
+    """`text` (nepovinny): textova alternativa e-mailu (multipart).
+    `odhlasit_url` (nepovinny): odkaz na odhlasenie, ide aj do hlavicky
+    List-Unsubscribe (Gmail/Outlook ukazu tlacidlo "Odhlasit").
+    Odpoved na e-mail vzdy ide na info@ (odosielatel noreply@ nema schranku;
+    e-mail sluby "odpovedzte slovom odhlasit" by inak isli do prazdna)."""
     if nasucho:
         log.info("NASUCHO -> %s | %s | %s znakov HTML", komu, predmet, len(html))
         return True
@@ -544,8 +578,13 @@ def posli(kluc, komu, predmet, html, nasucho, text=None):
                           headers={"Authorization": f"Bearer {kluc}",
                                    "Content-Type": "application/json"},
                           json=dict({"from": ODOSIELATEL, "to": [komu],
+                                     "reply_to": REPLY_TO,
                                      "subject": predmet, "html": html},
-                                    **({"text": text} if text else {})))
+                                    **({"text": text} if text else {}),
+                                    **({"headers": {"List-Unsubscribe":
+                                        f"<{odhlasit_url}>, <mailto:{REPLY_TO}?subject=odhl%C3%A1si%C5%A5>"}}
+                                       if odhlasit_url and str(odhlasit_url).startswith("https://predtendrom.sk")
+                                       else {})))
     except requests.RequestException as e:
         log.error("%s: siet zlyhala (%s)", komu, type(e).__name__)
         return False
@@ -639,6 +678,12 @@ def main():
     def _ma_pro(org_id) -> bool:
         return pro_org is None or (org_id in pro_org)
 
+    org_s_pristupom = _nacitaj_org_s_pristupom(sb)  # None = vsetci
+
+    def _ma_pristup(org_id) -> bool:
+        # Riadky bez org_id (stare) neposudzujeme; inak musi mat firma pristup.
+        return org_s_pristupom is None or not org_id or (org_id in org_s_pristupom)
+
     odberatelia = []
     try:
         odberatelia += [dict(x, _typ="dodavatel") for x in
@@ -686,6 +731,9 @@ def main():
         # je vseobecna (cita len frekvencia/posledny_email z dict), takze
         # funguje rovnako spravne aj pre obce (bez stlpca frekvencia
         # defaultuje na 'tyzdenne', presne ako sluby na obce.html).
+        if o["_typ"] == "dodavatel" and not _ma_pristup(o.get("org_id")):
+            preskocene += 1   # skuska skoncila / bez platneho pristupu
+            continue
         if not pripraveny_na_dalsi(o, _ma_pro(o.get("org_id"))):
             preskocene += 1
             continue
@@ -709,7 +757,8 @@ def main():
                      odhlasovaci_odkaz=obsah.get("odhlasovaci_odkaz"))
         predmet = f"PredTendrom.sk — {obsah['titulok']}"
 
-        if posli(kluc, komu, predmet, html, args.nasucho):
+        if posli(kluc, komu, predmet, html, args.nasucho,
+                 odhlasit_url=obsah.get("odhlasovaci_odkaz")):
             poslane += 1
             if not args.nasucho:
                 tab = "odber_obce" if o["_typ"] == "obec" else "odber"
