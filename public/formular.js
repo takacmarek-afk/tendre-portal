@@ -1,7 +1,8 @@
 // Verejne formulare (obce.html, servis.html, starosta.html): odoslanie cez Edge
 // Function "verejny-formular" s overenim Cloudflare Turnstile (vlna 81).
 //   ptFormular.widget('#ts-box')            -> vykresli overenie (ak je kluc v config.js)
-//   await ptFormular.posli(typ, data)       -> { ok: true } | { ok:false, kod }
+//   await ptFormular.posli(typ, data)       -> { ok: true, data? } | { ok:false, kod }
+//   await ptFormular.pockaj(ms)             -> pocka, kym widget vyda token (max ms)
 // kod: OVERENIE_CAKA (widget este nedobehol / bol zablokovany), OVERENIE
 // (server overenie odmietol), PRILIS_VELA, NEPLATNE, SIET, CHYBA.
 (function () {
@@ -49,8 +50,8 @@
       });
       var j = null;
       try { j = await r.json(); } catch (e) {}
-      if (j && j.ok === true) return { ok: true };
-      obnov();   // jednorazovy token je pouzity (alebo odmietnuty)
+      obnov();   // jednorazovy token je pouzity (uspesne aj neuspesne)
+      if (j && j.ok === true) return { ok: true, data: j.data };
       if (r.status === 429) return { ok: false, kod: 'PRILIS_VELA' };
       return { ok: false, kod: (j && j.kod) || 'CHYBA' };
     } catch (e) {
@@ -79,5 +80,19 @@
     }
   }
 
-  window.ptFormular = { widget: widget, posli: posli, hlaska: hlaska };
+  // Strankam, ktore posielaju hned po nacitani (kontrola.html s ?ico=), treba
+  // pockat na token. Bez widgetu (kluc nie je v config.js) vrati hned.
+  function pockaj(ms) {
+    return new Promise(function (resolve) {
+      if (!KLUC || token) return resolve(!!token || !KLUC);
+      var koniec = Date.now() + (ms || 10000);
+      (function skus() {
+        if (token) return resolve(true);
+        if (Date.now() >= koniec) return resolve(false);
+        setTimeout(skus, 150);
+      })();
+    });
+  }
+
+  window.ptFormular = { widget: widget, posli: posli, hlaska: hlaska, pockaj: pockaj };
 })();

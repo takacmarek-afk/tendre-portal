@@ -4,6 +4,9 @@
 //     typ = "odber_obce"      (obce.html)    -> prihlasenie na prehlady + potvrdzovaci e-mail
 //     typ = "servisny_dopyt"  (servis.html)  -> tabulka servisne_dopyty
 //     typ = "spatne_volanie"  (starosta.html)-> tabulka spatne_volania
+//     typ = "kontrola_ico"    (kontrola.html)-> RPC kontrola_zmluv_ico (vlna 84;
+//                                od migracie 69 ju anon priamo volat nemoze)
+//     typ = "profil_obstaravatela" (obstaravatel.html) -> RPC profil_obstaravatela (migracia 70)
 //
 //  PREC? Doteraz stranky zapisovali priamo cez REST (anon kluc). To sa nedalo
 //  chranit captchou ani limitom na jedneho navstevnika. Tato funkcia:
@@ -274,6 +277,32 @@ async function spatneVolanie(c: Ctx, d: Record<string, unknown>): Promise<Respon
   return ok ? json({ ok: true }) : json({ ok: false, kod: "CHYBA" });
 }
 
+// Kontrola zmlúv podľa IČO (vlna 84): RPC vracia len agregáty a 3 riadky teaseru.
+// Pred touto funkciou ju volal priamo prehliadač s anon kľúčom, takže robot mohol
+// prechádzať IČO bez overenia. Teraz ide cez Turnstile + limit na IP.
+async function hladajPodlaIco(c: Ctx, rpcNazov: string, d: Record<string, unknown>): Promise<Response> {
+  const ico = retazec(d.ico, 20);
+  if (!ico) return json({ ok: false, kod: "NEPLATNE" });
+  try {
+    const r = await fetch(`${c.url}/rest/v1/rpc/${rpcNazov}`, {
+      method: "POST",
+      headers: c.hlavicky,
+      body: JSON.stringify({ p_ico: ico }),
+    });
+    if (!r.ok) {
+      let kod = "";
+      try { kod = String((await r.json())?.code ?? ""); } catch (_) { /* telo nie je JSON */ }
+      if (kod === "54000" || r.status === 429) return json({ ok: false, kod: "PRILIS_VELA" }, 429);
+      console.error(`verejny-formular: ${rpcNazov} HTTP ${r.status}`);
+      return json({ ok: false, kod: "CHYBA" });
+    }
+    return json({ ok: true, data: await r.json() });
+  } catch (e) {
+    console.error(`verejny-formular: ${rpcNazov}`, String(e));
+    return json({ ok: false, kod: "CHYBA" });
+  }
+}
+
 export async function obsluz(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   if (req.method !== "POST") return json({ ok: false, kod: "METODA" }, 405);
@@ -299,7 +328,7 @@ export async function obsluz(req: Request): Promise<Response> {
   }
   const typ = String(telo?.typ ?? "");
   const d = (telo?.data && typeof telo.data === "object") ? telo.data as Record<string, unknown> : {};
-  if (!["odber_obce", "servisny_dopyt", "spatne_volanie"].includes(typ)) {
+  if (!["odber_obce", "servisny_dopyt", "spatne_volanie", "kontrola_ico", "profil_obstaravatela"].includes(typ)) {
     return json({ ok: false, kod: "NEPLATNE" }, 400);
   }
 
@@ -314,12 +343,20 @@ export async function obsluz(req: Request): Promise<Response> {
     console.warn("verejny-formular: TURNSTILE_SECRET nie je nastavene — overenie sa preskakuje");
   }
 
-  // 2) Limity na IP: 5 / hodinu na typ, 15 / hodinu spolu.
+  // 2) Limity na IP: formulare 5 / hodinu na typ a 15 / hodinu spolu; kontrola IČO
+  //    je vyhladavanie (nie zapis), preto 30 / hodinu a nezapocitava sa do "spolu".
   const sol = Deno.env.get("IP_SALT") ?? servis.slice(-24);
   const h = await odtlacokIp(ip, sol);
+  const jeKontrola = typ === "kontrola_ico" || typ === "profil_obstaravatela";
   try {
-    const vTypu = await rpc(c, "verejny_formular_strop", { p_ip_hash: h, p_typ: typ, p_max: 5, p_minut: 60 });
-    const spolu = vTypu ? await rpc(c, "verejny_formular_strop", { p_ip_hash: h, p_typ: "spolu", p_max: 15, p_minut: 60 }) : false;
+    const vTypu = await rpc(c, "verejny_formular_strop", { p_ip_hash: h, p_typ: typ, p_max: jeKontrola ? 30 : 5, p_minut: 60 });
+    // Vyhladavania maju navyse spolocny strop pre vsetkych navstevnikov (ochrana pred
+    // distribuovanym zberom z viacerych IP): 1 200 dopytov za hodinu na typ.
+    const celkovo = jeKontrola && vTypu
+      ? await rpc(c, "verejny_formular_strop", { p_ip_hash: "*", p_typ: typ, p_max: 1200, p_minut: 60 })
+      : true;
+    const spolu = jeKontrola ? (vTypu && celkovo)
+      : (vTypu ? await rpc(c, "verejny_formular_strop", { p_ip_hash: h, p_typ: "spolu", p_max: 15, p_minut: 60 }) : false);
     if (!vTypu || !spolu) return json({ ok: false, kod: "PRILIS_VELA" }, 429);
   } catch (e) {
     console.error("verejny-formular: strop", String(e));
@@ -327,6 +364,8 @@ export async function obsluz(req: Request): Promise<Response> {
   }
 
   // 3) Samotny zapis.
+  if (typ === "kontrola_ico") return await hladajPodlaIco(c, "kontrola_zmluv_ico", d);
+  if (typ === "profil_obstaravatela") return await hladajPodlaIco(c, "profil_obstaravatela", d);
   if (typ === "odber_obce") return await odberObce(c, d);
   if (typ === "servisny_dopyt") return await servisnyDopyt(c, d);
   return await spatneVolanie(c, d);

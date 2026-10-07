@@ -4,18 +4,18 @@
 <meta charset="utf-8">
 <script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Kontrola zmlúv podľa IČO — PredTendrom.sk</title>
-<meta name="description" content="Zadajte IČO a zistite, ktoré vaše zmluvy so štátom a verejným sektorom sa v najbližších 24 mesiacoch končia. Bez registrácie, zadarmo.">
+<title>Profil obstarávateľa podľa IČO — PredTendrom.sk</title>
+<meta name="description" content="Zadajte IČO úradu alebo obce a uvidíte, čo kupuje, od koho, koľko zmlúv mu končí a aké dotácie dostal. Z verejných údajov, bez registrácie, zadarmo.">
 <meta name="robots" content="index,follow">
-<link rel="canonical" href="https://predtendrom.sk/kontrola">
-<meta property="og:title" content="Kontrola zmlúv podľa IČO — PredTendrom.sk">
-<meta property="og:description" content="Zadajte IČO a zistite, ktoré vaše zmluvy so štátom a verejným sektorom sa v najbližších 24 mesiacoch končia.">
+<link rel="canonical" href="https://predtendrom.sk/obstaravatel">
+<meta property="og:title" content="Profil obstarávateľa podľa IČO — PredTendrom.sk">
+<meta property="og:description" content="Čo kupuje úrad alebo obec, od koho a kedy mu končia zmluvy. Z verejných údajov.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://predtendrom.sk/kontrola">
+<meta property="og:url" content="https://predtendrom.sk/obstaravatel">
 <meta property="og:locale" content="sk_SK">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Kontrola zmlúv podľa IČO — PredTendrom.sk">
-<meta name="twitter:description" content="Zadajte IČO a zistite, ktoré vaše zmluvy so štátom a verejným sektorom sa v najbližších 24 mesiacoch končia.">
+<meta name="twitter:title" content="Profil obstarávateľa podľa IČO — PredTendrom.sk">
+<meta name="twitter:description" content="Čo kupuje úrad alebo obec, od koho a kedy mu končia zmluvy.">
 <meta property="og:image" content="https://predtendrom.sk/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -135,6 +135,11 @@ body { background: var(--paper); color: var(--ink); }
 .kz-cta-pod { margin-top: 0.75rem !important; font-size: 14px; color: #d9d4c7; }
 .kz-poznamka { margin: 1.25rem 0 0; max-width: 640px; font-size: 13px; line-height: 1.6; color: var(--slate2); }
 .kz-poznamka a, .kz-stav a, .kz-pata a { color: var(--accent); }
+.ob-pruhy { padding: 0.25rem 0; }
+.ob-pruhy .ob-pruh { display: block; }
+.ob-pruh-hlava { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.2rem 1rem; font-weight: 500; }
+.ob-pruh-podklad { margin-top: 0.4rem; height: 8px; background: #efe9da; border-radius: 4px; overflow: hidden; }
+.ob-pruh-vypln { height: 100%; background: var(--accent); border-radius: 4px; }
 .kz-pata { padding: 1.5rem 0 2.5rem; border-top: 1px solid var(--line); margin-top: 1.5rem; }
 .kz-pata p { margin: 0 0 0.6rem; font-size: 13px; line-height: 1.6; color: var(--slate2); max-width: 720px; }
 </style>
@@ -162,22 +167,23 @@ body { background: var(--paper); color: var(--ink); }
 
 <main>
 <section class="kz-wrap kz-sekcia">
-  <h1 class="kz-h1">Kedy vám končia zmluvy so štátom?</h1>
+  <h1 class="kz-h1">Čo kupuje váš odberateľ a kedy mu končia zmluvy?</h1>
   <p class="kz-uvod">
-    Zadajte svoje IČO a hneď uvidíte, koľko vašich zmlúv zverejnených
-    v Centrálnom registri zmlúv sa v najbližších 24 mesiacoch končí.
+    Zadajte IČO úradu, mesta alebo obce. Uvidíte, na čo minul za posledné
+    tri roky, komu platil najviac, koľko jeho zmlúv sa v najbližších dvoch
+    rokoch končí a aké dotácie dostal.
   </p>
 
   <form id="kz-form" class="kz-form" novalidate autocomplete="off">
-    <label for="kz-ico" class="kz-label">Vaše IČO</label>
+    <label for="kz-ico" class="kz-label">IČO obstarávateľa</label>
     <div class="kz-riadok">
-      <input id="kz-ico" name="ico" type="text" inputmode="numeric" maxlength="14"
+      <input id="kz-ico" class="kz-input" name="ico" type="text" inputmode="numeric" maxlength="14"
              autocomplete="off" autocapitalize="characters" spellcheck="false"
              placeholder="8 číslic" aria-describedby="kz-napoveda kz-chyba">
-      <button id="kz-btn" type="submit" class="kz-btn-tmavy kz-btn-zistit">Zistiť</button>
+      <button id="kz-btn" type="submit" class="kz-btn-tmavy kz-btn-zistit">Zobraziť profil</button>
     </div>
-    <p id="kz-napoveda" class="kz-napoveda">IČO môžete zadať aj s medzerami alebo s predponou SK.</p>
-    <!-- Cloudflare Turnstile (vlna 84): zvyčajne neviditeľné, widget sa zobrazí len pri podozrivej návšteve. -->
+    <p id="kz-napoveda" class="kz-napoveda">IČO môžete zadať aj s medzerami alebo s predponou SK. Nájdete ho na webe úradu alebo v Registri právnických osôb.</p>
+    <!-- Cloudflare Turnstile: zvyčajne neviditeľné, widget sa zobrazí len pri podozrivej návšteve. -->
     <div id="ts-box" style="margin-top:.75rem"></div>
     <p id="kz-chyba" class="kz-chyba" role="alert"></p>
   </form>
@@ -189,17 +195,20 @@ body { background: var(--paper); color: var(--ink); }
 
 <footer class="kz-wrap kz-pata">
   <p>
-    Zdroj údajov: <strong style="color:var(--ink)">Centrálny register zmlúv</strong>.
-    Údaje majú informatívny charakter a nie sú právne záväzné &mdash; pred
-    rozhodnutím si ich overte v pôvodnom zdroji.
+    Zdroje údajov: <strong style="color:var(--ink)">Centrálny register zmlúv</strong>,
+    <strong style="color:var(--ink)">Vestník verejného obstarávania</strong> (ÚVO) a zverejnené
+    zmluvy o dotáciách. Údaje majú informatívny charakter a nie sú právne záväzné &mdash;
+    pred rozhodnutím si ich overte v pôvodnom zdroji.
     <a href="/zdroje">Podrobnosti o zdrojoch</a>.
   </p>
   <p>
-    Zadané IČO sa zapisuje len na ochranu služby pred hromadným zneužívaním.
+    Mená dodávateľov zobrazujeme len pri právnických osobách. Zadané IČO sa zapisuje len na
+    ochranu služby pred hromadným zneužívaním.
   </p>
   <p>
     Nie sme štátny orgán ani s ním prepojení.
-    <a href="/cennik">Cenník</a> &middot; <a href="/obstaravatel">Profil obstarávateľa podľa IČO</a> &middot; <a href="/">PredTendrom.sk pre dodávateľov</a>
+    <a href="/cennik">Cenník</a> &middot; <a href="/kontrola">Kontrola vašich zmlúv podľa IČO</a> &middot;
+    <a href="/">PredTendrom.sk pre dodávateľov</a>
   </p>
 </footer>
 
@@ -285,7 +294,7 @@ async function volajKontrolu(ico) {
   const pf = window.ptFormular;
   if (!pf) throw new ChybaRpc('server');
   await pf.pockaj(12000);
-  const v = await pf.posli('kontrola_ico', { ico });
+  const v = await pf.posli('profil_obstaravatela', { ico });
   if (v.ok) return v.data;
   if (v.kod === 'PRILIS_VELA') throw new ChybaRpc('limit');
   if (v.kod === 'OVERENIE' || v.kod === 'OVERENIE_CAKA') throw new ChybaRpc('overenie');
@@ -312,80 +321,110 @@ function karta(hodnota, popis) {
   return `<div class="kz-karta"><p class="kz-cislo">${bezpecne(hodnota)}</p><p class="kz-popis">${bezpecne(popis)}</p></div>`;
 }
 
-function skoncene(n) {
-  if (n <= 0) return '';
-  return `<p class="kz-dalsie">V posledných 6 mesiacoch navyše ${tvar(n, 'skončila', 'skončili', 'skončilo')} ${n} ${tvar(n, 'zmluva', 'zmluvy', 'zmlúv')}.</p>`;
+const SEKTORY = {
+  STAVEBNE_PRACE: 'stavebné práce', STRECHY_IZOLACIE: 'strechy, zateplenie',
+  OKNA_DVERE_POVRCHY: 'okná, dvere, povrchy', ELEKTROINSTALACIE: 'elektroinštalácie',
+  KURENIE_VODA_PLYN: 'kúrenie, voda, plyn', ZELEN_ZIMNA_UDRZBA: 'zeleň, zimná údržba',
+  UPRATOVANIE: 'upratovanie', DOPRAVA_MECHANIZACIA: 'doprava, mechanizácia',
+  STRAVOVANIE: 'stravovanie', OSTRAHA: 'ostraha', IT_TECHNIKA: 'IT technika',
+  TLAC_KANCELARIA: 'tlač, kancelária', PASPORTIZACIA_SPRAVA_BUDOV: 'pasportizácia, správa budov',
+  INE: 'ostatné',
+};
+const sektorSk = (k) => SEKTORY[k] || 'ostatné';
+
+function dlzkaSk(dni) {
+  const d = cislo(dni);
+  if (d <= 0) return '—';
+  const mes = Math.round(d / 30.4);
+  if (mes >= 24 && mes % 12 === 0) { const r = mes / 12; return `${r} ${tvar(r, 'rok', 'roky', 'rokov')}`; }
+  if (mes >= 12) { const r = Math.floor(mes / 12), m = mes % 12; return m ? `${r} r. ${m} mes.` : `${r} ${tvar(r, 'rok', 'roky', 'rokov')}`; }
+  return `${mes} mes.`;
+}
+
+function eurAleboPomlcka(x) {
+  const n = Number(x);
+  return x !== null && x !== undefined && Number.isFinite(n) && n > 0 ? eur(n) : '—';
 }
 
 function vykresli(d) {
   const ico = String(d.ico ?? '');
-  const aktivne = cislo(d.pocet_aktivnych);
-  const do6 = cislo(d.pocet_do_6_mesiacov);
-  const do12 = cislo(d.pocet_do_12_mesiacov);
-  const do24 = cislo(d.pocet_do_24_mesiacov);
-  const skonc = cislo(d.pocet_skoncenych_6_mesiacov);
-  const dalsich = Math.max(0, cislo(d.pocet_dalsich));
+  const nazov = typeof d.nazov === 'string' && d.nazov.trim() ? d.nazov.trim() : 'IČO ' + ico;
+  const z36 = cislo(d.zmluvy_36m), k6 = cislo(d.koncia_do_6), k12 = cislo(d.koncia_do_12), k24 = cislo(d.koncia_do_24);
+  const sektory = Array.isArray(d.sektory) ? d.sektory.slice(0, 5) : [];
+  const top = Array.isArray(d.dodavatelia_top) ? d.dodavatelia_top.slice(0, 3) : [];
   const zoznam = Array.isArray(d.zoznam) ? d.zoznam.slice(0, 3) : [];
-  const nazov = typeof d.nazov === 'string' && d.nazov.trim() ? d.nazov.trim() : '';
+  const dalsich = Math.max(0, cislo(d.pocet_dalsich));
+  const dodSpolu = cislo(d.dodavatelov_spolu);
+  const dotN = cislo(d.dotacie_pocet), uvoN = cislo(d.uvo_vysledky_24m);
 
-  if (do24 === 0) {
-    const navyse = aktivne > 0
-      ? ` Evidujeme ${aktivne} ${tvar(aktivne, 'aktívnu zmluvu', 'aktívne zmluvy', 'aktívnych zmlúv')} s koncom neskôr ako o 24 mesiacov.`
-      : '';
-    el('kz-vysledok').innerHTML = `
-      ${nazov ? `<h2 class="kz-nazov">${bezpecne(nazov)}</h2><p class="kz-ico-riadok">IČO ${bezpecne(ico)}</p>` : ''}
-      <div class="kz-stav-box kz-varovanie" style="margin-top:1rem">
-        <p class="kz-stav">V registri zmlúv sme pre toto IČO nenašli žiadnu zmluvu, ktorá by končila v najbližších 24 mesiacoch. Register pokrýva len zmluvy zverejnené v Centrálnom registri zmlúv.${bezpecne(navyse)}</p>
-      </div>
-      ${skoncene(skonc)}
-      <p class="kz-poznamka">Celý portál si môžete vyskúšať 14 dní zadarmo, bez platobnej karty: <a href="${CTA_HREF}">Vyskúšať 14 dní zadarmo</a>.</p>`;
-    return;
-  }
-
-  const objem = d.objem_do_12_mesiacov;
-  const maObjem = objem !== null && objem !== undefined && Number.isFinite(Number(objem)) && Number(objem) > 0;
   const karty = [
-    karta(do6, `${tvar(do6, 'zmluva končí', 'zmluvy končia', 'zmlúv končí')} do 6 mesiacov`),
-    karta(do12, `${tvar(do12, 'zmluva končí', 'zmluvy končia', 'zmlúv končí')} do 12 mesiacov`),
-    karta(do24, `${tvar(do24, 'zmluva končí', 'zmluvy končia', 'zmlúv končí')} do 24 mesiacov`),
-    karta(maObjem ? eur(Number(objem)) : '—',
-          maObjem ? 'súčet uvedených hodnôt zmlúv, ktoré končia do 12 mesiacov'
-                  : 'hodnota zmlúv končiacich do 12 mesiacov nie je v registri uvedená'),
+    karta(cislo(d.zmluvy_36m), `${tvar(z36, 'zmluva', 'zmluvy', 'zmlúv')} podpísaných za 36 mesiacov`),
+    karta(eurAleboPomlcka(d.objem_36m), 'súčet uvedených hodnôt týchto zmlúv'),
+    karta(k12, `${tvar(k12, 'zmluva končí', 'zmluvy končia', 'zmlúv končí')} do 12 mesiacov`),
+    karta(dlzkaSk(d.typicka_dlzka_dni), 'typická dĺžka ich zmluvy (medián)'),
   ].join('');
 
-  const riadky = zoznam.map((z) => {
-    const h = Number(z && z.hodnota);
-    const hodnota = z && z.hodnota !== null && z.hodnota !== undefined && Number.isFinite(h) && h > 0
-      ? eur(h) : 'hodnota neuvedená';
-    return `<li><span class="kz-z-obst">${bezpecne(z && z.obstaravatel ? z.obstaravatel : 'Obstarávateľ neuvedený')}</span>
-      <span class="kz-z-meta">končí ${bezpecne(mesiacSk(z && z.mesiac_konca))} &middot; ${bezpecne(hodnota)}</span></li>`;
+  const maxObjem = Math.max(1, ...sektory.map((s) => cislo(s.objem)));
+  const pruhy = sektory.map((s) => {
+    const o = cislo(s.objem);
+    const sirka = Math.max(2, Math.round((o / maxObjem) * 100));
+    return `<li class="ob-pruh"><div class="ob-pruh-hlava"><span>${bezpecne(sektorSk(s.sektor))}</span>
+      <span class="kz-z-meta">${bezpecne(eurAleboPomlcka(s.objem))} &middot; ${cislo(s.pocet)} ${tvar(cislo(s.pocet), 'zmluva', 'zmluvy', 'zmlúv')}</span></div>
+      <div class="ob-pruh-podklad"><div class="ob-pruh-vypln" style="width:${sirka}%"></div></div></li>`;
   }).join('');
 
-  const dalsie = dalsich > 0
-    ? `<p class="kz-dalsie">a ešte ${dalsich} ${tvar(dalsich, 'ďalšia zmluva', 'ďalšie zmluvy', 'ďalších zmlúv')}, ktoré končia do 24 mesiacov</p>`
-    : '';
+  const dodRiadky = top.map((t) => {
+    const nm = typeof t.nazov === 'string' && t.nazov.trim() ? bezpecne(t.nazov.trim()) : '<span style="color:var(--slate2)">fyzická osoba &ndash; podnikateľ (meno nezobrazujeme)</span>';
+    return `<li><span class="kz-z-obst">${nm}</span>
+      <span class="kz-z-meta">${bezpecne(eurAleboPomlcka(t.objem))} &middot; ${cislo(t.pocet)} ${tvar(cislo(t.pocet), 'zmluva', 'zmluvy', 'zmlúv')}</span></li>`;
+  }).join('');
+  const dodDalsich = Math.max(0, dodSpolu - top.length);
 
-  const najblizsi = d.najblizsi_koniec
-    ? `<p class="kz-dalsie">Najbližšia z vašich zmlúv končí ${bezpecne(datumSk(d.najblizsi_koniec))}.</p>` : '';
+  const ukoncRiadky = zoznam.map((z) => `<li><span class="kz-z-obst">${bezpecne(sektorSk(z && z.sektor))}</span>
+      <span class="kz-z-meta">končí ${bezpecne(mesiacSk(z && z.mesiac_konca))} &middot; ${bezpecne(eurAleboPomlcka(z && z.hodnota))}</span></li>`).join('');
+
+  const dotacie = dotN > 0
+    ? `<p class="kz-dalsie">Dotácie: <strong>${dotN}</strong> ${tvar(dotN, 'zmluva o dotácii', 'zmluvy o dotácii', 'zmlúv o dotácii')}${Number(d.dotacie_suma) > 0 ? ' v hodnote ' + bezpecne(eur(Number(d.dotacie_suma))) : ''}${cislo(d.dotacie_buduce_okna) > 0 ? `, z toho <strong>${cislo(d.dotacie_buduce_okna)}</strong> s očakávanou súťažou v najbližších mesiacoch` : ''}.</p>`
+    : '<p class="kz-dalsie">Dotácie: v registri sme žiadnu zmluvu o dotácii pre toto IČO nenašli.</p>';
+  const uvo = uvoN > 0
+    ? `<p class="kz-dalsie">Súťaže vo Vestníku (24 mesiacov): <strong>${uvoN}</strong> ${tvar(uvoN, 'výsledok', 'výsledky', 'výsledkov')}${d.uvo_priemer_ponuk !== null && d.uvo_priemer_ponuk !== undefined ? `, v priemere ${bezpecne(String(d.uvo_priemer_ponuk).replace('.', ','))} ${tvar(Math.round(Number(d.uvo_priemer_ponuk)), 'ponuka', 'ponuky', 'ponúk')} na súťaž` : ''}${cislo(d.uvo_slabe_konkurencie) > 0 ? `; <strong>${cislo(d.uvo_slabe_konkurencie)}</strong> ${tvar(cislo(d.uvo_slabe_konkurencie), 'súťaž mala', 'súťaže mali', 'súťaží malo')} len 1 až 2 ponuky` : ''}.</p>`
+    : '<p class="kz-dalsie">Súťaže vo Vestníku (24 mesiacov): žiadny výsledok pre toto IČO.</p>';
 
   el('kz-vysledok').innerHTML = `
-    <h2 class="kz-nazov">${bezpecne(nazov || 'IČO ' + ico)}</h2>
-    ${nazov ? `<p class="kz-ico-riadok">IČO ${bezpecne(ico)}</p>` : ''}
+    <h2 class="kz-nazov">${bezpecne(nazov)}</h2>
+    <p class="kz-ico-riadok">IČO ${bezpecne(ico)}</p>
     <div class="kz-karty">${karty}</div>
-    ${najblizsi}
-    <h3 class="kz-h2">Najbližšie končiace zmluvy</h3>
-    <ul class="kz-zoznam">${riadky}</ul>
-    ${dalsie}
-    ${skoncene(skonc)}
+
+    <h3 class="kz-h2">Na čo minul za posledné 3 roky</h3>
+    ${pruhy ? `<ul class="kz-zoznam ob-pruhy">${pruhy}</ul>` : '<p class="kz-dalsie">Za posledné 3 roky sme nenašli žiadnu zmluvu tohto obstarávateľa.</p>'}
+
+    <h3 class="kz-h2">Komu platil najviac</h3>
+    ${dodRiadky ? `<ul class="kz-zoznam">${dodRiadky}</ul>
+      ${dodDalsich > 0 ? `<p class="kz-dalsie">a ešte ${dodDalsich} ${tvar(dodDalsich, 'ďalší dodávateľ', 'ďalší dodávatelia', 'ďalších dodávateľov')} v aplikácii</p>` : ''}`
+      : '<p class="kz-dalsie">Bez zmlúv za posledné 3 roky nemáme čo zobraziť.</p>'}
+
+    <h3 class="kz-h2">Kedy mu končia zmluvy</h3>
+    <div class="kz-karty" style="grid-template-columns:repeat(3,1fr)">
+      ${karta(k6, 'do 6 mesiacov')}${karta(k12, 'do 12 mesiacov')}${karta(k24, 'do 24 mesiacov')}
+    </div>
+    ${cislo(d.objem_koncia_do_12) > 0 ? `<p class="kz-dalsie">Hodnota zmlúv končiacich do 12 mesiacov: <strong>${bezpecne(eur(Number(d.objem_koncia_do_12)))}</strong>.</p>` : ''}
+    ${ukoncRiadky ? `<ul class="kz-zoznam" style="margin-top:.75rem">${ukoncRiadky}</ul>` : ''}
+    ${dalsich > 0 ? `<p class="kz-dalsie">a ešte ${dalsich} ${tvar(dalsich, 'ďalšia zmluva', 'ďalšie zmluvy', 'ďalších zmlúv')}, ktoré končia do 24 mesiacov</p>` : ''}
+
+    <h3 class="kz-h2">Dotácie a súťaže</h3>
+    ${dotacie}
+    ${uvo}
+
     <div class="kz-cta-box">
-      <p style="font-weight:600;font-size:18px;line-height:1.4">Predmety zmlúv, mená všetkých obstarávateľov a doterajších dodávateľov uvidíte po registrácii.</p>
-      <a class="kz-cta" href="${CTA_HREF}">Zobraziť všetky zmluvy, predmety a doterajších dodávateľov</a>
+      <p style="font-weight:600;font-size:18px;line-height:1.4">Predmety zmlúv, dodávateľov k jednotlivým končiacim zmluvám a odhad, kedy vyhlásia súťaž, uvidíte po registrácii.</p>
+      <a class="kz-cta" href="${CTA_HREF}">Zobraziť všetky zmluvy tohto obstarávateľa</a>
       <p class="kz-cta-pod">Každý nový účet má prvých 14 dní zadarmo, bez platobnej karty.</p>
     </div>
     <p class="kz-poznamka">
-      Zdroj: Centrálny register zmlúv. Započítané sú zmluvy, pri ktorých je v registri
-      uvedený koniec platnosti; zmluvy bez uvedeného konca sa nezapočítavajú. Údaje majú
-      informatívny charakter a nie sú právne záväzné.
+      Zdroje: Centrálny register zmlúv, Vestník verejného obstarávania a zmluvy o dotáciách.
+      Započítané sú zmluvy podpísané za posledných 36 mesiacov a zmluvy, ktoré ešte neskončili;
+      zmluvy bez uvedenej ceny alebo konca platnosti sa do súčtov a končiacich zmlúv nezapočítavajú.
+      Údaje majú informatívny charakter a nie sú právne záväzné.
     </p>`;
 }
 
@@ -424,6 +463,8 @@ async function zisti() {
     } else if (d && d.kod === 'ICO_NEPLATNE') {
       el('kz-vysledok').innerHTML = '';
       ukazChybuVstupu('Toto IČO nie je platné. Skontrolujte ho prosím.');
+    } else if (d && d.kod === 'NENAJDENE') {
+      stav('Pre toto IČO sme v registri zmlúv, vo Vestníku ani medzi dotáciami nič nenašli. Skontrolujte IČO, alebo skúste inú organizáciu.', 'kz-varovanie');
     } else {
       stav(bezpecne(HLASKY.server), 'kz-varovanie');
     }

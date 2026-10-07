@@ -1882,6 +1882,7 @@ function riadok(r, benchmark, sanca, mojIco, stavMap) {
       </td>
       <td data-popis="Obstarávateľ" data-blok class="px-4 py-4 align-top text-[14px] text-slate2">
         ${bezpecne(r.authority_name)}
+        ${r.authority_cin ? `<div class="text-[12px] mt-1"><a href="/obstaravatel?ico=${encodeURIComponent(String(r.authority_cin).replace(/\D/g, '').padStart(8, '0'))}" target="_blank" rel="noopener" class="underline hover:text-ink">Profil obstarávateľa</a></div>` : ''}
         ${kde ? `<div class="text-[12px] mt-1">${bezpecne(kde)}</div>` : ''}
       </td>
       <td data-popis="Hodnota" class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${cenaBunka}</td>

@@ -11,12 +11,18 @@ let strop = { povol: true };
 let zabrane = [];
 let resendStatus = 200;
 let turnstileOk = true;
+let kontrola = { status: 200, kod: "" };
 globalThis.fetch = async (url, opt = {}) => {
   const u = String(url);
   const telo = opt.body && typeof opt.body === "string" && opt.body.startsWith("{") ? JSON.parse(opt.body) : opt.body;
   volania.push({ url: u, telo, headers: opt.headers });
   const ok = (o, s = 200) => new Response(JSON.stringify(o), { status: s });
   if (u.includes("/rpc/verejny_formular_strop")) return ok(strop.povol);
+  if (u.includes("/rpc/kontrola_zmluv_ico")) {
+    if (kontrola.status !== 200) return new Response(JSON.stringify({ code: kontrola.kod }), { status: kontrola.status });
+    return ok({ ok: true, ico: telo.p_ico, pocet_aktivnych: 3 });
+  }
+  if (u.includes("/rpc/profil_obstaravatela")) return ok({ ok: true, ico: telo.p_ico, nazov: "Mesto Test" });
   if (u.includes("/rpc/prihlas_odber_obce")) return ok({ ok: true });
   if (u.includes("/rpc/zaber_potvrdenie_odberu")) return ok(zabrane);
   if (u.includes("/rpc/vrat_potvrdenie_odberu")) return new Response("", { status: 204 });
@@ -108,5 +114,55 @@ assert.ok(up && up.telo.subject.startsWith("Nový servisný dopyt"), "upozorneni
 // zlyhanie e-mailu upozornenia nerozbije odpoved
 reset(); resendStatus = 500;
 assert.deepEqual(await res(req({ typ: "spatne_volanie", data: { meno: "J", obec: "O", telefon: "0900123456" } })), { ok: true });
+
+// 11) kontrola IČO (vlna 84): Turnstile, limit na IP bez "spolu", odpoved s datami
+env.TURNSTILE_SECRET = "sekret";
+reset(); kontrola = { status: 200, kod: "" };
+assert.equal((await res(req({ typ: "kontrola_ico", data: { ico: "47586362" } }))).kod, "OVERENIE", "bez tokenu");
+assert.ok(!volania.some((v) => v.url.includes("kontrola_zmluv_ico")), "bez overenia sa RPC nevola");
+reset();
+j = await res(req({ typ: "kontrola_ico", turnstile: "tok", data: { ico: "47586362" } }, { "cf-connecting-ip": "5.6.7.8" }));
+assert.equal(j.ok, true);
+assert.equal(j.data.pocet_aktivnych, 3);
+const strRiadky = volania.filter((v) => v.url.includes("verejny_formular_strop"));
+assert.equal(strRiadky.length, 2, "limit na IP + spolocny strop, ale nie 'spolu' formularov");
+assert.ok(strRiadky.every((v) => v.telo.p_typ === "kontrola_ico"));
+assert.equal(strRiadky[0].telo.p_max, 30);
+assert.equal(strRiadky[1].telo.p_ip_hash, "*");
+assert.equal(strRiadky[1].telo.p_max, 1200);
+delete env.TURNSTILE_SECRET;
+// bez IČO
+reset();
+assert.equal((await res(req({ typ: "kontrola_ico", data: {} }))).kod, "NEPLATNE");
+// limit na IP
+reset(); strop.povol = false;
+assert.equal((await obsluz(req({ typ: "kontrola_ico", data: { ico: "47586362" } }))).status, 429);
+assert.ok(!volania.some((v) => v.url.includes("kontrola_zmluv_ico")));
+// databazovy limit (54000) => PRILIS_VELA
+reset(); kontrola = { status: 400, kod: "54000" };
+const rl = await obsluz(req({ typ: "kontrola_ico", data: { ico: "47586362" } }));
+assert.equal(rl.status, 429);
+assert.equal((await rl.json()).kod, "PRILIS_VELA");
+// ina chyba RPC => CHYBA
+reset(); kontrola = { status: 500, kod: "" };
+assert.equal((await res(req({ typ: "kontrola_ico", data: { ico: "47586362" } }))).kod, "CHYBA");
+kontrola = { status: 200, kod: "" };
+
+// 12) profil obstaravatela (vlna 84): rovnaky rezim ako kontrola IČO
+env.TURNSTILE_SECRET = "sekret";
+reset();
+assert.equal((await res(req({ typ: "profil_obstaravatela", data: { ico: "00151742" } }))).kod, "OVERENIE");
+assert.ok(!volania.some((v) => v.url.includes("profil_obstaravatela")), "bez overenia sa RPC nevola");
+reset();
+j = await res(req({ typ: "profil_obstaravatela", turnstile: "tok", data: { ico: "00151742" } }));
+assert.equal(j.ok, true);
+assert.equal(j.data.nazov, "Mesto Test");
+assert.equal(volania.find((v) => v.url.includes("/rpc/profil_obstaravatela")).telo.p_ico, "00151742");
+delete env.TURNSTILE_SECRET;
+reset(); strop.povol = false;
+assert.equal((await obsluz(req({ typ: "profil_obstaravatela", data: { ico: "00151742" } }))).status, 429);
+assert.ok(!volania.some((v) => v.url.includes("/rpc/profil_obstaravatela")));
+reset();
+assert.equal((await res(req({ typ: "profil_obstaravatela", data: {} }))).kod, "NEPLATNE");
 
 console.log("OK verejny-formular");
