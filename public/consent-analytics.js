@@ -16,9 +16,11 @@
 //     ziadny consent signal k dispozicii pri prvom nacitani stranky.
 //  2. Ak uz mame ulozenu volbu z minula (localStorage), hned aplikujeme
 //     'granted'/'denied' cez gtag('consent','update', ...).
-//  3. Az POTOM asynchronne pripojime GTM container (script tag).
-//     GTM sam rozhoduje, ci znacku spusti, podla consent stavu v
-//     dataLayer - nie je potrebne nic dalsie robit v GTM.
+//  3. GTM container (script tag) sa nacita IBA ak navstevnik suhlasil
+//     (vlna 85, 7. 10. 2026). Bez suhlasu sa na Google nic neposiela,
+//     ani anonymne pingy - preto text o ochrane udajov moze pravdivo
+//     tvrdit, ze analytika je bez suhlasu vypnuta. Suhlas sa da kedykolvek
+//     zmenit cez window.ptCookieNastavenia() (odkaz "Nastavenia cookies").
 //  4. Ak volba este nie je ulozena, po nacitani DOM-u zobrazime banner
 //     (Prijat vsetko / Iba nevyhnutne). Volba sa ulozi do localStorage
 //     a zapise sa aj datum, aby sme v buducnosti mohli pridat
@@ -122,17 +124,44 @@
     aktualizujConsent(false);
   }
 
-  // ---- 3. Nacitanie GTM containera (vzdy, konzistentne s Consent Mode) ----
-  (function (w, d, s, l, i) {
-    w[l] = w[l] || [];
-    w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
-    var f = d.getElementsByTagName(s)[0],
-      j = d.createElement(s),
-      dl = l != "dataLayer" ? "&l=" + l : "";
-    j.async = true;
-    j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
-    f.parentNode.insertBefore(j, f);
-  })(window, document, "script", "dataLayer", GTM_ID);
+  // ---- 3. Nacitanie GTM containera (len po suhlase) -------------------------
+  var gtmNacitany = false;
+  function nacitajGtm() {
+    if (gtmNacitany) return;
+    gtmNacitany = true;
+    (function (w, d, s, l, i) {
+      w[l] = w[l] || [];
+      w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+      var f = d.getElementsByTagName(s)[0],
+        j = d.createElement(s),
+        dl = l != "dataLayer" ? "&l=" + l : "";
+      j.async = true;
+      j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+      f.parentNode.insertBefore(j, f);
+    })(window, document, "script", "dataLayer", GTM_ID);
+  }
+
+  // Pri odvolani suhlasu zmazeme Google cookies (_ga, _ga_*), ktore uz vznikli.
+  function zmazGoogleCookies() {
+    try {
+      var casti = document.cookie ? document.cookie.split(";") : [];
+      var host = location.hostname;
+      var domeny = [host, "." + host];
+      var p = host.split(".");
+      if (p.length > 2) domeny.push("." + p.slice(-2).join("."));
+      for (var i = 0; i < casti.length; i++) {
+        var nazov = casti[i].split("=")[0].trim();
+        if (nazov === "_ga" || nazov.indexOf("_ga_") === 0 || nazov === "_gid" || nazov.indexOf("_gat") === 0) {
+          document.cookie = nazov + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/";
+          for (var j = 0; j < domeny.length; j++) {
+            document.cookie = nazov + "=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; domain=" + domeny[j];
+          }
+        }
+      }
+    } catch (e) {}
+  }
+
+  if (ulozenaVolba === "granted") nacitajGtm();
 
   // ---- 4. Banner (len ak volba este nie je ulozena) ------------------------
   function zobrazBanner() {
@@ -152,8 +181,8 @@
     text.style.cssText = "flex:1;min-width:240px;font-size:13px;line-height:1.5;color:#E4DFD2;";
     text.innerHTML =
       "Na meranie návštevnosti a zlepšovanie stránky používame analytické cookies " +
-      "(Google Analytics), a to až po vašom súhlase. Viac v " +
-      '<a href="/index.html#ochrana-osobnych-udajov" style="color:#E8A33D;text-decoration:underline;">ochrane osobných údajov</a>.';
+      "(Google Analytics), a to až po vašom súhlase. Bez súhlasu sa nič nenačíta. Viac v " +
+      '<a href="/ochrana-osobnych-udajov#cookies" style="color:#E8A33D;text-decoration:underline;">zásadách ochrany osobných údajov</a>.';
 
     var btnWrap = document.createElement("div");
     btnWrap.style.cssText = "display:flex;gap:10px;flex-shrink:0;";
@@ -179,6 +208,7 @@
     btnOdmietnut.addEventListener("click", function () {
       ulozVolbu("denied");
       aktualizujConsent(false);
+      zmazGoogleCookies();
       window.ptUdalost("suhlas_odmietnuty");
       skry();
     });
@@ -186,6 +216,7 @@
     btnPrijat.addEventListener("click", function () {
       ulozVolbu("granted");
       aktualizujConsent(true);
+      nacitajGtm();
       window.ptUdalost("suhlas_prijaty");
       skry();
     });
@@ -205,6 +236,15 @@
     }
   }
 
+  // Zmena alebo odvolanie suhlasu (odkaz "Nastavenia cookies" v patickach
+  // a v zasadach ochrany udajov): zobrazi lištu znova.
+  window.ptCookieNastavenia = function () {
+    var stara = document.getElementById("pt-cookie-banner");
+    if (stara && stara.parentNode) stara.parentNode.removeChild(stara);
+    if (document.body) zobrazBanner();
+    return false;
+  };
+
   // ---- 5. Verejna funkcia na oznamenie konverzie ("aktivovany pouzivatel") -
   window.ptOznamAktivaciu = function () {
     gtag("event", "aktivovany_pouzivatel");
@@ -212,8 +252,8 @@
 
   // ---- 6. Udalosti: GA4 (ak je suhlas) + vlastne pocitadlo bez cookies ---
   // window.ptUdalost(nazov, parametre)
-  //   - gtag('event', ...) ide do GA4 cez znacku Google v GTM; bez suhlasu
-  //     ju Consent Mode posle len ako anonymny ping bez cookies.
+  //   - gtag('event', ...) sa zaradi do dataLayer; Google ich dostane az po
+  //     suhlase, ked sa nacita GTM (bez suhlasu sa nic neposiela).
   //   - Zaroven jeden riadok do public.udalosti (supabase/45_merania.sql):
   //     nazov + cesta + session_id karty + UTM. Nazvy su v databaze
   //     obmedzene zoznamom (check constraint) - novy nazov treba pridat aj

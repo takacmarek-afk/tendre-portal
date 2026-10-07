@@ -45,7 +45,7 @@ def test_ceny_v_cenniku():
     for kod in ("start", "growth", "team"):
         p = plany()["plany"][kod]
         assert f">{_eur(p['mesiac'])}&nbsp;€<" in t, f"cenník: mesačná cena {kod} nesedí"
-        assert f"alebo {_eur(p['rok'])}&nbsp;€ ročne" in t, f"cenník: ročná cena {kod} nesedí"
+        assert f"alebo {_eur(p['rok'])}&nbsp;€ ročne bez DPH" in t, f"cenník: ročná cena {kod} nesedí"
     # Poradca: dočasne "Zadarmo" (zakladajúci člen, rozhodnutie 29.9.2026),
     # nie aktívna cena ako pri ostatných — no budúca cena z plany.js musí
     # niekde v karte ostať ako referencia, nech sa nestratí pri spoplatnení.
@@ -76,7 +76,7 @@ def test_ceny_v_databaze():
 def test_team_dalsi_pouzivatel_a_start_limit():
     t = plany()["plany"]["team"]
     cennik = _stranky()["cennik.html"]
-    assert f"+ {t['dalsiPouzivatelMesiac']}&nbsp;€ / mesiac za každého ďalšieho používateľa" in cennik
+    assert f"+ {t['dalsiPouzivatelMesiac']}&nbsp;€ / mesiac bez DPH za každého ďalšieho používateľa" in cennik
     assert f"({t['dalsiPouzivatelRok']}&nbsp;€ ročne)" in cennik
     assert "Prioritná podpora" not in cennik, "cenník: nedefinovaná 'Prioritná podpora'"
     assert "2 kraje a 2 sektory" in cennik, "cenník: Start nemá 2 kraje a 2 sektory"

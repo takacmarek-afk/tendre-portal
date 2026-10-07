@@ -14,6 +14,14 @@
 //    supabase secrets set STRIPE_SECRET_KEY=sk_live_... (alebo sk_test_...)
 //  SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY / SUPABASE_ANON_KEY su v Edge
 //  Functions dostupne automaticky, nemusia sa nastavovat.
+//
+//  Volitelne (vlna 85, priprava na ostry rezim):
+//    STRIPE_TOS_CONSENT=true  -> Checkout zobrazi povinne zaskrtavacie pole
+//        "suhlasim s obchodnymi podmienkami" + vyhlasenie o strate prava na
+//        odstupenie (spotrebitel, zakon 102/2014). POZOR: Stripe to dovoli
+//        az po nastaveni URL obchodnych podmienok v Dashboarde (Settings ->
+//        Public details -> Terms of service), inak vrati chybu. Preto je to
+//        vypnute, kym to Marek nenastavi.
 // =============================================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -72,6 +80,14 @@ Deno.serve(async (req) => {
     global: { headers: { Authorization: authHeader } },
   });
 
+  // E-mail prihlaseneho pouzivatela predvyplni Checkout (a doklad od Stripe
+  // pojde na neho). Chyba tu nic nerozbije — Stripe sa vtedy opyta sam.
+  let emailKupujuceho: string | null = null;
+  try {
+    const { data: u } = await sbUzivatel.auth.getUser();
+    emailKupujuceho = u?.user?.email ?? null;
+  } catch (_) { /* bez predvyplnenia */ }
+
   const { data: platba, error: chybaZalozenia } = await sbUzivatel
     .rpc("zaloz_platbu", { p_plan: plan, p_obdobie: obdobie })
     .single();
@@ -103,12 +119,30 @@ Deno.serve(async (req) => {
     // zaloha pre pripad, ze by ho niektory typ udalosti neniesol.
     client_reference_id: platba.reference,
     "metadata[reference]": platba.reference,
+    // Slovensky Checkout a fakturacna adresa (podklad na faktúru; IČO, názov
+    // a DIČ organizácie už máme v databáze z registrácie).
+    locale: "sk",
+    billing_address_collection: "required",
+    "custom_text[submit][message]":
+      "Predplatné sa neobnovuje automaticky — platba predĺži prístup o zvolené obdobie. " +
+      "Podmienky: predtendrom.sk/obchodne-podmienky",
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": String(platba.mena).toLowerCase(),
     "line_items[0][price_data][unit_amount]": String(centy),
     "line_items[0][price_data][product_data][name]":
       `${NAZOV_PLANU[platba.plan] ?? platba.plan} (${platba.obdobie === "rok" ? "ročné" : "mesačné"} predplatné)`,
   });
+
+  if (emailKupujuceho) parametre.set("customer_email", emailKupujuceho);
+  if (Deno.env.get("STRIPE_TOS_CONSENT") === "true") {
+    parametre.set("consent_collection[terms_of_service]", "required");
+    parametre.set(
+      "custom_text[terms_of_service_acceptance][message]",
+      "Ak nakupujem ako spotrebiteľ, výslovne žiadam o začatie poskytovania služby ihneď po zaplatení " +
+        "a beriem na vedomie, že po jej úplnom poskytnutí strácam právo na odstúpenie od zmluvy " +
+        "a že pri odstúpení pred tým uhradím pomernú časť ceny.",
+    );
+  }
 
   try {
     const odpoved = await fetch(`${STRIPE_API}/checkout/sessions`, {

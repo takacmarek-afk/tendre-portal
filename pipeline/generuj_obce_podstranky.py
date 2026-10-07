@@ -171,6 +171,7 @@ PATICKA = """
     <a href="/zdroje" class="text-accent hover:underline">Ako to počítame</a>
     · <a href="mailto:info@predtendrom.sk" class="text-accent hover:underline">info@predtendrom.sk</a>
   </div>
+  <p class="pt-pravne text-[12px] text-slate2 text-center py-4 border-t border-line"><a href="/obchodne-podmienky" class="underline hover:text-ink">Obchodné podmienky</a> &middot; <a href="/ochrana-osobnych-udajov" class="underline hover:text-ink">Ochrana osobných údajov</a> &middot; <a href="#" onclick="window.ptCookieNastavenia&amp;&amp;window.ptCookieNastavenia();return false;" class="underline hover:text-ink">Nastavenia cookies</a></p>
 </footer>
 </body>
 </html>
@@ -365,6 +366,7 @@ def vygeneruj(riadky_kraj, riadky_sprostredkovatelia, vystup_dir=VYSTUP_DIR):
 STATICKE_STRANKY = [
     "/", "/cennik", "/obce", "/zdroje",
     "/starosta", "/prvych-100-dni", "/servis", "/kontrola", "/mapa",
+    "/obstaravatel", "/obchodne-podmienky", "/ochrana-osobnych-udajov",
 ]
 
 
