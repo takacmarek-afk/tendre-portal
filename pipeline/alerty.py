@@ -131,6 +131,8 @@ def _nacitaj_udalosti(sb, dnes):
                             "suma, podpisane")
                     .gte("podpisane", hranica)
                     .gte("suma", obce.MIN_SUMA_DOTACIE)
+                    # uz vyplatena dotacia = hotovy projekt, nie prilezitost
+                    .eq("vyplatene", False)
                     .order("podpisane", desc=True)
                     .execute().data or [])
     except Exception as e:

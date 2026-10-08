@@ -135,9 +135,11 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
         skontroluj_pokles(sb, "subsidies", dot)
         dotacii = store.nahrad_subsidies(sb, dot, dnes)
         # Uvodna stranka hlasi to, co zakaznik uvidi po prihlaseni v predvolenom
-        # pohlade (od 20 000 EUR), nie cely obsah tabulky.
-        dotacii_predvolene = (int((dot["suma"] >= DOTACIA_PREDVOLENE_OD_EUR).sum())
-                              if dot is not None and not dot.empty else 0)
+        # pohlade (od 20 000 EUR, bez uz vyplatenych), nie cely obsah tabulky.
+        dotacii_predvolene = (
+            int(((dot["suma"] >= DOTACIA_PREDVOLENE_OD_EUR)
+                 & ~dot["vyplatene"].fillna(False).astype(bool)).sum())
+            if dot is not None and not dot.empty else 0)
         if dotacii:
             log.info("Dotacie s ocakavanym tendrom: %s", dotacii)
     except Exception as e:

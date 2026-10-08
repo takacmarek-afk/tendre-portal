@@ -779,6 +779,17 @@
               <option value="500000">od 500 000 €</option>
             </select>
           </div>
+          <!-- VYPLATENE (vlna 88). Pôdohospodárska platobná agentúra platí
+               dotáciu až po realizácii projektu. Ak je v jej zozname
+               vyplatených, obec už postavila a obstarávanie je za ňou. -->
+          <div class="flex items-end">
+            <label class="flex items-start gap-2 cursor-pointer text-[13px] pb-2">
+              <input type="checkbox" id="d-skryt-vyplatene" checked
+                     class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
+              <span>Skryť už vyplatené<br>
+                <span class="text-[11px] text-slate2">projekt je hotový, tender nepríde</span></span>
+            </label>
+          </div>
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
           <span id="pocet-dot" class="text-[13px] text-slate2"></span>
@@ -2002,6 +2013,9 @@ function riadokDotacie(r, stavMap) {
           ${bezpecne(r.prijimatel)}
           ${nova ? `<span class="align-middle ml-1 text-[10px] font-semibold px-1.5 py-0.5
                          rounded bg-emerald-50 text-emerald-800">NOVÁ</span>` : ''}
+          ${r.vyplatene ? `<span class="align-middle ml-1 text-[10px] font-semibold px-1.5 py-0.5
+                         rounded bg-slate-100 text-slate-700"
+                         title="Pôdohospodárska platobná agentúra túto dotáciu už vyplatila${r.vyplatene_fy ? ' (' + bezpecne(r.vyplatene_fy) + ')' : ''}. Platí až po zrealizovaní projektu, takže obstarávanie už prebehlo.">VYPLATENÁ – PROJEKT HOTOVÝ</span>` : ''}
         </div>
         <div class="text-[12px] text-slate2 mt-1">${bezpecne(r.poskytovatel)}${r.strany_vymenene
           // Audit P1.2: interná poznámka nepatrí do riadku, len do bublinky.
@@ -2425,6 +2439,7 @@ const HLAVICKY_EXPORTU = {
   sektor_odhad: 'Odhad sektora', podpisane: 'Podpísané', okno_od: 'Okno tendra od',
   okno_do: 'Okno tendra do', strany_vymenene: 'Strany v CRZ vymenené',
   ma_dodatky: 'Počet dodatkov', je_dodatok: 'Je dodatok',
+  vyplatene: 'Už vyplatená (projekt hotový)', vyplatene_fy: 'Vyplatená vo fin. roku',
   obec: 'Obec', sprostredkovatel: 'Kto píše žiadosť', cena_sluzby: 'Cena služby (€)',
   najate: 'Najala', ocakavane: 'Dotáciu čakáme',
   oznamenie_id: 'ID oznámenia', vestnik: 'Vestník', typ: 'Typ', typ_oznamenia: 'Typ oznámenia',
@@ -4656,6 +4671,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     if (sektor) q = q.eq('sektor_odhad', sektor);
     const minSuma = Number(el('d-min-suma')?.value) || 0;
     if (minSuma > 0) q = q.gte('suma', minSuma);
+    // Vlna 88: uz vyplatena dotacia = hotovy projekt (PPA plati po realizacii).
+    if (el('d-skryt-vyplatene')?.checked) q = q.eq('vyplatene', false);
     // Pri dotáciách je sektor len odhad z textu zmluvy; dotácie bez odhadu
     // (väčšina "Zmluva o poskytnutí dotácie") výber nesmie skryť.
     q = sVyberom(q, { kraj: 'kraj', sektor: 'sektor_odhad', sektorAjPrazdny: true }, kraj, sektor);
@@ -4682,7 +4699,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     let q = supabase.from('subsidies')
       .select('contract_id, prijimatel, poskytovatel, ucel, suma, sektor_odhad, ' +
               'podpisane, okno_od, okno_do, mesto, kraj, odkaz, strany_vymenene, '
-              + 'contract_id_alt, ma_dodatky, je_dodatok', { count: 'exact' });
+              + 'contract_id_alt, ma_dodatky, je_dodatok, vyplatene, vyplatene_fy', { count: 'exact' });
 
     q = filtreDotacii(q);
 
@@ -5068,7 +5085,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     supabase.from('opportunities').select('*', { count: 'exact', head: true }),
     supabase.from('subsidies').select('*', { count: 'exact', head: true })
       .gt('okno_od', oDni(0))
-      .gte('suma', 20000),   // zhodne s predvolenou "Minimalnou sumou" na zalozke
+      .eq('vyplatene', false)   // zhodne s predvolenym pohladom na zalozke
+      .gte('suma', 20000),
   ]);
 
   if (pz.error) {
@@ -5221,7 +5239,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   el('f-reset-2').addEventListener('click', reset);
 
   const prekresliD = pozdrz(odznova('dotacie', nacitajDotacie));
-  for (const id of ['d-kraj', 'd-sektor', 'd-radenie', 'd-stav', 'd-min-suma']) {
+  for (const id of ['d-kraj', 'd-sektor', 'd-radenie', 'd-stav', 'd-min-suma', 'd-skryt-vyplatene']) {
     el(id).addEventListener('change', odznova('dotacie', nacitajDotacie));
   }
   el('d-text').addEventListener('input', prekresliD);

@@ -517,7 +517,8 @@ def nacitaj_data(sb, ica, dnes):
                     "predmet": r["subject"], "dodavatel": r["supplier_name"],
                     "hodnota": r.get("price_total"), "koniec": r["effective_to"]})
         for r in (sb.table("subsidies").select("prijimatel_ico,suma")
-                  .in_("prijimatel_ico", v).execute().data):
+                  .in_("prijimatel_ico", v).eq("vyplatene", False)
+                  .execute().data):
             c = ciel(r["prijimatel_ico"])
             if c is None:
                 continue

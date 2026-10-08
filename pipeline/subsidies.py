@@ -44,6 +44,7 @@ import pandas as pd
 import regiony
 import score
 from classify import klasifikuj_ucel, SEKTOR_DOTACIE, bez_diakritiky
+import ppa_vyplatene
 from config import DOTACIA_OKNO_OD_DNI, DOTACIA_OKNO_DO_DNI, MIN_DOTACIA_EUR
 
 log = logging.getLogger("subsidies")
@@ -489,11 +490,15 @@ def z_contracts(df: pd.DataFrame, dnes: date = None,
     for c in ("podpisane", "ucinne_od", "okno_od", "okno_do"):
         d[c] = d[c].dt.strftime("%Y-%m-%d")
 
+    # PPA vyplaca az po realizacii: vyplatena dotacia = hotovy projekt.
+    # Neznizuje pocet riadkov, len ich oznaci — rozhodnutie o skryti je v appke.
+    d = ppa_vyplatene.oznac(d)
+
     stlpce = ["contract_id", "prijimatel", "prijimatel_ico", "poskytovatel",
               "ucel", "suma", "podpisane", "ucinne_od", "sektor_odhad",
               "okno_od", "okno_do", "odkaz", "mesto", "kraj",
               "strany_vymenene", "contract_id_alt", "ma_dodatky",
-              "je_dodatok"]
+              "je_dodatok", "vyplatene", "vyplatene_fy"]
     out = d[stlpce].sort_values("suma", ascending=False).reset_index(drop=True)
     out["contract_id"] = pd.to_numeric(out["contract_id"], errors="coerce").astype("Int64")
     return out
