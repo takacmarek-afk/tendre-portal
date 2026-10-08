@@ -23,6 +23,7 @@ import vyzvy
 from classify import SEKTOR_DOTACIE
 from config import (
     BOOTSTRAP_SINCE, TIME_BUDGET_MIN, DNI_MIN, DNI_MAX, SEKTORY,
+    DOTACIA_PREDVOLENE_OD_EUR,
 )
 
 logging.basicConfig(
@@ -95,6 +96,7 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     """
     dnes = date.today().isoformat()
     tabulka, vlozene, dotacii, dodav, cien, cenPril = None, 0, 0, 0, 0, 0
+    dotacii_predvolene = 0
     tam = podiel = 0
     sanca = 0
     vsetky = None
@@ -132,6 +134,10 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
         dot = subsidies.z_contracts(vsetky, adresy_podla_ica=adresy_ico)
         skontroluj_pokles(sb, "subsidies", dot)
         dotacii = store.nahrad_subsidies(sb, dot, dnes)
+        # Uvodna stranka hlasi to, co zakaznik uvidi po prihlaseni v predvolenom
+        # pohlade (od 20 000 EUR), nie cely obsah tabulky.
+        dotacii_predvolene = (int((dot["suma"] >= DOTACIA_PREDVOLENE_OD_EUR).sum())
+                              if dot is not None and not dot.empty else 0)
         if dotacii:
             log.info("Dotacie s ocakavanym tendrom: %s", dotacii)
     except Exception as e:
@@ -264,7 +270,7 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
         store.zapis_verejne_pocty(sb, {
             "zmluv": celkom,
             "prilezitosti": vlozene,
-            "dotacie": dotacii,
+            "dotacie": dotacii_predvolene,
             "dodavatelia": dodav,
         })
     except Exception as e:

@@ -765,6 +765,20 @@
               <option value="0">všetko</option>
             </select>
           </div>
+          <!-- MINIMALNA SUMA (vlna 86). Tabulka obsahuje dotacie od 5 000 EUR,
+               predvolene sa ukazuju len od 20 000 EUR (velke projekty, na ktore
+               sa obstaravanie takmer iste vyhlasi). Mensie obce a mensie
+               projekty si zakaznik zapne tu. -->
+          <div>
+            <label for="d-min-suma" class="block text-[12px] font-semibold text-slate2 mb-1">Minimálna suma</label>
+            <select id="d-min-suma" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
+                                           focus:outline-none focus:border-accent">
+              <option value="20000" selected>od 20 000 €</option>
+              <option value="5000">od 5 000 € (aj menšie)</option>
+              <option value="100000">od 100 000 €</option>
+              <option value="500000">od 500 000 €</option>
+            </select>
+          </div>
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
           <span id="pocet-dot" class="text-[13px] text-slate2"></span>
@@ -4640,6 +4654,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
     if (kraj) q = q.eq('kraj', kraj);
     if (sektor) q = q.eq('sektor_odhad', sektor);
+    const minSuma = Number(el('d-min-suma')?.value) || 0;
+    if (minSuma > 0) q = q.gte('suma', minSuma);
     // Pri dotáciách je sektor len odhad z textu zmluvy; dotácie bez odhadu
     // (väčšina "Zmluva o poskytnutí dotácie") výber nesmie skryť.
     q = sVyberom(q, { kraj: 'kraj', sektor: 'sektor_odhad', sektorAjPrazdny: true }, kraj, sektor);
@@ -5051,7 +5067,8 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   const [pz, pd] = await Promise.all([
     supabase.from('opportunities').select('*', { count: 'exact', head: true }),
     supabase.from('subsidies').select('*', { count: 'exact', head: true })
-      .gt('okno_od', oDni(0)),
+      .gt('okno_od', oDni(0))
+      .gte('suma', 20000),   // zhodne s predvolenou "Minimalnou sumou" na zalozke
   ]);
 
   if (pz.error) {
@@ -5204,7 +5221,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   el('f-reset-2').addEventListener('click', reset);
 
   const prekresliD = pozdrz(odznova('dotacie', nacitajDotacie));
-  for (const id of ['d-kraj', 'd-sektor', 'd-radenie', 'd-stav']) {
+  for (const id of ['d-kraj', 'd-sektor', 'd-radenie', 'd-stav', 'd-min-suma']) {
     el(id).addEventListener('change', odznova('dotacie', nacitajDotacie));
   }
   el('d-text').addEventListener('input', prekresliD);

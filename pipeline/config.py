@@ -34,7 +34,13 @@ PRAH_SKORE = int(os.getenv("PRAH_SKORE", "3"))
 # Odhad okna, kedy po podpise dotacie pride tender.
 DOTACIA_OKNO_OD_DNI = 180
 DOTACIA_OKNO_DO_DNI = 540
-MIN_DOTACIA_EUR = float(os.getenv("MIN_DOTACIA_EUR", "20000"))
+# Vlna 86 (8. 10. 2026): spodna hranica tabulky `subsidies` klesla z 20 000 na
+# 5 000 EUR (rovnaka ako MIN_HODNOTA_EUR pri zmluvach). Dovod: mensie obce
+# (Trnavka, Revucka Lehota) mali nulu zaznamov, hoci dotaciu dostali. Zakaznik
+# si v appke vyberie "Minimalnu sumu"; predvolene ostava 20 000 EUR, aby
+# prva obrazovka a cisla na uvodnej stranke ostali take ako predtym.
+MIN_DOTACIA_EUR = float(os.getenv("MIN_DOTACIA_EUR", "5000"))
+DOTACIA_PREDVOLENE_OD_EUR = 20000    # musi sediet s predvolenou volbou v app.html (#d-min-suma)
 
 # --- Vylucujuce slova (platia pre vsetky sektory) --------------------------
 NEGATIVNE = [

@@ -64,7 +64,7 @@ DNI_DLHE = 90
 MIN_ZMLUV_AKTIVNY = 3
 
 MIN_OBCI_SPROSTREDKOVATEL = 1   # aj jedna obec je fakt, len to treba povedat
-MIN_SUMA_DOTACIE = 20000        # rovnaky prah ako v subsidies
+MIN_SUMA_DOTACIE = 20000        # prah pre stranku Peniaze pre obce a alerty (tabulka subsidies ma od vlny 86 spodnu hranicu 5 000)
 
 # ── RUCNE OPRAVY ZOZNAMU SPROSTREDKOVATELOV (audit P3.5, 28.9.2026) ────────
 # _PROJEKTOVE_SLUZBY vyssie je zamerne siroky regex na predmet zmluvy a
