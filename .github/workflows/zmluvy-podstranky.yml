@@ -28,7 +28,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: zmluvy-podstranky
+  group: commit-main
   cancel-in-progress: false
 
 jobs:
@@ -64,5 +64,8 @@ jobs:
             echo "Ziadna zmena vo vygenerovanych strankach, nic sa necommitne."
           else
             git commit -m "Automaticky vygenerovane: SEO podstranky konciace-zmluvy"
+            # Spolocna skupina `commit-main` serializuje oba generatory;
+            # rebase kryje aj ruzny commit, co pribudol pocas behu.
+            git pull --rebase origin main
             git push
           fi

@@ -50,6 +50,8 @@ from urllib.parse import quote
 import requests
 from supabase import create_client
 
+from strankuj import vsetky
+
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)-7s %(name)-9s %(message)s",
                     datefmt="%H:%M:%S")
@@ -495,8 +497,10 @@ def _nacitaj_org(sb, plany=PRO_PLANY) -> "set | None":
     if zadarmo:
         return None
     try:
-        subs = sb.table("subscriptions").select(
-            "org_id, plan, stav, trial_konci, obdobie_konci").execute().data or []
+        subs = vsetky(lambda od, do: (
+            sb.table("subscriptions")
+              .select("org_id, plan, stav, trial_konci, obdobie_konci")
+              .order("org_id").range(od, do).execute()))
     except Exception as e:
         log.warning("Tabulka subscriptions sa necitala: %s", e)
         return set()
@@ -689,20 +693,26 @@ def main():
     org_s_pristupom = _nacitaj_org_s_pristupom(sb)  # None = vsetci
 
     def _ma_pristup(org_id) -> bool:
-        # Riadky bez org_id (stare) neposudzujeme; inak musi mat firma pristup.
-        return org_s_pristupom is None or not org_id or (org_id in org_s_pristupom)
+        # Audit 8. 10. 2026: riadok BEZ org_id uz nie je "stary, neposudzuje sa" —
+        # org_id si pouzivatel vedel sam vynulovat a dostavat digesty zadarmo.
+        # Pri platenom rezime (org_s_pristupom nie je None) bez organizacie
+        # pristup nie je.
+        return org_s_pristupom is None or (bool(org_id) and org_id in org_s_pristupom)
 
     odberatelia = []
     try:
         odberatelia += [dict(x, _typ="dodavatel") for x in
-                        (sb.table("odber").select("*").eq("chce_email", True)
-                           .execute().data or [])]
+                        vsetky(lambda od, do: (
+                            sb.table("odber").select("*").eq("chce_email", True)
+                              .order("user_id").range(od, do).execute()))]
     except Exception as e:
         log.warning("Tabulka odber sa necitala: %s", e)
     try:
         odberatelia += [dict(x, _typ="obec") for x in
-                        (sb.table("odber_obce").select("*")
-                           .eq("potvrdeny", True).execute().data or [])]
+                        vsetky(lambda od, do: (
+                            sb.table("odber_obce").select("*")
+                              .eq("potvrdeny", True).order("id")
+                              .range(od, do).execute()))]
     except Exception as e:
         log.warning("Tabulka odber_obce sa necitala: %s", e)
 

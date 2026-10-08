@@ -61,6 +61,7 @@ from supabase import create_client
 
 import obce
 import regiony
+from strankuj import vsetky
 import register_obci
 from posli_email import (_obal, _eur, _datum_sk, posli, ODKAZ_OBCE,
                          odkaz_odberu_obce)
@@ -126,15 +127,16 @@ def _nacitaj_udalosti(sb, dnes):
     """
     hranica = (dnes - timedelta(days=DNI_OKNO)).isoformat()
     try:
-        riadky = (sb.table("subsidies")
-                    .select("contract_id, prijimatel, poskytovatel, ucel, "
-                            "suma, podpisane")
-                    .gte("podpisane", hranica)
-                    .gte("suma", obce.MIN_SUMA_DOTACIE)
-                    # uz vyplatena dotacia = hotovy projekt, nie prilezitost
-                    .eq("vyplatene", False)
-                    .order("podpisane", desc=True)
-                    .execute().data or [])
+        riadky = vsetky(lambda od, do: (
+            sb.table("subsidies")
+              .select("contract_id, prijimatel, poskytovatel, ucel, "
+                      "suma, podpisane")
+              .gte("podpisane", hranica)
+              .gte("suma", obce.MIN_SUMA_DOTACIE)
+              # uz vyplatena dotacia = hotovy projekt, nie prilezitost
+              .eq("vyplatene", False)
+              .order("podpisane", desc=True).order("contract_id")
+              .range(od, do).execute()))
     except Exception as e:
         log.error("Dopyt na subsidies zlyhal: %s", e)
         return {}
@@ -243,8 +245,9 @@ def main():
     dnes = date.today()
 
     try:
-        odberatelia = (sb.table("odber_obce").select("email, obec, kraj, token")
-                         .eq("potvrdeny", True).execute().data or [])
+        odberatelia = vsetky(lambda od, do: (
+            sb.table("odber_obce").select("email, obec, kraj, token")
+              .eq("potvrdeny", True).order("id").range(od, do).execute()))
     except Exception as e:
         log.error("Tabulka odber_obce sa necitala: %s", e)
         return 1
@@ -271,8 +274,12 @@ def main():
         return 0
 
     try:
-        odoslane_rows = (sb.table("sused_alerty_odoslane")
-                            .select("email, contract_id").execute().data or [])
+        # Kniha odoslanych alertov rastie navzdy. Bez stranok by sa po 1 000
+        # zaznamoch stratila deduplikacia a alerty by sa posielali znova.
+        odoslane_rows = vsetky(lambda od, do: (
+            sb.table("sused_alerty_odoslane")
+              .select("email, contract_id")
+              .order("email").order("contract_id").range(od, do).execute()))
     except Exception as e:
         log.error("Tabulka sused_alerty_odoslane sa necitala: %s", e)
         return 1

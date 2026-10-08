@@ -112,7 +112,11 @@
 
   function aktualizujConsent(udelene) {
     var stav = udelene
-      ? { ad_storage: "granted", analytics_storage: "granted", ad_user_data: "granted", ad_personalization: "granted" }
+      // Audit 8. 10. 2026: banner aj zasady hovoria len o ANALYTIKE ("marketingove
+      // zatial nepouzivame"), preto sa pri "Prijat" udeluje len analytics_storage.
+      // Reklamne signaly ostavaju denied; ked sa spusti retargeting, treba
+      // samostatnu volbu pre marketing (nie jedno tlacidlo pre vsetko).
+      ? { ad_storage: "denied", analytics_storage: "granted", ad_user_data: "denied", ad_personalization: "denied" }
       : { ad_storage: "denied", analytics_storage: "denied", ad_user_data: "denied", ad_personalization: "denied" };
     gtag("consent", "update", stav);
   }

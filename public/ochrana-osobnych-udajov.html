@@ -19,9 +19,8 @@
 <meta property="og:image:height" content="630">
 <meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
 <link rel="canonical" href="https://predtendrom.sk/ochrana-osobnych-udajov">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/IBMPlexSans-Variable.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
 <style>
 .wrap{max-width:760px;margin:0 auto;padding:0 1.25rem}
 .tabulka-wrap{overflow-x:auto;margin-top:.9rem;-webkit-overflow-scrolling:touch}
@@ -72,18 +71,18 @@ table.udaje th{font-weight:600}
     </p>
     <div class="tabulka-wrap"><table class="udaje">
       <thead><tr><th>Účel</th><th>Údaje</th><th>Právny základ</th><th>Ako dlho</th></tr></thead><tbody>
-      <tr><td>Účet a prihlásenie</td><td>e-mailová adresa, čas registrácie a prihlásenia</td><td>plnenie zmluvy (čl. 6 ods. 1 písm. b) GDPR)</td><td>po dobu trvania účtu a 24 mesiacov po jeho zrušení</td></tr>
-      <tr><td>Organizácia a nastavenia</td><td>názov firmy, IČO (povinné), prípadne DIČ a adresa, vaše voliteľné IČO, zvolené kraje a sektory, sledované firmy podľa IČO</td><td>plnenie zmluvy</td><td>po dobu trvania účtu a 24 mesiacov po jeho zrušení</td></tr>
+      <tr><td>Účet a prihlásenie</td><td>e-mailová adresa, čas registrácie a prihlásenia</td><td>plnenie zmluvy (čl. 6 ods. 1 písm. b) GDPR)</td><td>po dobu trvania účtu; po jeho zrušení údaje vymažeme najneskôr do 24 mesiacov (výmaz robíme na požiadanie alebo pri pravidelnej kontrole)</td></tr>
+      <tr><td>Organizácia a nastavenia</td><td>názov firmy, IČO (povinné), prípadne DIČ a adresa, vaše voliteľné IČO, zvolené kraje a sektory, sledované firmy podľa IČO</td><td>plnenie zmluvy</td><td>po dobu trvania účtu; po jeho zrušení najviac 24 mesiacov</td></tr>
       <tr><td>Platby a doklady</td><td>plán, obdobie, suma, referencia platby, fakturačné údaje organizácie. Číslo platobnej karty nespracúvame, spracúva ho výhradne Stripe</td><td>plnenie zmluvy; plnenie zákonnej povinnosti (čl. 6 ods. 1 písm. c) — účtovníctvo)</td><td>účtovné doklady 10 rokov</td></tr>
       <tr><td>Pozvánky kolegov (plán Team)</td><td>e-mailová adresa pozvaného kolegu, ktorú zadá vlastník organizácie</td><td>oprávnený záujem (čl. 6 ods. 1 písm. f)) — pozvánka je jednorazová a súvisí so zmluvou s organizáciou</td><td>po dobu platnosti pozvánky a členstva v organizácii</td></tr>
-      <tr><td>Servisné e-maily</td><td>prihlasovací odkaz, potvrdenia, pripomienka 7 dní pred koncom uhradeného obdobia, upozornenia podľa vášho nastavenia</td><td>plnenie zmluvy</td><td>po dobu trvania účtu</td></tr>
-      <tr><td>Dopyty a Trh dopytov</td><td>kontaktný e-mail a telefón, názov obce alebo firmy, popis dopytu; profil poradcu</td><td>plnenie zmluvy a opatrenia pred jej uzavretím na vašu žiadosť</td><td>servisné dopyty obcí 24 mesiacov; profil poradcu do jeho zrušenia</td></tr>
+      <tr><td>Servisné e-maily</td><td>prihlasovací odkaz, potvrdenia, pripomienka približne 7 dní pred koncom uhradeného obdobia, upozornenia podľa vášho nastavenia</td><td>plnenie zmluvy</td><td>po dobu trvania účtu</td></tr>
+      <tr><td>Dopyty a Trh dopytov</td><td>kontaktný e-mail a telefón, názov obce alebo firmy, popis dopytu; profil poradcu. Kontakt, ktorý uvediete, uvidí druhá strana dopytu (obec poradca, poradca obec) — po vašom zverejnení dopytu alebo odpovedi na dopyt</td><td>plnenie zmluvy a opatrenia pred jej uzavretím na vašu žiadosť</td><td>servisné dopyty obcí 24 mesiacov; profil poradcu do jeho zrušenia</td></tr>
       <tr><td>Zavolajte mi</td><td>meno, obec, telefón, vhodný čas na zavolanie</td><td>opatrenia pred uzavretím zmluvy na vašu žiadosť</td><td>12 mesiacov</td></tr>
       <tr><td>Odber prehľadov pre obce</td><td>e-mail, obec, IČO obce; odber sa aktivuje až kliknutím na potvrdzovací odkaz</td><td>súhlas (čl. 6 ods. 1 písm. a)), ktorý môžete kedykoľvek odvolať odkazom v každom e-maile</td><td>do odhlásenia; nepotvrdený odber 30 dní</td></tr>
       <tr><td>Informačné e-maily obciam</td><td>oficiálna adresa obce uverejnená v registroch, meno a priezvisko zvoleného starostu na oslovenie</td><td>oprávnený záujem (čl. 6 ods. 1 písm. f)) — informovať obce o službe pre obce</td><td>do odhlásenia alebo námietky; každý e-mail obsahuje odkaz na odhlásenie</td></tr>
       <tr><td>Kontrola zmlúv a profil obstarávateľa podľa IČO</td><td>zadané IČO a čas dotazu; z IP adresy vzniká len jednosmerný kryptografický odtlačok (hash) na obmedzenie zneužitia</td><td>oprávnený záujem (čl. 6 ods. 1 písm. f)) — ochrana nástroja pred hromadným zneužitím</td><td>záznam o dotaze 7 dní, odtlačok IP z formulárov 2 dni; nie je spojený s e-mailom ani osobou</td></tr>
       <tr><td>Ochrana formulárov (Cloudflare Turnstile)</td><td>technické údaje potrebné na rozlíšenie človeka od robota</td><td>oprávnený záujem — bezpečnosť a ochrana pred spamom</td><td>spracúva Cloudflare podľa vlastných zásad</td></tr>
-      <tr><td>Vlastné počítanie návštev</td><td>navštívená stránka, odkaz, z ktorého návšteva prišla, UTM parametre, náhodné ID návštevy v pamäti karty prehliadača; žiadne cookies, bez identifikácie osoby</td><td>oprávnený záujem (čl. 6 ods. 1 písm. f)) — vedieť, či a ako je web používaný</td><td>26 mesiacov</td></tr>
+      <tr><td>Vlastné počítanie návštev</td><td>navštívená stránka, odkaz, z ktorého návšteva prišla, UTM parametre (zdroj kampane), kliknutia na kľúčové tlačidlá (napríklad začiatok platby) a vaša voľba v lište cookies, náhodné ID návštevy v pamäti karty prehliadača; žiadne cookies, bez identifikácie osoby (odtlačok IP je pseudonymný údaj)</td><td>oprávnený záujem (čl. 6 ods. 1 písm. f)) — vedieť, či a ako je web používaný</td><td>26 mesiacov</td></tr>
       <tr><td>Google Analytics</td><td>štatistika používania webu cez súbory cookie</td><td>súhlas (čl. 6 ods. 1 písm. a)) — bez neho sa nenačíta</td><td>najviac 14 mesiacov</td></tr>
       <tr><td>Komunikácia e-mailom</td><td>obsah správy a adresa odosielateľa</td><td>oprávnený záujem (čl. 6 ods. 1 písm. f)) — vybavenie vašej požiadavky</td><td>po dobu vybavenia a následne najviac 3 roky (premlčacia doba)</td></tr>
     </tbody></table></div>
@@ -111,8 +110,9 @@ table.udaje th{font-weight:600}
       Bez vášho súhlasu nenačítavame žiadne analytické ani marketingové nástroje. Pri prvej návšteve sa zobrazí lišta s voľbou „Prijať“ alebo „Iba nevyhnutné“. Voľbu si pamätáme vo vašom prehliadači; môžete ju zmeniť tlačidlom nižšie.
     </p>
     <ul class="zoznam">
-      <li><strong>Nevyhnutné (bez súhlasu):</strong> uložená voľba v lište cookies; prihlásenie do účtu (token v úložisku prehliadača); náhodné ID návštevy v pamäti karty (zmizne so zatvorením karty), ktoré slúži len na to, aby sa jedna návšteva neráta viackrát. Slúži to na fungovanie portálu a nie je spojené s vašou osobou.</li>
+      <li><strong>Nevyhnutné (bez súhlasu):</strong> uložená voľba v lište cookies; prihlásenie do účtu (token v úložisku prehliadača); dočasne zvolený plán a obdobie počas platby (v pamäti karty, zmizne so zatvorením karty). Slúžia na fungovanie portálu.</li>
       <li><strong>Analytické (len so súhlasom):</strong> Google Analytics 4 cez Google Tag Manager. Google Tag Manager sa načíta až po vašom súhlase. Ak súhlas neudelíte alebo ho odvoláte, súbory cookie Google (<code>_ga</code>, <code>_ga_*</code>) sa odstránia. Údaje o používaní sa v Google Analytics uchovávajú najviac 14 mesiacov.</li>
+      <li><strong>Vlastná anonymná štatistika (bez cookies):</strong> náhodné ID návštevy a zdroj návštevy (UTM parametre) v pamäti karty prehliadača, ktoré zmiznú so zatvorením karty. Slúžia len na zistenie, či a ako je web používaný, a nie sú spojené s vašou osobou (pozri tabuľku vyššie).</li>
       <li><strong>Marketingové:</strong> zatiaľ nepoužívame. Ak ich niekedy zavedieme, budú vyžadovať váš samostatný súhlas.</li>
     </ul>
     <p class="mt-4"><button type="button" onclick="window.ptCookieNastavenia && window.ptCookieNastavenia()" class="text-[14px] font-medium border border-line rounded-lg px-4 py-2 hover:border-accent hover:text-accent">Nastavenia cookies</button></p>
@@ -130,6 +130,8 @@ table.udaje th{font-weight:600}
       <li><strong>GitHub</strong> — spúšťanie automatických úloh, ktoré obnovujú údaje z verejných registrov a posielajú e-maily.</li>
       <li><strong>Stripe</strong> — spracovanie platieb. Pri platobných údajoch koná Stripe aj ako samostatný prevádzkovateľ podľa vlastných zásad; číslo karty sa k nám nedostane.</li>
       <li><strong>Google</strong> (Analytics a Tag Manager) — len ak udelíte súhlas v lište cookies.</li>
+      <li><strong>jsDelivr</strong> (sieť na doručovanie verejných knižníc) — aplikácia z nej načíta knižnice na prihlásenie a export do Excelu. Pri načítaní sa prenáša vaša IP adresa. Písma stránok hostujeme sami.</li>
+      <li><strong>Používatelia Trhu dopytov</strong> — kontakt (e-mail, telefón), ktorý uvediete v dopyte alebo odpovedi, uvidí druhá strana dopytu; ide o príjemcu údajov podľa čl. 13 ods. 1 písm. e) GDPR.</li>
     </ul>
     <p class="mt-3 text-[15px] leading-relaxed">
       Niektorí dodávatelia sú americké spoločnosti alebo majú vo svojich službách prístup z USA. Prenos je vtedy chránený mechanizmami podľa kapitoly V GDPR, najmä rozhodnutím Európskej komisie o primeranosti (EU–US Data Privacy Framework) alebo štandardnými zmluvnými doložkami. Okrem uvedených dodávateľov údaje poskytujeme orgánom iba ak nám to ukladá zákon.

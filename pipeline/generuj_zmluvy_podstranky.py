@@ -37,6 +37,7 @@ from datetime import date, datetime, timedelta
 from collections import defaultdict
 
 import generuj_obce_podstranky as obce_podstranky
+from strankuj import vsetky
 from generuj_obce_podstranky import _slug, _suma, _cislo, _datum, _tvar, _e, VSETKY_KRAJE, LOKAL_KRAJA
 
 log = logging.getLogger("generuj_zmluvy_podstranky")
@@ -138,9 +139,8 @@ HLAVICKA = """<!doctype html>
 <meta property="og:image:height" content="630">
 <meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
 <script src="../../config.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/IBMPlexSans-Variable.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="/style.css">
 </head>
 <body class="font-sans text-ink bg-paper antialiased">
@@ -422,13 +422,16 @@ def hlavne():
 
     vsetky_agregaty = {}
     for sector in SEKTORY_SEO:
-        riadky = (
+        # Strankovane: PostgREST inak potichu orezava na 1 000 riadkov a
+        # verejne stranky by uvadzali podhodnoteny pocet a objem.
+        riadky = vsetky(lambda od, do: (
             sb.table("opportunities")
             .select("sector,kraj,authority_name,price_total,effective_to")
             .eq("sector", sector)
+            .order("contract_id")
+            .range(od, do)
             .execute()
-            .data
-        )
+        ))
         if not riadky:
             log.warning("opportunities: ziadne riadky pre sektor %s, preskakujem.", sector)
             continue

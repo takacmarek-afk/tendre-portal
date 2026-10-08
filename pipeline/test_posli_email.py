@@ -227,6 +227,10 @@ class _FalosnaTabulka:
         self._limit = n
         return self
 
+    def range(self, od, do):
+        self._range = (od, do)
+        return self
+
     def execute(self):
         data = self._data
         if self._order_key:
@@ -234,6 +238,8 @@ class _FalosnaTabulka:
                           reverse=self._order_desc)
         if self._limit is not None:
             data = data[:self._limit]
+        if getattr(self, "_range", None):
+            data = data[self._range[0]:self._range[1] + 1]
         return _FalosnaOdpoved(data)
 
 

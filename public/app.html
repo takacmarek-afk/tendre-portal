@@ -7,9 +7,8 @@
 <title>Prehľad príležitostí – PredTendrom.sk</title>
 <script src="./config.js"></script>
 <script src="./plany.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="preload" href="/fonts/IBMPlexSans-Variable.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
 <style>
 /* ── TABULKA AKO KARTY NA TELEFONE ──────────────────────────────────────
    Odmerane na iPhone sirke (375 px): tabulka mala 676 px a tri z piatich
@@ -793,9 +792,12 @@
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
           <span id="pocet-dot" class="text-[13px] text-slate2"></span>
-          <button id="export-d" class="text-[13px] font-semibold text-accent hover:text-accentDark">
-            Export do Excelu
-          </button>
+          <div class="flex items-center gap-3">
+            <button id="d-reset" class="text-[13px] text-slate2 hover:text-ink">Zrušiť filtre</button>
+            <button id="export-d" class="text-[13px] font-semibold text-accent hover:text-accentDark">
+              Export do Excelu
+            </button>
+          </div>
         </div>
       </div>
 
@@ -1658,7 +1660,7 @@ function cislo(v) {
 // PostgREST oddeluje podmienky v `or` ciarkou a hviezdicka je zastupny znak.
 // Ked ich pouzivatel napise do hladania, dopyt by sa rozpadol.
 function ocisti(q) {
-  return String(q ?? '').replace(/[,*()]/g, ' ').replace(/\s+/g, ' ').trim();
+  return String(q ?? '').replace(/[,*()"\\]/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function naplnSelect(id, hodnoty, prvyText) {
@@ -2014,7 +2016,7 @@ function riadokDotacie(r, stavMap) {
           ${nova ? `<span class="align-middle ml-1 text-[10px] font-semibold px-1.5 py-0.5
                          rounded bg-emerald-50 text-emerald-800">NOVÁ</span>` : ''}
           ${r.vyplatene ? `<span class="align-middle ml-1 text-[10px] font-semibold px-1.5 py-0.5
-                         rounded bg-slate-100 text-slate-700"
+                         rounded bg-slate-100 text-slate2"
                          title="Pôdohospodárska platobná agentúra túto dotáciu už vyplatila${r.vyplatene_fy ? ' (' + bezpecne(r.vyplatene_fy) + ')' : ''}. Platí až po zrealizovaní projektu, takže obstarávanie už prebehlo.">VYPLATENÁ – PROJEKT HOTOVÝ</span>` : ''}
         </div>
         <div class="text-[12px] text-slate2 mt-1">${bezpecne(r.poskytovatel)}${r.strany_vymenene
@@ -2569,6 +2571,13 @@ function otvorPredplatneModal(supabase, aktualnyPlan) {
   // Poradca), neznačkovať nijakú možnosť ako predvolenú — inak to
   // vyzeralo, akoby mal zákazník vybraný Start.
   let predvolene = PREDPLATNE_PLANY.findIndex(p => p.plan === aktualnyPlan);
+  // Audit 8. 10. 2026 (V1): pri skúške (plán 'trial') alebo bez plánu nebola
+  // predvolená žiadna možnosť a "Zaplatiť" potichu nerobilo nič — práve na
+  // hlavnej ceste skúška -> platba. Predvolíme Growth mesačne. Team/Poradca
+  // zámerne ostávajú bez predvolenej možnosti (viď vyššie).
+  if (predvolene < 0 && !['team', 'poradca', 'admin'].includes(aktualnyPlan)) {
+    predvolene = PREDPLATNE_PLANY.findIndex(p => p.plan === 'growth' && p.obdobie === 'mesiac');
+  }
   const nazovPlanu = (window.PLANY?.plany || {})[aktualnyPlan]?.nazov;
   el('modal-predplatne-aktualny').textContent = nazovPlanu ? `Váš plán: ${nazovPlanu}` : '';
   zoznam.innerHTML = PREDPLATNE_PLANY.map((p, i) => `
@@ -2594,9 +2603,13 @@ function otvorPredplatneModal(supabase, aktualnyPlan) {
 
   btn.onclick = async () => {
     const zvolene = document.querySelector('input[name="predplatne-volba"]:checked')?.value;
-    if (!zvolene) return;
-    const [plan, obdobie] = zvolene.split(':');
     const chyba = el('modal-predplatne-chyba');
+    if (!zvolene) {
+      chyba.textContent = 'Vyberte prosím plán a obdobie.';
+      chyba.classList.remove('hidden');
+      return;
+    }
+    const [plan, obdobie] = zvolene.split(':');
     chyba.classList.add('hidden');
     btn.disabled = true;
     btn.textContent = 'Presmerúvam na platbu…';
@@ -2605,7 +2618,12 @@ function otvorPredplatneModal(supabase, aktualnyPlan) {
       if (window.ptZaciatokPlatby) window.ptZaciatokPlatby(plan, obdobie);
       const { data, error } = await supabase.functions.invoke('stripe-checkout', { body: { plan, obdobie } });
       if (error || !data?.ok) {
-        const kod = data?.kod;
+        // Pri odpovedi mimo 2xx supabase-js vrati data = null a telo je v
+        // error.context (Response) — inak by sa konkretna hlaska nikdy neukazala.
+        let kod = data?.kod;
+        if (!kod && error?.context?.json) {
+          try { kod = (await error.context.json())?.kod; } catch { /* telo nie je JSON */ }
+        }
         chyba.textContent = PREDPLATNE_CHYBY[kod] || 'Platbu sa nepodarilo spustiť. Skúste to prosím znova.';
         chyba.classList.remove('hidden');
         btn.disabled = false;
@@ -4712,9 +4730,17 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     if (moje !== poziadavka.dotacie) return;
     if (error) {
       console.error(error);
-      el('pocet-dot').textContent = SPRAVA_NACITANIE;
+      // Audit 8. 10. 2026 (S8): pri chybe ostavala v tabulke stara sada riadkov,
+      // ktora vyzerala, akoby patrila k novemu filtru. Tabulku vyprazdnime.
+      posledne.dotacie = [];
+      el('riadky-d').innerHTML = '';
+      el('prazdny-dot').querySelector('p').textContent = SPRAVA_NACITANIE;
+      el('prazdny-dot').classList.remove('hidden');
+      skry('viac-d-obal');
+      el('pocet-dot').textContent = '';
       return;
     }
+    el('prazdny-dot').querySelector('p').textContent = 'Pre tieto filtre nemáme žiadny záznam.';
     posledne.dotacie = data ?? [];
     el('riadky-d').innerHTML = posledne.dotacie.map(x => riadokDotacie(x, stavPrilezitosti)).join('');
     el('prazdny-dot').classList.toggle('hidden', posledne.dotacie.length > 0);
@@ -5083,10 +5109,16 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // slubovalo styrikrat vac prilezitosti, nez zakaznik po otvoreni najde.
   const [pz, pd] = await Promise.all([
     supabase.from('opportunities').select('*', { count: 'exact', head: true }),
-    supabase.from('subsidies').select('*', { count: 'exact', head: true })
-      .gt('okno_od', oDni(0))
-      .eq('vyplatene', false)   // zhodne s predvolenym pohladom na zalozke
-      .gte('suma', 20000),
+    // Zhodne s predvolenym pohladom na zalozke: tie iste filtre ako
+    // filtreDotacii() (vratane "Moj vyber" a datumu podpisu), inak tab
+    // hlasi cislo za cele Slovensko, ked tabulka ukazuje menej.
+    sVyberom(
+      supabase.from('subsidies').select('*', { count: 'exact', head: true })
+        .gt('okno_od', oDni(0))
+        .eq('vyplatene', false)
+        .gte('suma', 20000)
+        .or(`podpisane.is.null,podpisane.lte.${oDni(0)}`),
+      { kraj: 'kraj', sektor: 'sektor_odhad', sektorAjPrazdny: true }, '', ''),
   ]);
 
   if (pz.error) {
@@ -5119,7 +5151,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   }
 
   el('pocet-z').textContent = `(${cislo(pz.count ?? 0)})`;
-  el('pocet-d').textContent = `(${cislo(pd.count ?? 0)})`;
+  el('pocet-d').textContent = pd.error ? '' : `(${cislo(pd.count ?? 0)})`;
 
   // Pocet v zalozke tretej vrstvy. Ked tabulka este neexistuje alebo
   // je prazdna, zalozka zostane bez cisla a nic sa nerozbije.
@@ -5237,6 +5269,19 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   }
   el('f-reset').addEventListener('click', reset);
   el('f-reset-2').addEventListener('click', reset);
+
+  // Zrusenie filtrov na zalozke Dotacie vracia PREDVOLENY pohlad (od 20 000 EUR,
+  // bez vyplatenych, tender este len pride), nie prazdny — rovnako ako reset()
+  // pri zmluvach.
+  el('d-reset').addEventListener('click', () => {
+    zobrazene.dotacie = LIMIT;
+    el('d-kraj').value = ''; el('d-sektor').value = ''; el('d-text').value = '';
+    el('d-radenie').value = 'nove';
+    el('d-stav').value = 'otvara';
+    el('d-min-suma').value = '20000';
+    el('d-skryt-vyplatene').checked = true;
+    nacitajDotacie();
+  });
 
   const prekresliD = pozdrz(odznova('dotacie', nacitajDotacie));
   for (const id of ['d-kraj', 'd-sektor', 'd-radenie', 'd-stav', 'd-min-suma', 'd-skryt-vyplatene']) {

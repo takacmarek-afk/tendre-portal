@@ -118,7 +118,7 @@ jobs:
           steps.obohat.outputs.zostava == 'true' &&
           steps.obohat.outputs.spracovanych != '0' &&
           github.event_name == 'workflow_dispatch' &&
-          inputs.nasucho != 'true'
+          !inputs.nasucho
         env:
           GH_TOKEN: ${{ github.token }}
           NEXT_LIMIT: ${{ inputs.limit }}
