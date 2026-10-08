@@ -314,7 +314,7 @@
       <p id="modal-predplatne-aktualny" class="text-[14px] font-semibold mb-2"></p>
       <div id="modal-predplatne-plany" class="space-y-2 mb-4"></div>
       <p class="text-[12px] leading-relaxed text-slate2 mb-4">
-        Ceny sú bez DPH (nie sme platcom DPH, DPH sa nepripočítava).
+        Ceny sú konečné (nie sme platcom DPH, DPH sa nepripočítava).
         Platba je jednorazová a predlží prístup o zvolené obdobie —
         predplatné sa neobnovuje automaticky. Pokračovaním súhlasíte s
         <a class="underline" href="/obchodne-podmienky" target="_blank" rel="noopener">obchodnými podmienkami</a>.
@@ -2540,8 +2540,8 @@ const PREDPLATNE_PLANY = ['start', 'growth'].flatMap(plan => {
   if (!p) return [];
   const eur = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0') + '\u00a0€';
   return [
-    { plan, obdobie: 'mesiac', label: p.nazov, cena: `${eur(p.mesiac)} / mesiac bez DPH` },
-    { plan, obdobie: 'rok',    label: p.nazov, cena: `${eur(p.rok)} / rok bez DPH` },
+    { plan, obdobie: 'mesiac', label: p.nazov, cena: `${eur(p.mesiac)} / mesiac` },
+    { plan, obdobie: 'rok',    label: p.nazov, cena: `${eur(p.rok)} / rok` },
   ];
 });
 
