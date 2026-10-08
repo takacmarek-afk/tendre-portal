@@ -1,0 +1,50 @@
+name: Register obci
+
+# Jednorazovo (a po zmene suborov v pipeline/data) naplni tabulku obce_register
+# vsetkymi obcami SR. Skript: pipeline/obce_register.py.
+# PRED SPUSTENIM musi byt v Supabase spustena migracia 73_register_obci.sql.
+
+on:
+  workflow_dispatch:
+    inputs:
+      nasucho:
+        description: "Nasucho - nic nezapisovat"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: obce-register
+  cancel-in-progress: false
+
+jobs:
+  register:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Naplnit obce_register
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NASUCHO: ${{ inputs.nasucho }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ "$NASUCHO" = "true" ]; then
+            ARGS+=(--nasucho)
+          fi
+          python obce_register.py "${ARGS[@]}"
