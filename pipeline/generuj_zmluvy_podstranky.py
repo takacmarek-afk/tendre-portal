@@ -333,6 +333,13 @@ def _vygeneruj_index_sektora(sector, agregaty):
   <div class="mt-8 grid sm:grid-cols-2 gap-3">
 {polozky}
   </div>
+  <div class="mt-8 rounded-lg border border-dashed border-line bg-[#F3F0E6] p-5 text-center">
+    <p class="text-[14px] text-slate2">Zoznam konkrétnych zmlúv, odhad termínu tendra a upozornenia vo vašom kraji a sektore.</p>
+    <a href="/prihlasenie?utm_source=seo_{sektor_info['slug']}_index&utm_medium=organic&utm_campaign=programmatic_seo"
+       class="mt-3 inline-block rounded-md bg-accent text-white text-[13px] font-medium px-4 py-2 hover:bg-accentDark">
+      Vyskúšať 14 dní zadarmo, bez karty
+    </a>
+  </div>
 </section>
 """
     return (
