@@ -3889,6 +3889,13 @@ function nastavDnes(supabase, ctx) {
       })));
       return vysl;
     }),
+    obrana: () => sp('obrana', async () => {
+      if (!ctx.jePro) return { zamknute: true };
+      // Zmluvy vedene na ICO organizacie (z registracie); RPC z migracie 78.
+      const { data: d, error } = await supabase.rpc('obrana_moje_zmluvy');
+      if (error) throw error;
+      return { zmluvy: d ?? [] };
+    }),
     konkurenti: () => sp('konkurenti', async () => {
       const sl = await ZDROJE.sledovane();
       if (sl.zamknute) return { zamknute: true };
@@ -4023,6 +4030,31 @@ function nastavDnes(supabase, ctx) {
           `;
       },
     },
+    obrana: {
+      zdroje: [ZDROJE.obrana],
+      vykresli: ([o]) => {
+        if (o.zamknute) return zamknutyNahlad('Obrana vlastných zmlúv je súčasťou plánu Growth a vyššie.');
+        if (!o.zmluvy.length) {
+          return prazdnyStav('Nenašli sme zmluvu vedenú na IČO vašej organizácie, ktorá by končila do 12 mesiacov. IČO si môžete doplniť v nastaveniach organizácie.');
+        }
+        return `<ol class="list-none m-0 p-0">${o.zmluvy.map(z => {
+          const ponuky = z.pocet_ponuk_naposledy != null
+            ? ` · v poslednej súťaži úradu bolo ${bezpecne(String(z.pocet_ponuk_naposledy))} ${tvar(z.pocet_ponuk_naposledy, 'ponuka', 'ponuky', 'ponúk')}` : '';
+          const vyzva = z.vyzva_nazov
+            ? `<p class="text-[12px] text-ink mt-1 font-medium">Úrad vyhlásil súťaž: ${z.vyzva_url && /^https?:\/\//.test(z.vyzva_url)
+                ? `<a class="text-accent hover:underline" href="${bezpecne(z.vyzva_url)}" target="_blank" rel="noopener noreferrer">${bezpecne(z.vyzva_nazov)}</a>`
+                : bezpecne(z.vyzva_nazov)}${z.vyzva_lehota ? ' (ponuky do ' + bezpecne(dSk(String(z.vyzva_lehota).slice(0, 10))) + ')' : ''}</p>`
+            : (z.odhad_vyhlasenia ? `<p class="text-[12px] text-slate2 mt-1">Odhad vyhlásenia tendra: ${bezpecne(dSk(z.odhad_vyhlasenia))}</p>` : '');
+          return `
+          <li class="dnes-polozka">
+            <p class="text-[13px] font-semibold text-ink">${bezpecne(z.authority_name) || '—'}</p>
+            <p class="text-[14px] leading-snug mt-0.5">${bezpecne(z.subject) || '(bez predmetu)'}</p>
+            <p class="text-[12px] text-slate2 mt-1">Končí ${bezpecne(dSk(z.effective_to))} · ${bezpecne(suma(z.price_total))}${ponuky}</p>
+            ${vyzva}
+          </li>`; }).join('')}</ol>
+          <p class="text-[11px] text-slate2 mt-2">Súťaž v rovnakom sektore môže byť nástupcom vašej zmluvy, istotu nemáme.</p>`;
+      },
+    },
     konkurenti: {
       zdroje: [ZDROJE.konkurenti],
       vykresli: ([k]) => {
@@ -4108,6 +4140,9 @@ function nastavDnes(supabase, ctx) {
       <div class="dnes-stlpce">
         ${karta('konkurenti', 'Vaši konkurenti', 'Najnovšie zmluvy sledovaných firiem')}
         ${karta('crm', 'Moje príležitosti', 'Stav príležitostí, ktoré ste označili')}
+      </div>
+      <div class="dnes-stlpce">
+        ${karta('obrana', 'Vaše zmluvy', 'Vaše zmluvy, ktoré končia do 12 mesiacov')}
       </div>
       <p class="text-[12px] leading-relaxed text-slate2 max-w-3xl">
         Zdroje údajov, oznámenie o úpravách a podmienky použitia nájdete v
