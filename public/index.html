@@ -5,17 +5,17 @@
 <script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="google-site-verification" content="JiYXwFxwzzNJjR7gFvfzr-L7-KpIeCqXCXbNz6jz2fI" />
-<title>PredTendrom.sk — vieme o zákazke skôr, než sa vyhlási</title>
-<meta name="description" content="Sledujeme končiace zmluvy úradov a dotácie, ktoré obce už dostali. Vidíte tender mesiace pred tým, než sa vyhlási. Dáta z Centrálneho registra zmlúv.">
+<title>PredTendrom.sk — končiace zmluvy úradov a dotácie obcí</title>
+<meta name="description" content="Vidíte, ktorým úradom končia zmluvy vo vašom odbore, aké dotácie obce podpísali a ktoré si najali projektanta. Dáta z Centrálneho registra zmlúv. 14 dní zadarmo.">
 <link rel="canonical" href="https://predtendrom.sk/">
-<meta property="og:title" content="Vieme o zákazke skôr, než sa vyhlási">
-<meta property="og:description" content="Končiace zmluvy úradov a dotácie obcí. Tender vidíte mesiace pred vyhlásením.">
+<meta property="og:title" content="Končiace zmluvy úradov a dotácie obcí">
+<meta property="og:description" content="Zistite, ktorým úradom končia zmluvy vo vašom odbore. Dáta z Centrálneho registra zmlúv.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://predtendrom.sk/">
 <meta property="og:locale" content="sk_SK">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Vieme o zákazke skôr, než sa vyhlási">
-<meta name="twitter:description" content="Končiace zmluvy úradov a dotácie obcí. Tender vidíte mesiace pred vyhlásením.">
+<meta name="twitter:title" content="Končiace zmluvy úradov a dotácie obcí">
+<meta name="twitter:description" content="Zistite, ktorým úradom končia zmluvy vo vašom odbore. Dáta z Centrálneho registra zmlúv.">
 <!-- og-image.png (audit 19.9.2026, doplnené 21.9.2026): 1200×630, vyrobene
      priamo z realnych brand fontov (Instrument Serif Regular+Italic,
      stiahnute z github.com/google/fonts — Google Fonts CDN samotny z tejto
@@ -175,8 +175,8 @@
       </div>
 
       <h1 class="font-serif text-[34px] leading-[1.18] md:text-[50px] md:leading-[1.14] text-paper">
-        O tendri viete až vo Vestníku.<br class="hidden md:block">
-        <em class="italic text-amber">My vám ho ukážeme mesiace až roky skôr.</em>
+        Ktorému úradu končí zmluva vo vašom odbore?<br class="hidden md:block">
+        <em class="italic text-amber">Vidíte to mesiace vopred, nie až vo Vestníku.</em>
       </h1>
 
       <!-- "228 000+" je overena hodnota verejne_pocty.zmluv (17.9.2026:
@@ -185,9 +185,10 @@
            dotiahne na presnu zivu hodnotu, rovnaky zdroj ako #p-zmluv. -->
       <p class="mt-7 text-[17px] md:text-[18px] leading-relaxed text-[#ADA795] max-w-lg">
         PredTendrom sleduje <span id="hero-zmluv" class="font-mono text-paper">228&nbsp;000+</span>
-        zmlúv v štáte a obciach a nájde tender skôr, ako ho niekto vyhlási —
-        z končiacich zmlúv, podpísaných dotácií a obcí, ktoré si práve najali
-        projektanta.
+        zmlúv v štáte a obciach a ukazuje, ktoré z nich končia, aké dotácie
+        obce podpísali a ktoré si práve najali projektanta. Všetko s dátumom
+        z verejných záznamov. Tendre nepredpovedáme, ukazujeme, kde sa o nich
+        dá začať rozprávať skôr.
       </p>
 
       <div class="mt-9 flex flex-wrap items-center gap-6">
@@ -209,38 +210,44 @@
 
     <div class="bg-[#111A2C] border border-white/10 rounded-xl p-6">
       <div class="flex items-center justify-between pb-4">
-        <span class="text-[12px] tracking-wide text-[#8B8574] font-mono uppercase">Príklad feedu</span>
-        <span class="text-[11px] text-[#8B8574] font-mono flex items-center gap-1.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-[#8B8574]"></span> príklad
+        <span class="text-[12px] tracking-wide text-[#8B8574] font-mono uppercase">Ukážka z našich dát</span>
+        <span class="text-[11px] text-[#4FD1C5] font-mono flex items-center gap-1.5">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#4FD1C5]"></span> reálne záznamy
         </span>
       </div>
       <div class="divide-y divide-white/5">
         <div class="flex items-center gap-3 py-3">
           <span class="w-2 h-2 rounded-full bg-amber shrink-0"></span>
-          <span class="font-mono text-[12px] text-[#ADA795] w-24 shrink-0">pred 14 dňami</span>
-          <span class="text-[13px] text-paper flex-1">Mesto A &mdash; zmluva na upratovanie končí o 3 mesiace</span>
-          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Trnavský kraj</span>
-        </div>
-        <div class="flex items-center gap-3 py-3">
-          <span class="w-2 h-2 rounded-full bg-[#4FD1C5] shrink-0"></span>
-          <span class="font-mono text-[12px] text-[#ADA795] w-24 shrink-0">pred 2 dňami</span>
-          <span class="text-[13px] text-paper flex-1">Mesto B &mdash; podpísalo dotáciu na materskú školu</span>
-          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Žilinský kraj</span>
+          <span class="font-mono text-[12px] text-[#ADA795] w-28 shrink-0">do 31. 12. 2026</span>
+          <span class="text-[13px] text-paper flex-1"><a href="https://www.crz.gov.sk/zmluva/12025195/" target="_blank" rel="noopener" class="underline underline-offset-2 decoration-white/30 hover:text-amber">Mesto Nitra</a> &mdash; údržba verejnej zelene, lokalita 11 (56&nbsp;389&nbsp;€)</span>
+          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Zelená údržba</span>
         </div>
         <div class="flex items-center gap-3 py-3">
           <span class="w-2 h-2 rounded-full bg-amber shrink-0"></span>
-          <span class="font-mono text-[12px] text-[#ADA795] w-24 shrink-0">pred 9 dňami</span>
-          <span class="text-[13px] text-paper flex-1">Mesto C &mdash; zmluva na stravovanie končí o 5 mesiacov</span>
-          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Nitriansky kraj</span>
+          <span class="font-mono text-[12px] text-[#ADA795] w-28 shrink-0">do 31. 12. 2026</span>
+          <span class="text-[13px] text-paper flex-1"><a href="https://www.crz.gov.sk/zmluva/8747444/" target="_blank" rel="noopener" class="underline underline-offset-2 decoration-white/30 hover:text-amber">Úrad práce, sociálnych vecí a rodiny Dolný Kubín</a> &mdash; bezpečnostná služba (35&nbsp;308&nbsp;€)</span>
+          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Ostraha</span>
+        </div>
+        <div class="flex items-center gap-3 py-3">
+          <span class="w-2 h-2 rounded-full bg-amber shrink-0"></span>
+          <span class="font-mono text-[12px] text-[#ADA795] w-28 shrink-0">do 11. 2. 2027</span>
+          <span class="text-[13px] text-paper flex-1"><a href="https://www.crz.gov.sk/zmluva/10407975/" target="_blank" rel="noopener" class="underline underline-offset-2 decoration-white/30 hover:text-amber">Univerzita Pavla Jozefa Šafárika v Košiciach</a> &mdash; deratizácia, dezinfekcia, dezinsekcia (59&nbsp;330&nbsp;€)</span>
+          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Služby</span>
+        </div>
+        <div class="flex items-center gap-3 py-3">
+          <span class="w-2 h-2 rounded-full bg-amber shrink-0"></span>
+          <span class="font-mono text-[12px] text-[#ADA795] w-28 shrink-0">do 31. 3. 2027</span>
+          <span class="text-[13px] text-paper flex-1"><a href="https://www.crz.gov.sk/zmluva/12866519/" target="_blank" rel="noopener" class="underline underline-offset-2 decoration-white/30 hover:text-amber">Nemocnica pre obvinených a odsúdených, Trenčín</a> &mdash; rámcová dohoda na pekárske výrobky (22&nbsp;601&nbsp;€)</span>
+          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Stravovanie</span>
         </div>
         <div class="flex items-center gap-3 py-3">
           <span class="w-2 h-2 rounded-full bg-[#4FD1C5] shrink-0"></span>
-          <span class="font-mono text-[12px] text-[#ADA795] w-24 shrink-0">pred 21 dňami</span>
-          <span class="text-[13px] text-paper flex-1">Obec D &mdash; najala projektanta na žiadosť o dotáciu</span>
-          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Prešovský kraj</span>
+          <span class="font-mono text-[12px] text-[#ADA795] w-28 shrink-0">19. 9. 2025</span>
+          <span class="text-[13px] text-paper flex-1"><a href="https://www.crz.gov.sk/zmluva/11332551/" target="_blank" rel="noopener" class="underline underline-offset-2 decoration-white/30 hover:text-amber">Obec Seňa</a> &mdash; najala poradenskú firmu na žiadosť o dotáciu</span>
+          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Dotácia</span>
         </div>
       </div>
-      <div class="pt-3 font-mono text-[10px] text-[#55503F]">Ilustračný príklad, nie živé dáta</div>
+      <div class="pt-3 font-mono text-[10px] leading-snug text-[#8B8574]">Záznamy z Centrálneho registra zmlúv (stav 13. 10. 2026), každý odkazuje na pôvodnú zmluvu. Dátum konca je podľa zmluvy; ak ho úrad predĺži dodatkom, nemusí platiť.</div>
     </div>
 
   </div>
@@ -264,7 +271,7 @@
     </div>
     <div>
       <div class="font-mono text-[28px] font-bold tracking-tight">8 krajov</div>
-      <div class="text-[13px] text-slate2 mt-1 leading-snug">filtrujete si svoj región a sektor</div>
+      <div class="text-[13px] text-slate2 mt-1 leading-snug">zmluvy z celého Slovenska, filtrujete región a sektor</div>
     </div>
     <div>
       <div class="font-mono text-[28px] font-bold tracking-tight">14 dní</div>
@@ -300,7 +307,7 @@
         nie pri jej konci.
       </p>
       <div class="mt-6 pt-5 border-t border-line">
-        <div class="text-[13px] text-slate2">Predstih</div>
+        <div class="text-[13px] text-slate2">Odstup do konca zmluvy</div>
         <div class="text-[17px] font-semibold mt-0.5">3 až 12 mesiacov</div>
         <div class="text-[12px] text-slate2 mt-1.5">
           Zmluvy končiace skôr zobrazujeme tiež, ale označené &mdash; pri nich
@@ -320,11 +327,11 @@
         vyhlásiť verejné obstarávanie a má na to termín.
       </p>
       <p class="mt-4 text-[15px] leading-relaxed text-slate2">
-        Tieto zmluvy sú verejné od prvého dňa. Tender z nich vzniká
-        až o pol roka a viac.
+        Tieto zmluvy sú verejné od prvého dňa. Obstarávanie z nich
+        zvyčajne nasleduje, kedy presne, záleží od harmonogramu projektu.
       </p>
       <div class="mt-6 pt-5 border-t border-line">
-        <div class="text-[13px] text-slate2">Predstih</div>
+        <div class="text-[13px] text-slate2">Odhadovaný odstup (nemeraný)</div>
         <div class="text-[17px] font-semibold mt-0.5">6 až 18 mesiacov</div>
       </div>
     </div>
@@ -350,9 +357,11 @@
         od prvého dňa.
       </p>
       <p class="mt-4 text-[15px] leading-relaxed text-slate2">
-        Zo 101 obcí, ktoré si takú firmu najali, dotáciu potom dostalo
-        <strong class="text-ink font-semibold">69 %</strong>. Medián odstupu
-        bol 382 dní. Potom ešte príde obstarávanie.
+        Zo 101 obcí, ktoré si takú firmu najali a ktoré sme v registri
+        dohľadali, dotáciu potom dostalo
+        <strong class="text-ink font-semibold">69 %</strong>, s mediánom
+        odstupu 382 dní. Nie je to predpoveď: nemáme porovnanie s obcami, ktoré
+        si poradcu nenajali, preto to berte ako pozorovanie z našich dát.
       </p>
       <!-- Audit 18.9.2026: chyba "aspon jeden mikro-dokaz" — namiesto cisla
            o poctoch uctov (dnes 0 realnych zakaznikov, take cislo by skodilo)
@@ -368,12 +377,12 @@
         dostala od Ministerstva financií SR dotáciu 33&nbsp;000&nbsp;€.
       </p>
       <div class="mt-6 pt-5 border-t border-line">
-        <div class="text-[13px] text-slate2">Predstih</div>
-        <div class="text-[17px] font-semibold mt-0.5">1,5 až 2,5 roka</div>
+        <div class="text-[13px] text-slate2">Odstup od najatia poradcu po dotáciu</div>
+        <div class="text-[17px] font-semibold mt-0.5">medián 382 dní</div>
         <div class="text-[12px] text-slate2 mt-1.5">
-          Pri takom predstihu máte čas pripraviť si referencie, kapacity
-          a cenu. Keď sa súťaž vyhlási, ste pripravení medzi prvými &mdash;
-          férovo a v otvorenej súťaži.
+          Za ten čas si môžete pripraviť referencie, kapacity a cenu.
+          Keď sa súťaž vyhlási, nezačínate od nuly &mdash; a súťaž je
+          aj tak otvorená pre všetkých.
         </div>
       </div>
     </div>
@@ -404,45 +413,91 @@
       tri zdroje na jednom mieste — končiace zmluvy, podpísané dotácie a
       obce, ktoré si práve najali projektanta — a ukazuje ich s dátumom, ktorý
       je vo verejných záznamoch. Nepredpovedáme, že tender vznikne, ukazujeme,
-      kde sa o ňom dá začať rozprávať skôr. Naša cena sa pohybuje v strede
-      tohto rozpätia.
+      kde sa o ňom dá začať rozprávať skôr. Náš najlacnejší plán je drahší
+      než jednoduché monitory vyhlásených tendrov, lebo platíte za iný druh
+      údajov, nie za rýchlosť oznámenia.
     </p>
     <div id="porovnanie-scroll" class="mt-8 overflow-x-auto">
       <table class="w-full text-[14px] border-collapse min-w-[560px]">
         <thead>
           <tr class="text-left text-slate2 border-b border-line">
-            <th class="py-2 pr-4 font-medium">Typ nástroja na trhu</th>
+            <th class="py-2 pr-4 font-medium">Nástroj</th>
             <th class="py-2 pr-4 font-medium">Cena</th>
-            <th class="py-2 font-medium">Predstih</th>
+            <th class="py-2 font-medium">Čo sleduje</th>
           </tr>
         </thead>
         <tbody class="text-ink">
           <tr class="border-b border-line/60">
-            <td class="py-2.5 pr-4">Jednoduché registre obstarávaní</td>
-            <td class="py-2.5 pr-4">20–80 €/rok</td>
-            <td class="py-2.5">Vyhlásené obstarávania</td>
+            <td class="py-2.5 pr-4">TenderMonitor</td>
+            <td class="py-2.5 pr-4">4,99&nbsp;€/mes.</td>
+            <td class="py-2.5">Vyhlásené tendre z viacerých zdrojov, e-mailové upozornenia</td>
           </tr>
           <tr class="border-b border-line/60">
-            <td class="py-2.5 pr-4">Mesačné sledovanie tendrov</td>
-            <td class="py-2.5 pr-4">20 €/mes.</td>
-            <td class="py-2.5">Vyhlásené tendre</td>
+            <td class="py-2.5 pr-4">UVOstat</td>
+            <td class="py-2.5 pr-4">20 / 40 / 80&nbsp;€/rok</td>
+            <td class="py-2.5">Štatistiky a zoznamy obstarávaní od roku 2014</td>
           </tr>
           <tr class="border-b border-line/60">
-            <td class="py-2.5 pr-4 font-semibold">PredTendrom.sk</td>
-            <td class="py-2.5 pr-4 font-semibold">34–89 €/mes., konečná cena</td>
-            <td class="py-2.5 font-semibold">3 mesiace až 2,5 roka vopred</td>
+            <td class="py-2.5 pr-4">TenderRadar</td>
+            <td class="py-2.5 pr-4">19,90&nbsp;€/mes. alebo 199&nbsp;€/rok</td>
+            <td class="py-2.5">Vyhlásené tendre, okamžité upozornenia</td>
+          </tr>
+          <tr class="border-b border-line/60">
+            <td class="py-2.5 pr-4">Tender.sk</td>
+            <td class="py-2.5 pr-4">cena nie je zverejnená</td>
+            <td class="py-2.5">Vyhlásené tendre, plány obstarávania, očakávané zákazky (končiace zmluvy), AI zhrnutie</td>
+          </tr>
+          <tr class="border-b border-line/60">
+            <td class="py-2.5 pr-4">Transpera</td>
+            <td class="py-2.5 pr-4">640 až 1&nbsp;992&nbsp;€/rok</td>
+            <td class="py-2.5">Viac ako 10 zdrojov, AI prioritizácia</td>
           </tr>
           <tr>
-            <td class="py-2.5 pr-4">Prémiový AI monitoring</td>
-            <td class="py-2.5 pr-4">640–1&nbsp;992 €/rok</td>
-            <td class="py-2.5">Tesne pred vyhlásením alebo podpisom</td>
+            <td class="py-2.5 pr-4 font-semibold">PredTendrom.sk</td>
+            <td class="py-2.5 pr-4 font-semibold">34 až 89&nbsp;€/mes., konečná cena</td>
+            <td class="py-2.5 font-semibold">Končiace zmluvy, podpísané dotácie, obce, ktoré si najali projektanta</td>
           </tr>
         </tbody>
       </table>
     </div>
-    <p class="mt-4 text-[12px] text-slate2">Ceny porovnateľných nástrojov na trhu overené v septembri 2026, verejné cenníky.</p>
+    <p class="mt-4 text-[12px] text-slate2">Overené 13. októbra 2026 z verejných cenníkov a webov uvedených nástrojov; ceny konkurentov sú bez DPH, naše sú konečné (nie sme platcami DPH). Funkcie sa menia &mdash; ak niečo nesedí, napíšte nám a opravíme to.</p>
     <a href="./cennik.html" class="mt-6 inline-flex items-center gap-1.5 text-[14px] font-semibold text-accent hover:text-accentDark transition">
       Pozrieť celý cenník &rarr;
+    </a>
+  </div>
+</section>
+
+<!-- ══════════════ CENY NA JEDNOM MIESTE (audit 13.10.2026) ══════════════ -->
+<section class="bg-paper">
+  <div class="wrap py-16 md:py-20">
+    <h2 class="font-serif text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
+      Tri plány, konečné ceny
+    </h2>
+    <p class="mt-4 text-[16px] leading-relaxed text-slate2 max-w-2xl">
+      Každý účet má prvých 14 dní zadarmo, bez platobnej karty. Nie sme platcami DPH, cena je konečná.
+    </p>
+    <div class="mt-8 grid md:grid-cols-3 gap-6 items-stretch">
+      <div class="border border-line rounded-lg p-7 bg-white flex flex-col">
+        <h3 class="text-[19px] font-semibold">Start</h3>
+        <p class="mt-1 text-[14px] text-slate2 flex-1">Pre mikro a malé firmy s jedným obchodníkom. 2 kraje a 2 sektory.</p>
+        <div class="mt-5"><span class="font-serif text-[34px] font-bold">34&nbsp;€</span> <span class="text-[14px] text-slate2">/ mesiac</span></div>
+        <div class="text-[12px] text-slate2">alebo 340&nbsp;€ ročne</div>
+      </div>
+      <div class="border-2 border-ink rounded-lg p-7 bg-white flex flex-col">
+        <h3 class="text-[19px] font-semibold">Growth</h3>
+        <p class="mt-1 text-[14px] text-slate2 flex-1">Pre firmy so 6 až 50 zamestnancami a vlastným obchodom. Celé Slovensko, všetky sektory, sledovanie firiem podľa IČO.</p>
+        <div class="mt-5"><span class="font-serif text-[34px] font-bold">89&nbsp;€</span> <span class="text-[14px] text-slate2">/ mesiac</span></div>
+        <div class="text-[12px] text-slate2">alebo 890&nbsp;€ ročne</div>
+      </div>
+      <div class="border border-line rounded-lg p-7 bg-white flex flex-col">
+        <h3 class="text-[19px] font-semibold">Team</h3>
+        <p class="mt-1 text-[14px] text-slate2 flex-1">Pre firmy s obchodným tímom alebo viacerými pobočkami. Cena Growth plus každý ďalší používateľ.</p>
+        <div class="mt-5"><span class="font-serif text-[34px] font-bold">89&nbsp;€</span> <span class="text-[14px] text-slate2">+ 29&nbsp;€ za osobu</span></div>
+        <div class="text-[12px] text-slate2">na dopyt, e-mailom</div>
+      </div>
+    </div>
+    <a href="./cennik.html" class="mt-6 inline-flex items-center gap-1.5 text-[14px] font-semibold text-accent hover:text-accentDark transition">
+      Celý cenník a zakladajúca ponuka &rarr;
     </a>
   </div>
 </section>
@@ -811,7 +866,7 @@
         <h2 class="mt-1 font-serif text-[28px] text-ink">Marek Takáč</h2>
         <p class="mt-2 text-[15px] leading-relaxed text-slate2">
           Staviam PredTendrom.sk ako nástroj, ktorý by som ako dodávateľ sám
-          potreboval &mdash; nie ďalší dashboard, ale skutočný predstih pred tendrom.
+          potreboval &mdash; nie ďalší dashboard, ale prehľad toho, čo úradom končí, skôr než to vyhlásia.
         </p>
         <div class="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-3">
           <a href="tel:+421905438454"

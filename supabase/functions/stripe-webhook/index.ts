@@ -30,6 +30,8 @@
 //              checkout.session.async_payment_succeeded
 //              checkout.session.async_payment_failed
 //              checkout.session.expired
+//              charge.refunded          (refund -> zapis do events, 79_refundy_a_spory.sql)
+//              charge.dispute.created   (spor u banky -> zapis do events)
 //  Signing secret, ktory tam Stripe ukaze po vytvoreni endpointu, skopiruj
 //  do STRIPE_WEBHOOK_SECRET (supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...).
 // =============================================================================
@@ -99,6 +101,34 @@ Deno.serve(async (req) => {
   }
 
   const typ: string = udalost?.type ?? "";
+
+  // Refund a spor (79_refundy_a_spory.sql). Nesu len payment_intent, nie nasu
+  // referenciu, preto sa sparuju cez platby.payment_intent. Predplatne sa
+  // nevypina automaticky: zapise sa udalost a ty rozhodnes.
+  if (typ === "charge.refunded" || typ === "charge.dispute.created") {
+    const obj = udalost?.data?.object;
+    const paymentIntent: string | undefined = obj?.payment_intent;
+    const sumaMinor: number = typ === "charge.refunded" ? (obj?.amount_refunded ?? 0) : (obj?.amount ?? 0);
+    const plna: boolean = typ === "charge.refunded" ? obj?.refunded === true : true;
+    if (!paymentIntent) return new Response("OK (bez payment_intent)", { status: 200 });
+
+    const sbRefund = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const { data: dRefund, error: eRefund } = await sbRefund.rpc("spracuj_refund_stripe", {
+      p_payment_intent: paymentIntent,
+      p_udalost: typ,
+      p_suma: sumaMinor / 100,
+      p_plna: plna,
+    });
+    if (eRefund) {
+      console.error("spracuj_refund_stripe zlyhalo:", eRefund);
+      return new Response("Chyba spracovania", { status: 500 });
+    }
+    console.log("stripe-webhook refund/spor:", dRefund);
+    return new Response("OK", { status: 200 });
+  }
   const NAS_STAV: Record<string, "zaplatena" | "zamietnuta"> = {
     "checkout.session.completed": "zaplatena",
     "checkout.session.async_payment_succeeded": "zaplatena",
@@ -141,6 +171,16 @@ Deno.serve(async (req) => {
   if (error) {
     console.error("spracuj_platbu_stripe zlyhalo:", error);
     return new Response("Chyba spracovania", { status: 500 });
+  }
+
+  // Uloz payment_intent, aby sa neskorsi refund/spor dal sparovat s platbou.
+  // Chyba tu platbu nezastavi (aktivacia uz prebehla).
+  if (stav === "zaplatena" && session?.payment_intent) {
+    const { error: ePi } = await sbServis.rpc("zapis_payment_intent", {
+      p_reference: referencia,
+      p_payment_intent: session.payment_intent,
+    });
+    if (ePi) console.error("zapis_payment_intent zlyhalo:", ePi);
   }
 
   console.log("stripe-webhook spracovane:", data);
