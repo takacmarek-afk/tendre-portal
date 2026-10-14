@@ -7,6 +7,7 @@
 //     typ = "kontrola_ico"    (kontrola.html)-> RPC kontrola_zmluv_ico (vlna 84;
 //                                od migracie 69 ju anon priamo volat nemoze)
 //     typ = "profil_obstaravatela" (obstaravatel.html) -> RPC profil_obstaravatela (migracia 70)
+//     typ = "odber_firmy"    (index.html)    -> tyzdenny prehlad pre firmy, double opt-in (migracia 81)
 //     typ = "ukazka_zmluv"   (index.html)    -> RPC ukazka_koncich_zmluv (migracia 80;
 //                                3 konciace zmluvy pre vybrany odbor a kraj, bez registracie)
 //
@@ -111,6 +112,39 @@ export function htmlEmailu(odkaz: string): string {
     </td></tr>
   </table>
 </td></tr></table></body></html>`;
+}
+
+// ── E-mail pre odber prehladu firiem (migracia 81) ─────────────────────────
+export function odkazPotvrdeniaFirmy(token: string): string {
+  return `https://predtendrom.sk/odber-firmy?t=${encodeURIComponent(token)}&akcia=potvrdit`;
+}
+
+export const PREDMET_FIRMY = "Potvrďte týždenný prehľad končiacich zmlúv — PredTendrom.sk";
+
+export function textEmailuFirmy(odkaz: string): string {
+  return "Dobrý deň,\n\n" +
+    "niekto (pravdepodobne Vy) zadal túto adresu na predtendrom.sk a požiadal o týždenný " +
+    "prehľad končiacich zmlúv úradov v odbore a kraji, ktoré vybral.\n\n" +
+    `Ak ste to boli Vy, potvrďte súhlas: ${odkaz}\n\n` +
+    "Po potvrdení Vám pošleme prvý prehľad a v nasledujúcich týždňoch ďalšie. " +
+    "Odhlásiť sa môžete kedykoľvek jedným kliknutím v každom e-maile.\n\n" +
+    "Ak ste to nezadali Vy, nič nerobte — e-maily Vám posielať nebudeme.\n\n" +
+    "PredTendrom.sk, LoveHome s.r.o., Černyševského 40, 851 01 Bratislava\n";
+}
+
+export function htmlEmailuFirmy(odkaz: string): string {
+  const uvod = "Dobrý deň, niekto (pravdepodobne Vy) zadal túto adresu na predtendrom.sk a požiadal " +
+    "o týždenný prehľad končiacich zmlúv úradov v odbore a kraji, ktoré vybral. " +
+    "Ak ste to boli Vy, potvrďte súhlas kliknutím na tlačidlo nižšie. " +
+    "Po potvrdení Vám pošleme prvý prehľad a v nasledujúcich týždňoch ďalšie; " +
+    "odhlásiť sa môžete kedykoľvek jedným kliknutím v každom e-maile.";
+  return htmlEmailu(odkaz)
+    .replace("Potvrďte odber prehľadov pre obce", "Potvrďte týždenný prehľad končiacich zmlúv")
+    .replace(
+      /<div style="font:14px\/1\.6 Arial,sans-serif;color:#5a6472;margin-top:8px;">[\s\S]*?<\/div>/,
+      `<div style="font:14px/1.6 Arial,sans-serif;color:#5a6472;margin-top:8px;">${bezpecne(uvod)}</div>`,
+    )
+    .replace(">\n        Potvrdiť odber</a>", ">\n        Potvrdiť súhlas</a>");
 }
 
 // ── Pomocne volania ─────────────────────────────────────────────────────────
@@ -237,6 +271,55 @@ async function odberObce(c: Ctx, d: Record<string, unknown>): Promise<Response> 
   return json({ ok: true });
 }
 
+// Tyzdenny prehlad pre firmy (migracia 81, double opt-in). Odpoved je vzdy rovnaka,
+// nezistuje sa, ci adresa uz v zozname je. Potvrdzovaci e-mail dostane len ten, kto
+// riadok atomicky "zabral" (max. 3 pokusy, nie casteje nez raz za 10 minut).
+async function odberFirmy(c: Ctx, d: Record<string, unknown>): Promise<Response> {
+  const email = String(d.email ?? "").trim();
+  const sektor = retazec(d.sektor, 40);
+  const kraj = retazec(d.kraj, 80);
+  if (email.length < 5 || email.length > 254 || !EMAIL_RE.test(email) ||
+      !sektor || !/^[A-Z_]{3,40}$/.test(sektor)) {
+    return json({ ok: false, kod: "NEPLATNE" });
+  }
+  if (d.suhlas !== true) return json({ ok: false, kod: "NEPLATNE" });
+  const zdroj = retazec(d.zdroj, 80) ?? "index-ukazka";
+  try {
+    await rpc(c, "prihlas_odber_firmy", { p_email: email, p_sektor: sektor, p_kraj: kraj, p_zdroj: zdroj });
+    const riadky = await rpc(c, "zaber_potvrdenie_firmy", { p_email: email }) as
+      Array<{ id: number; email: string; token: string }> | null;
+    if (c.resend && Array.isArray(riadky)) {
+      for (const r of riadky) {
+        const komu = String(r.email ?? "").trim();
+        if (!r.token || !EMAIL_RE.test(komu)) continue;
+        const odkaz = odkazPotvrdeniaFirmy(String(r.token));
+        let poslane = false;
+        try {
+          const rs = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${c.resend}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              from: c.od, to: [komu], reply_to: "info@predtendrom.sk", subject: PREDMET_FIRMY,
+              html: htmlEmailuFirmy(odkaz), text: textEmailuFirmy(odkaz),
+            }),
+          });
+          poslane = rs.status === 200 || rs.status === 201;
+          if (!poslane) console.error("verejny-formular: Resend HTTP", rs.status);
+        } catch (e) {
+          console.error("verejny-formular: siet zlyhala", String(e));
+        }
+        if (!poslane) {
+          await rpc(c, "vrat_potvrdenie_firmy", { p_id: r.id }).catch(() => {});
+        }
+      }
+    }
+  } catch (e) {
+    console.error("verejny-formular: odber_firmy", String(e));
+    return json({ ok: false, kod: "CHYBA" });
+  }
+  return json({ ok: true });
+}
+
 async function servisnyDopyt(c: Ctx, d: Record<string, unknown>): Promise<Response> {
   const obec = retazec(d.obec, 200);
   const popis = retazec(d.popis, 4000);
@@ -353,7 +436,7 @@ export async function obsluz(req: Request): Promise<Response> {
   }
   const typ = String(telo?.typ ?? "");
   const d = (telo?.data && typeof telo.data === "object") ? telo.data as Record<string, unknown> : {};
-  if (!["odber_obce", "servisny_dopyt", "spatne_volanie", "kontrola_ico", "profil_obstaravatela", "ukazka_zmluv"].includes(typ)) {
+  if (!["odber_obce", "servisny_dopyt", "spatne_volanie", "kontrola_ico", "profil_obstaravatela", "ukazka_zmluv", "odber_firmy"].includes(typ)) {
     return json({ ok: false, kod: "NEPLATNE" }, 400);
   }
 
@@ -393,6 +476,7 @@ export async function obsluz(req: Request): Promise<Response> {
   if (typ === "profil_obstaravatela") return await hladajPodlaIco(c, "profil_obstaravatela", d);
   if (typ === "ukazka_zmluv") return await ukazkaZmluv(c, d);
   if (typ === "odber_obce") return await odberObce(c, d);
+  if (typ === "odber_firmy") return await odberFirmy(c, d);
   if (typ === "servisny_dopyt") return await servisnyDopyt(c, d);
   return await spatneVolanie(c, d);
 }

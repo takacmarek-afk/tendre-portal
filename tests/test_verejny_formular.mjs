@@ -25,6 +25,9 @@ globalThis.fetch = async (url, opt = {}) => {
   if (u.includes("/rpc/profil_obstaravatela")) return ok({ ok: true, ico: telo.p_ico, nazov: "Mesto Test" });
   if (u.includes("/rpc/ukazka_koncich_zmluv")) return ok({ celkom: 5, zoznam: [{ urad: "Mesto Test", sektor: telo.p_sektor, kraj: telo.p_kraj }] });
   if (u.includes("/rpc/prihlas_odber_obce")) return ok({ ok: true });
+  if (u.includes("/rpc/prihlas_odber_firmy")) return ok({ ok: true });
+  if (u.includes("/rpc/zaber_potvrdenie_firmy")) return ok(zabrane);
+  if (u.includes("/rpc/vrat_potvrdenie_firmy")) return new Response("", { status: 204 });
   if (u.includes("/rpc/zaber_potvrdenie_odberu")) return ok(zabrane);
   if (u.includes("/rpc/vrat_potvrdenie_odberu")) return new Response("", { status: 204 });
   if (u.includes("api.resend.com")) return ok({ id: "1" }, resendStatus);
@@ -186,5 +189,42 @@ assert.ok(!volania.some((v) => v.url.includes("/rpc/ukazka_koncich_zmluv")));
 reset(); strop.povol = false;
 assert.equal((await obsluz(req({ typ: "ukazka_zmluv", data: { sektor: "OSTRAHA" } }))).status, 429);
 assert.ok(!volania.some((v) => v.url.includes("/rpc/ukazka_koncich_zmluv")));
+
+// odber_firmy (migracia 81): tyzdenny prehlad pre firmy, double opt-in
+reset(); zabrane = [{ id: 21, email: "firma@example.sk", token: "33333333-3333-3333-3333-333333333333" }];
+j = await res(req({ typ: "odber_firmy", data: { email: "Firma@Example.sk", sektor: "UPRATOVANIE", kraj: "Žilinský kraj", suhlas: true } }, { "cf-connecting-ip": "5.6.7.8" }));
+assert.deepEqual(j, { ok: true });
+let pr = volania.find((v) => v.url.includes("/rpc/prihlas_odber_firmy"));
+assert.equal(pr.telo.p_sektor, "UPRATOVANIE");
+assert.equal(pr.telo.p_kraj, "Žilinský kraj");
+assert.equal(pr.telo.p_zdroj, "index-ukazka");
+const mailF = volania.find((v) => v.url.includes("resend"));
+assert.ok(mailF, "potvrdzovaci e-mail sa mal poslat");
+assert.deepEqual(mailF.telo.to, ["firma@example.sk"]);
+assert.ok(mailF.telo.text.includes("odber-firmy?t=33333333-3333-3333-3333-333333333333&akcia=potvrdit"));
+assert.ok(mailF.telo.html.includes("odber-firmy?t=33333333-3333-3333-3333-333333333333&amp;akcia=potvrdit"));
+assert.ok(mailF.telo.html.includes("Potvrďte týždenný prehľad končiacich zmlúv"));
+assert.ok(mailF.telo.html.includes("Potvrdiť súhlas"));
+assert.ok(!mailF.telo.html.includes("pre obce"), "e-mail pre firmy nesmie spominat obce");
+assert.ok(!JSON.stringify(volania).includes("5.6.7.8"), "cista IP nesmie ist do DB");
+// bez suhlasu, so zlym sektorom alebo e-mailom sa nic nezapise
+reset();
+assert.equal((await res(req({ typ: "odber_firmy", data: { email: "a@b.sk", sektor: "OSTRAHA" } }))).kod, "NEPLATNE");
+assert.equal((await res(req({ typ: "odber_firmy", data: { email: "a@b.sk", sektor: "x'; drop", suhlas: true } }))).kod, "NEPLATNE");
+assert.equal((await res(req({ typ: "odber_firmy", data: { email: "zle", sektor: "OSTRAHA", suhlas: true } }))).kod, "NEPLATNE");
+assert.ok(!volania.some((v) => v.url.includes("/rpc/prihlas_odber_firmy")));
+// uz potvrdena / existujuca adresa => ziadny e-mail, rovnaka odpoved
+reset();
+j = await res(req({ typ: "odber_firmy", data: { email: "a@b.sk", sektor: "OSTRAHA", suhlas: true } }));
+assert.deepEqual(j, { ok: true });
+assert.ok(!volania.some((v) => v.url.includes("resend")));
+// zlyhanie Resend => vrat_potvrdenie_firmy
+reset(); resendStatus = 500; zabrane = [{ id: 22, email: "a@b.sk", token: "44444444-4444-4444-4444-444444444444" }];
+await res(req({ typ: "odber_firmy", data: { email: "a@b.sk", sektor: "OSTRAHA", suhlas: true } }));
+assert.ok(volania.some((v) => v.url.includes("vrat_potvrdenie_firmy") && v.telo.p_id === 22));
+// strop IP (zapis: 5/h) => 429
+reset(); strop.povol = false;
+assert.equal((await obsluz(req({ typ: "odber_firmy", data: { email: "a@b.sk", sektor: "OSTRAHA", suhlas: true } }))).status, 429);
+assert.ok(!volania.some((v) => v.url.includes("/rpc/prihlas_odber_firmy")));
 
 console.log("OK verejny-formular");

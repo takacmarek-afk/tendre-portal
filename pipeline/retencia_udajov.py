@@ -30,6 +30,14 @@ def spusti(sb, nasucho: bool = False) -> dict:
     data = res.data or {}
     for kluc, pocet in sorted(data.items()):
         log.info("%-26s zmazanych: %s", kluc, pocet)
+    # Prehlad pre firmy (migracia 81): nepotvrdene po 3 dnoch, skoncene po 12 mesiacoch.
+    # Odhlaseni ostavaju v tabulke ako zoznam odhlasenych.
+    try:
+        n = sb.rpc("odber_firmy_upratanie").execute().data
+        log.info("%-26s zmazanych: %s", "odber_firmy", n)
+        data = dict(data, odber_firmy=n)
+    except Exception as e:  # pred spustenim migracie 81 funkcia neexistuje
+        log.warning("odber_firmy_upratanie() sa nepodarilo zavolat (%s)", e)
     return data
 
 

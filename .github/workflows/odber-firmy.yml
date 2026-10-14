@@ -1,0 +1,56 @@
+name: Tyzdenny prehlad pre firmy
+
+# E-maily pre tych, co si na uvodnej stranke vyziadali prehlad konciacich zmlúv
+# a potvrdili ho (double opt-in). Skript: pipeline/posli_odber_firmy.py,
+# RPC z migracie 81. PRED PUSHOM musi byt v Supabase spustena migracia
+# 81_odber_firmy.sql. Prvy beh vzdy rucne s nasucho = true.
+
+on:
+  workflow_dispatch:
+    inputs:
+      nasucho:
+        description: "Nasucho — nic neposielat, len vypisat"
+        type: boolean
+        default: true
+  schedule:
+    - cron: "17 7 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: odber-firmy
+  cancel-in-progress: false
+
+jobs:
+  posli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Poslat prehlady
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EVENT: ${{ github.event_name }}
+          NASUCHO: ${{ inputs.nasucho }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ "$EVENT" = "workflow_dispatch" ] && [ "$NASUCHO" = "true" ]; then
+            ARGS+=(--nasucho)
+          fi
+          echo "Spustam: python posli_odber_firmy.py ${ARGS[*]-}"
+          python posli_odber_firmy.py "${ARGS[@]}"

@@ -809,7 +809,7 @@
 </section>
 
 <!-- ══════════════ CTA ══════════════ -->
-<section id="ukazka" class="border-t border-line bg-[#F3F0E6]">
+<section id="registracia" class="border-t border-line bg-[#F3F0E6]">
   <div class="wrap py-20 md:py-28">
     <div class="max-w-2xl mx-auto text-center">
       <h2 class="font-serif text-[28px] md:text-[40px] font-bold tracking-tight leading-tight">
@@ -1018,6 +1018,49 @@
       '<a href="./prihlasenie.html" class="mt-4 inline-flex items-center bg-amber text-ink font-semibold px-5 py-2.5 rounded-md hover:bg-[#F3B65C] transition text-[14px]">Vyskúšať 14 dní zadarmo</a>';
     out.innerHTML = html;
   }
+  var posl = { sektor: '', kraj: '' };
+  function ponukniOdber(sektor, kraj) {
+    posl = { sektor: sektor, kraj: kraj || '' };
+    var sel = document.getElementById('uk-sektor');
+    var odbor = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent : '';
+    var kde = kraj ? kraj : 'celé Slovensko';
+    var f = document.createElement('form');
+    f.id = 'uk-odber'; f.className = 'mt-6 border border-line rounded-lg p-4'; f.noValidate = true;
+    f.innerHTML =
+      '<p class="text-[15px] font-semibold">Chcete každý týždeň ďalšie končiace zmluvy z tohto výberu?</p>' +
+      '<p class="mt-1 text-[13px] text-slate2">Pošleme vám e-mailom tri zmluvy s odkazom do registra. Bez registrácie, odhlásiť sa dá jedným kliknutím.</p>' +
+      '<div class="mt-3 flex flex-col sm:flex-row gap-3">' +
+        '<input id="uk-email" type="email" autocomplete="email" maxlength="254" placeholder="vas@email.sk" class="flex-1 border border-line rounded-md px-3 py-2.5 text-[15px] bg-white focus:outline-none focus:border-accent">' +
+        '<button id="uk-odber-btn" type="submit" class="bg-ink text-white font-semibold px-6 py-2.5 rounded-md hover:bg-accent transition text-[15px]">Posielať prehľad</button>' +
+      '</div>' +
+      '<label class="mt-3 flex gap-2 items-start text-[12px] text-slate2"><input id="uk-suhlas" type="checkbox" class="mt-1">' +
+        '<span>Súhlasím, že mi LoveHome s.r.o. bude na túto adresu posielať týždenný prehľad končiacich zmlúv (odbor: ' + esc(odbor) + ', ' + esc(kde) + '). ' +
+        'Súhlas potvrdím odkazom v e-maile a môžem ho kedykoľvek odvolať. <a href="./ochrana-osobnych-udajov" class="underline">Ochrana osobných údajov</a></span></label>' +
+      '<p id="uk-odber-hlaska" class="mt-2 text-[13px] text-slate2" role="status" aria-live="polite"></p>';
+    out.appendChild(f);
+    f.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      var h = document.getElementById('uk-odber-hlaska');
+      var email = document.getElementById('uk-email').value.trim();
+      if (!/^[^@\s,;<>"]+@[^@\s,;<>"]+\.[A-Za-z]{2,}$/.test(email)) { h.textContent = 'Zadajte prosím platnú e-mailovú adresu.'; return; }
+      if (!document.getElementById('uk-suhlas').checked) { h.textContent = 'Na odoslanie prehľadu potrebujeme Váš súhlas, zaškrtnite ho prosím.'; return; }
+      var pf = window.ptFormular;
+      if (!pf) { h.textContent = 'Nepodarilo sa odoslať. Skúste to prosím neskôr.'; return; }
+      var b = document.getElementById('uk-odber-btn');
+      b.disabled = true; b.textContent = 'Odosielam…'; h.textContent = '';
+      try {
+        await pf.pockaj(12000);
+        var v = await pf.posli('odber_firmy', { email: email, sektor: posl.sektor, kraj: posl.kraj || null, suhlas: true, zdroj: 'index-ukazka' });
+        if (v.ok) {
+          f.innerHTML = '<p class="text-[15px] font-semibold">Skoro hotovo</p>' +
+            '<p class="mt-1 text-[14px] text-slate2">Poslali sme e-mail na adresu ' + esc(email) + '. Kliknite v ňom na potvrdenie, až potom vám začnú prehľady chodiť. Ak ho nevidíte, pozrite aj priečinok Spam.</p>';
+          return;
+        }
+        h.textContent = pf.hlaska(v.kod);
+      } catch (err) { h.textContent = 'Nepodarilo sa odoslať. Skúste to prosím neskôr.'; }
+      b.disabled = false; b.textContent = 'Posielať prehľad';
+    });
+  }
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
     var sektor = document.getElementById('uk-sektor').value;
@@ -1028,7 +1071,7 @@
     try {
       await pf.pockaj(12000);
       var v = await pf.posli('ukazka_zmluv', { sektor: sektor, kraj: document.getElementById('uk-kraj').value || null });
-      if (v.ok) vykresli(v.data); else hlaska(pf.hlaska(v.kod));
+      if (v.ok) { vykresli(v.data); ponukniOdber(sektor, document.getElementById('uk-kraj').value || null); } else hlaska(pf.hlaska(v.kod));
     } catch (err) { hlaska('Ukážku sa nepodarilo načítať. Skúste to prosím neskôr.'); }
     btn.disabled = false; btn.textContent = 'Ukázať 3 zmluvy';
   });

@@ -26,15 +26,27 @@ class _SB:
 
     def rpc(self, nazov, *a):
         self.volania.append(nazov)
+        if nazov == "odber_firmy_upratanie":
+            if getattr(self, "zlyha", False):
+                raise RuntimeError("funkcia neexistuje")
+            return _Res(2)
         return _Res({"navstevy": 3, "odber_obce_nepotvrdeny": 1})
 
 
 def test_vola_rpc():
     sb = _SB()
     out = r.spusti(sb)
-    assert sb.volania == ["retencia_udajov"]
-    assert out["navstevy"] == 3
+    assert sb.volania == ["retencia_udajov", "odber_firmy_upratanie"]
+    assert out["navstevy"] == 3 and out["odber_firmy"] == 2
     print("OK test_vola_rpc")
+
+
+def test_upratanie_firiem_nezhodi_beh():
+    sb = _SB()
+    sb.zlyha = True
+    out = r.spusti(sb)
+    assert out["navstevy"] == 3 and "odber_firmy" not in out
+    print("OK test_upratanie_firiem_nezhodi_beh")
 
 
 def test_nasucho_nevola():
@@ -53,5 +65,6 @@ def test_bez_kluca_konci_chybou():
 
 if __name__ == "__main__":
     test_vola_rpc()
+    test_upratanie_firiem_nezhodi_beh()
     test_nasucho_nevola()
     test_bez_kluca_konci_chybou()
