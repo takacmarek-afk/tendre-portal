@@ -577,9 +577,10 @@
           </div>
           <div>
             <label for="f-text" class="block text-[12px] font-semibold text-slate2 mb-1">Hľadať</label>
-            <input id="f-text" type="search" placeholder="predmet, obstarávateľ, mesto"
+            <input id="f-text" type="search" placeholder="napr. ostraha Košice alebo upratovanie v Prešovskom kraji"
                    class="w-full border border-line rounded-md px-3 py-2 text-[14px]
                           focus:outline-none focus:border-accent">
+            <p id="f-rozpoznane" class="hidden mt-1 text-[12px] text-slate2"></p>
           </div>
           <div>
             <label for="f-radenie" class="block text-[12px] font-semibold text-slate2 mb-1">Zoradiť</label>
@@ -662,6 +663,10 @@
             <button id="f-reset" class="text-[13px] text-slate2 hover:text-ink">Zrušiť filtre</button>
             <button id="export-z" class="text-[13px] font-semibold text-accent hover:text-accentDark">
               Export do Excelu
+            </button>
+            <button id="export-ics" class="text-[13px] font-semibold text-accent hover:text-accentDark"
+                    title="Konce zmlúv z aktuálneho filtra ako udalosti do kalendára, s pripomienkou 30 dní vopred">
+              Do kalendára (.ics)
             </button>
           </div>
         </div>
@@ -2382,6 +2387,94 @@ function riadokDodavatela(r, sledovane, jePro) {
           : ''}
       </td>
     </tr>`;
+}
+
+// ── KALENDAR (.ics) z filtra ────────────────────────────────────────────
+// Samotny format zostavuje uz existujuca vytvorIcs() (nastenka Dnes); toto je
+// len export podla aktualnych filtrov, najviac 500 najblizsich koncov.
+const ICS_MAX = 500;
+
+// ── HLADANIE VLASTNYMI SLOVAMI ──────────────────────────────────────────
+// Bez AI modelu: pravidla nad slovami. "ostraha Kosice" nastavi sektor Ostraha
+// a Kosicky kraj, zvysok textu ostane ako bezne hladanie. Ked je vysledok
+// nejednoznacny (dva sektory, dva kraje), nic sa nenastavi a text ostane.
+const SEKTOR_SLOVA = {
+  UPRATOVANIE: ['upratovan', 'cistenie', 'cistiac'],
+  STRAVOVANIE: ['stravovan', 'jedaln', 'kuchyn'],
+  OSTRAHA: ['ostrah', 'strazen', 'strazn', 'bezpecnostn'],
+  ZELEN_ZIMNA_UDRZBA: ['zelen', 'zimna', 'kosen'],
+  STAVEBNE_PRACE: ['stavebn', 'stavb', 'rekonstrukc'],
+  STRECHY_IZOLACIE: ['strech', 'zateplen', 'izolac'],
+  OKNA_DVERE_POVRCHY: ['okn', 'dver', 'podlah'],
+  ELEKTROINSTALACIE: ['elektro', 'osvetlen'],
+  KURENIE_VODA_PLYN: ['kuren', 'vodoinstal', 'plyn', 'kotol'],
+  DOPRAVA_MECHANIZACIA: ['mechaniz', 'autobus', 'prepravn'],
+  IT_TECHNIKA: ['it', 'informacn', 'software', 'pocitac'],
+  TLAC_KANCELARIA: ['tlac', 'kancelar', 'polygraf'],
+  PASPORTIZACIA_SPRAVA_BUDOV: ['pasport'],
+};
+// Kraj: pridavne meno ("presovsky", "kosickom") sa z textu odstrani; nazov mesta
+// ("Kosice") kraj tiez nastavi, ale slovo v texte ZOSTANE, lebo clovek hlada mesto.
+// Sam nazov mesta bez sektora a bez pridavneho mena hladanie nemeni.
+const KRAJ_SLOVA = [
+  ['Bratislavský kraj', ['bratislavsk'], ['bratislav']],
+  ['Trnavský kraj', ['trnavsk'], ['trnav']],
+  ['Trenčiansky kraj', ['trenciansk'], ['trencin']],
+  ['Nitriansky kraj', ['nitriansk'], ['nitr']],
+  ['Žilinský kraj', ['zilinsk'], ['zilin']],
+  ['Banskobystrický kraj', ['banskobystrick'], ['banskobystr']],
+  ['Prešovský kraj', ['presovsk'], ['presov']],
+  ['Košický kraj', ['kosick'], ['kosic']],
+];
+const FILLER_SLOVA = new Set(['v', 'vo', 'na', 'pre', 'do', 'kraj', 'kraji', 'okres', 'okrese', 'zmluvy', 'zmluva', 'hladam', 'technika', 'techniky']);
+
+function bezDiakritiky(t) {
+  return String(t).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+}
+
+function jeSektorSlovo(sektor, w) {
+  return (SEKTOR_SLOVA[sektor] ?? []).some(st => (st === 'it' ? w === 'it' : w.startsWith(st)));
+}
+
+/** Vrati {sektor, kraj, predstih, zvysok} alebo null, ked sa nic nerozpoznalo. */
+function rozpoznajVolnyText(text) {
+  let rest = String(text ?? '').trim();
+  if (!rest) return null;
+  let predstih = '';
+  const m = /(\d{1,2})\s*(?:až|az|-|–)\s*(\d{1,2})\s*mesiac\w*/i.exec(rest);
+  if (m && ['1-3', '3-6', '6-12'].includes(`${m[1]}-${m[2]}`)) {
+    predstih = `${m[1]}-${m[2]}`;
+    rest = (rest.slice(0, m.index) + ' ' + rest.slice(m.index + m[0].length)).trim();
+  }
+  const slova = rest.split(/\s+/).filter(Boolean);
+  const norm = slova.map(bezDiakritiky);
+  const sektory = new Set();
+  const kraje = new Set();
+  const pridavne = new Set();   // indexy slov, ktore sa z textu odstrania
+  let maPridavne = false;
+  norm.forEach((w, i) => {
+    for (const k of Object.keys(SEKTOR_SLOVA)) if (jeSektorSlovo(k, w)) sektory.add(k);
+    for (const [k, adj, mesto] of KRAJ_SLOVA) {
+      if (adj.some(st => w.startsWith(st))) { kraje.add(k); maPridavne = true; }
+      else if (mesto.some(st => w.startsWith(st))) kraje.add(k);
+    }
+    if (w === 'banska' && (norm[i + 1] ?? '').startsWith('bystric')) kraje.add('Banskobystrický kraj');
+  });
+  const sektor = sektory.size === 1 ? [...sektory][0] : '';
+  const kraj = kraje.size === 1 ? [...kraje][0] : '';
+  // Samotny kraj z nazvu mesta (bez sektora, predstihu a pridavneho mena) nestaci:
+  // "Mesto Nitra" ma ostat obycajnym hladanim.
+  if (!sektor && !predstih && !(kraj && maPridavne)) return null;
+  const zostane = slova.filter((w, i) => {
+    const n = norm[i];
+    if (sektor && jeSektorSlovo(sektor, n)) return false;
+    if (kraj) {
+      const def = KRAJ_SLOVA.find(([k]) => k === kraj);
+      if (def[1].some(st => n.startsWith(st))) return false;
+    }
+    return !FILLER_SLOVA.has(n);
+  });
+  return { sektor, kraj, predstih, zvysok: zostane.join(' ') };
 }
 
 // ── EXPORT ──────────────────────────────────────────────────────────────
@@ -5273,6 +5366,38 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     el(id).addEventListener('change', odznova('zmluvy', nacitajZmluvy));
   }
   el('f-text').addEventListener('input', prekresliZ);
+
+  // Hladanie vlastnymi slovami: po Enter alebo opusteni pola sa z textu
+  // vyberie sektor, kraj a predstih a nastavia sa filtre. Pod poľom sa ukaze,
+  // co sa rozpoznalo, s moznostou to vratit.
+  el('f-text').addEventListener('change', () => {
+    const hint = el('f-rozpoznane');
+    const povodny = el('f-text').value;
+    const r = rozpoznajVolnyText(povodny);
+    if (!r) { hint.classList.add('hidden'); return; }
+    if (r.sektor) el('f-sektor').value = r.sektor;
+    if (r.kraj) el('f-kraj').value = r.kraj;
+    if (r.predstih) el('f-predstih').value = r.predstih;
+    el('f-text').value = r.zvysok;
+    const casti = [];
+    if (r.sektor) casti.push(`sektor ${POPIS_SEKTORA[r.sektor]}`);
+    if (r.kraj) casti.push(r.kraj);
+    if (r.predstih) casti.push(`predstih ${r.predstih.replace('-', ' až ')} mesiacov`);
+    hint.textContent = `Rozpoznané: ${casti.join(', ')}${r.zvysok ? `, hľadá sa „${r.zvysok}“` : ''}. `;
+    const zrus = document.createElement('button');
+    zrus.type = 'button';
+    zrus.className = 'underline';
+    zrus.textContent = 'Vrátiť pôvodný text';
+    zrus.addEventListener('click', () => {
+      el('f-sektor').value = ''; el('f-kraj').value = ''; el('f-predstih').value = '0';
+      el('f-text').value = povodny;
+      hint.classList.add('hidden');
+      nacitajZmluvy();
+    });
+    hint.appendChild(zrus);
+    hint.classList.remove('hidden');
+    nacitajZmluvy();
+  });
   napojViac('viac-z', 'zmluvy', nacitajZmluvy);
 
   // Audit 17.9.2026, quick win #5: preklik z mena dodavatela (riadok
@@ -5341,6 +5466,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     for (const k of Object.keys(zobrazene)) zobrazene[k] = LIMIT;
     el('f-kraj').value = ''; el('f-sektor').value = '';
     el('f-skore').value = '0'; el('f-text').value = '';
+    el('f-rozpoznane').classList.add('hidden');
     el('f-radenie').value = 'signal';
     el('f-predstih').value = '0';
     // Zrusenie filtrov vracia PREDVOLENY stav, nie prazdny. Predvolene je
@@ -5385,6 +5511,21 @@ async function dashboard(supabase, rola, spravaPozvanky) {
               .order('skore', { ascending: false, nullsFirst: false });
     }, 'contract_id');
     return exportExcel('konciace-zmluvy', dopelnOdkaz(riadky));
+  }));
+
+  el('export-ics').addEventListener('click', () => sExportom('export-ics', async () => {
+    await osviezSledovaneIdy();
+    const riadky = await stahniVsetko(() => {
+      let q = filtreZmluv(supabase.from('opportunities')
+        .select('contract_id, authority_name, subject, sector, effective_to, price_total, odkaz'))
+        .gte('effective_to', oDni(0));
+      if (el('f-jeCas').checked) q = q.gte('dni_do_konca', DNI_TENDER_UZ_BEZI);
+      return q.order('effective_to', { ascending: true });
+    }, 'contract_id');
+    const najblizsie = riadky.sort((a, b) => String(a.effective_to).localeCompare(String(b.effective_to))).slice(0, ICS_MAX);
+    if (!najblizsie.length) return false;
+    stiahniSubor(`konciace-zmluvy-${dnesLokalne()}.ics`, vytvorIcs(najblizsie), 'text/calendar;charset=utf-8');
+    return true;
   }));
 
   el('export-d').addEventListener('click', () => sExportom('export-d', async () => {

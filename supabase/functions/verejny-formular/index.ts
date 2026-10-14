@@ -7,6 +7,8 @@
 //     typ = "kontrola_ico"    (kontrola.html)-> RPC kontrola_zmluv_ico (vlna 84;
 //                                od migracie 69 ju anon priamo volat nemoze)
 //     typ = "profil_obstaravatela" (obstaravatel.html) -> RPC profil_obstaravatela (migracia 70)
+//     typ = "ukazka_zmluv"   (index.html)    -> RPC ukazka_koncich_zmluv (migracia 80;
+//                                3 konciace zmluvy pre vybrany odbor a kraj, bez registracie)
 //
 //  PREC? Doteraz stranky zapisovali priamo cez REST (anon kluc). To sa nedalo
 //  chranit captchou ani limitom na jedneho navstevnika. Tato funkcia:
@@ -303,6 +305,29 @@ async function hladajPodlaIco(c: Ctx, rpcNazov: string, d: Record<string, unknow
   }
 }
 
+// Ukazka 3 konciacich zmluv na uvodnej stranke (migracia 80). Je to vyhladavanie
+// (nie zapis), preto ma rovnaky limit ako kontrola ICO.
+async function ukazkaZmluv(c: Ctx, d: Record<string, unknown>): Promise<Response> {
+  const sektor = retazec(d.sektor, 40);
+  const kraj = retazec(d.kraj, 40);
+  if (!sektor || !/^[A-Z_]{3,40}$/.test(sektor)) return json({ ok: false, kod: "NEPLATNE" });
+  try {
+    const r = await fetch(`${c.url}/rest/v1/rpc/ukazka_koncich_zmluv`, {
+      method: "POST",
+      headers: c.hlavicky,
+      body: JSON.stringify({ p_sektor: sektor, p_kraj: kraj || null }),
+    });
+    if (!r.ok) {
+      console.error(`verejny-formular: ukazka_koncich_zmluv HTTP ${r.status}`);
+      return json({ ok: false, kod: "CHYBA" });
+    }
+    return json({ ok: true, data: await r.json() });
+  } catch (e) {
+    console.error("verejny-formular: ukazka_koncich_zmluv", String(e));
+    return json({ ok: false, kod: "CHYBA" });
+  }
+}
+
 export async function obsluz(req: Request): Promise<Response> {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   if (req.method !== "POST") return json({ ok: false, kod: "METODA" }, 405);
@@ -328,7 +353,7 @@ export async function obsluz(req: Request): Promise<Response> {
   }
   const typ = String(telo?.typ ?? "");
   const d = (telo?.data && typeof telo.data === "object") ? telo.data as Record<string, unknown> : {};
-  if (!["odber_obce", "servisny_dopyt", "spatne_volanie", "kontrola_ico", "profil_obstaravatela"].includes(typ)) {
+  if (!["odber_obce", "servisny_dopyt", "spatne_volanie", "kontrola_ico", "profil_obstaravatela", "ukazka_zmluv"].includes(typ)) {
     return json({ ok: false, kod: "NEPLATNE" }, 400);
   }
 
@@ -347,7 +372,7 @@ export async function obsluz(req: Request): Promise<Response> {
   //    je vyhladavanie (nie zapis), preto 30 / hodinu a nezapocitava sa do "spolu".
   const sol = Deno.env.get("IP_SALT") ?? servis.slice(-24);
   const h = await odtlacokIp(ip, sol);
-  const jeKontrola = typ === "kontrola_ico" || typ === "profil_obstaravatela";
+  const jeKontrola = typ === "kontrola_ico" || typ === "profil_obstaravatela" || typ === "ukazka_zmluv";
   try {
     const vTypu = await rpc(c, "verejny_formular_strop", { p_ip_hash: h, p_typ: typ, p_max: jeKontrola ? 30 : 5, p_minut: 60 });
     // Vyhladavania maju navyse spolocny strop pre vsetkych navstevnikov (ochrana pred
@@ -366,6 +391,7 @@ export async function obsluz(req: Request): Promise<Response> {
   // 3) Samotny zapis.
   if (typ === "kontrola_ico") return await hladajPodlaIco(c, "kontrola_zmluv_ico", d);
   if (typ === "profil_obstaravatela") return await hladajPodlaIco(c, "profil_obstaravatela", d);
+  if (typ === "ukazka_zmluv") return await ukazkaZmluv(c, d);
   if (typ === "odber_obce") return await odberObce(c, d);
   if (typ === "servisny_dopyt") return await servisnyDopyt(c, d);
   return await spatneVolanie(c, d);

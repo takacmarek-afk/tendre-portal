@@ -23,6 +23,7 @@ globalThis.fetch = async (url, opt = {}) => {
     return ok({ ok: true, ico: telo.p_ico, pocet_aktivnych: 3 });
   }
   if (u.includes("/rpc/profil_obstaravatela")) return ok({ ok: true, ico: telo.p_ico, nazov: "Mesto Test" });
+  if (u.includes("/rpc/ukazka_koncich_zmluv")) return ok({ celkom: 5, zoznam: [{ urad: "Mesto Test", sektor: telo.p_sektor, kraj: telo.p_kraj }] });
   if (u.includes("/rpc/prihlas_odber_obce")) return ok({ ok: true });
   if (u.includes("/rpc/zaber_potvrdenie_odberu")) return ok(zabrane);
   if (u.includes("/rpc/vrat_potvrdenie_odberu")) return new Response("", { status: 204 });
@@ -164,5 +165,26 @@ assert.equal((await obsluz(req({ typ: "profil_obstaravatela", data: { ico: "0015
 assert.ok(!volania.some((v) => v.url.includes("/rpc/profil_obstaravatela")));
 reset();
 assert.equal((await res(req({ typ: "profil_obstaravatela", data: {} }))).kod, "NEPLATNE");
+
+// ukazka_zmluv (migracia 80): vyhladavanie bez zapisu, rovnaky limit ako kontrola ICO
+reset();
+j = await res(req({ typ: "ukazka_zmluv", data: { sektor: "UPRATOVANIE", kraj: "Prešovský kraj" } }));
+assert.equal(j.ok, true);
+assert.equal(j.data.celkom, 5);
+let uk = volania.find((v) => v.url.includes("/rpc/ukazka_koncich_zmluv"));
+assert.equal(uk.telo.p_sektor, "UPRATOVANIE");
+assert.equal(uk.telo.p_kraj, "Prešovský kraj");
+// bez kraja ide null; neplatny sektor sa na RPC vobec nedostane
+reset();
+await res(req({ typ: "ukazka_zmluv", data: { sektor: "OSTRAHA" } }));
+assert.equal(volania.find((v) => v.url.includes("/rpc/ukazka_koncich_zmluv")).telo.p_kraj, null);
+reset();
+assert.equal((await res(req({ typ: "ukazka_zmluv", data: { sektor: "x'; drop table" } }))).kod, "NEPLATNE");
+assert.equal((await res(req({ typ: "ukazka_zmluv", data: {} }))).kod, "NEPLATNE");
+assert.ok(!volania.some((v) => v.url.includes("/rpc/ukazka_koncich_zmluv")));
+// strop IP => 429, RPC sa nevola
+reset(); strop.povol = false;
+assert.equal((await obsluz(req({ typ: "ukazka_zmluv", data: { sektor: "OSTRAHA" } }))).status, 429);
+assert.ok(!volania.some((v) => v.url.includes("/rpc/ukazka_koncich_zmluv")));
 
 console.log("OK verejny-formular");

@@ -253,6 +253,38 @@
   </div>
 </section>
 
+<!-- ══════════════ UKÁŽKA BEZ REGISTRÁCIE (audit 13.10.2026) ══════════════
+     Návštevník vyberie odbor a kraj a vidí 3 reálne končiace zmluvy.
+     Ide cez Edge Function verejny-formular (typ ukazka_zmluv, migrácia 80):
+     Turnstile + limit na IP, nikdy priamo do databázy. -->
+<section id="ukazka" class="border-y border-line bg-white">
+  <div class="wrap py-14 md:py-20">
+    <h2 class="font-serif text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
+      Skúste to bez registrácie
+    </h2>
+    <p class="mt-4 text-[16px] leading-relaxed text-slate2 max-w-2xl">
+      Vyberte odbor a kraj. Ukážeme vám tri skutočné zmluvy z Centrálneho registra zmlúv, ktoré budú končiť v najbližších mesiacoch.
+    </p>
+    <form id="uk-form" class="mt-6 flex flex-col sm:flex-row sm:items-end gap-3 max-w-3xl" novalidate>
+      <label class="flex-1">
+        <span class="block text-[12px] font-semibold text-slate2 mb-1">Odbor</span>
+        <select id="uk-sektor" required class="w-full border border-line rounded-md px-3 py-2.5 text-[15px] bg-white focus:outline-none focus:border-accent">
+          <option value="">vyberte odbor</option><option value="UPRATOVANIE">upratovanie</option><option value="OSTRAHA">ostraha</option><option value="STRAVOVANIE">stravovanie</option><option value="ZELEN_ZIMNA_UDRZBA">zeleň, zimná údržba</option><option value="STAVEBNE_PRACE">stavebné práce</option><option value="STRECHY_IZOLACIE">strechy, zateplenie</option><option value="OKNA_DVERE_POVRCHY">okná, dvere, povrchy</option><option value="ELEKTROINSTALACIE">elektroinštalácie</option><option value="KURENIE_VODA_PLYN">kúrenie, voda, plyn</option><option value="DOPRAVA_MECHANIZACIA">doprava, mechanizácia</option><option value="IT_TECHNIKA">IT technika</option><option value="TLAC_KANCELARIA">tlač, kancelária</option><option value="PASPORTIZACIA_SPRAVA_BUDOV">pasportizácia, správa budov</option>
+        </select>
+      </label>
+      <label class="flex-1">
+        <span class="block text-[12px] font-semibold text-slate2 mb-1">Kraj</span>
+        <select id="uk-kraj" class="w-full border border-line rounded-md px-3 py-2.5 text-[15px] bg-white focus:outline-none focus:border-accent"><option value="">celé Slovensko</option><option value="Bratislavský kraj">Bratislavský kraj</option><option value="Trnavský kraj">Trnavský kraj</option><option value="Trenčiansky kraj">Trenčiansky kraj</option><option value="Nitriansky kraj">Nitriansky kraj</option><option value="Žilinský kraj">Žilinský kraj</option><option value="Banskobystrický kraj">Banskobystrický kraj</option><option value="Prešovský kraj">Prešovský kraj</option><option value="Košický kraj">Košický kraj</option></select>
+      </label>
+      <div>
+        <button id="uk-btn" type="submit" class="bg-ink text-white font-semibold px-6 py-2.5 rounded-md hover:bg-accent transition text-[15px]">Ukázať 3 zmluvy</button>
+      </div>
+    </form>
+    <div id="uk-ts" class="mt-3"></div>
+    <div id="uk-vysledok" class="mt-6 max-w-3xl" aria-live="polite"></div>
+  </div>
+</section>
+
 <!-- ══════════════ ČÍSLA ══════════════ -->
 <section class="border-y border-line bg-[#F3F0E6]">
   <div class="wrap py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -954,6 +986,55 @@
 </footer>
 
 <script src="./config.js"></script>
+<script src="./formular.js"></script>
+<script>
+// ── Ukážka 3 končiacich zmlúv bez registrácie ─────────────────
+(function () {
+  var form = document.getElementById('uk-form');
+  if (!form) return;
+  var out = document.getElementById('uk-vysledok');
+  var btn = document.getElementById('uk-btn');
+  function esc(t) { return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function datum(iso) { var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso)); return m ? (+m[3]) + '. ' + (+m[2]) + '. ' + m[1] : ''; }
+  function eur(n) { return (n == null || isNaN(n)) ? '' : new Intl.NumberFormat('sk-SK', { maximumFractionDigits: 0 }).format(n) + '\u00a0€'; }
+  function hlaska(t) { out.innerHTML = '<p class="text-[14px] text-slate2">' + esc(t) + '</p>'; }
+  function odkazOk(u) { return /^https:\/\/www\.crz\.gov\.sk\/zmluva\/\d+\/?$/.test(String(u)) ? u : 'https://www.crz.gov.sk/'; }
+  function tvar(n) { return n === 1 ? 'zmluva' : (n >= 2 && n <= 4 ? 'zmluvy' : 'zmlúv'); }
+  function vykresli(d) {
+    var z = (d && d.zoznam) || [];
+    if (!z.length) { hlaska('Pre tento výber teraz nemáme žiadnu zmluvu, ktorá končí v najbližších mesiacoch. Skúste iný kraj alebo odbor.'); return; }
+    var html = '<ul class="divide-y divide-line border border-line rounded-lg">';
+    z.forEach(function (r) {
+      html += '<li class="p-4"><div class="flex flex-wrap items-baseline justify-between gap-2">' +
+        '<span class="font-semibold text-[15px]">' + esc(r.urad) + '</span>' +
+        '<span class="font-mono text-[12px] text-slate2">končí ' + esc(datum(r.koniec)) + '</span></div>' +
+        '<p class="mt-1 text-[14px] text-slate2">' + esc(r.predmet) + (r.cena ? ' &middot; ' + esc(eur(r.cena)) : '') + '</p>' +
+        '<a class="mt-1 inline-block text-[13px] text-accent hover:underline" target="_blank" rel="noopener" href="' + esc(odkazOk(r.odkaz)) + '">zmluva v Centrálnom registri zmlúv</a></li>';
+    });
+    html += '</ul>';
+    var viac = (d.celkom || 0) - z.length;
+    html += '<p class="mt-4 text-[14px] text-slate2">' + (viac > 0 ? 'Ďalších ' + viac + ' ' + tvar(viac) + ' v tomto výbere vidíte po prihlásení. ' : '') +
+      'Dátum konca je podľa zmluvy; ak ho úrad predĺži dodatkom, nemusí platiť.</p>' +
+      '<a href="./prihlasenie.html" class="mt-4 inline-flex items-center bg-amber text-ink font-semibold px-5 py-2.5 rounded-md hover:bg-[#F3B65C] transition text-[14px]">Vyskúšať 14 dní zadarmo</a>';
+    out.innerHTML = html;
+  }
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    var sektor = document.getElementById('uk-sektor').value;
+    if (!sektor) { hlaska('Vyberte prosím odbor.'); return; }
+    var pf = window.ptFormular;
+    if (!pf) { hlaska('Ukážku sa nepodarilo načítať. Skúste to prosím neskôr.'); return; }
+    btn.disabled = true; btn.textContent = 'Hľadám…';
+    try {
+      await pf.pockaj(12000);
+      var v = await pf.posli('ukazka_zmluv', { sektor: sektor, kraj: document.getElementById('uk-kraj').value || null });
+      if (v.ok) vykresli(v.data); else hlaska(pf.hlaska(v.kod));
+    } catch (err) { hlaska('Ukážku sa nepodarilo načítať. Skúste to prosím neskôr.'); }
+    btn.disabled = false; btn.textContent = 'Ukázať 3 zmluvy';
+  });
+  window.addEventListener('load', function () { if (window.ptFormular) window.ptFormular.widget('#uk-ts'); });
+})();
+</script>
 <script>
 // ── Návštevnosť ──────────────────────────────────────────────────────────
 // Vlastná mini-analytika namiesto Plausible (supabase/27_navstevnost.sql,
