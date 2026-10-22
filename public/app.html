@@ -3491,6 +3491,59 @@ async function nastavTeam(supabase, rola, jeTeam) {
   });
 }
 
+// ── ADMIN: PREPINAC PLANOV (supabase/82_admin_prepinac_planov.sql) ───────
+// Len pre je_admin() (pevny e-mail zakladatela takac.marek@gmail.com), nie
+// pre rolu 'owner'/'admin' vo firme. Select v hlavicke existuje v DOM-e len
+// vtedy, ked je_admin() vrati true. Prepnutie meni skutocny plan vlastnej
+// firmy v subscriptions (admin_prepni_plan() si e-mail overi znova na
+// serveri), potom sa stranka znova nacita — o datach rozhoduje ta ista RLS
+// ako u zakaznika s danym planom.
+async function nastavAdminPrepinacPlanu(supabase, sub) {
+  const { data: jeAdmin, error } = await supabase.rpc('je_admin');
+  if (error || jeAdmin !== true || el('admin-plan')) return;
+
+  const plany = [
+    ['trial', 'Skúška'],
+    ['start', 'Start'],
+    ['growth', 'Growth'],
+    ['team', 'Team'],
+    ['poradca', 'Poradca'],
+    ['admin', 'Admin'],
+  ];
+  const aktualny = sub?.plan ?? '';
+  if (aktualny && !plany.some(([k]) => k === aktualny)) plany.push([aktualny, aktualny]);
+
+  const sel = document.createElement('select');
+  sel.id = 'admin-plan';
+  sel.title = 'Len pre správcu: prepne plán vašej firmy a appka sa zobrazí ako zákazníkovi s týmto plánom.';
+  sel.setAttribute('aria-label', 'Prepnúť plán (správca)');
+  sel.className = 'text-[12px] font-semibold px-2.5 py-1 rounded border border-line bg-amber-100 text-amber-800';
+  for (const [kluc, nazov] of plany) {
+    const opt = document.createElement('option');
+    opt.value = kluc;
+    opt.textContent = 'Správca: ' + nazov;
+    if (kluc === aktualny) opt.selected = true;
+    sel.appendChild(opt);
+  }
+
+  sel.addEventListener('change', async () => {
+    const novy = sel.value;
+    sel.disabled = true;
+    const { data, error: chyba } = await supabase.rpc('admin_prepni_plan', { p_plan: novy });
+    if (chyba || !data?.ok) {
+      console.error(chyba);
+      sel.value = aktualny;
+      sel.disabled = false;
+      ukazBanner('chyba', 'Plán sa nepodarilo prepnúť. Skúste to prosím znova.');
+      return;
+    }
+    location.reload();
+  });
+
+  const odznak = el('odznak-plan');
+  odznak.parentNode.insertBefore(sel, odznak);
+}
+
 // ── ŠTATISTIKY (vlastná mini-analytika, supabase/27_navstevnost.sql) ──────
 // Instance-wide admin (je_admin() = pevný e-mail zakladateľa), NIE rola
 // 'owner' — to je organizačný koncept a vlastník bežnej firmy tieto dáta
@@ -4406,6 +4459,10 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
   el('nazov-firmy').textContent = org?.nazov ?? '';
   const { jePro, aktivny, jePoradca, jeStart, skoncene, skoncilaSkuska } = odznakPredplatneho(sub, zadarmo === true);
+  // Prepinac planov pre spravcu (len je_admin()). Zamerne pred vsetkymi
+  // skorymi navratmi nizsie (skoncene, Poradca), aby bol vidiet na kazdom
+  // plane a dal sa vzdy prepnut spat. Necakame nan — appka sa nacita aj bez neho.
+  nastavAdminPrepinacPlanu(supabase, sub).catch(e => console.error('Prepinac planov:', e));
   // Team-only podmnozina jePro — financny kontext dodavatela (RUZ). Zrkadli
   // presne ma_team() v databaze (supabase/35_ruz_financie.sql): 'trial' dava
   // Pro uroven, nie Team (viz komentar pri odznakPredplatneho vyssie), preto
