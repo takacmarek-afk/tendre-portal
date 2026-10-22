@@ -21,8 +21,8 @@ name: Zmluvy podstranky
 on:
   workflow_dispatch: {}
 
-  # schedule:
-  #   - cron: "35 6 * * 3"
+  schedule:
+    - cron: "35 6 * * 3"
 
 permissions:
   contents: write
