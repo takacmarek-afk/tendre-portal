@@ -5315,7 +5315,10 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     .select('*', { count: 'exact', head: true });
   const mameDotacie = !pdVsetky.error && (pdVsetky.count ?? 0) > 0;
 
-  if (!mameZmluvy && !mameDotacie) {
+  // Start vidi len svoje 2 kraje a 2 sektory (RLS). Kym si ich nevyberie, alebo
+  // ked v nich nic nie je, su oba pocty 0 — to NIE JE prazdna databaza, a
+  // appka musi pokracovat, aby ho na konci dashboard() vyzvala na vyber.
+  if (!mameZmluvy && !mameDotacie && !jeStart) {
     const { count } = await supabase.from('contracts')
       .select('*', { count: 'exact', head: true });
     el('pocet-zmluv').textContent = (count ?? 0).toLocaleString('sk-SK');
