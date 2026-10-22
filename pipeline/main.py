@@ -107,6 +107,23 @@ def prepocet(sb, fetched: int, kept: int, hotovo: bool) -> int:
     try:
         vsetky = store.nacitaj_contracts(sb)
 
+        # Podsektory (audit 22. 10. 2026): starsie zmluvy z UPRATOVANIE/OSTRAHA,
+        # ktore su v skutocnosti nakup cistiacich prostriedkov alebo
+        # zabezpecovacia technika, sa presunu do podsektora — v pamati pre
+        # tento prepocet aj natrvalo v `contracts`.
+        try:
+            from classify import prekvalifikuj_podsektory
+            if len(vsetky) and "sector" in vsetky.columns:
+                zmeny = prekvalifikuj_podsektory(vsetky.to_dict("records"))
+                if zmeny:
+                    vsetky.loc[vsetky["id"].isin(list(zmeny)), "sector"] = \
+                        vsetky["id"].map(zmeny)
+                    zapisane = store.zapis_sektory(sb, zmeny)
+                    log.info("Podsektory: prekvalifikovanych %s zmluv", zapisane)
+        except Exception as e:
+            # Nesmie zhodit prepocet — horsie zaradenie je menej zle nez ziadne data.
+            log.warning("Prekvalifikovanie podsektorov zlyhalo: %s", e)
+
         # Mapu PSC -> kraj sa naucime z adries, ktorym kraj urcit vieme,
         # a potom nou doplnime male obce, ktore v zozname okresnych miest
         # nie su. Musi to byt PRED vypoctom prilezitosti aj dotacii,

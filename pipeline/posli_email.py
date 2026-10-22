@@ -101,6 +101,8 @@ SEKTOR_NAZOV = {
     "STRAVOVANIE": "stravovanie", "OSTRAHA": "ostraha", "IT_TECHNIKA": "IT technika",
     "TLAC_KANCELARIA": "tlač, kancelária",
     "PASPORTIZACIA_SPRAVA_BUDOV": "pasportizácia, správa budov",
+    "UPRATOVANIE_TOVAR": "upratovanie – hygienický tovar",
+    "OSTRAHA_TECHNIKA": "ostraha – zabezpečovacia technika",
     "DOTACIE_NFP": "dotácie",
 }
 
@@ -262,7 +264,8 @@ def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie,
         Majú informatívny charakter, pred rozhodnutím si ich overte v zdroji.<br><br>
         {odhlasenie}<br>
         {odhlasit_html}
-        LoveHome s.r.o., Černyševského 40, 851 01 Bratislava, IČO 47 586 362
+        LoveHome s.r.o., Černyševského 40, 851 01 Bratislava, IČO 47 586 362,<br>
+        OR Mestského súdu Bratislava III, oddiel Sro, vložka č. 95571/B
       </div>
     </td></tr>
   </table>
@@ -341,6 +344,17 @@ def pre_dodavatela(sb, o, dnes):
     else:
         od = (dnes - timedelta(days=DNI_SPAT)).isoformat()
 
+    # Plan Start (audit 22. 10. 2026): e-mail smie obsahovat len to, co Start
+    # vidi v appke — prve 2 kraje a 2 sektory z nastavenia_pouzivatela.
+    # main() ich sem vlozi ako o["_vyber_startu"]; bez vyberu sa nic neposiela
+    # (inak by Start cez e-mail dostal cele Slovensko, co appka RLS-kou skryva).
+    vyber = o.get("_vyber_startu")
+    if vyber is not None:
+        kraje_v = [k for k in (vyber.get("kraje") or []) if k][:2]
+        sektory_v = [s for s in (vyber.get("sektory") or []) if s][:2]
+        if not kraje_v or not sektory_v:
+            return None
+
     pouzit_relevanciu = bool(o.get("moje_ico")) and not (o.get("sektor") and o.get("kraj"))
     limit = KANDIDATOV_NA_VYBER if pouzit_relevanciu else MAX_POLOZIEK
 
@@ -355,6 +369,8 @@ def pre_dodavatela(sb, o, dnes):
         q = q.eq("sector", o["sektor"])
     if o.get("kraj"):
         q = q.eq("kraj", o["kraj"])
+    if vyber is not None:
+        q = q.in_("kraj", kraje_v).in_("sector", sektory_v)
 
     try:
         zmluvy = q.execute().data or []
@@ -395,9 +411,14 @@ def pre_dodavatela(sb, o, dnes):
                 + f"zmluva končí {_datum_sk(z.get('effective_to'))}"),
         })
 
-    kde_text = o.get("kraj") or "celé Slovensko"
-    co_text = (f"v sektore {_sektor_text(o['sektor'])}" if o.get("sektor")
-               else "vo vašich sektoroch")
+    kde_text = o.get("kraj") or (", ".join(kraje_v) if vyber is not None
+                                 else "celé Slovensko")
+    if o.get("sektor"):
+        co_text = f"v sektore {_sektor_text(o['sektor'])}"
+    elif vyber is not None:
+        co_text = "v sektoroch " + " a ".join(_sektor_text(s) for s in sektory_v)
+    else:
+        co_text = "vo vašich sektoroch"
     n = len(zmluvy)
     return {
         "titulok": (f"{n} " + _sklon(n, "nová príležitosť", "nové príležitosti",
@@ -538,9 +559,33 @@ def _nacitaj_pro_org(sb) -> "set | None":
 
 
 def _nacitaj_org_s_pristupom(sb) -> "set | None":
-    """Org_id s akymkolvek aktivnym pristupom (aj Start). Organizacia bez
-    neho (skuska skoncila, nezaplatila) uz e-maily dostavat nema."""
-    return _nacitaj_org(sb, None)
+    """Org_id s aktivnym pristupom k databaze zmluv (aj Start). Organizacia
+    bez neho (skuska skoncila, nezaplatila) uz e-maily dostavat nema.
+    Poradca medzi nimi nie je: rovnako ako ma_aktivny_pristup() v databaze
+    (68_plany_a_pristup.sql) nema pristup ku konciacim zmluvam, preto ich
+    nesmie dostavat ani e-mailom (audit 22. 10. 2026)."""
+    return _nacitaj_org(sb, PLANY_SO_ZMLUVAMI)
+
+
+# Plany s pristupom k databaze zmluv (vsetko okrem 'poradca').
+PLANY_SO_ZMLUVAMI = ("trial", "start", "pro", "growth", "team", "admin")
+
+
+def _nacitaj_vybery(sb) -> dict:
+    """user_id -> {"kraje": [...], "sektory": [...]} z nastavenia_pouzivatela.
+    Pouziva sa len pre plan Start (2 kraje a 2 sektory). Pri chybe vrati {},
+    co pre Start znamena "bez vyberu" -> ziadny e-mail (radsej nic nez cele
+    Slovensko, ktore Start nema zaplatene)."""
+    try:
+        riadky = vsetky(lambda od, do: (
+            sb.table("nastavenia_pouzivatela").select("user_id, kraje, sektory")
+              .order("user_id").range(od, do).execute()))
+    except Exception as e:
+        log.warning("Tabulka nastavenia_pouzivatela sa necitala: %s", e)
+        return {}
+    return {r.get("user_id"): {"kraje": r.get("kraje") or [],
+                               "sektory": r.get("sektory") or []}
+            for r in riadky if r.get("user_id")}
 
 
 def pripraveny_na_dalsi(o: dict, ma_pro: bool = True) -> bool:
@@ -699,6 +744,10 @@ def main():
         # pristup nie je.
         return org_s_pristupom is None or (bool(org_id) and org_id in org_s_pristupom)
 
+    # Vybery krajov/sektorov su potrebne len vtedy, ked sa plany rozlisuju
+    # (pro_org nie je None) — v otvorenom obdobi ma kazdy plny rozsah.
+    vybery = _nacitaj_vybery(sb) if pro_org is not None else {}
+
     odberatelia = []
     try:
         odberatelia += [dict(x, _typ="dodavatel") for x in
@@ -755,6 +804,9 @@ def main():
         if not pripraveny_na_dalsi(o, _ma_pro(o.get("org_id"))):
             preskocene += 1
             continue
+        if o["_typ"] == "dodavatel" and not _ma_pro(o.get("org_id")):
+            # Start: len vlastny vyber (2 kraje + 2 sektory), viz pre_dodavatela().
+            o["_vyber_startu"] = vybery.get(o.get("user_id"), {})
 
         obsah = (pre_obec(sb, o, dnes) if o["_typ"] == "obec"
                  else pre_dodavatela(sb, o, dnes))

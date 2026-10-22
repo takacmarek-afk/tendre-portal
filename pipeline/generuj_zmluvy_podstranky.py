@@ -122,6 +122,9 @@ HLAVICKA = """<!doctype html>
 <meta charset="utf-8">
 <script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>{titul}</title>
 <meta name="description" content="{popis}">
 <meta name="robots" content="index,follow">

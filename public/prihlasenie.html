@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="canonical" href="https://predtendrom.sk/prihlasenie">
 <title>Prihlásenie — PredTendrom.sk</title>
 <meta name="description" content="Prihlásenie a registrácia do PredTendrom.sk — končiace zmluvy a dotácie pre firmy, ktoré dodávajú štátu a obciam.">
 <meta property="og:title" content="Prihlásenie — PredTendrom.sk">
@@ -174,8 +178,8 @@
         </button>
 
         <p class="text-[12px] leading-relaxed text-slate2 text-center">
-          Prihlásením potvrdzujete <a href="/obchodne-podmienky" class="text-accent hover:underline">obchodné podmienky</a>
-          a berie sa na vedomie <a href="/ochrana-osobnych-udajov" class="text-accent hover:underline">ochrana osobných údajov</a>.
+          Prihlásením súhlasíte s <a href="/obchodne-podmienky" class="text-accent hover:underline">obchodnými podmienkami</a>
+          a beriete na vedomie <a href="/ochrana-osobnych-udajov" class="text-accent hover:underline">zásady ochrany osobných údajov</a>.
         </p>
 
         <p id="chyba" class="text-[13px] text-red-700 hidden"></p>
@@ -236,14 +240,15 @@
   </p>
 
   <p id="pata-text" class="text-center text-[12px] text-slate2 mt-6 leading-relaxed">
-    Služba je určená podnikateľským subjektom.<br>
+    Služba je určená len podnikateľom a obciam, nie spotrebiteľom.<br>
     Prevádzkovateľ: LoveHome s.r.o., IČO 47586362
   </p>
 
 </div>
 
 <script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+// supabase-js 2.118.0 hostovana u nas (audit 22. 10. 2026): presna verzia, bez CDN tretej strany.
+import { createClient } from '/vendor/supabase-js-2.118.0.js';
 
 const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG;
 
@@ -457,6 +462,7 @@ if (SUPABASE_ANON_KEY.startsWith('SEM_VLOZ')) {
         tsWidget = window.turnstile.render('#ts-box', {
           sitekey: TS_KLUC,
           language: 'sk',
+          size: 'flexible',  // na mobile sa prisposobi sirke formulara
           callback: (t) => { tsToken = t; },
           'expired-callback': () => { tsToken = ''; },
           'error-callback': () => { tsToken = ''; },

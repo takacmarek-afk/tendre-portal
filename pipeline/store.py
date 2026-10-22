@@ -89,6 +89,23 @@ def nacitaj_contracts(sb) -> pd.DataFrame:
     return pd.DataFrame(vsetko)
 
 
+def zapis_sektory(sb, zmeny: dict, davka: int = 200) -> int:
+    """Prepise `sector` pri zmluvach z {id: sektor} (prekvalifikovanie do
+    podsektorov). Po davkach podla cieloveho sektora. Vrati pocet riadkov."""
+    podla = {}
+    for i, s in zmeny.items():
+        if i is None or not s:
+            continue
+        podla.setdefault(s, []).append(i)
+    spolu = 0
+    for s, ids in podla.items():
+        for k in range(0, len(ids), davka):
+            cast = ids[k:k + davka]
+            sb.table("contracts").update({"sector": s}).in_("id", cast).execute()
+            spolu += len(cast)
+    return spolu
+
+
 def pocet_contracts(sb) -> int:
     r = sb.table("contracts").select("id", count="exact", head=True).execute()
     return r.count or 0

@@ -99,3 +99,27 @@ def klasifikuj_ucel(subject, popis):
         return None
     sektor, _ = _skoruj(text, vynechaj=(SEKTOR_DOTACIE,))
     return sektor
+
+
+# ── PODSEKTORY (audit 22. 10. 2026) ──────────────────────────────────────
+# Zmluvy zaradene do UPRATOVANIE/OSTRAHA pred zavedenim podsektorov su
+# v databaze uz ulozene. Pri kazdom prepocte sa preto prekontroluju a tie,
+# ktore teraz patria do podsektora (tovar, technika), sa prekvalifikuju.
+# Ostatne zaradenia sa zamerne nemenia (ziadne tiche prehadzovanie sektorov).
+PODSEKTORY = {"UPRATOVANIE": "UPRATOVANIE_TOVAR", "OSTRAHA": "OSTRAHA_TECHNIKA"}
+
+
+def prekvalifikuj_podsektory(riadky):
+    """riadky: iterovatelne dict-y s id, sector, subject, subject_description.
+    Vrati {id: novy_sektor} len pre zmluvy, ktore z materskeho sektora
+    patria do jeho podsektora."""
+    zmeny = {}
+    for r in riadky:
+        stary = r.get("sector")
+        cielovy = PODSEKTORY.get(stary)
+        if not cielovy:
+            continue
+        novy, _ = klasifikuj(r.get("subject"), r.get("subject_description"))
+        if novy == cielovy:
+            zmeny[r.get("id")] = novy
+    return zmeny

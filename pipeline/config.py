@@ -170,6 +170,38 @@ SEKTORY = {
                 "verejnej zelen", "verejna zelen"],
         },
     },
+    # PODSEKTORY (audit 22. 10. 2026, rozhodnutie Mareka "nove sektory
+    # podruzne"): nakup cistiacich prostriedkov a drogerie nie je upratovacia
+    # sluzba a kamerovy system nie je fyzicka ostraha. Upratovacia firma taku
+    # zakazku nedoda, preto mala v sektore UPRATOVANIE silu signalu 99 a
+    # zavadzala. Su PRED materskym sektorom, aby pri zhode vyhrali.
+    "UPRATOVANIE_TOVAR": {
+        "cpv": "39830000-9",
+        "popis": "Hygienicky tovar a cistiace prostriedky (podsektor upratovania)",
+        "kluc": {
+            4: ["cistiac prostriedk", "cistiac potr", "cistiac a hygienick",
+                "hygienick potr", "hygienick prostriedk", "hygienick tovar",
+                "drogeri", "upratovac prostriedk", "upratovac potr",
+                "spotrebn material na upratovani", "toaletn papier",
+                "papierov uterak", "lestiac prostriedk",
+                "dezinfekcn prostriedk", "pracich prostriedk",
+                "lestiac", "hyg.potr", "hyg. potr", "predmet osobnej starostlivost",
+                "dodavk cistiac", "dodani cistiac", "nakup cistiac"],
+        },
+    },
+    "OSTRAHA_TECHNIKA": {
+        "cpv": "35120000-1",
+        "popis": "Zabezpecovacia technika: kamery, EPS, EZS (podsektor ostrahy)",
+        "kluc": {
+            4: ["kamerov system", "kamerovy system", "kameroveho systemu",
+                "kamerovych systemov", "elektronick poziarn signalizaci",
+                "elektrick poziarn signalizaci", "poziarn signalizaci",
+                "elektrick zabezpecovac", "elektronick zabezpecovac",
+                "zabezpecovac system", "priemyseln televizi",
+                "pristupov system", "dochadzkov system", "videodohlad"],
+            2: ["kamer"],
+        },
+    },
     "UPRATOVANIE": {
         "cpv": "90900000-6",
         "popis": "Upratovacie a cistiace sluzby",
@@ -177,7 +209,10 @@ SEKTORY = {
             3: ["upratovac", "upratovani", "upratovanie", "upratovania",
                 "cistiac", "dezinfekci", "deratizaci", "dezinsekci",
                 "umyvani okien", "umyvanie okien"],
-            2: ["cisten", "hygienick servis", "pranie a zehleni", "sanitarn sluzb"],
+            # "upratovacich sluzieb" ako sluzba prevazi nad podsektorom tovaru
+            # aj ked zmluva spomina "vratane dodavky hygienickych potrieb".
+            2: ["cisten", "hygienick servis", "pranie a zehleni", "sanitarn sluzb",
+                "upratovac sluz", "cistiac sluz", "upratovac prac", "cistiac prac"],
         },
     },
     "DOPRAVA_MECHANIZACIA": {
@@ -203,12 +238,10 @@ SEKTORY = {
     },
     "OSTRAHA": {
         "cpv": "79710000-4",
-        "popis": "Ostraha, bezpecnost, kamerove systemy",
+        "popis": "Ostraha a bezpecnostne sluzby",
         "kluc": {
             3: ["strazn sluzb", "ochran majetku", "bezpecnostn sluzb",
-                "kamerov system", "kamerovy system", "kameroveho systemu",
-                "elektronick poziarn signalizaci", "zabezpecovaci system",
-                "pult centralnej ochrany"],
+                "fyzick ochran", "pult centralnej ochrany"],
             2: ["ostrah", "monitoring objektu", "vratnic"],
         },
     },

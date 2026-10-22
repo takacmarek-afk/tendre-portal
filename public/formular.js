@@ -21,6 +21,7 @@
         widgetId = window.turnstile.render(selector, {
           sitekey: KLUC,
           language: 'sk',
+          size: 'flexible',  // na mobile sa prisposobi sirke formulara
           callback: function (t) { token = t; },
           'expired-callback': function () { token = ''; },
           'error-callback': function () { token = ''; },

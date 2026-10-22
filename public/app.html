@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="robots" content="noindex">
 <title>Prehľad príležitostí – PredTendrom.sk</title>
 <script src="./config.js"></script>
 <script src="./plany.js"></script>
@@ -151,8 +155,10 @@
 }
 </style>
 <link rel="stylesheet" href="/style.css">
+<style>.preskocit{position:absolute;left:-9999px;top:0;z-index:100;background:#0B1220;color:#fff;padding:.6rem 1rem;border-radius:.375rem;font-weight:600;font-size:14px}.preskocit:focus{left:1rem;top:1rem}</style>
 </head>
 <body class="font-sans text-ink bg-[#F3F0E6] min-h-screen">
+<a href="#obsah" class="preskocit">Preskočiť na obsah</a>
 
 <div id="nacitavam" class="min-h-screen flex items-center justify-center">
   <div class="text-[14px] text-slate2" role="status">Načítavam…</div>
@@ -319,6 +325,11 @@
         predplatné sa neobnovuje automaticky. Pokračovaním súhlasíte s
         <a class="underline" href="/obchodne-podmienky" target="_blank" rel="noopener">obchodnými podmienkami</a>.
       </p>
+      <!-- Len pre podnikatelov a obce (obchodne podmienky, bod 6; rozhodnutie 22. 10. 2026). -->
+      <label class="flex items-start gap-2 text-[13px] leading-snug text-ink mb-4 cursor-pointer">
+        <input id="modal-predplatne-b2b" type="checkbox" class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
+        <span>Plán objednávam ako podnikateľ alebo obec v rámci svojej činnosti, nie ako spotrebiteľ.</span>
+      </label>
       <p id="modal-predplatne-chyba" class="hidden text-[13px] text-red-700 mb-3"></p>
       <button id="modal-predplatne-zaplatit"
               class="w-full bg-accent text-white font-semibold px-5 py-3 rounded-md
@@ -368,7 +379,7 @@
     </div>
   </div>
 
-  <main class="max-w-[1280px] mx-auto px-5 py-8">
+  <main id="obsah" tabindex="-1" class="max-w-[1280px] mx-auto px-5 py-8">
 
     <!-- Vysledok prijatia pozvanky do timu (viz start() a spravaPozvanky).
          Jednorazova hlaska, ziadny trvaly stav — po zatvoreni/odchode zo
@@ -487,7 +498,7 @@
            class="hidden bg-ink text-white rounded-lg px-4 py-3
                   flex items-center justify-between gap-3">
         <p class="text-[13px] text-white/85 leading-snug">
-          <span class="font-semibold text-white">Prehľad máte objednaný.</span>
+          <span class="font-semibold text-white">Prehľad e-mailom máte zapnutý:</span>
           <span id="o-zhrnutie-filtre"></span>
         </p>
         <span class="flex items-center gap-4 shrink-0">
@@ -515,13 +526,13 @@
           <div class="flex flex-col sm:flex-row gap-2 lg:shrink-0">
             <select id="o-sektor" aria-label="Sektor"
                     class="border border-white/20 bg-white/10 text-white rounded-md
-                           px-3 py-2 text-[14px] focus:outline-none focus:border-white/60"></select>
+                           px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-white"></select>
             <select id="o-kraj" aria-label="Kraj"
                     class="border border-white/20 bg-white/10 text-white rounded-md
-                           px-3 py-2 text-[14px] focus:outline-none focus:border-white/60"></select>
+                           px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-white"></select>
             <select id="o-frekvencia" aria-label="Ako často chcete prehľad"
                     class="border border-white/20 bg-white/10 text-white rounded-md
-                           px-3 py-2 text-[14px] focus:outline-none focus:border-white/60">
+                           px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-white">
               <option value="tyzdenne">týždenne</option>
               <option value="denne">denne</option>
             </select>
@@ -539,7 +550,7 @@
           <input id="o-webhook" type="url" placeholder="https://hooks.slack.com/services/…"
                  class="w-full sm:max-w-md border border-white/20 bg-white/10 text-white rounded-md
                         px-3 py-2 text-[14px] placeholder:text-white/40
-                        focus:outline-none focus:border-white/60">
+                        focus:outline-none focus:ring-2 focus:ring-white">
         </div>
         <div class="mt-3">
           <label for="o-moje-ico" class="block text-[12px] text-white/60 mb-1">
@@ -550,7 +561,7 @@
           <input id="o-moje-ico" type="text" inputmode="numeric" maxlength="20" placeholder="12345678"
                  class="w-full sm:max-w-xs border border-white/20 bg-white/10 text-white rounded-md
                         px-3 py-2 text-[14px] placeholder:text-white/40
-                        focus:outline-none focus:border-white/60">
+                        focus:outline-none focus:ring-2 focus:ring-white">
         </div>
         <p id="o-hlaska" class="hidden mt-4 text-[13px] text-white/80"></p>
       </div>
@@ -658,7 +669,7 @@
           </div>
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
-          <span id="pocet" class="text-[13px] text-slate2"></span>
+          <span id="pocet" class="text-[13px] text-slate2" aria-live="polite"></span>
           <div class="flex items-center gap-3">
             <button id="f-reset" class="text-[13px] text-slate2 hover:text-ink">Zrušiť filtre</button>
             <button id="export-z" class="text-[13px] font-semibold text-accent hover:text-accentDark">
@@ -805,7 +816,7 @@
           </div>
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
-          <span id="pocet-dot" class="text-[13px] text-slate2"></span>
+          <span id="pocet-dot" class="text-[13px] text-slate2" aria-live="polite"></span>
           <div class="flex items-center gap-3">
             <button id="d-reset" class="text-[13px] text-slate2 hover:text-ink">Zrušiť filtre</button>
             <button id="export-d" class="text-[13px] font-semibold text-accent hover:text-accentDark">
@@ -987,7 +998,7 @@
           </label>
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
-          <span id="pocet-uvo" class="text-[13px] text-slate2"></span>
+          <span id="pocet-uvo" class="text-[13px] text-slate2" aria-live="polite"></span>
           <button id="export-u" class="text-[13px] font-semibold text-accent">Export do Excelu</button>
         </div>
       </div>
@@ -1073,7 +1084,7 @@
             </div>
           </div>
           <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
-            <span id="pocet-dod" class="text-[13px] text-slate2"></span>
+            <span id="pocet-dod" class="text-[13px] text-slate2" aria-live="polite"></span>
             <button id="export-f" class="text-[13px] font-semibold text-accent hover:text-accentDark">
               Export do Excelu
             </button>
@@ -1369,8 +1380,14 @@
 </div>
 
 <script type="module">
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import * as XLSX from 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm';
+// supabase-js 2.118.0 hostovana u nas (audit 22. 10. 2026): presna verzia, bez CDN tretej strany.
+import { createClient } from '/vendor/supabase-js-2.118.0.js';
+// xlsx sa nacita az pri prvom exporte (nie pri kazdom otvoreni appky).
+let XLSX = null;
+async function nacitajXlsx() {
+  if (!XLSX) XLSX = await import('https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm');
+  return XLSX;
+}
 
 // ─────────────────────────────────────────────────────────────────────────
 //  PORADIE V TOMTO SUBORE JE ZAMERNE
@@ -1524,6 +1541,15 @@ function tvar(n, jeden, dvaAzStyri, pat) {
   return pat;
 }
 
+// Pocet z head-only dotazu ({ count: 'exact', head: true }). Audit 22. 10. 2026:
+// pri HTTP 503 vratil supabase-js `count: null` BEZ `error` a appka ukazala
+// "0 novych prilezitosti". null = pocet nevieme (chyba), nie nula.
+function pocetAleboNull(res) {
+  if (!res || res.error) return null;
+  if (typeof res.status === 'number' && res.status >= 400) return null;
+  return Number.isFinite(res.count) ? res.count : null;
+}
+
 /** Kontrola IČO: 8 cislic + kontrolna cislica (modulo 11).
  *  Rovnaky algoritmus ako _ico_platne() v DB (migracia 63). */
 function icoPlatne(ico) {
@@ -1607,6 +1633,9 @@ const POPIS_SEKTORA = {
   STRAVOVANIE: 'stravovanie', OSTRAHA: 'ostraha', IT_TECHNIKA: 'IT technika',
   TLAC_KANCELARIA: 'tlač, kancelária',
   PASPORTIZACIA_SPRAVA_BUDOV: 'pasportizácia, správa budov',
+  // Podsektory (audit 22. 10. 2026)
+  UPRATOVANIE_TOVAR: 'upratovanie – hygienický tovar',
+  OSTRAHA_TECHNIKA: 'ostraha – zabezpečovacia technika',
 };
 
 // Moj vyber (P1.3): velkost zakaziek. Hranice v eurach; 'vsetko' = bez obmedzenia.
@@ -1769,8 +1798,11 @@ function porovnanieCeny(b) {
 
   const riadky = [`${suma(cena)} ${jednotka}`];
   if (maKotvu) {
+    // Viac nez trojnasobok medianu je takmer vzdy iny rozsah zmluvy (vacsia
+    // budova, viac objektov), nie draha zmluva — audit 22. 10. 2026.
     riadky.push(Math.abs(o) < 10
       ? 'na úrovni mediánu sektora'
+      : o > 200 ? 'viac ako 3× medián sektora, pravdepodobne iný rozsah'
       : `${o > 0 ? '+' : ''}${o} % oproti mediánu`);
   }
 
@@ -2210,7 +2242,12 @@ function poslednaSutaz(r) {
   const u = r.authority_cin ? UVO_POSLEDNA.get(`${r.authority_cin}|${r.sector}`) : null;
   if (!u) return '';
   const casti = [];
-  if (u.hodnota != null) casti.push(`za ${suma(u.hodnota)}`);
+  // Hodnota pod 1 000 EUR je pri sluzbe takmer vzdy jednotkova cena (napr.
+  // 8 EUR za hodinu ostrahy), nie hodnota zakazky — audit 22. 10. 2026.
+  if (u.hodnota != null) {
+    const h = num(u.hodnota);
+    casti.push(!Number.isNaN(h) && h < 1000 ? `jednotková cena ${suma(u.hodnota)}` : `za ${suma(u.hodnota)}`);
+  }
   if (u.pocet_ponuk != null) casti.push(`${u.pocet_ponuk} ${tvar(u.pocet_ponuk, 'ponuka', 'ponuky', 'ponúk')}`);
   if (u.podpisane) casti.push(`podpísané ${datumKratky(u.podpisane)}`);
   // Audit 6. 10. 2026 (A2): ak ma rovnaky obstaravatel v tom istom sektore
@@ -2402,6 +2439,8 @@ const SEKTOR_SLOVA = {
   UPRATOVANIE: ['upratovan', 'cistenie', 'cistiac'],
   STRAVOVANIE: ['stravovan', 'jedaln', 'kuchyn'],
   OSTRAHA: ['ostrah', 'strazen', 'strazn', 'bezpecnostn'],
+  UPRATOVANIE_TOVAR: ['drogeri', 'hygienick'],
+  OSTRAHA_TECHNIKA: ['kamer', 'zabezpecovac'],
   ZELEN_ZIMNA_UDRZBA: ['zelen', 'zimna', 'kosen'],
   STAVEBNE_PRACE: ['stavebn', 'stavb', 'rekonstrukc'],
   STRECHY_IZOLACIE: ['strech', 'zateplen', 'izolac'],
@@ -2600,8 +2639,9 @@ const HLAVICKY_EXPORTU = {
 };
 
 /** Vrati true, ked sa subor stiahol, false ked nebolo co exportovat. */
-function exportExcel(nazov, riadky) {
+async function exportExcel(nazov, riadky) {
   if (!riadky?.length) return false;
+  await nacitajXlsx();
   const hlavicky = Object.keys(riadky[0]);
   const hlavickySk = hlavicky.map(h => HLAVICKY_EXPORTU[h] ?? h);
 
@@ -2733,6 +2773,7 @@ function otvorPredplatneModal(supabase, aktualnyPlan) {
     </label>`).join('');
 
   el('modal-predplatne-chyba').classList.add('hidden');
+  el('modal-predplatne-b2b').checked = false;
   const btn = el('modal-predplatne-zaplatit');
   btn.disabled = false;
   btn.textContent = 'Zaplatiť';
@@ -2745,6 +2786,11 @@ function otvorPredplatneModal(supabase, aktualnyPlan) {
     const chyba = el('modal-predplatne-chyba');
     if (!zvolene) {
       chyba.textContent = 'Vyberte prosím plán a obdobie.';
+      chyba.classList.remove('hidden');
+      return;
+    }
+    if (!el('modal-predplatne-b2b').checked) {
+      chyba.textContent = 'PredTendrom je len pre firmy a obce. Potvrďte prosím, že plán objednávate v rámci svojej činnosti.';
       chyba.classList.remove('hidden');
       return;
     }
@@ -3157,7 +3203,7 @@ function platneIco(v) {
   return icoPlatne(t) ? t : '';
 }
 
-async function nastavOdber(supabase, sektory, email, onZmena, jePro = false) {
+async function nastavOdber(supabase, sektory, email, onZmena, jePro = false, jeStart = false) {
   naplnSelect('o-sektor', sektory, 'všetky sektory');
   naplnSelect('o-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
 
@@ -3197,11 +3243,13 @@ async function nastavOdber(supabase, sektory, email, onZmena, jePro = false) {
 
     // Popis filtrov do zhrnutia. Prazdna hodnota znamena "vsetko", takze
     // ju treba pomenovat — "Zapnuty pre , " by vyzeralo ako chyba.
-    const sektorText = o?.sektor ? (POPIS_SEKTORA[o.sektor] ?? o.sektor) : 'všetky sektory';
-    const krajText = o?.kraj || 'celé Slovensko';
+    // Start dostava e-mail len zo svojho vyberu (pipeline/posli_email.py).
+    const sektorText = o?.sektor ? (POPIS_SEKTORA[o.sektor] ?? o.sektor)
+      : (jeStart ? 'sektory z môjho výberu' : 'všetky sektory');
+    const krajText = o?.kraj || (jeStart ? 'kraje z môjho výberu' : 'celé Slovensko');
     const frekvenciaText = o?.frekvencia === 'denne' ? 'denne' : 'týždenne';
     el('o-zhrnutie-filtre').textContent =
-      ` ${sektorText}, ${krajText} — ${frekvenciaText}.` +
+      ` ${frekvenciaText}, ${sektorText}, ${krajText}.` +
       (jePro && o?.frekvencia !== 'denne' ? ' Váš plán umožňuje aj denný prehľad.' : '');
 
     if (zbal) {
@@ -3971,23 +4019,28 @@ function nastavDnes(supabase, ctx) {
     return zdroje[kluc];
   };
 
-  const kde = () => ctx.vyber().zapnuty ? 'vo vašom výbere' : 'na celom Slovensku';
+  const kde = () => (ctx.vyber().zapnuty || ctx.jeStart) ? 'vo vašom výbere' : 'na celom Slovensku';
+  // Start bez vyberu nevidi nic (RLS), nie "cele Slovensko" (audit 22. 10. 2026).
+  const kdePopis = () => ctx.vyber().zapnuty ? ctx.vyber().popis
+    : (ctx.jeStart ? 'výber nie je nastavený' : 'celé Slovensko');
 
   // ── Zdroje dat (kazdy dopyt nanajvys raz na generaciu) ──────────────────
   const ZDROJE = {
     nove: () => sp('nove', async () => {
-      const { count, error } = await ctx.obmedz(
+      const { count, error, status } = await ctx.obmedz(
         supabase.from('opportunities').select('contract_id', { count: 'exact', head: true })
           .gte('first_seen_at', oDni(-7)));
-      if (error) throw error;
-      return count ?? 0;
+      const n = pocetAleboNull({ count, error, status });
+      if (n === null) throw error || new Error('Pocet novych prilezitosti sa nenacital');
+      return n;
     }),
     koncia90: () => sp('koncia90', async () => {
-      const { count, error } = await ctx.obmedz(
+      const { count, error, status } = await ctx.obmedz(
         supabase.from('opportunities').select('contract_id', { count: 'exact', head: true })
           .gte('effective_to', oDni(0)).lte('effective_to', oDni(DNI_TENDER_UZ_BEZI)));
-      if (error) throw error;
-      return count ?? 0;
+      const n = pocetAleboNull({ count, error, status });
+      if (n === null) throw error || new Error('Pocet konciacich zmluv sa nenacital');
+      return n;
     }),
     signaly: () => sp('signaly', async () => {
       // Rovnaky predvoleny pohlad ako zalozka Koncice zmluvy: bez zmlúv, kde
@@ -4120,12 +4173,12 @@ function nastavDnes(supabase, ctx) {
     'kpi-nove': {
       zdroje: [ZDROJE.nove],
       vykresli: ([n]) => prazdnaDlazdica('Nové príležitosti',
-        kpiTelo(cislo(n), `za posledných 7 dní · ${ctx.vyber().zapnuty ? ctx.vyber().popis : 'celé Slovensko'}`)),
+        kpiTelo(cislo(n), `za posledných 7 dní · ${kdePopis()}`)),
     },
     'kpi-koncia': {
       zdroje: [ZDROJE.koncia90],
       vykresli: ([n]) => prazdnaDlazdica('Zmluvy končiace do 90 dní',
-        kpiTelo(cislo(n), ctx.vyber().zapnuty ? ctx.vyber().popis : 'celé Slovensko')),
+        kpiTelo(cislo(n), kdePopis())),
     },
     'kpi-sledovane': {
       zdroje: [ZDROJE.sledovane],
@@ -4148,7 +4201,7 @@ function nastavDnes(supabase, ctx) {
       zdroje: [ZDROJE.signaly],
       vykresli: ([riadky]) => {
         if (!riadky.length) {
-          return prazdnyStav(`${ctx.vyber().zapnuty ? 'Pre váš výber' : 'Na celom Slovensku'} teraz nemáme žiadnu príležitosť so signálom na zobrazenie.`,
+          return prazdnyStav(`${(ctx.vyber().zapnuty || ctx.jeStart) ? 'Pre váš výber' : 'Na celom Slovensku'} teraz nemáme žiadnu príležitosť so signálom na zobrazenie.`,
             ctx.vyber().zapnuty && ctx.vyber().moze
               ? '<div class="dnes-akcie"><button type="button" class="dnes-btn" data-dnes-vyber>Zmeniť výber</button></div>' : '');
         }
@@ -4327,6 +4380,11 @@ function nastavDnes(supabase, ctx) {
     const vy = ctx.vyber();
     if (vy.zapnuty || !vy.moze) { v.classList.add('hidden'); v.innerHTML = ''; return; }
     v.classList.remove('hidden');
+    if (ctx.jeStart) {
+      v.innerHTML = `Plán Start ukazuje 2 kraje a 2 sektory, ktoré si vyberiete. Kým ich nevyberiete, príležitosti tu neuvidíte.
+         <button type="button" class="dnes-btn dnes-btn-hlavne" data-dnes-vyber style="margin-left:.4rem">Vybrať kraje a sektory</button>`;
+      return;
+    }
     v.innerHTML = vy.maObsah
       ? `Môj výber je vypnutý, zobrazujeme celé Slovensko.
          <button type="button" class="dnes-btn" data-dnes-zapni-vyber style="margin-left:.4rem">Zapnúť výber</button>`
@@ -4338,6 +4396,10 @@ function nastavDnes(supabase, ctx) {
     const v = el('dnes-veta');
     if (!v) return;
     const vy = ctx.vyber();
+    if (ctx.jeStart && !vy.zapnuty) {
+      v.textContent = 'Vyberte si 2 kraje a 2 sektory a ukážeme vám, ktoré zmluvy vo vašom výbere končia.';
+      return;
+    }
     const znamy = (kluc) => (kluc in data ? data[kluc] : null);
     const nove = znamy('nove'), koncia = znamy('koncia90');
     const veta = vetaSuhrnu(nove, koncia, { zapnuty: vy.zapnuty, sektorov: vy.sektorov, iba: vy.iba });
@@ -4564,14 +4626,18 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   let dnes = null;
 
   const sektory = Object.entries(POPIS_SEKTORA).sort((a, b) => a[1].localeCompare(b[1], 'sk'));
-  naplnSelect('f-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
-  naplnSelect('d-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
-  naplnSelect('f-sektor', sektory, 'všetky sektory');
-  naplnSelect('d-sektor', sektory, 'všetko');
-  naplnSelect('s-sektor', sektory, 'všetky sektory');
-  naplnSelect('zi-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
-  naplnSelect('u-kraj', KRAJE.map(k => [k, k]), 'celé Slovensko');
-  naplnSelect('u-sektor', sektory, 'všetky sektory');
+  // Start vidi len svoj vyber (RLS), preto "cele Slovensko" by klamalo
+  // (audit 22. 10. 2026) — prazdna volba je u neho "vsetko z mojho vyberu".
+  const vsetkyKraje = jeStart ? 'všetky z môjho výberu' : 'celé Slovensko';
+  const vsetkySektory = jeStart ? 'všetky z môjho výberu' : 'všetky sektory';
+  naplnSelect('f-kraj', KRAJE.map(k => [k, k]), vsetkyKraje);
+  naplnSelect('d-kraj', KRAJE.map(k => [k, k]), vsetkyKraje);
+  naplnSelect('f-sektor', sektory, vsetkySektory);
+  naplnSelect('d-sektor', sektory, jeStart ? vsetkySektory : 'všetko');
+  naplnSelect('s-sektor', sektory, vsetkySektory);
+  naplnSelect('zi-kraj', KRAJE.map(k => [k, k]), vsetkyKraje);
+  naplnSelect('u-kraj', KRAJE.map(k => [k, k]), vsetkyKraje);
+  naplnSelect('u-sektor', sektory, vsetkySektory);
 
   // Posledne ZOBRAZENE data (max LIMIT riadkov). Sluzia na vykreslenie
   // a na dohladanie cenoveho benchmarku k zobrazenym riadkom.
@@ -4903,7 +4969,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     // databazy je presne ten druh "pomoci", ktory zakaznik objavi az vtedy,
     // ked mu nieco chyba — a vtedy prestane verit celemu zvysku.
     el('pocet').textContent = jeCas && skrytych > 0
-      ? `${zaklad} · ${cislo(skrytych)} skrytých, kde tender už pravdepodobne beží`
+      ? `${zaklad} · ${cislo(skrytych)} ${tvar(skrytych, 'skrytá', 'skryté', 'skrytých')}, kde tender už pravdepodobne beží`
       : zaklad;
     nastavViac('zmluvy', 'viac-z-obal', 'viac-z-stav', c, posledne.zmluvy.length);
   }
@@ -5116,7 +5182,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       if (t) sq = sq.or(`nazov.ilike.*${t}*,obstaravatel_nazov.ilike.*${t}*,vitaz_nazov.ilike.*${t}*`);
       const skr = await sq;
       if (moje !== poziadavka.uvo) return;
-      if (!skr.error && skr.count) text += ` · ${cislo(skr.count)} skrytých, kde súťaž už pravdepodobne beží`;
+      if (!skr.error && skr.count) text += ` · ${cislo(skr.count)} ${tvar(skr.count, 'skrytá', 'skryté', 'skrytých')}, kde súťaž už pravdepodobne beží`;
     }
     if (typ === 'koncia') text += ' · stavebné práce tu nie sú, stavba sa neopakuje';
     el('pocet-uvo').textContent = text;
@@ -5363,14 +5429,17 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     return;
   }
 
-  const mameZmluvy = (pz.count ?? 0) > 0;
+  // Neznamy pocet (null) nie je prazdna databaza — radsej pokracovat.
+  const pocetZmluv = pocetAleboNull(pz);
+  const mameZmluvy = pocetZmluv === null || pocetZmluv > 0;
 
   // Na rozhodnutie "mame vobec data" sa NESMIE pouzit dopredu hladiaci
   // pocet. Keby raz neboli ziadne dotacie s neotvorenym oknom, aplikacia
   // by tvrdila, ze databaza je prazdna, hoci v nej je 2 500 riadkov.
   const pdVsetky = await supabase.from('subsidies')
     .select('*', { count: 'exact', head: true });
-  const mameDotacie = !pdVsetky.error && (pdVsetky.count ?? 0) > 0;
+  const pocetDotaciiVsetkych = pocetAleboNull(pdVsetky);
+  const mameDotacie = pocetDotaciiVsetkych === null || pocetDotaciiVsetkych > 0;
 
   // Start vidi len svoje 2 kraje a 2 sektory (RLS). Kym si ich nevyberie, alebo
   // ked v nich nic nie je, su oba pocty 0 — to NIE JE prazdna databaza, a
@@ -5385,15 +5454,18 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     return;
   }
 
-  el('pocet-z').textContent = `(${cislo(pz.count ?? 0)})`;
-  el('pocet-d').textContent = pd.error ? '' : `(${cislo(pd.count ?? 0)})`;
+  // Neznamy pocet = bez cisla (nie "(0)"); zalozka si ho doplni po otvoreni.
+  const pocetDotacii = pocetAleboNull(pd);
+  el('pocet-z').textContent = pocetZmluv === null ? '' : `(${cislo(pocetZmluv)})`;
+  el('pocet-d').textContent = pocetDotacii === null ? '' : `(${cislo(pocetDotacii)})`;
 
   // Pocet v zalozke tretej vrstvy. Ked tabulka este neexistuje alebo
   // je prazdna, zalozka zostane bez cisla a nic sa nerozbije.
   try {
     const pzi = await supabase.from('obce_ziadatelia')
       .select('contract_id', { count: 'exact', head: true });
-    if (!pzi.error) el('pocet-zi').textContent = `(${cislo(pzi.count ?? 0)})`;
+    const nzi = pocetAleboNull(pzi);
+    if (nzi !== null) el('pocet-zi').textContent = `(${cislo(nzi)})`;
   } catch (e) { /* ticho */ }
 
   // ── Strankovanie ──────────────────────────────────────────────────────
@@ -5837,7 +5909,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // zobrazenie prilezitosti — tie su jadro produktu.
   try {
     const { data: { user } } = await supabase.auth.getUser();
-    await nastavOdber(supabase, sektory, user?.email, nastavRelevanciu, jePro);
+    await nastavOdber(supabase, sektory, user?.email, nastavRelevanciu, jePro, jeStart);
   } catch (e) {
     console.error('Odber sa nepodarilo nastavit:', e);
   }
@@ -5884,6 +5956,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     orgId,
     aktivny,
     jePro,
+    jeStart,
     vyber: () => ({
       zapnuty: vyberZapnuty(),
       maObsah: mvTextVyberu(),

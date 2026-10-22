@@ -222,6 +222,10 @@ CPV_SEKTORY = [
     ("7734", "ZELEN_ZIMNA_UDRZBA"),
     ("9062", "ZELEN_ZIMNA_UDRZBA"),
     ("9063", "ZELEN_ZIMNA_UDRZBA"),
+    # Podsektory (audit 22. 10. 2026): cistiace prostriedky a zabezpecovacia technika.
+    ("3983", "UPRATOVANIE_TOVAR"),   # cistiace prostriedky
+    ("3512", "OSTRAHA_TECHNIKA"),    # sledovacie a bezpecnostne systemy
+    ("32323500", "OSTRAHA_TECHNIKA"),  # videodohlad
     ("9091", "UPRATOVANIE"),
     ("9092", "UPRATOVANIE"),
     ("90900", "UPRATOVANIE"),

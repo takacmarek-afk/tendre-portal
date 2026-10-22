@@ -219,6 +219,10 @@ class _FalosnaTabulka:
         self._data = [r for r in self._data if r.get(col) == val]
         return self
 
+    def in_(self, col, vals):
+        self._data = [r for r in self._data if r.get(col) in vals]
+        return self
+
     def order(self, col, desc=False):
         self._order_key, self._order_desc = col, desc
         return self
@@ -556,3 +560,23 @@ assert 'Vypnúť prehľad' in ob["odhlasenie"] and '"' not in ob["odhlasenie"]
 ob2 = pe.pre_dodavatela(_SbD(1), {"email": "a@b.sk"}, date(2026, 10, 5))
 assert "vo vašich sektoroch" in ob2["uvod"] and "celé Slovensko" in ob2["uvod"]
 print("T7) pre_dodavatela OK")
+
+
+# T8) Plan Start (audit 22. 10. 2026): e-mail obsahuje len vyber 2 kraje + 2
+#     sektory; bez vyberu sa neposiela nic; Poradca nema e-maily so zmluvami.
+_zm_start = ([_zakazka(i, "UPRATOVANIE", "Bratislavský kraj", 1000 + i, dni_pred=i) for i in range(3)] +
+             [_zakazka(10 + i, "OSTRAHA", "Košický kraj", 2000 + i, dni_pred=i) for i in range(3)] +
+             [_zakazka(20 + i, "IT_TECHNIKA", "Bratislavský kraj", 3000 + i, dni_pred=i) for i in range(3)] +
+             [_zakazka(30 + i, "UPRATOVANIE", "Nitriansky kraj", 4000 + i, dni_pred=i) for i in range(3)])
+o_start = {"email": "start@x.sk", "sektor": None, "kraj": None, "moje_ico": None,
+           "_vyber_startu": {"kraje": ["Bratislavský kraj", "Košický kraj", "Nitriansky kraj"],
+                             "sektory": ["UPRATOVANIE", "OSTRAHA"]}}
+v8 = pe.pre_dodavatela(_FalosnySb({"opportunities": _zm_start}), o_start, _dnes)
+cisla = sorted(int(b["titul"].split()[1]) for b in v8["bloky"])
+assert cisla == [0, 1, 2, 10, 11, 12], cisla          # 3. kraj (Nitra) a IT mimo vyberu
+assert "Bratislavský kraj, Košický kraj" in v8["uvod"] and "celé Slovensko" not in v8["uvod"]
+assert "upratovanie a ostraha" in v8["uvod"], v8["uvod"]
+o_bez = dict(o_start, _vyber_startu={"kraje": [], "sektory": ["UPRATOVANIE"]})
+assert pe.pre_dodavatela(_FalosnySb({"opportunities": _zm_start}), o_bez, _dnes) is None
+assert "poradca" not in pe.PLANY_SO_ZMLUVAMI and "start" in pe.PLANY_SO_ZMLUVAMI
+print("T8) Start vyber v e-maile OK")

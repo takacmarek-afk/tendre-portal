@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>Profil obstarávateľa podľa IČO — PredTendrom.sk</title>
 <meta name="description" content="Zadajte IČO úradu alebo obce a uvidíte, čo kupuje, od koho, koľko zmlúv mu končí a aké dotácie dostal. Z verejných údajov, bez registrácie, zadarmo.">
 <meta name="robots" content="index,follow">
@@ -328,6 +331,7 @@ const SEKTORY = {
   UPRATOVANIE: 'upratovanie', DOPRAVA_MECHANIZACIA: 'doprava, mechanizácia',
   STRAVOVANIE: 'stravovanie', OSTRAHA: 'ostraha', IT_TECHNIKA: 'IT technika',
   TLAC_KANCELARIA: 'tlač, kancelária', PASPORTIZACIA_SPRAVA_BUDOV: 'pasportizácia, správa budov',
+  UPRATOVANIE_TOVAR: 'upratovanie – hygienický tovar', OSTRAHA_TECHNIKA: 'ostraha – zabezpečovacia technika',
   INE: 'ostatné',
 };
 const sektorSk = (k) => SEKTORY[k] || 'ostatné';

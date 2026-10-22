@@ -4,9 +4,12 @@
 <meta charset="utf-8">
 <script src="/consent-analytics.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="google-site-verification" content="JiYXwFxwzzNJjR7gFvfzr-L7-KpIeCqXCXbNz6jz2fI" />
 <title>PredTendrom.sk — končiace zmluvy úradov a dotácie obcí</title>
-<meta name="description" content="Vidíte, ktorým úradom končia zmluvy vo vašom odbore, aké dotácie obce podpísali a ktoré si najali projektanta. Dáta z Centrálneho registra zmlúv. 14 dní zadarmo.">
+<meta name="description" content="Vidíte, ktorým úradom končia zmluvy vo vašom odbore, aké dotácie obce podpísali a ktoré si najali dotačného poradcu. Dáta z Centrálneho registra zmlúv. 14 dní zadarmo.">
 <link rel="canonical" href="https://predtendrom.sk/">
 <meta property="og:title" content="Končiace zmluvy úradov a dotácie obcí">
 <meta property="og:description" content="Zistite, ktorým úradom končia zmluvy vo vašom odbore. Dáta z Centrálneho registra zmlúv.">
@@ -61,8 +64,10 @@
   }
 </style>
 <link rel="stylesheet" href="/style.css">
+<style>.preskocit{position:absolute;left:-9999px;top:0;z-index:100;background:#0B1220;color:#fff;padding:.6rem 1rem;border-radius:.375rem;font-weight:600;font-size:14px}.preskocit:focus{left:1rem;top:1rem}</style>
 </head>
 <body class="font-sans text-ink bg-paper antialiased">
+<a href="#obsah" class="preskocit">Preskočiť na obsah</a>
 
 <!-- ══════════════ PREPÍNAČ PUBLIKA — ODSTRÁNENÝ (audit 19.9.2026) ══════════════
      Pôvodne samostatný pruh NAD hlavičkou, s prepínačom firma/obec ako
@@ -156,6 +161,7 @@
     })();
   </script>
 </header>
+<div id="obsah" tabindex="-1"></div>
 
 <!-- ══════════════ HERO ══════════════
      Tmavý "monitoring" panel — vedomá odlišnosť od bieleho SaaS vzoru
@@ -184,9 +190,9 @@
            aj ked cislo medzitym narastie. #hero-zmluv sa nizsie v zobrazPocty()
            dotiahne na presnu zivu hodnotu, rovnaky zdroj ako #p-zmluv. -->
       <p class="mt-7 text-[17px] md:text-[18px] leading-relaxed text-[#ADA795] max-w-lg">
-        PredTendrom sleduje <span id="hero-zmluv" class="font-mono text-paper">228&nbsp;000+</span>
+        PredTendrom sleduje <span id="hero-zmluv" class="font-semibold text-paper">233&nbsp;000+</span>
         zmlúv v štáte a obciach a ukazuje, ktoré z nich končia, aké dotácie
-        obce podpísali a ktoré si práve najali projektanta. Všetko s dátumom
+        obce podpísali a ktoré si práve najali dotačného poradcu. Všetko s dátumom
         z verejných záznamov. Tendre nepredpovedáme, ukazujeme, kde sa o nich
         dá začať rozprávať skôr.
       </p>
@@ -443,7 +449,7 @@
       alebo tesne pred vyhlásením — za ceny od pár eur mesačne po stovky
       eur ročne. Niektoré už sledujú aj končiace zmluvy. PredTendrom spája
       tri zdroje na jednom mieste — končiace zmluvy, podpísané dotácie a
-      obce, ktoré si práve najali projektanta — a ukazuje ich s dátumom, ktorý
+      obce, ktoré si práve najali dotačného poradcu — a ukazuje ich s dátumom, ktorý
       je vo verejných záznamoch. Nepredpovedáme, že tender vznikne, ukazujeme,
       kde sa o ňom dá začať rozprávať skôr. Náš najlacnejší plán je drahší
       než jednoduché monitory vyhlásených tendrov, lebo platíte za iný druh
@@ -487,7 +493,7 @@
           <tr>
             <td class="py-2.5 pr-4 font-semibold">PredTendrom.sk</td>
             <td class="py-2.5 pr-4 font-semibold">34 až 89&nbsp;€/mes., konečná cena</td>
-            <td class="py-2.5 font-semibold">Končiace zmluvy, podpísané dotácie, obce, ktoré si najali projektanta</td>
+            <td class="py-2.5 font-semibold">Končiace zmluvy, podpísané dotácie, obce, ktoré si najali dotačného poradcu</td>
           </tr>
         </tbody>
       </table>
@@ -525,7 +531,7 @@
         <h3 class="text-[19px] font-semibold">Team</h3>
         <p class="mt-1 text-[14px] text-slate2 flex-1">Pre firmy s obchodným tímom alebo viacerými pobočkami. Cena Growth plus každý ďalší používateľ.</p>
         <div class="mt-5"><span class="font-serif text-[34px] font-bold">89&nbsp;€</span> <span class="text-[14px] text-slate2">+ 29&nbsp;€ za osobu</span></div>
-        <div class="text-[12px] text-slate2">na dopyt, e-mailom</div>
+        <div class="text-[12px] text-slate2">aktivácia e-mailom</div>
       </div>
     </div>
     <a href="./cennik.html" class="mt-6 inline-flex items-center gap-1.5 text-[14px] font-semibold text-accent hover:text-accentDark transition">
@@ -942,6 +948,7 @@
           LoveHome s.r.o.<br>
           Černyševského 40, 851 01 Bratislava<br>
           IČO: 47586362<br>
+          OR Mestského súdu Bratislava III, oddiel Sro, vložka č. 95571/B<br>
           info@predtendrom.sk
         </p>
         <p class="mt-3 flex items-center gap-4 text-[13px]">
