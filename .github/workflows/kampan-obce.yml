@@ -22,7 +22,8 @@ name: Kampan pre obce
 #   Settings -> Secrets and variables -> Actions -> New repository secret:
 #     KAMPAN_REPLY_TO  — adresa, kam maju prist odpovede obci (povinne)
 #     KAMPAN_TELEFON   — telefon do podpisu (nepovinne)
-#   RESEND_API_KEY je uz nastaveny (tyzdenny e-mail).
+#     ZOHO_SMTP_PASSWORD — heslo aplikacie pre marek@predtendrom.sk (Zoho Mail).
+#   Kampan NEJDE cez Resend: jeho pravidla zakazuju studene e-maily.
 # ══════════════════════════════════════════════════════════════════════════
 
 on:
@@ -65,7 +66,7 @@ concurrency:
 jobs:
   kampan:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - uses: actions/checkout@v4
@@ -83,7 +84,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
           KAMPAN_REPLY_TO: ${{ secrets.KAMPAN_REPLY_TO }}
           KAMPAN_TELEFON: ${{ secrets.KAMPAN_TELEFON }}
           KROK: ${{ inputs.krok }}
