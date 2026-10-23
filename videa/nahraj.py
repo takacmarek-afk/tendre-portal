@@ -36,12 +36,12 @@ try { localStorage.setItem('pt_admin_zariadenie','1'); localStorage.setItem('pt_
         padding:${m?'12px 16px':'16px 26px'};border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);pointer-events:none}
       #__cap.on{opacity:1;transform:translateX(-50%) translateY(0)}
       #__cur{position:fixed;left:0;top:0;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;
-        background:rgba(178,83,19,.85);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);z-index:2147483647;
+        background:rgba(178,83,19,.85);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35);z-index:2147483644;
         transition:left .7s cubic-bezier(.4,0,.2,1), top .7s cubic-bezier(.4,0,.2,1), transform .15s;pointer-events:none;opacity:0}
       #__cur.klik{transform:scale(.7)}
       .__hl{position:absolute;border:4px solid #B25313;border-radius:10px;box-shadow:0 0 0 9999px rgba(11,18,32,.28);
         z-index:2147483640;pointer-events:none;transition:all .4s}
-      #__karta{position:fixed;inset:0;z-index:2147483645;display:flex;align-items:center;justify-content:center;
+      #__karta{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;
         background:#0B1220;color:#F7F3EA;opacity:0;transition:opacity .45s;pointer-events:none;text-align:center;padding:6%}
       #__karta.on{opacity:1}
       #__karta.svetla{background:rgba(247,243,234,.97);color:#0B1220}
@@ -76,25 +76,39 @@ try { localStorage.setItem('pt_admin_zariadenie','1'); localStorage.setItem('pt_
 class Rez:
     """Pomocnik pre jednu nahravku."""
 
-    def __init__(self, pg, mobil):
+    def __init__(self, pg, mobil, t0=None):
         self.pg, self.mobil = pg, mobil
+        self.t0 = t0 or time.monotonic()
+        self.medzery = []          # (od, do) v sekundach od zaciatku nahravky: nacitavanie, vystrihne sa
 
     async def w(self, s):
         await self.pg.wait_for_timeout(int(s * 1000))
 
     async def ide(self, url, cakat="networkidle"):
+        a = time.monotonic() - self.t0
         try:
             await self.pg.goto(url, wait_until=cakat, timeout=45000)
         except Exception:
             await self.pg.goto(url, timeout=45000)
         await self.pg.wait_for_function("window.__pt !== undefined", timeout=15000)
-        await self.w(1.2)
+        if url.startswith(APP):
+            try:
+                await self.pg.wait_for_selector('[data-zalozka="obsah"]', state="visible", timeout=30000)
+                await self.pg.wait_for_load_state("networkidle", timeout=15000)
+            except Exception:
+                pass
+        if "crz.gov.sk" in url:
+            await self.pg.evaluate("""() => { const b = [...document.querySelectorAll('button, a')]
+                .find(x => /odmiet|nevyhnutn|zamietn|reject|decline/i.test(x.innerText || '')); if (b) b.click(); }""")
+        await self.w(0.8)
+        self.medzery.append((a + 0.15, time.monotonic() - self.t0 - 0.1))
+        await self.w(0.6)
 
     async def cap(self, t, s=0.0):
         await self.pg.evaluate("t => window.__pt.cap(t)", t)
         await self.w(s)
 
-    async def karta(self, nadpis, text="", s=3.5, cislo=None, body=None, svetla=False):
+    async def karta(self, nadpis, text="", s=3.5, cislo=None, body=None, svetla=False, nechat=False):
         html = f'<div><div class="k-logo">predtendrom{" · návod " + str(cislo) + " / 6" if cislo else ""}</div><h1>{nadpis}</h1>'
         if text:
             html += f"<p>{text}</p>"
@@ -103,6 +117,9 @@ class Rez:
         html += "</div>"
         await self.pg.evaluate("([h, s]) => window.__pt.karta(h, s)", [html, svetla])
         await self.w(s)
+        if nechat:
+            self.koniec_at = time.monotonic() - self.t0
+            return
         await self.pg.evaluate("window.__pt.bezKarty()")
         await self.w(0.5)
 
@@ -178,7 +195,8 @@ class Rez:
     async def koniec(self, s=5):
         await self.cap("")
         await self.karta("Vyskúšajte 14 dní zadarmo",
-                         "Bez platobnej karty. Nové zmluvy z vášho odboru raz týždenne e-mailom.<br><b>predtendrom.sk</b>", s)
+                         "Bez platobnej karty. Nové zmluvy z vášho odboru raz týždenne e-mailom.<br><b>predtendrom.sk</b>", s,
+                         nechat=True)
 
 
 # ── scenare ──────────────────────────────────────────────────────────────
@@ -378,7 +396,7 @@ async def nahraj(p, stav, n, mobil, cielovy_subor):
     await ctx.add_init_script(f"window.__ptMobil = {str(mobil).lower()};" + INIT)
     pg = await ctx.new_page()
     t0 = time.monotonic()
-    r = Rez(pg, mobil)
+    r = Rez(pg, mobil, t0)
     zaciatok = [None]
     povodna = r.karta
 
@@ -394,8 +412,12 @@ async def nahraj(p, stav, n, mobil, cielovy_subor):
         await b.close()
     webm = next(tmp.glob("*.webm"))
     od = max(0.0, (zaciatok[0] or 0) - 0.1)
-    ffmpeg("-ss", f"{od:.2f}", "-i", str(webm), "-c:v", "libx264", "-preset", "slow", "-crf", "24",
-           "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an", "-r", "30", str(cielovy_subor))
+    do = getattr(r, "koniec_at", None)
+    podm = [f"gte(t,{od:.2f})"] + ([f"lte(t,{do:.2f})"] if do else [])
+    podm += [f"not(between(t,{a:.2f},{b:.2f}))" for a, b in r.medzery if b > a and a > od]
+    vf = f"fps=30,select='{'*'.join(podm)}',setpts=N/30/TB"
+    ffmpeg("-i", str(webm), "-vf", vf, "-c:v", "libx264", "-preset", "slow", "-crf", "24",
+           "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an", str(cielovy_subor))
     shutil.rmtree(tmp, ignore_errors=True)
 
 
