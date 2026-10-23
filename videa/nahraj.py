@@ -235,13 +235,18 @@ async def video1(r: Rez):
 
 
 async def video2(r: Rez):
+    # prihlasenie.html prihlaseneho presmeruje do appky: session docasne odlozime
+    await r.pg.goto(WEB + "/404.html")
+    ulozene = await r.pg.evaluate("""() => { const o = {}; for (const k of Object.keys(localStorage))
+        if (k.startsWith('sb-')) { o[k] = localStorage.getItem(k); localStorage.removeItem(k); } return o; }""")
     await r.ide(WEB + "/prihlasenie")
     await r.karta("Nastavte si odbor a kraj", "Prvé nastavenie po registrácii zaberie 2 minúty.", 3.5, cislo=2)
     await r.cap("Prihlásite sa e-mailom. Bez hesla, bez karty.")
-    await r.pis('input[type="email"]', "vas@firma.sk")
-    await r.hl('button[type="submit"]', 2.5)
+    await r.pis('#email', "vas@firma.sk")
+    await r.hl('#odoslat', 2.5)
     await r.bez_hl()
     await r.cap("Na e-mail vám príde kód. Zadáte ho a ste v appke.", 2.5)
+    await r.pg.evaluate("o => { for (const [k, v] of Object.entries(o)) localStorage.setItem(k, v); }", ulozene)
     await r.ide(APP)
     await r.cap("V časti Môj výber označte, čo robíte a kde.")
     await r.klik("#mv-zmenit", 1.5)
