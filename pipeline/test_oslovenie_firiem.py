@@ -199,6 +199,23 @@ def test_neposiela_cez_resend():
     assert "api.resend.com" not in src and "RESEND_API_KEY" not in src
 
 
+def test_doplnit_odbor_z_dodavatelov():
+    class Q:
+        def __init__(self): self.v = []
+        def select(self, *_): return self
+        def in_(self, s, v): self.v = v; return self
+        def execute(self):
+            class R: pass
+            r = R(); r.data = [{"supplier_cin": "36034762", "hlavny_sektor": "OSTRAHA"},
+                               {"supplier_cin": "123", "hlavny_sektor": None}]
+            return r
+    class SB:
+        def table(self, _): return Q()
+    k = [{"ico": "36034762", "segment": None}, {"ico": "00000123", "segment": "IT_TECHNIKA"}]
+    assert of.doplnit_odbor(SB(), k) == 1
+    assert k[0]["segment"] == "OSTRAHA" and k[1]["segment"] == "IT_TECHNIKA"
+
+
 if __name__ == "__main__":
     # Spustenie bez pytestu (python test_oslovenie_firiem.py), ako ostatne testy v pipeline.
     import inspect

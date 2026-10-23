@@ -188,6 +188,22 @@ def zluc_kontakty(riadky):
     return out
 
 
+def doplnit_odbor(sb, kontakty):
+    """Odbor firmy podla jej zmluv v CRZ (dodavatelia.hlavny_sektor), nie podla jednej sutaze."""
+    ica = [k["ico"] for k in kontakty]
+    hlavny = {}
+    for i in range(0, len(ica), 200):
+        for r in (sb.table("dodavatelia").select("supplier_cin,hlavny_sektor")
+                  .in_("supplier_cin", ica[i:i + 200] + [x.lstrip("0") for x in ica[i:i + 200]])
+                  .execute().data):
+            if r.get("hlavny_sektor"):
+                hlavny[ico8(r["supplier_cin"])] = r["hlavny_sektor"]
+    for k in kontakty:
+        if k["ico"] in hlavny:
+            k["segment"] = hlavny[k["ico"]]
+    return len(hlavny)
+
+
 def krok_kontakty(sb, nasucho, od_rok, limit):
     import uvo
     sess = uvo._session()
@@ -209,6 +225,8 @@ def krok_kontakty(sb, nasucho, od_rok, limit):
             except Exception:
                 continue
     kontakty = zluc_kontakty(riadky)
+    if sb is not None:
+        doplnit_odbor(sb, kontakty)
     pocty = {}
     for k in kontakty:
         pocty[k["stav"]] = pocty.get(k["stav"], 0) + 1
