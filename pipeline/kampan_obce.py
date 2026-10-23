@@ -41,17 +41,28 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import quote
 
+import smtplib
+import ssl
+from email.message import EmailMessage
+from email.utils import formatdate, make_msgid, parseaddr
+
 import requests
 
 log = logging.getLogger("kampan")
 
-RESEND_URL = "https://api.resend.com/emails"
+# Studene e-maily NEJDU cez Resend: jeho Acceptable Use Policy zakazuje
+# "unsolicited messages of any kind, including cold outreach" a hrozi zrusenie
+# uctu, na ktorom stoja prihlasovacie kody. Kampan ide cez samostatnu schranku
+# marek@predtendrom.sk v Zoho Mail (SMTP, DKIM domeny). Rozhodnutie 22. 10. 2026.
+SMTP_HOST = os.getenv("KAMPAN_SMTP_HOST", "smtp.zoho.eu")
+SMTP_PORT = int(os.getenv("KAMPAN_SMTP_PORT", "465"))
+SMTP_USER = os.getenv("KAMPAN_SMTP_USER", "marek@predtendrom.sk")
 ODOSIELATEL = os.getenv("KAMPAN_OD", "Marek Takáč z PredTendrom.sk <marek@predtendrom.sk>")
 REPLY_TO = os.getenv("KAMPAN_REPLY_TO", "").strip()
 TELEFON = os.getenv("KAMPAN_TELEFON", "").strip()
 ROK_VOLIEB = int(os.getenv("KAMPAN_ROK_VOLIEB", "2026"))
 WEB = "https://predtendrom.sk"
-PAUZA_S = 0.6            # Resend free plan: max 2 e-maily za sekundu
+PAUZA_S = float(os.getenv("KAMPAN_PAUZA_S", "20"))   # rozostup: posiela clovek, nie hromadna posta
 
 VLNY = {
     "vlna1": date(2026, 11, 24),   # po ustanovujucich zastupitelstvach
@@ -561,21 +572,38 @@ def smie_ostro(vlna, dnes, vynutit):
     return None
 
 
-def posli_resend(kluc, komu, predmet, text, telo, token):
-    hlavicky = {"List-Unsubscribe": f"<{_odhlasenie_url(token)}>"
-                + (f", <mailto:{REPLY_TO}?subject=odhlasit>" if REPLY_TO else "")}
-    payload = {"from": ODOSIELATEL, "to": [komu], "subject": predmet,
-               "text": text, "html": telo, "headers": hlavicky}
+def zostav_spravu(komu, predmet, text, telo, token):
+    m = EmailMessage()
+    m["From"] = ODOSIELATEL
+    m["To"] = komu
+    m["Subject"] = predmet
+    m["Date"] = formatdate(localtime=True)
+    m["Message-ID"] = make_msgid(domain=SMTP_USER.split("@")[-1])
     if REPLY_TO:
-        payload["reply_to"] = REPLY_TO
+        m["Reply-To"] = REPLY_TO
+    m["List-Unsubscribe"] = (f"<{_odhlasenie_url(token)}>"
+                             + (f", <mailto:{REPLY_TO}?subject=odhlasit>" if REPLY_TO else ""))
+    m.set_content(text)
+    m.add_alternative(telo, subtype="html")
+    return m
+
+
+def posli_smtp(heslo, komu, predmet, text, telo, token, _smtp=smtplib.SMTP_SSL):
+    """Posle jeden e-mail cez schranku SMTP_USER. Vrati (message_id, None) alebo (None, chyba)."""
+    if parseaddr(ODOSIELATEL)[1].lower() != SMTP_USER.lower():
+        return None, f"odosielatel {ODOSIELATEL!r} nesedi so schrankou {SMTP_USER}"
+    m = zostav_spravu(komu, predmet, text, telo, token)
     try:
-        r = requests.post(RESEND_URL, timeout=30, json=payload,
-                          headers={"Authorization": f"Bearer {kluc}"})
-    except requests.RequestException as e:
-        return None, f"siet: {type(e).__name__}"
-    if r.status_code in (200, 201):
-        return (r.json() or {}).get("id") or "ok", None
-    return None, f"HTTP {r.status_code} {r.text[:200]}"
+        with _smtp(SMTP_HOST, SMTP_PORT, timeout=30, context=ssl.create_default_context()) as s:
+            s.login(SMTP_USER, heslo)
+            odmietnute = s.send_message(m)
+    except smtplib.SMTPAuthenticationError:
+        return None, "SMTP prihlasenie zlyhalo (heslo aplikacie alebo SMTP pristup v Zoho)"
+    except (smtplib.SMTPException, OSError) as e:
+        return None, f"SMTP: {type(e).__name__} {str(e)[:150]}"
+    if odmietnute:
+        return None, f"odmietnute: {list(odmietnute)}"
+    return m["Message-ID"], None
 
 
 def uloz_nahlad(cesta, spravy):
@@ -605,9 +633,9 @@ def krok_posli(sb, a):
         if not REPLY_TO:
             log.error("Chyba KAMPAN_REPLY_TO — odpovede obci by nedosli Marekovi. Neposielam.")
             return 1
-    kluc = os.getenv("RESEND_API_KEY")
+    kluc = os.getenv("ZOHO_SMTP_PASSWORD")
     if not a.nasucho and not kluc:
-        log.error("Chyba RESEND_API_KEY.")
+        log.error("Chyba ZOHO_SMTP_PASSWORD (heslo aplikacie pre %s).", SMTP_USER)
         return 1
 
     kontakty = _vsetky(sb, "kampan_obce_kontakty",
@@ -659,9 +687,9 @@ def krok_posli(sb, a):
 
     if a.komu:
         for s in spravy[:a.test_pocet]:
-            rid, chyba = posli_resend(kluc, a.komu, "[TEST] " + s["predmet"], s["text"], s["html"], s["token"])
+            rid, chyba = posli_smtp(kluc, a.komu, "[TEST] " + s["predmet"], s["text"], s["html"], s["token"])
             log.info("TEST %s -> %s: %s", s["ico"], a.komu, chyba or rid)
-            time.sleep(PAUZA_S)
+            time.sleep(min(PAUZA_S, 3))
         return 0
 
     log.info("OSTRO: posielam %d (dnes uz %d, limit %d).", len(davka), dnes_odoslane, a.max)
@@ -676,8 +704,9 @@ def krok_posli(sb, a):
             log.warning("%s: preskakujem, uz je v evidencii (%s)", s["ico"], type(e).__name__)
             continue
         rid_riadku = ins.data[0]["id"]
-        rid, chyba = posli_resend(kluc, s["email"], s["predmet"], s["text"], s["html"], s["token"])
+        rid, chyba = posli_smtp(kluc, s["email"], s["predmet"], s["text"], s["html"], s["token"])
         sb.table("kampan_obce_odoslane").update(
+            # stlpec sa vola resend_id z historickych dovodov, drzi Message-ID zo SMTP
             {"stav": "odoslane", "resend_id": rid} if rid else {"stav": "chyba", "chyba": chyba}
         ).eq("id", rid_riadku).execute()
         if rid:

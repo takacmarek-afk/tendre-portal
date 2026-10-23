@@ -255,6 +255,11 @@ class _Q:
         self.filtre.append(lambda x: (x.get(stlpec) or "") >= h)
         return self
 
+    def eq(self, stlpec, h):
+        # chybajuci stlpec v testovacom riadku = predvolena hodnota v DB (vyplatene=false)
+        self.filtre.append(lambda x: x.get(stlpec, h) == h)
+        return self
+
     @property
     def not_(self):
         return self
@@ -311,3 +316,56 @@ def test_text_neslubuje_ze_sa_poradcovia_ozvu():
         s = k.zostav("vlna1", KONTAKT, None, d)
         text, _ = k.vyrenderuj(s, KONTAKT["token"])
         assert "ozvú sa" not in text and "môžu sa vám ozvať" in text, text
+
+
+# ── odosielanie cez Zoho SMTP (nie Resend: AUP zakazuje cold outreach) ─────
+
+class _FakeSMTP:
+    posledne = {}
+
+    def __init__(self, host, port, timeout=None, context=None):
+        _FakeSMTP.posledne = {"host": host, "port": port}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+    def login(self, user, heslo):
+        _FakeSMTP.posledne["login"] = (user, heslo)
+
+    def send_message(self, m):
+        _FakeSMTP.posledne["sprava"] = m
+        return {}
+
+
+def test_posli_smtp_hlavicky_a_prihlasenie():
+    rid, chyba = k.posli_smtp("tajne", "podatelna@obec.sk", "Predmet", "text", "<p>html</p>",
+                              "tok123", _smtp=_FakeSMTP)
+    assert chyba is None and rid and rid.endswith("@predtendrom.sk>")
+    p = _FakeSMTP.posledne
+    assert p["host"] == "smtp.zoho.eu" and p["port"] == 465
+    assert p["login"] == ("marek@predtendrom.sk", "tajne")
+    m = p["sprava"]
+    assert m["To"] == "podatelna@obec.sk"
+    assert "marek@predtendrom.sk" in m["From"]
+    assert "odhlasenie-obce.html?t=tok123" in m["List-Unsubscribe"]
+    druhy = {c.get_content_type() for c in m.iter_parts()}
+    assert druhy == {"text/plain", "text/html"}
+
+
+def test_posli_smtp_zle_heslo_nezhodi_beh():
+    import smtplib
+
+    class Zle(_FakeSMTP):
+        def login(self, user, heslo):
+            raise smtplib.SMTPAuthenticationError(535, b"bad")
+
+    rid, chyba = k.posli_smtp("zle", "a@b.sk", "P", "t", "<p>h</p>", "t", _smtp=Zle)
+    assert rid is None and "prihlasenie" in chyba
+
+
+def test_kampan_neposiela_cez_resend():
+    src = open(k.__file__, encoding="utf-8").read()
+    assert "api.resend.com" not in src and "RESEND_API_KEY" not in src
