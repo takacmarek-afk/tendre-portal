@@ -5,6 +5,7 @@ name: Videa navodov
 # vetvy "videa-vystup" (nie do main); hotove videa presunie Claude do
 # public/navody/ az po schvaleni.
 #   krok=prieskum  -> snimky obrazoviek a zoznam prvkov (na pisanie scenarov)
+#   krok=cisla     -> cisla pre prispevky na FB/IG (vystup/cisla/cisla.json)
 #   krok=nahraj    -> videa 1-6 (alebo vybrane cez "videa", napr. "2,3")
 
 on:
@@ -12,7 +13,7 @@ on:
     inputs:
       krok:
         type: choice
-        options: [prieskum, nahraj]
+        options: [prieskum, nahraj, cisla]
         default: prieskum
       videa:
         description: "Ktore videa (napr. 1,2,3); prazdne = vsetky"
@@ -40,6 +41,7 @@ jobs:
           python -m playwright install --with-deps chromium
           sudo apt-get install -y ffmpeg fonts-dejavu-core >/dev/null
       - name: Ukazkovy ucet a prihlasovaci odkaz
+        if: inputs.krok != 'cisla'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -47,6 +49,12 @@ jobs:
       - name: Prieskum
         if: inputs.krok == 'prieskum'
         run: python videa/prieskum.py "$RUNNER_TEMP/odkaz.txt" vystup/prieskum
+      - name: Cisla pre prispevky
+        if: inputs.krok == 'cisla'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python videa/cisla.py vystup/cisla/cisla.json
       - name: Nahravanie a strih
         if: inputs.krok == 'nahraj'
         env:
