@@ -42,7 +42,7 @@ import re
 import sys
 import time
 import unicodedata
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import kampan_obce as ko   # posli_smtp, zostav_spravu, SMTP nastavenia
@@ -247,13 +247,15 @@ def krok_kontakty(sb, nasucho, od_rok, limit):
         log.info("NASUCHO — nic nezapisane.")
         return 0
     # existujuce riadky: stav, ktory Marek zmenil rucne, a odhlasenie sa neprepisuju
-    stare = {r["ico"]: r for r in _vsetky(sb, "oslovenie_firiem_kontakty", "ico,stav,email,odhlasene_at")}
+    stare = {r["ico"]: r for r in _vsetky(sb, "oslovenie_firiem_kontakty", "ico,stav,dovod,email,odhlasene_at")}
     nove = []
     for k in kontakty:
         s = stare.get(k["ico"])
         riadok = {x: k.get(x) for x in ("ico", "nazov", "email", "segment", "kraj", "posledny_urad",
                                         "zdroj_url", "zdroj_datum")}
-        riadok.update(zdroj="uvo", upravene_at="now()")
+        # kazdy riadok davky musi mat rovnake stlpce: chybajuci stav by PostgREST
+        # zapisal ako NULL a cela davka by padla (400, not null)
+        riadok.update(zdroj="uvo", upravene_at=datetime.now(timezone.utc).isoformat())
         if s is None:
             riadok.update(stav=k["stav"], dovod=k["dovod"])
         elif s["stav"] == "na_kontrolu" or (s["email"] != k["email"] and s["stav"] == "ok"):
@@ -261,7 +263,7 @@ def krok_kontakty(sb, nasucho, od_rok, limit):
             # (rucne rozhodnutia) a odhlasenie sa nikdy neprepisuju
             riadok.update(stav=k["stav"], dovod=k["dovod"])
         else:
-            riadok["email"] = s["email"]
+            riadok.update(email=s["email"], stav=s["stav"], dovod=s.get("dovod"))
         nove.append(riadok)
     for i in range(0, len(nove), 200):
         try:

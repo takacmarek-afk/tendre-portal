@@ -223,6 +223,42 @@ def test_doplnit_odbor_z_dodavatelov():
     assert k[0]["segment"] == "OSTRAHA" and k[1]["segment"] == "IT_TECHNIKA"
 
 
+def test_zapis_kontaktov_ma_v_davke_rovnake_stlpce(monkeypatch):
+    """Riadok bez 'stav' by PostgREST zapisal ako NULL a padla by cela davka (400)."""
+    import sys, types
+    k1 = {"ico": "1", "nazov": "A s.r.o.", "email": "info@a.sk", "segment": None, "kraj": None,
+          "posledny_urad": None, "zdroj_url": None, "zdroj_datum": None, "stav": "ok", "dovod": "x"}
+    k2 = dict(k1, ico="2", email="info@b.sk")
+    k3 = dict(k1, ico="3", email="info@c.sk")
+    uvo = types.SimpleNamespace(_session=lambda: None, zoznam_cisel=lambda s, r: [])
+    povodny = sys.modules.get("uvo")
+    sys.modules["uvo"] = uvo
+    monkeypatch.setattr(of, "zluc_kontakty", lambda r: [dict(k1), dict(k2), dict(k3)])
+    monkeypatch.setattr(of, "doplnit_odbor", lambda sb, k: 0)
+    monkeypatch.setattr(of, "_vsetky", lambda *a, **kw: [
+        {"ico": "1", "stav": "vylucene", "dovod": "rucne", "email": "stara@a.sk", "odhlasene_at": None},
+        {"ico": "2", "stav": "na_kontrolu", "dovod": None, "email": "info@b.sk", "odhlasene_at": None}])
+    zapis = []
+    class Q:
+        def upsert(self, r, on_conflict=None): zapis.append(r); return self
+        def execute(self): return None
+    class SB:
+        def table(self, _): return Q()
+    try:
+        of.krok_kontakty(SB(), False, 2025, 1)
+    finally:
+        if povodny is None:
+            sys.modules.pop("uvo", None)
+        else:
+            sys.modules["uvo"] = povodny
+    davka = zapis[0]
+    assert len({tuple(sorted(r)) for r in davka}) == 1
+    r1, r2, r3 = davka
+    assert (r1["stav"], r1["dovod"], r1["email"]) == ("vylucene", "rucne", "stara@a.sk")
+    assert r2["stav"] == "ok" and r3["stav"] == "ok"
+    assert "now()" not in str(davka)
+
+
 if __name__ == "__main__":
     # Spustenie bez pytestu (python test_oslovenie_firiem.py), ako ostatne testy v pipeline.
     import inspect
