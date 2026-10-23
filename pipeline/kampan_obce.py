@@ -572,7 +572,8 @@ def smie_ostro(vlna, dnes, vynutit):
     return None
 
 
-def zostav_spravu(komu, predmet, text, telo, token):
+def zostav_spravu(komu, predmet, text, telo, token, odhlasenie=None):
+    odhlasenie = odhlasenie or _odhlasenie_url(token)
     m = EmailMessage()
     m["From"] = ODOSIELATEL
     m["To"] = komu
@@ -581,18 +582,18 @@ def zostav_spravu(komu, predmet, text, telo, token):
     m["Message-ID"] = make_msgid(domain=SMTP_USER.split("@")[-1])
     if REPLY_TO:
         m["Reply-To"] = REPLY_TO
-    m["List-Unsubscribe"] = (f"<{_odhlasenie_url(token)}>"
+    m["List-Unsubscribe"] = (f"<{odhlasenie}>"
                              + (f", <mailto:{REPLY_TO}?subject=odhlasit>" if REPLY_TO else ""))
     m.set_content(text)
     m.add_alternative(telo, subtype="html")
     return m
 
 
-def posli_smtp(heslo, komu, predmet, text, telo, token, _smtp=smtplib.SMTP_SSL):
+def posli_smtp(heslo, komu, predmet, text, telo, token, _smtp=smtplib.SMTP_SSL, _odhlasenie=None):
     """Posle jeden e-mail cez schranku SMTP_USER. Vrati (message_id, None) alebo (None, chyba)."""
     if parseaddr(ODOSIELATEL)[1].lower() != SMTP_USER.lower():
         return None, f"odosielatel {ODOSIELATEL!r} nesedi so schrankou {SMTP_USER}"
-    m = zostav_spravu(komu, predmet, text, telo, token)
+    m = zostav_spravu(komu, predmet, text, telo, token, _odhlasenie)
     try:
         with _smtp(SMTP_HOST, SMTP_PORT, timeout=30, context=ssl.create_default_context()) as s:
             s.login(SMTP_USER, heslo)
