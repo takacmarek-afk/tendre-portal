@@ -69,7 +69,7 @@ jobs:
           rm -f "$RUNNER_TEMP/odkaz.txt"
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          cp -r vystup "$RUNNER_TEMP/vystup"
+          cp -r vystup "$RUNNER_TEMP/vystup" && rm -rf vystup pipeline/__pycache__
           git fetch origin videa-vystup || true
           if git rev-parse --verify -q origin/videa-vystup >/dev/null; then
             git checkout -B videa-vystup origin/videa-vystup
@@ -77,6 +77,8 @@ jobs:
             git checkout --orphan videa-vystup && git rm -rf . -q
           fi
           for d in "$RUNNER_TEMP/vystup/"*; do rm -rf "$(basename "$d")"; cp -r "$d" .; done
+          git rm -rq --cached vystup pipeline 2>/dev/null || true
+          rm -rf vystup pipeline
           git add -A
           git commit -qm "Videa: ${{ inputs.krok }} ${{ inputs.videa }} (beh ${{ github.run_id }})" || echo "bez zmien"
           git push -q origin videa-vystup
