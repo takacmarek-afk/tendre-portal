@@ -1,0 +1,626 @@
+{
+ "stav_k": "2026-10-23",
+ "zmluv_spolu": 1158,
+ "uradov_spolu": 578,
+ "sektory": {
+  "STRAVOVANIE": {
+   "zmluv": 479,
+   "uradov": 245,
+   "median": 26574,
+   "kraje": {
+    "Trenčiansky kraj": 93,
+    "Žilinský kraj": 85,
+    "Bratislavský kraj": 66,
+    "Košický kraj": 50,
+    "Banskobystrický kraj": 48,
+    "Prešovský kraj": 45,
+    "Nitriansky kraj": 38,
+    "Trnavský kraj": 25
+   },
+   "do_90_dni": 195
+  },
+  "STAVEBNE_PRACE": {
+   "zmluv": 154,
+   "uradov": 96,
+   "median": 89858,
+   "kraje": {
+    "Bratislavský kraj": 50,
+    "Banskobystrický kraj": 23,
+    "Košický kraj": 20,
+    "Nitriansky kraj": 16,
+    "Trnavský kraj": 16,
+    "Žilinský kraj": 12,
+    "Prešovský kraj": 9,
+    "Trenčiansky kraj": 4
+   },
+   "do_90_dni": 94
+  },
+  "UPRATOVANIE": {
+   "zmluv": 120,
+   "uradov": 102,
+   "median": 38376,
+   "kraje": {
+    "Bratislavský kraj": 58,
+    "Prešovský kraj": 12,
+    "Košický kraj": 11,
+    "Nitriansky kraj": 11,
+    "Trenčiansky kraj": 9,
+    "Banskobystrický kraj": 7,
+    "Žilinský kraj": 6,
+    "Trnavský kraj": 3
+   },
+   "do_90_dni": 49
+  },
+  "IT_TECHNIKA": {
+   "zmluv": 95,
+   "uradov": 77,
+   "median": 85229,
+   "kraje": {
+    "Bratislavský kraj": 52,
+    "Trnavský kraj": 8,
+    "Banskobystrický kraj": 8,
+    "Trenčiansky kraj": 7,
+    "Košický kraj": 6,
+    "Prešovský kraj": 5,
+    "Žilinský kraj": 4,
+    "Nitriansky kraj": 3
+   },
+   "do_90_dni": 46
+  },
+  "UPRATOVANIE_TOVAR": {
+   "zmluv": 71,
+   "uradov": 66,
+   "median": 14746,
+   "kraje": {
+    "Bratislavský kraj": 15,
+    "Prešovský kraj": 13,
+    "Trnavský kraj": 12,
+    "Nitriansky kraj": 7,
+    "Košický kraj": 6,
+    "Trenčiansky kraj": 6,
+    "Žilinský kraj": 4,
+    "Banskobystrický kraj": 2
+   },
+   "do_90_dni": 28
+  },
+  "KURENIE_VODA_PLYN": {
+   "zmluv": 49,
+   "uradov": 16,
+   "median": 12647,
+   "kraje": {
+    "Trnavský kraj": 34,
+    "Bratislavský kraj": 8,
+    "Žilinský kraj": 2,
+    "Banskobystrický kraj": 2,
+    "Nitriansky kraj": 2
+   },
+   "do_90_dni": 7
+  },
+  "OSTRAHA": {
+   "zmluv": 43,
+   "uradov": 39,
+   "median": 110366,
+   "kraje": {
+    "Bratislavský kraj": 18,
+    "Banskobystrický kraj": 8,
+    "Žilinský kraj": 5,
+    "Prešovský kraj": 4,
+    "Nitriansky kraj": 3,
+    "Trnavský kraj": 1,
+    "Košický kraj": 1,
+    "Trenčiansky kraj": 1
+   },
+   "do_90_dni": 22
+  },
+  "ZELEN_ZIMNA_UDRZBA": {
+   "zmluv": 37,
+   "uradov": 26,
+   "median": 74098,
+   "kraje": {
+    "Banskobystrický kraj": 8,
+    "Košický kraj": 7,
+    "Bratislavský kraj": 6,
+    "Trenčiansky kraj": 5,
+    "Prešovský kraj": 5,
+    "Nitriansky kraj": 3,
+    "Trnavský kraj": 2,
+    "Žilinský kraj": 1
+   },
+   "do_90_dni": 21
+  },
+  "TLAC_KANCELARIA": {
+   "zmluv": 36,
+   "uradov": 34,
+   "median": 18450,
+   "kraje": {
+    "Bratislavský kraj": 17,
+    "Košický kraj": 4,
+    "Banskobystrický kraj": 3,
+    "Prešovský kraj": 3,
+    "Nitriansky kraj": 3,
+    "Trnavský kraj": 3,
+    "Trenčiansky kraj": 2
+   },
+   "do_90_dni": 12
+  },
+  "ELEKTROINSTALACIE": {
+   "zmluv": 28,
+   "uradov": 23,
+   "median": 78745,
+   "kraje": {
+    "Bratislavský kraj": 8,
+    "Žilinský kraj": 4,
+    "Banskobystrický kraj": 4,
+    "Prešovský kraj": 3,
+    "Nitriansky kraj": 3,
+    "Košický kraj": 3,
+    "Trenčiansky kraj": 1,
+    "Trnavský kraj": 1
+   },
+   "do_90_dni": 17
+  },
+  "DOPRAVA_MECHANIZACIA": {
+   "zmluv": 18,
+   "uradov": 14,
+   "median": 250000,
+   "kraje": {
+    "Bratislavský kraj": 8,
+    "Prešovský kraj": 4,
+    "Košický kraj": 3,
+    "Trnavský kraj": 1,
+    "Žilinský kraj": 1,
+    "Trenčiansky kraj": 1
+   },
+   "do_90_dni": 5
+  },
+  "OSTRAHA_TECHNIKA": {
+   "zmluv": 13,
+   "uradov": 11,
+   "median": 46711,
+   "kraje": {
+    "Bratislavský kraj": 5,
+    "Trnavský kraj": 5,
+    "Nitriansky kraj": 1,
+    "Košický kraj": 1,
+    "Banskobystrický kraj": 1
+   },
+   "do_90_dni": 6
+  },
+  "STRECHY_IZOLACIE": {
+   "zmluv": 8,
+   "uradov": 7,
+   "median": 114741,
+   "kraje": {
+    "Bratislavský kraj": 3,
+    "Trnavský kraj": 2,
+    "Žilinský kraj": 1,
+    "Nitriansky kraj": 1,
+    "Trenčiansky kraj": 1
+   },
+   "do_90_dni": 6
+  },
+  "OKNA_DVERE_POVRCHY": {
+   "zmluv": 7,
+   "uradov": 7,
+   "median": 10441,
+   "kraje": {
+    "Bratislavský kraj": 2,
+    "Trenčiansky kraj": 2,
+    "Košický kraj": 1,
+    "Prešovský kraj": 1,
+    "Nitriansky kraj": 1
+   },
+   "do_90_dni": 2
+  }
+ },
+ "najvacsie_6_12_mes": {
+  "UPRATOVANIE": [
+   {
+    "authority_name": "Slovenská elektrizačná prenosová sústava, a.s.",
+    "subject": "Zmluva na poskytovanie upratovacích služieb",
+    "price_total": 404859.85,
+    "effective_to": "2027-09-30",
+    "sector": "UPRATOVANIE",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/10937384/"
+   },
+   {
+    "authority_name": "Správa služieb diplomatickému zboru, a.s.",
+    "subject": "Zmluva o poskytovaní upratovacích služieb č. OST/14/2024",
+    "price_total": 318680.7,
+    "effective_to": "2027-04-30",
+    "sector": "UPRATOVANIE",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/9227135/"
+   },
+   {
+    "authority_name": "Domov seniorov ARCHA",
+    "subject": "Zmluva o poskytovaní upratovacích služieb č. DSA/20/2025",
+    "price_total": 237586.8,
+    "effective_to": "2027-09-30",
+    "sector": "UPRATOVANIE",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/11358439/"
+   },
+   {
+    "authority_name": "Centrum výcviku Lešť",
+    "subject": "Zmluva o poskytnutí služby č. CV-90-23/2026 - 5100012709 ZoPS \"Odvoz odpadovej vody, upratovanie, dezinfekcia, dopĺňanie hyg. potrieb pre soc. kontajnery v správe CV Lešť\"",
+    "price_total": 207845.4,
+    "effective_to": "2027-08-30",
+    "sector": "UPRATOVANIE",
+    "kraj": null,
+    "odkaz": "https://www.crz.gov.sk/zmluva/12624202/"
+   },
+   {
+    "authority_name": "Domov seniorov Lamač",
+    "subject": "Zmluva o poskytovaní upratovacích služieb",
+    "price_total": 179245.62,
+    "effective_to": "2027-04-30",
+    "sector": "UPRATOVANIE",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/11523464/"
+   }
+  ],
+  "OSTRAHA": [
+   {
+    "authority_name": "Bratislavská vodárenská spoločnosť, a. s. ",
+    "subject": "Zmluva o poskytovaní strážnej služby",
+    "price_total": 8009582.88,
+    "effective_to": "2027-09-01",
+    "sector": "OSTRAHA",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/8236345/"
+   },
+   {
+    "authority_name": "Univerzitná nemocnica Bratislava",
+    "subject": "Zmluva o poskytovaní bezpečnostnej služby",
+    "price_total": 755269.2,
+    "effective_to": "2027-05-27",
+    "sector": "OSTRAHA",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/10835397/"
+   },
+   {
+    "authority_name": "Fakultná nemocnica Trnava",
+    "subject": "Zmluva o poskytovaní strážnej služby",
+    "price_total": 743692.44,
+    "effective_to": "2027-04-30",
+    "sector": "OSTRAHA",
+    "kraj": "Trnavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/10741457/"
+   },
+   {
+    "authority_name": "Finančné riaditeľstvo SR",
+    "subject": "Zmluva o poskytovaní bezpečnostnej služby č. 31855/2024/1",
+    "price_total": 586798.8,
+    "effective_to": "2027-09-01",
+    "sector": "OSTRAHA",
+    "kraj": "Banskobystrický kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/9692121/"
+   },
+   {
+    "authority_name": "Ministerstvo pôdohospodárstva a rozvoja vidieka SR",
+    "subject": "Zmluva o poskytovaní strážnej služby",
+    "price_total": 390638.16,
+    "effective_to": "2027-09-30",
+    "sector": "OSTRAHA",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/12871530/"
+   }
+  ],
+  "STRAVOVANIE": [
+   {
+    "authority_name": "Centrum sociálnych služieb PARK",
+    "subject": "Zabezpečenie stravovania zamestnancov úradu ŽSK",
+    "price_total": 16068240.54,
+    "effective_to": "2027-06-01",
+    "sector": "STRAVOVANIE",
+    "kraj": "Žilinský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/7947583/"
+   },
+   {
+    "authority_name": "Mesto Banská Bystrica",
+    "subject": "Zmluva o poskytovaní stravovacích služieb č. 1567/2025/PS-TP",
+    "price_total": 546904.0,
+    "effective_to": "2027-06-30",
+    "sector": "STRAVOVANIE",
+    "kraj": "Banskobystrický kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/11027847/"
+   },
+   {
+    "authority_name": "Východoslovenský onkologický ústav, a.s. ",
+    "subject": "ZMLUVA O POSKYTOVANÍ SLUŽIEB ZABEZPEČENIE STRAVOVANIA PRE PACIENTOV",
+    "price_total": 486600.0,
+    "effective_to": "2027-05-12",
+    "sector": "STRAVOVANIE",
+    "kraj": "Košický kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/12327371/"
+   },
+   {
+    "authority_name": "Univerzita Komenského v Bratislave - Evanjelická bohoslovecká fakulta",
+    "subject": "Zmluva o poskytovaní stravovacích služieb",
+    "price_total": 251392.0,
+    "effective_to": "2027-08-31",
+    "sector": "STRAVOVANIE",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/9678498/"
+   },
+   {
+    "authority_name": "Mestská časť Bratislava-Podunajské Biskupice",
+    "subject": "Zabezpečenie stravovania pre prijímateľov sociálnej služby",
+    "price_total": 232424.64,
+    "effective_to": "2027-07-31",
+    "sector": "STRAVOVANIE",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/9547613/"
+   }
+  ],
+  "ZELEN_ZIMNA_UDRZBA": [
+   {
+    "authority_name": "Národná diaľničná spoločnosť, a.s.",
+    "subject": "Rámcová dohoda - Dodávka chemického posypového materiálu časť 1",
+    "price_total": 8638044.0,
+    "effective_to": "2027-09-03",
+    "sector": "ZELEN_ZIMNA_UDRZBA",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/11253386/"
+   },
+   {
+    "authority_name": "Národná diaľničná spoločnosť, a.s.",
+    "subject": "Rámcová dohoda - Dodávka chemického posypového materiálu časť 2",
+    "price_total": 8207175.0,
+    "effective_to": "2027-09-03",
+    "sector": "ZELEN_ZIMNA_UDRZBA",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/11253594/"
+   },
+   {
+    "authority_name": "MH Teplárenský holding, a.s.",
+    "subject": "Rámcová zmluva o poskytovaní služieb \"Kosenie a výrub drevín\"",
+    "price_total": 246000.0,
+    "effective_to": "2027-05-21",
+    "sector": "ZELEN_ZIMNA_UDRZBA",
+    "kraj": "Bratislavský kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/12365234/"
+   },
+   {
+    "authority_name": "Mesto Spišská Nová Ves ",
+    "subject": "Rámcová zmluva o poskytovaní verejnoprospešných služieb na zabezpečenie zimnej údržby komunikácii v meste Spišská Nová Ves",
+    "price_total": 226798.95,
+    "effective_to": "2027-04-30",
+    "sector": "ZELEN_ZIMNA_UDRZBA",
+    "kraj": "Košický kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/12917031/"
+   },
+   {
+    "authority_name": "Mesto Ilava",
+    "subject": "Záhradnícke práce a starostlivosť o zeleň",
+    "price_total": 19200.0,
+    "effective_to": "2027-08-25",
+    "sector": "ZELEN_ZIMNA_UDRZBA",
+    "kraj": "Trenčiansky kraj",
+    "odkaz": "https://www.crz.gov.sk/zmluva/12713637/"
+   }
+  ]
+ },
+ "najvacsie_1_3_mes": [
+  {
+   "authority_name": "Gymnázium Pavla Országha Hviezdoslava, Kežmarok",
+   "subject": "stavebné práce v rámci investičnej akcie: \"Prestavba budovy Gymnázia P. O. Hviezdoslava s prístavbou budovy Školy umeleckého priemyslu v Kežmarku\"",
+   "price_total": 12949500.0,
+   "effective_to": "2026-11-27",
+   "sector": "STAVEBNE_PRACE",
+   "kraj": "Prešovský kraj",
+   "odkaz": "https://www.crz.gov.sk/zmluva/8611232/"
+  },
+  {
+   "authority_name": "Úrad geodézie, kartografie a katastra SR",
+   "subject": "Zmluva o podpore prevádzky a rozvoji informačného systému",
+   "price_total": 4879999.2,
+   "effective_to": "2026-11-30",
+   "sector": "IT_TECHNIKA",
+   "kraj": "Bratislavský kraj",
+   "odkaz": "https://www.crz.gov.sk/zmluva/7109280/"
+  },
+  {
+   "authority_name": "Obec Markušovce",
+   "subject": "Základná škola Markušovce, Budova v areáli základnej školy",
+   "price_total": 1585430.76,
+   "effective_to": "2026-12-31",
+   "sector": "STAVEBNE_PRACE",
+   "kraj": "Košický kraj",
+   "odkaz": "https://www.crz.gov.sk/zmluva/9133915/"
+  },
+  {
+   "authority_name": "Železničná spoločnosť Slovensko, a.s.",
+   "subject": "Zmluva o dielo č. 4600008614/RKsKZ/2025 na vykonanie opravy poškodenia elektrickej jednotky zloženej z vozňov 660 019-4, 660 119-9, 660 219-7, 660 819-4",
+   "price_total": 1484746.45,
+   "effective_to": "2026-11-26",
+   "sector": "STAVEBNE_PRACE",
+   "kraj": "Bratislavský kraj",
+   "odkaz": "https://www.crz.gov.sk/zmluva/11386201/"
+  },
+  {
+   "authority_name": "Finančné riaditeľstvo SR",
+   "subject": "Zmluva o poskytovaní bezpečnostnej služby",
+   "price_total": 1388602.66,
+   "effective_to": "2026-12-31",
+   "sector": "OSTRAHA",
+   "kraj": "Banskobystrický kraj",
+   "odkaz": "https://www.crz.gov.sk/zmluva/8777898/"
+  }
+ ],
+ "obce_programy": [
+  {
+   "poskytovatel": "Fond na podporu umenia",
+   "zmluv_30d": 6,
+   "zmluv_90d": 33,
+   "obci_90d": 33,
+   "objem_90d": 3092000.0,
+   "median_dotacie": 80000.0,
+   "najmensia": 20000.0,
+   "najvacsia": 230000.0,
+   "hlavny_ucel": null,
+   "posledna_zmluva": "2026-10-05",
+   "last_seen_at": "2026-10-23",
+   "refreshed_at": "2026-10-23T10:01:31.992623+00:00"
+  },
+  {
+   "poskytovatel": "Ministerstvo investícií, regionálneho rozvoja a informatizácie Slovenskej republiky",
+   "zmluv_30d": 4,
+   "zmluv_90d": 27,
+   "obci_90d": 26,
+   "objem_90d": 24391845.0,
+   "median_dotacie": 809149.0,
+   "najmensia": 214795.0,
+   "najvacsia": 2050068.0,
+   "hlavny_ucel": null,
+   "posledna_zmluva": "2026-10-09",
+   "last_seen_at": "2026-10-23",
+   "refreshed_at": "2026-10-23T10:01:31.992623+00:00"
+  },
+  {
+   "poskytovatel": "Ministerstvo kultúry Slovenskej republiky",
+   "zmluv_30d": 7,
+   "zmluv_90d": 16,
+   "obci_90d": 14,
+   "objem_90d": 1372900.0,
+   "median_dotacie": 28350.0,
+   "najmensia": 20000.0,
+   "najvacsia": 600000.0,
+   "hlavny_ucel": null,
+   "posledna_zmluva": "2026-10-06",
+   "last_seen_at": "2026-10-23",
+   "refreshed_at": "2026-10-23T10:01:31.992623+00:00"
+  },
+  {
+   "poskytovatel": "Ministerstvo práce, sociálnych vecí a rodiny SR",
+   "zmluv_30d": 2,
+   "zmluv_90d": 13,
+   "obci_90d": 13,
+   "objem_90d": 5619336.0,
+   "median_dotacie": 50000.0,
+   "najmensia": 22000.0,
+   "najvacsia": 2200985.0,
+   "hlavny_ucel": null,
+   "posledna_zmluva": "2026-10-09",
+   "last_seen_at": "2026-10-23",
+   "refreshed_at": "2026-10-23T10:01:31.992623+00:00"
+  },
+  {
+   "poskytovatel": "Ministerstvo dopravy SR",
+   "zmluv_30d": 3,
+   "zmluv_90d": 19,
+   "obci_90d": 13,
+   "objem_90d": 15029572.0,
+   "median_dotacie": 343404.0,
+   "najmensia": 23130.0,
+   "najvacsia": 2780880.0,
+   "hlavny_ucel": "Nájomné byty",
+   "posledna_zmluva": "2026-10-07",
+   "last_seen_at": "2026-10-23",
+   "refreshed_at": "2026-10-23T10:01:31.992623+00:00"
+  },
+  {
+   "poskytovatel": "Ministerstvo životného prostredia SR",
+   "zmluv_30d": 8,
+   "zmluv_90d": 9,
+   "obci_90d": 9,
+   "objem_90d": 3298729.0,
+   "median_dotacie": 250877.0,
+   "najmensia": 21133.0,
+   "najvacsia": 1276592.0,
+   "hlavny_ucel": null,
+   "posledna_zmluva": "2026-10-05",
+   "last_seen_at": "2026-10-23",
+   "refreshed_at": "2026-10-23T10:01:31.992623+00:00"
+  },
+  {
+   "poskytovatel": "Ministerstvo obrany SR",
+   "zmluv_30d": 0,
+   "zmluv_90d": 8,
+   "obci_90d": 8,
+   "objem_90d": 377202.0,
+   "median_dotacie": 43641.0,
+   "najmensia": 27171.0,
+   "najvacsia": 75463.0,
+   "hlavny_ucel": null,
+   "posledna_zmluva": "2026-09-08",
+   "last_seen_at": "2026-10-23",
+   "refreshed_at": "2026-10-23T10:01:31.992623+00:00"
+  },
+  {
+   "poskytovatel": "Košický samosprávny kraj",
+   "zmluv_30d": 1,
+   "zmluv_90d": 5,
+   "obci_90d": 5,
+   "objem_90d": 545000.0,
+   "median_dotacie": 60000.0,
+   "najmensia": 40000.0,
+   "najvacsia": 300000.0,
+   "hlavny_ucel": null,
+   "posledna_zmluva": "2026-10-05",
+   "last_seen_at": "2026-10-23",
+   "refreshed_at": "2026-10-23T10:01:31.992623+00:00"
+  }
+ ],
+ "obce_vyzvy_otvorene": [],
+ "obce_vyzvy_pocet": 0,
+ "obci_v_registri": 2928,
+ "dotacie_12m": {
+  "zmluv": 6281,
+  "objem": 1534418019,
+  "poskytovatelia": [
+   [
+    "Ministerstvo financií Slovenskej republiky",
+    1183
+   ],
+   [
+    "Environmentálny fond",
+    787
+   ],
+   [
+    "Ministerstvo investícií, regionálneho rozvoja a informatizácie Slovenskej republiky",
+    762
+   ],
+   [
+    "Ministerstvo financií SR",
+    579
+   ],
+   [
+    "Fond na podporu umenia",
+    317
+   ],
+   [
+    "Úrad vlády SR",
+    209
+   ],
+   [
+    "Ministerstvo práce, sociálnych vecí a rodiny SR",
+    204
+   ],
+   [
+    "Nitriansky samosprávny kraj",
+    181
+   ],
+   [
+    "Ministerstvo dopravy SR",
+    158
+   ],
+   [
+    "Ministerstvo školstva, výskumu, vývoja a mládeže Slovenskej republiky",
+    134
+   ]
+  ],
+  "kraje": {
+   "Prešovský kraj": 1172,
+   "Nitriansky kraj": 1110,
+   "Košický kraj": 939,
+   "Žilinský kraj": 782,
+   "Banskobystrický kraj": 773,
+   "Trnavský kraj": 524,
+   "Trenčiansky kraj": 507,
+   "Bratislavský kraj": 283
+  }
+ }
+}
