@@ -53,7 +53,7 @@ Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) return json({ ok: false, kod: "NEPRIHLASENY" }, 401);
 
-  let telo: { plan?: string; obdobie?: string };
+  let telo: { plan?: string; obdobie?: string; kod?: string };
   try {
     telo = await req.json();
   } catch {
@@ -63,6 +63,8 @@ Deno.serve(async (req) => {
   const plan = telo.plan;
   const obdobie = telo.obdobie;
   if (!plan || !obdobie) return json({ ok: false, kod: "CHYBAJU_PARAMETRE" }, 400);
+  // Zakladajuci kod (migracia 85). Cenu podla neho urci VYHRADNE databaza.
+  const zlavovyKod = typeof telo.kod === "string" ? telo.kod.trim().slice(0, 40) : "";
 
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -89,11 +91,16 @@ Deno.serve(async (req) => {
   } catch (_) { /* bez predvyplnenia */ }
 
   const { data: platba, error: chybaZalozenia } = await sbUzivatel
-    .rpc("zaloz_platbu", { p_plan: plan, p_obdobie: obdobie })
+    .rpc("zaloz_platbu", { p_plan: plan, p_obdobie: obdobie, p_kod: zlavovyKod || null })
     .single();
 
   if (chybaZalozenia || !platba) {
-    const kod = (chybaZalozenia?.message || "").includes("NEPRIHLASENY")
+    const sprava = chybaZalozenia?.message || "";
+    const znamy = ["NEPLATNY_KOD", "KOD_LEN_ROCNE", "KOD_VYCERPANY", "KOD_SKONCIL"]
+      .find((k) => sprava.includes(k));
+    const kod = znamy
+      ? znamy
+      : sprava.includes("NEPRIHLASENY")
       ? "NEPRIHLASENY"
       : (chybaZalozenia?.message || "").includes("BEZ_OPRAVNENIA")
       ? "BEZ_OPRAVNENIA"
@@ -130,7 +137,8 @@ Deno.serve(async (req) => {
     "line_items[0][price_data][currency]": String(platba.mena).toLowerCase(),
     "line_items[0][price_data][unit_amount]": String(centy),
     "line_items[0][price_data][product_data][name]":
-      `${NAZOV_PLANU[platba.plan] ?? platba.plan} (${platba.obdobie === "rok" ? "ročné" : "mesačné"} predplatné)`,
+      `${NAZOV_PLANU[platba.plan] ?? platba.plan} (${platba.obdobie === "rok" ? "ročné" : "mesačné"} predplatné)` +
+      (platba.zlava_kod === "ZAKLADATEL" ? " – zakladajúca cena" : ""),
   });
 
   if (emailKupujuceho) parametre.set("customer_email", emailKupujuceho);
