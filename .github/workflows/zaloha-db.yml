@@ -1,0 +1,77 @@
+name: Zaloha databazy
+
+# ══════════════════════════════════════════════════════════════════════════
+#  CO TOTO ROBI
+#  Kym je Supabase na bezplatnom plane (bez zaloh), kazdu noc urobi
+#  pg_dump schem public a auth, zasifruje ho (AES-256, heslo ZALOHA_HESLO)
+#  a ulozi ako artifact behu na 7 dni. Najnovsiu zalohu najdes v Actions ->
+#  Zaloha databazy -> posledny beh -> Artifacts -> zaloha-db.
+#
+#  OBNOVA (len v nudzi, na novom alebo prazdnom projekte):
+#    gpg --decrypt zaloha.dump.gpg > zaloha.dump
+#    pg_restore --no-owner --clean --if-exists -d "<connection string>" zaloha.dump
+#
+#  POTREBNE SECRETS
+#    SUPABASE_DB_URL — Supabase -> Connect -> Session pooler (IPv4!),
+#                      postgresql://postgres.<projekt>:<heslo>@aws-...pooler.supabase.com:5432/postgres
+#    ZALOHA_HESLO    — dlhe nahodne heslo na sifrovanie; ulozit si ho aj mimo GitHubu
+# ══════════════════════════════════════════════════════════════════════════
+
+on:
+  # cron sa zapne po prvom uspesnom rucnom behu (Claude, 23. 10. 2026)
+  # schedule:
+  #   - cron: "17 2 * * *"      # 02:17 UTC kazdy den
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zaloha-db
+  cancel-in-progress: false
+
+jobs:
+  zaloha:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Skontrolovat secrets
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+          HESLO: ${{ secrets.ZALOHA_HESLO }}
+        run: |
+          if [ -z "$DB" ] || [ -z "$HESLO" ]; then
+            echo "::error::Chyba SUPABASE_DB_URL alebo ZALOHA_HESLO v secrets."
+            exit 1
+          fi
+          if [ ${#HESLO} -lt 20 ]; then
+            echo "::error::ZALOHA_HESLO ma menej ako 20 znakov."
+            exit 1
+          fi
+
+      - name: pg_dump (PostgreSQL 17) a sifrovanie
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+          HESLO: ${{ secrets.ZALOHA_HESLO }}
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          docker run --rm -e DB -v "$PWD/out:/out" postgres:17 \
+            sh -c 'pg_dump "$DB" -Fc --no-owner --no-privileges -n public -n auth -f /out/zaloha.dump'
+          ls -lh out/zaloha.dump
+          # kontrola, ze zaloha sa da precitat a obsahuje hlavne tabulky
+          docker run --rm -v "$PWD/out:/out" postgres:17 pg_restore -l /out/zaloha.dump > out/obsah.txt
+          for t in contracts opportunities organizations users; do
+            grep -q "TABLE DATA [a-z]* $t " out/obsah.txt || { echo "::error::V zalohe chyba tabulka $t"; exit 1; }
+          done
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$HESLO" \
+              --symmetric --cipher-algo AES256 -o out/zaloha.dump.gpg out/zaloha.dump
+          rm out/zaloha.dump
+          echo "Zaloha: $(du -h out/zaloha.dump.gpg | cut -f1), $(grep -c 'TABLE DATA' out/obsah.txt) tabuliek s datami"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zaloha-db
+          path: out/zaloha.dump.gpg
+          retention-days: 7
+          compression-level: 0
