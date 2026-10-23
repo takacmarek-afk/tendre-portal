@@ -1,0 +1,113 @@
+name: Oslovenie firiem
+
+# ══════════════════════════════════════════════════════════════════════════
+#  CO TOTO ROBI
+#  Tri osobne e-maily dodavatelom verejneho sektora (plan predaja, sekcia 3).
+#  Len rucne spustenie. Kazdy krok sa da pustit nasucho (default).
+#
+#  KROKY
+#   kontakty — z Vestnika UVO vyberie zverejnene e-maily vitazov sutazi
+#              (BT-506) do oslovenie_firiem_kontakty (pipeline/oslovenie_firiem.py)
+#   posli    — nasucho vyrobi NAHLAD (Artifacts -> oslovenie-nahlad).
+#              S "komu" posle 3 testovacie e-maily len na tu adresu.
+#              Ostro: nadvazujuce kroky + "novych" novych firiem, najviac "max"
+#              za den, len pondelok az stvrtok 8:00–16:00.
+#   zastav   — firma odpovedala: zadaj ICO (oddelene ciarkou) do "ico".
+#
+#  ODOSIELA SA CEZ ZOHO (marek@predtendrom.sk), NIE CEZ RESEND.
+#  Potrebne secrets: ZOHO_SMTP_PASSWORD, KAMPAN_REPLY_TO.
+# ══════════════════════════════════════════════════════════════════════════
+
+on:
+  workflow_dispatch:
+    inputs:
+      krok:
+        description: "Krok"
+        type: choice
+        options: [posli, kontakty, zastav]
+        default: posli
+      nasucho:
+        description: "Nasucho — nic nezapisat ani neposlat (nechaj true, kym si neisty)"
+        type: boolean
+        default: true
+      segmenty:
+        description: "Segmenty (krok posli), oddelene ciarkou"
+        type: string
+        default: "UPRATOVANIE,OSTRAHA"
+      novych:
+        description: "Kolko novych firiem dnes zacat (krok posli)"
+        type: string
+        default: "0"
+      komu:
+        description: "Test: poslat 3 e-maily len na tuto adresu (krok posli)"
+        type: string
+        default: ""
+      max:
+        description: "Najviac e-mailov za den spolu (krok posli)"
+        type: string
+        default: "30"
+      ico:
+        description: "ICO firiem, ktore odpovedali (krok zastav)"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: oslovenie-firiem
+  cancel-in-progress: false
+
+jobs:
+  oslovenie:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+
+      - run: pip install -r pipeline/requirements.txt
+
+      - name: Spustit krok
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
+          KAMPAN_REPLY_TO: ${{ secrets.KAMPAN_REPLY_TO }}
+          KROK: ${{ inputs.krok }}
+          NASUCHO: ${{ inputs.nasucho }}
+          SEGMENTY: ${{ inputs.segmenty }}
+          NOVYCH: ${{ inputs.novych }}
+          KOMU: ${{ inputs.komu }}
+          MAX: ${{ inputs.max }}
+          ICO: ${{ inputs.ico }}
+        run: |
+          set -euo pipefail
+          SUCHO=()
+          if [ "$NASUCHO" = "true" ]; then SUCHO=(--nasucho); fi
+          case "$KROK" in
+            kontakty)
+              python oslovenie_firiem.py kontakty "${SUCHO[@]}" ;;
+            zastav)
+              python oslovenie_firiem.py zastav --ico "$ICO" ;;
+            posli)
+              ARGS=(posli --segmenty "$SEGMENTY" --novych "${NOVYCH:-0}" --max "${MAX:-30}" --nahlad nahlad.html)
+              if [ -n "${KOMU:-}" ]; then ARGS+=(--komu "$KOMU"); fi
+              python oslovenie_firiem.py "${ARGS[@]}" "${SUCHO[@]}" ;;
+          esac
+
+      - name: Nahlad e-mailov
+        if: inputs.krok == 'posli' && always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: oslovenie-nahlad
+          path: pipeline/nahlad.html
+          if-no-files-found: ignore
+          retention-days: 14
