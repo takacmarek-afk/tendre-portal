@@ -24,9 +24,11 @@ def test_vseobecna_adresa_je_ok():
     assert of.posud_email("office.ba@firma.sk", "Firma s.r.o.")[0] == "ok"
 
 
-def test_osobna_a_verejna_schranka_na_kontrolu():
-    assert of.posud_email("jan.novak@dug.sk", "DUG s.r.o.")[0] == "na_kontrolu"
-    assert of.posud_email("dugsro@gmail.com", "DUG s.r.o.")[0] == "na_kontrolu"
+def test_osobna_a_verejna_schranka_zverejnena_vo_vestniku_je_ok():
+    # rozhodnutie 23. 10. 2026: kontakt, ktory firma uviedla vo Vestniku, sa smie pouzit
+    stav, dovod = of.posud_email("jan.novak@dug.sk", "DUG s.r.o.")
+    assert stav == "ok" and "Vestniku" in dovod
+    assert of.posud_email("dugsro@gmail.com", "DUG s.r.o.")[0] == "ok"
     assert of.posud_email("zle", "X")[0] == "vylucene"
 
 
@@ -50,6 +52,11 @@ def test_zluc_berie_najnovsiu_adresu_a_najcastejsi_kraj():
     k = of.zluc_kontakty(r)
     assert len(k) == 1 and k[0]["email"] == "info@a.sk" and k[0]["kraj"] == "Bratislavský kraj"
     assert k[0]["stav"] == "ok"
+
+
+def test_rucne_rozhodnutia_sa_neprepisuju():
+    src = open(of.__file__, encoding="utf-8").read()
+    assert 's["stav"] == "na_kontrolu" or' in src
 
 
 # ── kontakty z formulara Vestnika ─────────────────────────────────────────

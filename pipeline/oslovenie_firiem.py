@@ -13,10 +13,10 @@ KROKY
     python oslovenie_firiem.py zastav --ico 12345678   # firma odpovedala
 
 KOMU PISEME (a komu nie) — § 116 ods. 15 zakona c. 452/2021 Z. z.
-  Len na ZVEREJNENU firemnu adresu: oficialny e-mail vitaza sutaze vo
-  Vestniku UVO (pole BT-506). Vseobecne adresy (info@, obchod@, office@ ...)
-  dostanu 'ok'; osobne (meno.priezvisko@) a schranky na verejnych domenach
-  'na_kontrolu' a bez rucneho schvalenia sa nepouziju. Nepiseme firmam, ktore
+  Len na ZVEREJNENU adresu: oficialny e-mail vitaza sutaze vo Vestniku UVO
+  (pole BT-506), ktory firma sama uviedla ako svoj kontakt. Aj osobne
+  adresy (meno.priezvisko@), ktore firma takto zverejnila (rozhodnutie
+  23. 10. 2026). Rucne 'vylucene' a 'odpovedal' sa nikdy neprepisuju. Nepiseme firmam, ktore
   uz maju ucet, ani adresam prihlasenym do tyzdenneho prehladu (dali suhlas,
   dostavaju ine e-maily). Odhlasena firma uz nedostane nic.
 
@@ -119,22 +119,27 @@ def mesiac_rok(d):
 
 
 def posud_email(email, firma):
-    """-> (stav, dovod). Konzervativne: 'ok' len vseobecna adresa firmy."""
+    """-> (stav, dovod).
+
+    Kazda adresa sem prichadza z Vestnika UVO (BT-506): je to kontakt, ktory
+    firma sama uviedla ako svoj oficialny kontakt vo verejnom obstaravani.
+    Rozhodnutie Mareka 23. 10. 2026: aj osobne adresy (meno.priezvisko@,
+    schranka zivnostnika na gmaile), ktore firma takto zverejnila, sa smu
+    pouzit (§ 116 ods. 15 z. 452/2021: zverejnene kontaktne udaje PO a FO
+    podnikatela). Kazdy e-mail ma odhlasenie a povie, odkial adresu mame.
+    """
     e = (email or "").strip().lower()
     if not _EMAIL.match(e):
         return "vylucene", "neplatna adresa"
     lokal, domena = e.split("@", 1)
-    if domena in _FREEMAIL:
-        return "na_kontrolu", "verejna schranka (moze byt sukromna adresa zivnostnika)"
     zaklad = re.split(r"[._\-+0-9]", lokal)[0]
     if lokal in _VSEOBECNE or zaklad in _VSEOBECNE:
         return "ok", "vseobecna firemna adresa"
+    if domena in _FREEMAIL:
+        return "ok", "kontakt zverejneny vo Vestniku (verejna schranka)"
     if re.fullmatch(r"[a-z]+[._-][a-z]+", lokal):
-        return "na_kontrolu", "vyzera ako osobna adresa (meno.priezvisko)"
-    firma_k = re.sub(r"[^a-z0-9]", "", _norm(kratky_nazov(firma)))
-    if firma_k and len(firma_k) >= 4 and (firma_k in re.sub(r"[^a-z0-9]", "", lokal)):
-        return "ok", "adresa s nazvom firmy"
-    return "na_kontrolu", "nejasna adresa"
+        return "ok", "osobny kontakt zverejneny firmou vo Vestniku"
+    return "ok", "kontakt zverejneny firmou vo Vestniku"
 
 
 # ── 1. kontakty z Vestnika UVO ─────────────────────────────────────────────
@@ -251,8 +256,10 @@ def krok_kontakty(sb, nasucho, od_rok, limit):
         riadok.update(zdroj="uvo", upravene_at="now()")
         if s is None:
             riadok.update(stav=k["stav"], dovod=k["dovod"])
-        elif s["email"] != k["email"] and s["stav"] == "ok":
-            riadok.update(stav=k["stav"], dovod=k["dovod"])   # nova adresa sa posudi znova
+        elif s["stav"] == "na_kontrolu" or (s["email"] != k["email"] and s["stav"] == "ok"):
+            # na_kontrolu a nova adresa sa posudia znova; 'vylucene' a 'odpovedal'
+            # (rucne rozhodnutia) a odhlasenie sa nikdy neprepisuju
+            riadok.update(stav=k["stav"], dovod=k["dovod"])
         else:
             riadok["email"] = s["email"]
         nove.append(riadok)
