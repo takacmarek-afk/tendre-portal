@@ -390,10 +390,14 @@ def ffmpeg(*args):
 
 async def nahraj(p, stav, n, mobil, cielovy_subor):
     tmp = Path(tempfile.mkdtemp())
+    # Nahravka Playwrightu ma rozmer v CSS pixeloch (DPR sa do videa nepremieta);
+    # vacsi record_video_size len prida sivy okraj. Nahrava sa preto v rozmere
+    # viewportu a na cielovy rozmer sa zvacsi az v ffmpeg (chyba z 23. 10. 2026).
     if mobil:
-        vp, dpr, velkost = {"width": 432, "height": 768}, 2.5, {"width": 1080, "height": 1920}
+        vp, dpr, ciel = {"width": 432, "height": 768}, 2.5, "1080:1920"
     else:
-        vp, dpr, velkost = {"width": 1280, "height": 720}, 1.5, {"width": 1920, "height": 1080}
+        vp, dpr, ciel = {"width": 1280, "height": 720}, 1.5, "1920:1080"
+    velkost = vp
     b = await p.chromium.launch()
     ctx = await b.new_context(viewport=vp, device_scale_factor=dpr, locale="sk-SK", storage_state=stav,
                               record_video_dir=str(tmp), record_video_size=velkost, accept_downloads=True,
@@ -420,7 +424,7 @@ async def nahraj(p, stav, n, mobil, cielovy_subor):
     do = getattr(r, "koniec_at", None)
     podm = [f"gte(t,{od:.2f})"] + ([f"lte(t,{do:.2f})"] if do else [])
     podm += [f"not(between(t,{a:.2f},{b:.2f}))" for a, b in r.medzery if b > a and a > od]
-    vf = f"fps=30,select='{'*'.join(podm)}',setpts=N/30/TB"
+    vf = f"fps=30,select='{'*'.join(podm)}',setpts=N/30/TB,scale={ciel}:flags=lanczos"
     ffmpeg("-i", str(webm), "-vf", vf, "-c:v", "libx264", "-preset", "slow", "-crf", "24",
            "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an", str(cielovy_subor))
     shutil.rmtree(tmp, ignore_errors=True)
