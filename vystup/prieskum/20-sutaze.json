@@ -1,0 +1,445 @@
+[
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "preskocit",
+  "data": {},
+  "text": "Preskočiť na obsah"
+ },
+ {
+  "tag": "button",
+  "id": "btn-predplatne",
+  "cls": "text-[13px] text-slate2 hover:text-ink",
+  "data": {},
+  "text": "Predplatné"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "text-[13px] text-slate2 hover:text-ink",
+  "data": {},
+  "text": "Návody"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "text-[13px] text-slate2 hover:text-ink hidden sm:inline",
+  "data": {},
+  "text": "Zdroje dát"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "text-[13px] text-slate2 hover:text-ink hidden sm:inline",
+  "data": {},
+  "text": "Pre obce"
+ },
+ {
+  "tag": "button",
+  "id": "odhlasit",
+  "cls": "text-[13px] text-slate2 hover:text-ink",
+  "data": {},
+  "text": "Odhlásiť sa"
+ },
+ {
+  "tag": "input",
+  "id": "mv-pouzit",
+  "cls": "mt-0.5 w-4 h-4 rounded border-line accent-accent",
+  "data": {},
+  "text": "on"
+ },
+ {
+  "tag": "button",
+  "id": "mv-zmenit",
+  "cls": "text-[13px] font-semibold text-accent hover:text-accentDark",
+  "data": {},
+  "text": "Zmeniť"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "dnes"
+  },
+  "text": "Dnes"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "obsah"
+  },
+  "text": "Končiace zmluvy (1 158)"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "dotacie"
+  },
+  "text": "Dotácie (1 615)"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "ziadatelia"
+  },
+  "text": "Žiadajú o dotáciu (13)"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "sutaze"
+  },
+  "text": "Súťaže ÚVO"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "dodavatelia"
+  },
+  "text": "Dodávatelia (125)"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "dopyty"
+  },
+  "text": "Dopyty od obcí"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "team"
+  },
+  "text": "Tím"
+ },
+ {
+  "tag": "select",
+  "id": "o-sektor",
+  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
+  "data": {},
+  "text": "všetky sektory\ndoprava, mechanizácia\nelektroinštalácie\nIT technika\nkúr"
+ },
+ {
+  "tag": "select",
+  "id": "o-kraj",
+  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
+  "data": {},
+  "text": "celé Slovensko\nBratislavský kraj\nTrnavský kraj\nTrenčiansky kraj\nNitria"
+ },
+ {
+  "tag": "select",
+  "id": "o-frekvencia",
+  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
+  "data": {},
+  "text": "týždenne\ndenne"
+ },
+ {
+  "tag": "button",
+  "id": "o-zapnut",
+  "cls": "bg-white text-ink font-semibold px-5 py-2 rounded-md\n                           ",
+  "data": {},
+  "text": "Chcem ho dostávať"
+ },
+ {
+  "tag": "input",
+  "id": "o-webhook",
+  "cls": "w-full sm:max-w-md border border-white/20 bg-white/10 text-white rounded-md\n    ",
+  "data": {},
+  "text": ""
+ },
+ {
+  "tag": "input",
+  "id": "o-moje-ico",
+  "cls": "w-full sm:max-w-xs border border-white/20 bg-white/10 text-white rounded-md\n    ",
+  "data": {},
+  "text": ""
+ },
+ {
+  "tag": "select",
+  "id": "u-typ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "data": {},
+  "text": "Zmluvy zo súťaží, ktoré končia\nKto nedávno vyhral\nPráve vyhlásené súťa"
+ },
+ {
+  "tag": "select",
+  "id": "u-kraj",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "data": {},
+  "text": "celé Slovensko\nBratislavský kraj\nTrnavský kraj\nTrenčiansky kraj\nNitria"
+ },
+ {
+  "tag": "select",
+  "id": "u-sektor",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "data": {},
+  "text": "všetky sektory\ndoprava, mechanizácia\nelektroinštalácie\nIT technika\nkúr"
+ },
+ {
+  "tag": "input",
+  "id": "u-text",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px]\n                     ",
+  "data": {},
+  "text": ""
+ },
+ {
+  "tag": "input",
+  "id": "u-jeCas",
+  "cls": "mt-0.5 w-4 h-4 rounded border-line accent-accent",
+  "data": {},
+  "text": "on"
+ },
+ {
+  "tag": "input",
+  "id": "u-malo-ponuk",
+  "cls": "mt-0.5 w-4 h-4 rounded border-line accent-accent",
+  "data": {},
+  "text": "on"
+ },
+ {
+  "tag": "button",
+  "id": "export-u",
+  "cls": "text-[13px] font-semibold text-accent",
+  "data": {},
+  "text": "Export do Excelu"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "data": {},
+  "text": "Zákazka na ÚVO ↗"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 ml-3 text-[12px] text-accent hover:text-accentDark hover:under",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ }
+]

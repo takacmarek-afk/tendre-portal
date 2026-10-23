@@ -1,0 +1,485 @@
+[
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "preskocit",
+  "data": {},
+  "text": "Preskočiť na obsah"
+ },
+ {
+  "tag": "button",
+  "id": "btn-predplatne",
+  "cls": "text-[13px] text-slate2 hover:text-ink",
+  "data": {},
+  "text": "Predplatné"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "text-[13px] text-slate2 hover:text-ink",
+  "data": {},
+  "text": "Návody"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "text-[13px] text-slate2 hover:text-ink hidden sm:inline",
+  "data": {},
+  "text": "Zdroje dát"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "text-[13px] text-slate2 hover:text-ink hidden sm:inline",
+  "data": {},
+  "text": "Pre obce"
+ },
+ {
+  "tag": "button",
+  "id": "odhlasit",
+  "cls": "text-[13px] text-slate2 hover:text-ink",
+  "data": {},
+  "text": "Odhlásiť sa"
+ },
+ {
+  "tag": "input",
+  "id": "mv-pouzit",
+  "cls": "mt-0.5 w-4 h-4 rounded border-line accent-accent",
+  "data": {},
+  "text": "on"
+ },
+ {
+  "tag": "button",
+  "id": "mv-zmenit",
+  "cls": "text-[13px] font-semibold text-accent hover:text-accentDark",
+  "data": {},
+  "text": "Zmeniť"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "dnes"
+  },
+  "text": "Dnes"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "obsah"
+  },
+  "text": "Končiace zmluvy (1 158)"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "dotacie"
+  },
+  "text": "Dotácie (1 615)"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "ziadatelia"
+  },
+  "text": "Žiadajú o dotáciu (13)"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "sutaze"
+  },
+  "text": "Súťaže ÚVO"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "dodavatelia"
+  },
+  "text": "Dodávatelia (125)"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "dopyty"
+  },
+  "text": "Dopyty od obcí"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
+  "data": {
+   "zalozka": "team"
+  },
+  "text": "Tím"
+ },
+ {
+  "tag": "select",
+  "id": "o-sektor",
+  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
+  "data": {},
+  "text": "všetky sektory\ndoprava, mechanizácia\nelektroinštalácie\nIT technika\nkúr"
+ },
+ {
+  "tag": "select",
+  "id": "o-kraj",
+  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
+  "data": {},
+  "text": "celé Slovensko\nBratislavský kraj\nTrnavský kraj\nTrenčiansky kraj\nNitria"
+ },
+ {
+  "tag": "select",
+  "id": "o-frekvencia",
+  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
+  "data": {},
+  "text": "týždenne\ndenne"
+ },
+ {
+  "tag": "button",
+  "id": "o-zapnut",
+  "cls": "bg-white text-ink font-semibold px-5 py-2 rounded-md\n                           ",
+  "data": {},
+  "text": "Chcem ho dostávať"
+ },
+ {
+  "tag": "input",
+  "id": "o-webhook",
+  "cls": "w-full sm:max-w-md border border-white/20 bg-white/10 text-white rounded-md\n    ",
+  "data": {},
+  "text": ""
+ },
+ {
+  "tag": "input",
+  "id": "o-moje-ico",
+  "cls": "w-full sm:max-w-xs border border-white/20 bg-white/10 text-white rounded-md\n    ",
+  "data": {},
+  "text": ""
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-odkaz text-[14px] font-medium leading-snug",
+  "data": {
+   "dnesOtvor": "11920146"
+  },
+  "text": "Zmluva o poskytovaní čistiacich a upratovacích služieb"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesOtvor": "11920146"
+  },
+  "text": "Zobraziť v zmluvách"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesIcs": "11920146"
+  },
+  "text": "Pridať do kalendára"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-odkaz text-[14px] font-medium leading-snug",
+  "data": {
+   "dnesOtvor": "10916121"
+  },
+  "text": "Zmluva o poskytovaní upratovacích a čistiacich služieb"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesOtvor": "10916121"
+  },
+  "text": "Zobraziť v zmluvách"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesIcs": "10916121"
+  },
+  "text": "Pridať do kalendára"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-odkaz text-[14px] font-medium leading-snug",
+  "data": {
+   "dnesOtvor": "10937384"
+  },
+  "text": "Zmluva na poskytovanie upratovacích služieb"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesOtvor": "10937384"
+  },
+  "text": "Zobraziť v zmluvách"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesIcs": "10937384"
+  },
+  "text": "Pridať do kalendára"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-odkaz text-[14px] font-medium leading-snug",
+  "data": {
+   "dnesOtvor": "10959214"
+  },
+  "text": "Zmluva o zabezpečení upratovacích a čistiacich služieb ev. č. 70/2025"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesOtvor": "10959214"
+  },
+  "text": "Zobraziť v zmluvách"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesIcs": "10959214"
+  },
+  "text": "Pridať do kalendára"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-odkaz text-[14px] font-medium leading-snug",
+  "data": {
+   "dnesOtvor": "11931801"
+  },
+  "text": "Zmluva o poskytovaní čistiacich a upratovacích služieb"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesOtvor": "11931801"
+  },
+  "text": "Zobraziť v zmluvách"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesIcs": "11931801"
+  },
+  "text": "Pridať do kalendára"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-odkaz text-[14px] font-medium leading-snug",
+  "data": {
+   "dnesOtvor": "10211720"
+  },
+  "text": "Zmluva o poskytovaní upratovacích služieb"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesOtvor": "10211720"
+  },
+  "text": "Zobraziť v zmluvách"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesIcs": "10211720"
+  },
+  "text": "Pridať do kalendára"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-odkaz text-[14px] font-medium leading-snug",
+  "data": {
+   "dnesOtvor": "10218877"
+  },
+  "text": "Zmluva o poskytovaní upratovacích služieb"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesOtvor": "10218877"
+  },
+  "text": "Zobraziť v zmluvách"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesIcs": "10218877"
+  },
+  "text": "Pridať do kalendára"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-odkaz text-[14px] font-medium leading-snug",
+  "data": {
+   "dnesOtvor": "11637550"
+  },
+  "text": "Zmluva o zabezpečení upratovacích služieb"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesOtvor": "11637550"
+  },
+  "text": "Zobraziť v zmluvách"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesIcs": "11637550"
+  },
+  "text": "Pridať do kalendára"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-odkaz text-[14px] font-medium leading-snug",
+  "data": {
+   "dnesOtvor": "11663317"
+  },
+  "text": "Zmluva o poskytovaní upratovacích a čistiacich služieb"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesOtvor": "11663317"
+  },
+  "text": "Zobraziť v zmluvách"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesIcs": "11663317"
+  },
+  "text": "Pridať do kalendára"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-odkaz text-[14px] font-medium leading-snug",
+  "data": {
+   "dnesOtvor": "11747123"
+  },
+  "text": "Zmluva o poskytovaní služieb - pravidelné upratovacie a čistiace práce"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesOtvor": "11747123"
+  },
+  "text": "Zobraziť v zmluvách"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesIcs": "11747123"
+  },
+  "text": "Pridať do kalendára"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn dnes-btn-hlavne",
+  "data": {
+   "dnesIcsVsetky": ""
+  },
+  "text": "Stiahnuť kalendár končiacich zmlúv (.ics)"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesTab": "dodavatelia"
+  },
+  "text": "Otvoriť Dodávateľov"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesTab": "obsah"
+  },
+  "text": "Končiace zmluvy"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "dnes-btn",
+  "data": {
+   "dnesTab": "dotacie"
+  },
+  "text": "Dotácie"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "text-accent hover:underline",
+  "data": {},
+  "text": "Zdrojoch dát"
+ }
+]
