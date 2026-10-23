@@ -30,6 +30,8 @@ jobs:
   videa:
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    env:
+      DEBIAN_FRONTEND: noninteractive
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -37,9 +39,10 @@ jobs:
           python-version: "3.11"
       - name: Instalacia
         run: |
-          pip install supabase playwright
+          pip install supabase playwright imageio-ffmpeg
           python -m playwright install --with-deps chromium
-          sudo apt-get install -y ffmpeg fonts-dejavu-core >/dev/null
+          ln -sf "$(python -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')" /usr/local/bin/ffmpeg || sudo ln -sf "$(python -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')" /usr/local/bin/ffmpeg
+          ffmpeg -version | head -1
       - name: Ukazkovy ucet a prihlasovaci odkaz
         if: inputs.krok != 'cisla'
         env:
