@@ -38,7 +38,7 @@ jobs:
       - name: Skontrolovat secrets
         env:
           DB: ${{ secrets.SUPABASE_DB_URL }}
-          HESLO: ${{ secrets.ZALOHA_HESLO }}
+          HESLO: ${{ secrets.ZALOHA_HESLO || secrets.ZALOHA }}
         run: |
           if [ -z "$DB" ] || [ -z "$HESLO" ]; then
             echo "::error::Chyba SUPABASE_DB_URL alebo ZALOHA_HESLO v secrets."
@@ -52,7 +52,7 @@ jobs:
       - name: pg_dump (PostgreSQL 17) a sifrovanie
         env:
           DB: ${{ secrets.SUPABASE_DB_URL }}
-          HESLO: ${{ secrets.ZALOHA_HESLO }}
+          HESLO: ${{ secrets.ZALOHA_HESLO || secrets.ZALOHA }}
         run: |
           set -euo pipefail
           mkdir -p out
