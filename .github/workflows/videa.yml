@@ -1,0 +1,71 @@
+name: Videa navodov
+
+# Nahra videa navodov v prehliadaci bez obrazovky (Playwright) na ukazkovom
+# ucte demo@predtendrom.sk a zostriha ich (ffmpeg). Vysledok sa ulozi do
+# vetvy "videa-vystup" (nie do main); hotove videa presunie Claude do
+# public/navody/ az po schvaleni.
+#   krok=prieskum  -> snimky obrazoviek a zoznam prvkov (na pisanie scenarov)
+#   krok=nahraj    -> videa 1-6 (alebo vybrane cez "videa", napr. "2,3")
+
+on:
+  workflow_dispatch:
+    inputs:
+      krok:
+        type: choice
+        options: [prieskum, nahraj]
+        default: prieskum
+      videa:
+        description: "Ktore videa (napr. 1,2,3); prazdne = vsetky"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: videa
+  cancel-in-progress: false
+
+jobs:
+  videa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Instalacia
+        run: |
+          pip install supabase playwright
+          python -m playwright install --with-deps chromium
+          sudo apt-get install -y ffmpeg fonts-dejavu-core >/dev/null
+      - name: Ukazkovy ucet a prihlasovaci odkaz
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python videa/pripravit_demo.py "$RUNNER_TEMP/odkaz.txt"
+      - name: Prieskum
+        if: inputs.krok == 'prieskum'
+        run: python videa/prieskum.py "$RUNNER_TEMP/odkaz.txt" vystup/prieskum
+      - name: Nahravanie a strih
+        if: inputs.krok == 'nahraj'
+        env:
+          VIDEA: ${{ inputs.videa }}
+        run: python videa/nahraj.py "$RUNNER_TEMP/odkaz.txt" vystup/videa "$VIDEA"
+      - name: Ulozit do vetvy videa-vystup
+        run: |
+          set -euo pipefail
+          rm -f "$RUNNER_TEMP/odkaz.txt"
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          cp -r vystup "$RUNNER_TEMP/vystup"
+          git fetch origin videa-vystup || true
+          if git rev-parse --verify -q origin/videa-vystup >/dev/null; then
+            git checkout -B videa-vystup origin/videa-vystup
+          else
+            git checkout --orphan videa-vystup && git rm -rf . -q
+          fi
+          for d in "$RUNNER_TEMP/vystup/"*; do rm -rf "$(basename "$d")"; cp -r "$d" .; done
+          git add -A
+          git commit -qm "Videa: ${{ inputs.krok }} ${{ inputs.videa }} (beh ${{ github.run_id }})" || echo "bez zmien"
+          git push -q origin videa-vystup
