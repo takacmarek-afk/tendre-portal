@@ -18,9 +18,8 @@ name: Zaloha databazy
 # ══════════════════════════════════════════════════════════════════════════
 
 on:
-  # cron sa zapne po prvom uspesnom rucnom behu (Claude, 23. 10. 2026)
-  # schedule:
-  #   - cron: "17 2 * * *"      # 02:17 UTC kazdy den
+  schedule:
+    - cron: "17 2 * * *"      # 02:17 UTC kazdy den (zapnute 23. 10. 2026 po prvom uspesnom behu)
   workflow_dispatch: {}
 
 permissions:
