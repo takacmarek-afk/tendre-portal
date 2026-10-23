@@ -172,7 +172,8 @@ def obsah(krok: int, k: dict, miesta: int = 30) -> dict:
             "predmet": "Pridajte si prvú zmluvu do kalendára",
             "odseky": [
                 "zmluva sa oplatí sledovať vtedy, keď máte čas sa pripraviť. Pri každej zmluve "
-                "je tlačidlo „Pridať do kalendára“ a pripomienka Vám príde 6 mesiacov pred koncom.",
+                "je tlačidlo „Pridať do kalendára“: koniec zmluvy sa Vám uloží do kalendára "
+                "a pripomienka príde 30 dní vopred.",
                 "Vyberte si jednu zmluvu, na ktorú by ste chceli dať ponuku, a pridajte si ju:",
                 ("Pozrieť video: Príprava 6 mesiacov vopred", video(6)),
             ],
