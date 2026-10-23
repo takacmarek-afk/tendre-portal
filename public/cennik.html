@@ -309,14 +309,19 @@
         <strong class="text-ink">240&nbsp;€ ročne</strong> namiesto 340&nbsp;€. Cena platí 2 roky, konečná, bez DPH navyše.
       </p>
       <p class="mt-3 text-[15px] leading-relaxed text-slate2">
-        Výmenou prosíme o 20-minútový hovor so spätnou väzbou a o súhlas, že môžeme uviesť váš citát
-        (len ak ho sami schválite). Pomáha nám stavať nástroj podľa toho, čo dodávatelia skutočne potrebujú.
+        Ako na to: v appke pri platbe vyberte ročný plán a do poľa <strong class="text-ink">Zakladajúci kód</strong>
+        napíšte <strong class="text-ink font-mono">ZAKLADATEL</strong>. Cena sa upraví hneď, faktúra príde e-mailom.
       </p>
-      <a href="mailto:info@predtendrom.sk?subject=Zakladaj%C3%BAca%20ponuka"
+      <p class="mt-3 text-[15px] leading-relaxed text-slate2">
+        <strong class="text-ink">30 dní na rozmyslenie:</strong> ak do 30 dní od prvej platby nebudete spokojní,
+        napíšte nám a vrátime celú sumu. Po 30 dňoch vám pošleme 5 krátkych otázok e-mailom &mdash; odpovede nám pomôžu
+        stavať nástroj podľa toho, čo dodávatelia skutočne potrebujú.
+      </p>
+      <a href="./prihlasenie.html?utm_source=cennik&amp;utm_campaign=zakladatel"
          class="mt-6 inline-flex justify-center items-center bg-ink text-white font-semibold px-5 py-3 rounded-md hover:bg-accent transition text-[14px]">
-        Požiadať o zakladajúcu ponuku
+        Vyskúšať 14 dní zadarmo
       </a>
-      <p class="mt-3 text-[12px] text-slate2">Ponuku vybavujeme e-mailom, platba po dohode faktúrou alebo kartou.</p>
+      <p class="mt-3 text-[12px] text-slate2" id="zakladajuce-miesta">Skúška je bez karty, kód zadáte až pri platbe.</p>
     </div>
     <div>
       <h2 class="font-serif text-[24px] md:text-[28px] font-bold tracking-tight">Pre poradcov a účtovníkov</h2>
@@ -337,6 +342,29 @@
 </section>
 
 <!-- ══════════════ POROVNANIE S TRHOM ══════════════ -->
+<!-- ══════════════ ČASTÉ OTÁZKY (plán predaja, sekcia 4) ══════════════ -->
+<section class="border-t border-line bg-white">
+  <div class="wrap py-16 md:py-20 max-w-3xl">
+    <h2 class="font-serif text-[24px] md:text-[28px] font-bold tracking-tight">Časté otázky</h2>
+    <dl class="mt-6 divide-y divide-line">
+      <div class="py-4"><dt class="font-semibold text-[15px]">Predpovedáte tendre?</dt>
+        <dd class="mt-1 text-[15px] leading-relaxed text-slate2">Nie. Ukazujeme zmluvy úradov, ktoré sa blížia ku koncu, a súťaže, ktoré už boli vyhlásené. Čo úrad urobí po konci zmluvy &mdash; predĺži ju, kúpi bez súťaže alebo vyhlási nové obstarávanie &mdash; rozhodne on.</dd></div>
+      <div class="py-4"><dt class="font-semibold text-[15px]">Odkiaľ sú dáta?</dt>
+        <dd class="mt-1 text-[15px] leading-relaxed text-slate2">Z Centrálneho registra zmlúv, Vestníka verejného obstarávania a ďalších verejných registrov (<a class="text-accent hover:underline" href="./zdroje.html">zoznam zdrojov</a>). Každá položka má odkaz na zdroj. Aktualizujeme každý pracovný deň.</dd></div>
+      <div class="py-4"><dt class="font-semibold text-[15px]">Čím sa líšite od Vestníka alebo monitorov tendrov?</dt>
+        <dd class="mt-1 text-[15px] leading-relaxed text-slate2">Tie začínajú, keď je súťaž vyhlásená. My začíname, keď ešte beží stará zmluva: kto ju má, za koľko a do kedy.</dd></div>
+      <div class="py-4"><dt class="font-semibold text-[15px]">Potrebujem kartu na skúšku?</dt>
+        <dd class="mt-1 text-[15px] leading-relaxed text-slate2">Nie. 14 dní je zadarmo a skúška sa sama skončí.</dd></div>
+      <div class="py-4"><dt class="font-semibold text-[15px]">Obnovuje sa predplatné automaticky?</dt>
+        <dd class="mt-1 text-[15px] leading-relaxed text-slate2">Nie. Každá platba je jednorazová. Týždeň pred koncom obdobia vám pošleme pripomienku. Do 30 dní od prvej platby vrátime celú sumu, ak nebudete spokojní.</dd></div>
+      <div class="py-4"><dt class="font-semibold text-[15px]">Dostanem faktúru?</dt>
+        <dd class="mt-1 text-[15px] leading-relaxed text-slate2">Áno, e-mailom po každej platbe.</dd></div>
+      <div class="py-4"><dt class="font-semibold text-[15px]">Je to aj pre živnostníkov?</dt>
+        <dd class="mt-1 text-[15px] leading-relaxed text-slate2">Áno, pre každého podnikateľa a obec. Nie pre spotrebiteľov.</dd></div>
+    </dl>
+  </div>
+</section>
+
 <section class="border-t border-line bg-[#F3F0E6]">
   <div class="wrap py-16 md:py-20">
     <h2 class="font-serif text-[24px] md:text-[28px] font-bold tracking-tight">Prečo tieto čísla</h2>
@@ -555,6 +583,23 @@
         posliNavstevu();
       }
     }).catch(function(){ posliNavstevu(); });
+  } catch (e) {}
+})();
+</script>
+<script>
+// Pocet volnych zakladajucich miest (migracia 85). Ukazeme ho, az ked je
+// obsadene aspon 3 — inak by "30 z 30 volnych" posobilo ako prazdny obchod.
+(function(){
+  try {
+    var cfg = window.CONFIG || {}, el = document.getElementById('zakladajuce-miesta');
+    if (!el || !cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return;
+    fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/zakladajuce_miesta', {
+      method: 'POST', headers: {'Content-Type': 'application/json', 'apikey': cfg.SUPABASE_ANON_KEY}, body: '{}'
+    }).then(function(r){ return r.ok ? r.json() : null; }).then(function(n){
+      if (typeof n !== 'number') return;
+      if (n <= 0) el.textContent = 'Všetkých 30 zakladajúcich miest je obsadených.';
+      else if (n <= 27) el.textContent = 'Voľné zakladajúce miesta: ' + n + ' z 30. Skúška je bez karty, kód zadáte až pri platbe.';
+    }).catch(function(){});
   } catch (e) {}
 })();
 </script>

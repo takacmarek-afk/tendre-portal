@@ -319,6 +319,14 @@
       </p>
       <p id="modal-predplatne-aktualny" class="text-[14px] font-semibold mb-2"></p>
       <div id="modal-predplatne-plany" class="space-y-2 mb-4"></div>
+      <!-- Zakladajuci kod (migracia 85): cenu urci databaza, tu len pole. -->
+      <label class="block text-[13px] text-ink mb-4">
+        <span class="block mb-1">Zakladajúci kód <span class="text-slate2">(nepovinné)</span></span>
+        <input id="modal-predplatne-kod" type="text" maxlength="40" autocomplete="off" spellcheck="false"
+               placeholder="napr. ZAKLADATEL"
+               class="w-full border border-line rounded-md px-3 py-2 text-[14px] uppercase focus:outline-none focus:ring-2 focus:ring-accent">
+        <span class="block text-[12px] text-slate2 mt-1">Prvých 30 firiem: Start 240&nbsp;€ a Growth 590&nbsp;€ ročne, cena platí 2 roky. Len pri ročnej platbe.</span>
+      </label>
       <p class="text-[12px] leading-relaxed text-slate2 mb-4">
         Ceny sú konečné (nie sme platcom DPH, DPH sa nepripočítava).
         Platba je jednorazová a predlží prístup o zvolené obdobie —
@@ -2740,6 +2748,10 @@ const PREDPLATNE_CHYBY = {
   PLATOBNA_BRANA_NENASTAVENA: 'Platobná brána zatiaľ nie je nastavená. Skúste to prosím neskôr.',
   STRIPE_PLATBA_ZLYHALA: 'Platobná brána momentálne neodpovedá. Skúste to prosím o chvíľu.',
   STRIPE_BEZ_GATEWAY_URL: 'Platobná brána vrátila neočakávanú odpoveď. Skúste to prosím o chvíľu.',
+  NEPLATNY_KOD: 'Tento kód nepoznáme. Skontrolujte ho, prípadne pole nechajte prázdne.',
+  KOD_LEN_ROCNE: 'Zakladajúci kód platí len pri ročnej platbe plánu Start alebo Growth.',
+  KOD_VYCERPANY: 'Všetkých 30 zakladajúcich miest je už obsadených. Pole s kódom nechajte prázdne.',
+  KOD_SKONCIL: 'Zakladajúca cena platila 2 roky od prvej platby a už skončila. Pole s kódom nechajte prázdne.',
 };
 
 function otvorPredplatneModal(supabase, aktualnyPlan) {
@@ -2774,6 +2786,7 @@ function otvorPredplatneModal(supabase, aktualnyPlan) {
 
   el('modal-predplatne-chyba').classList.add('hidden');
   el('modal-predplatne-b2b').checked = false;
+  el('modal-predplatne-kod').value = '';
   const btn = el('modal-predplatne-zaplatit');
   btn.disabled = false;
   btn.textContent = 'Zaplatiť';
@@ -2795,13 +2808,19 @@ function otvorPredplatneModal(supabase, aktualnyPlan) {
       return;
     }
     const [plan, obdobie] = zvolene.split(':');
+    const kod = el('modal-predplatne-kod').value.trim().toUpperCase();
+    if (kod && obdobie !== 'rok') {
+      chyba.textContent = PREDPLATNE_CHYBY.KOD_LEN_ROCNE;
+      chyba.classList.remove('hidden');
+      return;
+    }
     chyba.classList.add('hidden');
     btn.disabled = true;
     btn.textContent = 'Presmerúvam na platbu…';
     try {
       // Meranie: zaciatok platby (GA4 begin_checkout + vlastne pocitadlo, 45_merania.sql).
       if (window.ptZaciatokPlatby) window.ptZaciatokPlatby(plan, obdobie);
-      const { data, error } = await supabase.functions.invoke('stripe-checkout', { body: { plan, obdobie } });
+      const { data, error } = await supabase.functions.invoke('stripe-checkout', { body: kod ? { plan, obdobie, kod } : { plan, obdobie } });
       if (error || !data?.ok) {
         // Pri odpovedi mimo 2xx supabase-js vrati data = null a telo je v
         // error.context (Response) — inak by sa konkretna hlaska nikdy neukazala.
