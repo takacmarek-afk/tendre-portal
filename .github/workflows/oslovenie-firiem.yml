@@ -100,8 +100,15 @@ jobs:
             posli)
               ARGS=(posli --segmenty "$SEGMENTY" --novych "${NOVYCH:-0}" --max "${MAX:-30}" --nahlad nahlad.html)
               if [ -n "${KOMU:-}" ]; then ARGS+=(--komu "$KOMU"); fi
-              python oslovenie_firiem.py "${ARGS[@]}" "${SUCHO[@]}" ;;
+              python oslovenie_firiem.py "${ARGS[@]}" "${SUCHO[@]}" 2>&1 | tee ../beh.log ;;
           esac
+
+      - name: Zhrnutie (anotacia, bez e-mailovych adries)
+        if: inputs.krok == 'posli' && always()
+        run: |
+          [ -f beh.log ] || exit 0
+          S=$(grep -E "Kontaktov|NASUCHO|OSTRO|HOTOVO|CHYBA|ERROR|krok [123] " beh.log | sed -E 's/<[^>]*>//; s/ -> [^ |]+@[^ |]+//; s/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+//g' | head -60 | sed ':a;N;$!ba;s/\n/%0A/g')
+          echo "::notice title=Oslovenie firiem::$S"
 
       - name: Nahlad e-mailov
         if: inputs.krok == 'posli' && always()
