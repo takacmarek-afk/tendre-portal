@@ -30,16 +30,16 @@ CSS = """
 @import url(/fonts/fonts.css);
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:1080px;height:1350px}
-body{background:#F7F3EA;color:#0B1220;font-family:'IBM Plex Sans',sans-serif;padding:84px 88px;display:flex;flex-direction:column}
-body.tmava{background:#0B1220;color:#F7F3EA}
-.logo{display:flex;align-items:center;gap:14px;font:italic 44px 'Instrument Serif',serif}
-.kicker{margin-top:0;font:600 28px/1.2 'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:#B25313}
-.velke{font:400 340px/0.9 'Instrument Serif',serif;margin-top:36px;letter-spacing:-.02em}
-.stredne{font:400 150px/0.95 'Instrument Serif',serif;margin-top:30px}
+body{background:#FFFFFF;color:#0B1220;font-family:'IBM Plex Sans',sans-serif;padding:84px 88px;display:flex;flex-direction:column}
+body.tmava{background:#0B1220;color:#FFFFFF}
+.logo{display:flex;align-items:center;gap:14px;font:600 40px 'IBM Plex Sans',sans-serif;letter-spacing:-.01em}
+.kicker{margin-top:0;font:600 30px/1.2 'IBM Plex Sans',sans-serif;color:#B25313}
+.velke{font:600 300px/0.9 'IBM Plex Sans',sans-serif;margin-top:36px;letter-spacing:-.04em}
+.stredne{font:600 140px/0.95 'IBM Plex Sans',sans-serif;margin-top:30px;letter-spacing:-.03em}
 h1{font:600 62px/1.16 'IBM Plex Sans',sans-serif;margin-top:34px;letter-spacing:-.01em}
 h2{font:600 80px/1.1 'IBM Plex Sans',sans-serif;margin-top:40px;letter-spacing:-.015em}
-p.pod{font:400 38px/1.4 'IBM Plex Sans',sans-serif;color:#6B6558;margin-top:26px}
-body.tmava p.pod{color:#C9C2B3}
+p.pod{font:400 38px/1.4 'IBM Plex Sans',sans-serif;color:#59636F;margin-top:26px}
+body.tmava p.pod{color:#C3CAD3}
 ol,ul{margin-top:40px;padding-left:0;list-style:none;counter-reset:k}
 li{font:400 44px/1.35 'IBM Plex Sans',sans-serif;margin-top:26px;padding-left:76px;position:relative}
 ol li::before{counter-increment:k;content:counter(k);position:absolute;left:0;top:-4px;width:52px;height:52px;border-radius:50%;
@@ -50,17 +50,17 @@ ul li::before{content:'';position:absolute;left:12px;top:20px;width:18px;height:
 .bar{height:44px}
 .bar{height:38px;background:#B25313;border-radius:4px}
 .riadok b{font-weight:600;text-align:right}
-.box{margin-top:44px;border:2px solid #E4DFD2;border-radius:18px;padding:44px;background:#fff}
+.box{margin-top:44px;border:2px solid #E1E5EA;border-radius:18px;padding:44px;background:#fff}
 .box .urad{font:600 44px/1.2 'IBM Plex Sans'}
-.box .predmet{font:400 34px/1.35 'IBM Plex Sans';color:#6B6558;margin-top:16px}
-.box .suma{font:400 130px/1 'Instrument Serif',serif;margin-top:34px}
+.box .predmet{font:400 34px/1.35 'IBM Plex Sans';color:#59636F;margin-top:16px}
+.box .suma{font:600 116px/1 'IBM Plex Sans',sans-serif;margin-top:34px;letter-spacing:-.03em}
 .box .koniec{font:600 34px 'IBM Plex Sans';margin-top:18px;color:#B25313}
 .obsah{flex:1;display:flex;flex-direction:column;justify-content:center;padding-bottom:40px}
 .spacer{flex:0}
-.zdroj{font:400 25px/1.45 'IBM Plex Sans';color:#6B6558;border-top:2px solid #E4DFD2;padding-top:26px;display:flex;justify-content:space-between;gap:30px}
-body.tmava .zdroj{color:#C9C2B3;border-color:#2A3446}
+.zdroj{font:400 25px/1.45 'IBM Plex Sans';color:#59636F;border-top:2px solid #E1E5EA;padding-top:26px;display:flex;justify-content:space-between;gap:30px}
+body.tmava .zdroj{color:#C3CAD3;border-color:#2A3446}
 .zdroj b{color:#B25313;font-weight:600;white-space:nowrap}
-.strana{font:600 26px 'IBM Plex Mono';color:#6B6558}
+.strana{font:600 26px 'IBM Plex Sans';color:#59636F}
 """
 
 
