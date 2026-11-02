@@ -66,6 +66,7 @@ ODBOR = {   # sektor -> (genitiv "v odbore ...", akuzativ "zmluva na ...")
     "OSTRAHA_TECHNIKA": ("zabezpečovacej techniky", "zabezpečovaciu techniku"),
     "STRAVOVANIE": ("stravovania", "stravovanie"),
     "ZELEN_ZIMNA_UDRZBA": ("údržby zelene a zimnej údržby", "údržbu zelene"),
+    "ODPAD": ("zberu a vývozu odpadu", "vývoz odpadu"),
 }
 # Kym nie je video 1 (plan predaja, sekcia 5), odkaz vedie na ukazku bez registracie.
 VIDEO_URL = os.getenv("KAMPAN_VIDEO_CESTA", "").strip()

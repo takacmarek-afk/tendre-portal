@@ -70,6 +70,7 @@ SEKTORY_SEO = {
     "OKNA_DVERE_POVRCHY":  {"slug": "okna-dvere-povrchy", "nazov": "okná, dvere a povrchy", "nazov_nom": "okná, dvere a povrchy", "nazov_2": "okná, dvere a povrchy"},
     "DOPRAVA_MECHANIZACIA":{"slug": "doprava",            "nazov": "dopravu a mechanizáciu", "nazov_nom": "doprava a mechanizácia", "nazov_2": "dopravu a mechanizáciu"},
     "TLAC_KANCELARIA":     {"slug": "tlac-kancelaria",    "nazov": "tlač a kancelárske potreby", "nazov_nom": "tlač a kancelárske potreby", "nazov_2": "tlač a kancelárske potreby"},
+    "ODPAD":               {"slug": "odpad",              "nazov": "zber a vývoz odpadu", "nazov_nom": "zber a vývoz odpadu", "nazov_2": "zber a vývoz odpadu"},
     "PASPORTIZACIA_SPRAVA_BUDOV": {"slug": "sprava-budov", "nazov": "správu budov a pasportizáciu", "nazov_nom": "správa budov a pasportizácia", "nazov_2": "správu budov a pasportizáciu"},
 }
 

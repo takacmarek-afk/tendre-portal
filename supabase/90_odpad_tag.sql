@@ -22,7 +22,7 @@ language sql stable security definer set search_path = public as $$
                          where o.authority_cin = r.ico
                            and o.effective_to between current_date and current_date + interval '24 months'
                         union all
-                        select jsonb_build_object('sektor', 'odpad', 'koniec', o.effective_to), o.effective_to
+                        select jsonb_build_object('sektor', 'ODPAD', 'koniec', o.effective_to), o.effective_to
                           from opportunities o
                          where o.authority_cin = r.ico
                            and o.effective_to between current_date and current_date + interval '24 months'

@@ -69,7 +69,7 @@ print("OK: sitemap bez .html, bez trh")
 # 5. Rozsirenie sektorov (5.10.2026): slugy, nadpisy, velke pismeno v title
 assert {"upratovanie", "stravovanie", "ostraha", "stavebne-prace", "it-technika", "doprava"} <= {
     v["slug"] for v in zmluvy.SEKTORY_SEO.values()}
-assert len({v["slug"] for v in zmluvy.SEKTORY_SEO.values()}) == len(zmluvy.SEKTORY_SEO) == 13
+assert len({v["slug"] for v in zmluvy.SEKTORY_SEO.values()}) == len(zmluvy.SEKTORY_SEO) == 14
 for kluc, titul, slug in (("IT_TECHNIKA", "IT služby a výpočtová technika v trenčianskom kraji: končiace zmluvy úradov | PredTendrom.sk", "it-technika"),
                           ("STAVEBNE_PRACE", "Stavebné práce v trenčianskom kraji: končiace zmluvy úradov | PredTendrom.sk", "stavebne-prace")):
     h = zmluvy._vygeneruj_stranku(kluc, agregat(7, 50000.0, teaser))

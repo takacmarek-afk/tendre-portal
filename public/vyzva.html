@@ -1,0 +1,802 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<script src="/consent-analytics.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>Karta výzvy | PredTendrom.sk</title>
+<meta name="description" content="Oprávnenosť, kontrola pripravenosti, výpočet spoluúčasti a prvý krok k dotačnej výzve pre vašu obec.">
+<!-- Personalizovana stranka (token obce v odkaze): nikdy do vyhladavacov. -->
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<link rel="stylesheet" href="/style.css">
+<script src="/config.js"></script>
+<script src="/formular.js"></script>
+<style>
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 1rem; }
+.blok { border-top: 1px solid #E1E5EA; padding: 1.75rem 0; }
+.cislo { display:inline-flex; align-items:center; justify-content:center; width:1.6rem; height:1.6rem;
+         border-radius:9999px; background:#0B1220; color:#fff; font-size:13px; font-weight:600; flex-shrink:0; }
+.odp[aria-pressed="true"] { background:#0B1220; color:#fff; border-color:#0B1220; }
+input, textarea { font-size:16px; } /* iOS nezoomuje pri focuse */
+[hidden] { display:none !important; }
+</style>
+</head>
+<!--
+  KARTA VYZVY (Quick Win B), kampan obciam od 24. 11. 2026
+  Odkaz z e-mailu:  /vyzva?k=<kod vyzvy>&o=<karta_token obce>
+    - bez "o" sa zobrazi vseobecna verzia (bez udajov obce)
+    - data: RPC karta_vyzvy (migracia 89), neoverena vyzva sa nevrati
+    - semafor a kalkulacka: /semafor.js (ciste funkcie, testy v tests/)
+    - odpovede: RPC uloz_semafor (len s tokenom) + localStorage ako zaloha
+    - Trh dopytov: formular je skryty, vyklopi sa pod otazkou Q3 alebo Q5
+      po kliknuti na NIE/NEVIEM; odosiela sa cez Edge Function
+      "verejny-formular" (typ servisny_dopyt, Turnstile + limit na IP),
+      z ktorej ide do servisnych dopytov a odtial na Trh dopytov.
+  Vsetky texty z databazy sa vkladaju cez textContent / esc() (ziadne XSS).
+-->
+<body class="font-sans text-ink bg-paper antialiased">
+
+<header class="border-b border-line bg-white">
+  <div class="wrap flex items-center justify-between h-14 gap-3">
+    <a href="/starosta" class="flex items-center gap-2 min-w-0">
+      <svg width="19" height="19" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0" aria-hidden="true">
+        <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+        <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+        <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+        <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+        <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+      </svg>
+      <span class="font-serif text-[17px] text-ink truncate">PredTendrom.sk</span>
+    </a>
+    <button id="zdielaj" type="button"
+      class="shrink-0 inline-flex items-center text-[14px] font-semibold text-ink border border-line rounded-md px-3 py-2 hover:border-accent transition">
+      Poslať prednostovi
+    </button>
+  </div>
+</header>
+
+<main class="wrap pb-10">
+
+  <!-- Stav nacitania / chyby -->
+  <p id="stav" class="py-16 text-center text-slate2">Načítavame výzvu…</p>
+
+  <div id="karta" hidden>
+
+    <!-- ── HLAVICKA ─────────────────────────────────────────────────────── -->
+    <section class="pt-6 pb-6">
+      <p id="h-meta" class="text-[13px] text-slate2"></p>
+      <h1 id="h-nazov" class="text-[24px] sm:text-[30px] font-bold leading-tight tracking-tight mt-2"></h1>
+      <div class="mt-4 flex flex-wrap items-center gap-2">
+        <span id="h-uzavierka" class="inline-flex items-center rounded-md px-2.5 py-1 text-[14px] font-semibold"></span>
+        <span id="h-nfp" class="text-[14px] text-slate2"></span>
+      </div>
+      <a id="h-zdroj" href="#" target="_blank" rel="noopener noreferrer"
+         class="inline-block mt-3 text-[14px] text-accent hover:underline">Znenie výzvy u poskytovateľa ↗</a>
+    </section>
+
+    <!-- ── ① OPRAVNENOST ────────────────────────────────────────────────── -->
+    <section class="blok" aria-labelledby="t-opr">
+      <h2 id="t-opr" class="flex items-center gap-2 text-[19px] font-bold"><span class="cislo">1</span><span id="opr-nadpis">Oprávnenosť</span></h2>
+      <ul id="opr-overene" class="mt-4 space-y-2 text-[15px]"></ul>
+      <p class="mt-5 text-[14px] font-semibold">Musíte overiť vy:</p>
+      <ul id="opr-neoverene" class="mt-2 space-y-1.5 text-[15px] text-slate2"></ul>
+      <p id="opr-zhrnutie" class="mt-5 rounded-md bg-pas px-4 py-3 text-[15px]"></p>
+    </section>
+
+    <!-- ── ② SEMAFOR ────────────────────────────────────────────────────── -->
+    <section class="blok" aria-labelledby="t-sem">
+      <h2 id="t-sem" class="flex items-center gap-2 text-[19px] font-bold"><span class="cislo">2</span>Ste pripravení?</h2>
+      <p class="mt-2 text-[14px] text-slate2">Odpovedzte na otázky, trvá to asi 2 minúty. „Neviem“ počítame ako „nie“.</p>
+
+      <!-- Vysledok: aria-live, aby citacka ohlasila zmenu farby -->
+      <div id="sem-vysledok" aria-live="polite" class="mt-5 rounded-lg border-l-4 px-4 py-3"></div>
+
+      <ol id="sem-otazky" class="mt-5 space-y-5"></ol>
+    </section>
+
+    <!-- ── ③ PENIAZE ────────────────────────────────────────────────────── -->
+    <section class="blok" aria-labelledby="t-pen">
+      <h2 id="t-pen" class="flex items-center gap-2 text-[19px] font-bold"><span class="cislo">3</span>Peniaze</h2>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <label class="block">
+          <span class="text-[14px] font-semibold">Odhadovaná cena projektu s DPH (€)</span>
+          <input id="pen-cena" type="number" inputmode="numeric" min="0" step="1000" placeholder="napr. 400000"
+                 class="mt-1 w-full rounded-md border border-line px-3 py-2.5 focus:border-accent focus:outline-none">
+        </label>
+        <label class="block">
+          <span class="text-[14px] font-semibold">Z toho neoprávnené výdavky (€)</span>
+          <input id="pen-neopr" type="number" inputmode="numeric" min="0" step="1000" value="0"
+                 class="mt-1 w-full rounded-md border border-line px-3 py-2.5 focus:border-accent focus:outline-none">
+        </label>
+      </div>
+      <fieldset id="pen-dph-box" class="mt-4" hidden>
+        <legend class="text-[14px] font-semibold">Je DPH pre vašu obec oprávneným výdavkom?</legend>
+        <div class="mt-2 flex gap-4 text-[15px]">
+          <label class="inline-flex items-center gap-2"><input type="radio" name="pen-dph" value="ano"> Áno</label>
+          <label class="inline-flex items-center gap-2"><input type="radio" name="pen-dph" value="nie"> Nie</label>
+          <label class="inline-flex items-center gap-2"><input type="radio" name="pen-dph" value="" checked> Neviem</label>
+        </div>
+      </fieldset>
+      <div id="pen-vysledok" class="mt-5" aria-live="polite"></div>
+    </section>
+
+    <!-- ── ④ PRVY KROK ──────────────────────────────────────────────────── -->
+    <section class="blok" aria-labelledby="t-krok">
+      <h2 id="t-krok" class="flex items-center gap-2 text-[19px] font-bold"><span class="cislo">4</span>Váš prvý krok</h2>
+      <div id="krok" class="mt-4 rounded-lg border border-line p-4" aria-live="polite"></div>
+    </section>
+
+    <!-- ── ⑤ POMOC: TRH DOPYTOV ─────────────────────────────────────────── -->
+    <!-- Sekcia je skryta, kym starosta neodpovie NIE/NEVIEM pri Q3 alebo Q5.
+         Samotny formular (#trh-form) sa presuva pod prislusnu otazku. -->
+    <section id="pomoc" class="blok" aria-labelledby="t-pom" hidden>
+      <h2 id="t-pom" class="flex items-center gap-2 text-[19px] font-bold"><span class="cislo">5</span>Ceny ešte pred obstarávaním</h2>
+      <p class="mt-2 text-[15px] text-slate2">Zadajte dopyt raz a ponuky prídu do e-mailu obce. Pre obec je to bezplatné.</p>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <button type="button" data-otvor-trh="prieskum" class="rounded-md border border-line px-3 py-2 text-[14px] font-semibold hover:border-accent">Prieskum trhu</button>
+        <button type="button" data-otvor-trh="pd" class="rounded-md border border-line px-3 py-2 text-[14px] font-semibold hover:border-accent">Nacenenie projektovej dokumentácie</button>
+      </div>
+      <div id="slot-pomoc" class="mt-4"></div>
+    </section>
+
+    <!-- Formular Trhu dopytov: jediny v DOM, presuva sa medzi slotmi -->
+    <form id="trh-form" class="rounded-lg border-2 border-accent bg-white p-4 mt-3" novalidate hidden>
+      <p id="trh-uvod" class="text-[15px] font-semibold"></p>
+      <p id="trh-uvod2" class="mt-1 text-[14px] text-slate2"></p>
+
+      <fieldset class="mt-4">
+        <legend class="text-[14px] font-semibold">Čo potrebujete</legend>
+        <label class="mt-2 flex items-start gap-2 text-[15px]"><input type="radio" name="druh" value="prieskum" class="mt-1"> Prieskum trhu (stavebné práce, dodávka, služba)</label>
+        <label class="mt-1 flex items-start gap-2 text-[15px]"><input type="radio" name="druh" value="pd" class="mt-1"> Projektová dokumentácia</label>
+      </fieldset>
+
+      <label id="trh-obec-box" class="block mt-4" hidden>
+        <span class="text-[14px] font-semibold">Obec</span>
+        <input id="trh-obec" type="text" maxlength="200" autocomplete="organization"
+               class="mt-1 w-full rounded-md border border-line px-3 py-2.5 focus:border-accent focus:outline-none">
+      </label>
+      <label class="block mt-4">
+        <span class="text-[14px] font-semibold">Predmet</span>
+        <input id="trh-predmet" type="text" maxlength="200"
+               class="mt-1 w-full rounded-md border border-line px-3 py-2.5 focus:border-accent focus:outline-none">
+      </label>
+      <label class="block mt-4">
+        <span class="text-[14px] font-semibold">Stručný popis</span>
+        <textarea id="trh-popis" rows="3" maxlength="2500" placeholder="napr. zateplenie MŠ, 640 m², strecha + fasáda"
+                  class="mt-1 w-full rounded-md border border-line px-3 py-2.5 focus:border-accent focus:outline-none"></textarea>
+      </label>
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <label class="block">
+          <span class="text-[14px] font-semibold">Ponuky do</span>
+          <input id="trh-do" type="date"
+                 class="mt-1 w-full rounded-md border border-line px-3 py-2.5 focus:border-accent focus:outline-none">
+        </label>
+        <label class="block">
+          <span class="text-[14px] font-semibold">E-mail obce</span>
+          <input id="trh-email" type="email" maxlength="254" autocomplete="email" inputmode="email" placeholder="obec@obec.sk"
+                 class="mt-1 w-full rounded-md border border-line px-3 py-2.5 focus:border-accent focus:outline-none">
+        </label>
+      </div>
+      <label class="mt-4 flex items-start gap-2 text-[14px]">
+        <input id="trh-suhlas" type="checkbox" class="mt-1">
+        <span>Rozumiem, že ide o prieskum trhu, nie o objednávku. Dopyt sa zverejní firmám z odboru.</span>
+      </label>
+      <div id="ts-karta" class="mt-4"></div>
+      <button type="submit" id="trh-odoslat"
+        class="mt-4 w-full sm:w-auto inline-flex justify-center items-center bg-ink text-white font-semibold px-6 py-3 rounded-md hover:bg-accent transition text-[16px]">
+        Odoslať dopyt
+      </button>
+      <p id="trh-chyba" class="mt-3 text-[14px] text-red-700" role="alert"></p>
+      <p class="mt-4 text-[12px] leading-relaxed text-slate2">
+        Prieskum trhu je jeden zo spôsobov, ako podľa zákona o verejnom obstarávaní určiť predpokladanú
+        hodnotu zákazky. Firmy, ktoré pošlú ponuku, sa môžu neskôr zapojiť do súťaže. Ak im poskytnete
+        informácie, ktoré ostatní nemajú, poskytnite ich v súťaži všetkým.
+      </p>
+    </form>
+
+    <!-- Potvrdenie po odoslani dopytu -->
+    <div id="trh-ok" class="rounded-lg border-l-4 border-emerald-600 bg-emerald-50 px-4 py-3 mt-3" hidden></div>
+  </div>
+</main>
+
+<footer class="border-t border-line">
+  <div class="wrap py-6 text-[13px] leading-relaxed text-slate2">
+    <p id="f-overene"></p>
+    <p class="mt-2">Nie sme poskytovateľ dotácie ani poradca a žiadosti za obce nepíšeme. Kartu môžete poslať svojmu poradcovi. Rozhodujúce je vždy znenie výzvy.</p>
+    <p class="mt-2">Služba je pre obce bezplatná.</p>
+  </div>
+  <p class="pt-pravne text-[12px] text-slate2 text-center py-4 border-t border-line"><a href="/obchodne-podmienky" class="underline hover:text-ink">Obchodné podmienky</a> &middot; <a href="/ochrana-osobnych-udajov" class="underline hover:text-ink">Ochrana osobných údajov</a> &middot; <a href="#" onclick="window.ptCookieNastavenia&amp;&amp;window.ptCookieNastavenia();return false;" class="underline hover:text-ink">Nastavenia cookies</a></p>
+</footer>
+
+<script type="module">
+import { vyhodnotSemafor, spocitajPeniaze, platneOtazky, otazkaQ7, OTAZKY } from "/semafor.js";
+
+// ═════════════════════════════════════════════════════════════════════════
+//  Pomocne funkcie
+// ═════════════════════════════════════════════════════════════════════════
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const eur = (n) => n == null ? "–" : new Intl.NumberFormat("sk-SK", { maximumFractionDigits: 0 }).format(n) + " €";
+const datum = (iso) => { if (!iso) return ""; const [r, m, d] = iso.slice(0, 10).split("-"); return `${+d}. ${+m}. ${r}`; };
+const norm = (s) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+  .replace(/^okres\s+/, "").replace(/\s+kraj$/, "").replace(/\s*-\s*/g, "-").trim();
+const dnesIso = () => new Date().toISOString().slice(0, 10);
+const dniDo = (iso) => iso ? Math.round((Date.parse(iso) - Date.parse(dnesIso())) / 86400000) : null;
+const plusDni = (n) => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.CONFIG ?? {};
+async function rpc(fn, telo) {
+  const r = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}`, "Content-Type": "application/json" },
+    body: JSON.stringify(telo),
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.json();
+}
+
+// localStorage: len zaloha, moze zlyhat (sukromne okno) - vzdy try/catch
+const uloz = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const nacitaj = (k) => { try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } };
+
+// ═════════════════════════════════════════════════════════════════════════
+//  Stav stranky
+// ═════════════════════════════════════════════════════════════════════════
+const params = new URLSearchParams(location.search);
+const KOD = (params.get("k") || "").slice(0, 80);
+const TOKEN = UUID.test(params.get("o") || "") ? params.get("o") : null;
+
+let V = null;          // vyzva
+let OBEC = null;       // obec (len s platnym tokenom)
+let odpovede = {};     // { q1: "ano" | "nie" | "neviem", ... }
+let peniaze = null;    // posledny vysledok kalkulacky (pre vzor uznesenia)
+let semafor = null;    // posledny vysledok semafora
+let trhOtvoreny = false;
+
+const NAZOV_PD = { ziadna: "", studia: "štúdia", DSP: "dokumentácia pre povolenie stavby", DRS: "realizačná dokumentácia" };
+const NAZOV_TYPU = { obec: "obce", mesto: "mestá", mestska_cast: "mestské časti", zdruzenie_obci: "združenia obcí", VUC: "VÚC" };
+
+// ═════════════════════════════════════════════════════════════════════════
+//  Start
+// ═════════════════════════════════════════════════════════════════════════
+async function start() {
+  if (!KOD) return chyba("V odkaze chýba kód výzvy. Skúste odkaz z e-mailu otvoriť znova.");
+  let data = null;
+  try { data = await rpc("karta_vyzvy", { p_kod: KOD, p_token: TOKEN }); }
+  catch { return chyba("Výzvu sa nepodarilo načítať. Skontrolujte pripojenie a obnovte stránku."); }
+  if (!data || !data.vyzva) return chyba("Túto výzvu nemáme alebo už nie je aktuálna.");
+
+  V = data.vyzva;
+  OBEC = data.obec || null;
+  // Odpovede: najprv server (zdielane v obci), potom zaloha v prehliadaci
+  odpovede = data.odpovede || nacitaj(`pt-semafor-${KOD}`) || {};
+
+  document.title = `${V.nazov} | PredTendrom.sk`;
+  $("stav").hidden = true;
+  $("karta").hidden = false;
+
+  vykresliHlavicku();
+  vykresliOpravnenost();
+  vykresliOtazky();
+  nastavKalkulacku();
+  napojTrh();
+  prepocitaj();
+}
+
+function chyba(text) { $("stav").textContent = text; }
+
+// ═════════════════════════════════════════════════════════════════════════
+//  Hlavicka
+// ═════════════════════════════════════════════════════════════════════════
+function vykresliHlavicku() {
+  $("h-meta").textContent = [V.poskytovatel, V.program, `kód ${V.kod}`].filter(Boolean).join(" · ");
+  $("h-nazov").textContent = V.nazov;
+  $("h-zdroj").href = /^https:\/\//.test(V.zdroj_url) ? V.zdroj_url : "#";
+
+  const u = $("h-uzavierka");
+  const dni = dniDo(V.uzavierka);
+  if (!V.uzavierka) {
+    u.textContent = "Otvorená výzva";
+    u.className += " bg-pas text-ink";
+  } else if (dni < 0) {
+    u.textContent = `Uzávierka uplynula ${datum(V.uzavierka)}`;
+    u.className += " bg-red-50 text-red-800";
+  } else {
+    u.textContent = `Uzávierka ${datum(V.uzavierka)} · zostáva ${dni} dní`;
+    // >60 dni siva, 30-60 oranzova, <30 cervena
+    u.className += dni > 60 ? " bg-pas text-ink" : dni >= 30 ? " bg-amber-100 text-amber-900" : " bg-red-50 text-red-800";
+  }
+  if (V.nfp_min != null || V.nfp_max != null) {
+    $("h-nfp").textContent = `Dotácia ${V.nfp_min != null ? eur(V.nfp_min) : ""}${V.nfp_min != null && V.nfp_max != null ? " – " : ""}${V.nfp_max != null ? eur(V.nfp_max) : ""} · spoluúčasť ${V.spoluucast_pct} %`;
+  } else {
+    $("h-nfp").textContent = `Spoluúčasť ${V.spoluucast_pct} %`;
+  }
+  $("f-overene").textContent = V.overene_at ? `Výzvu sme ručne skontrolovali ${datum(V.overene_at)}.` : "";
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+//  ① Opravnenost
+// ═════════════════════════════════════════════════════════════════════════
+function vykresliOpravnenost() {
+  const ul = $("opr-overene");
+  const riadok = (ok, text) => `<li class="flex gap-2"><span aria-hidden="true" class="${ok ? "text-emerald-700" : "text-red-700"} font-bold">${ok ? "✓" : "✕"}</span><span>${esc(text)}</span></li>`;
+  const typy = (V.typ_ziadatela || []).map((t) => NAZOV_TYPU[t] || t).join(", ");
+  const uzemie = (V.kraje?.length || V.okresy?.length) ? [...(V.kraje || []), ...(V.okresy || [])].join(", ") : "celé Slovensko";
+  const velkost = (V.obyv_min != null || V.obyv_max != null) ? `${V.obyv_min ?? 0} – ${V.obyv_max ?? "bez limitu"} obyvateľov` : null;
+
+  if (!OBEC) {
+    // Vseobecna verzia: podmienky vyzvy bez vyhodnotenia
+    $("opr-nadpis").textContent = "Pre koho je výzva";
+    ul.innerHTML = [
+      `Žiadatelia: ${typy}`, `Územie: ${uzemie}`,
+      V.len_nro ? "Len najmenej rozvinuté okresy" : null,
+      V.len_mrk ? "Len obce s rómskymi komunitami (Atlas)" : null,
+      velkost ? `Veľkosť: ${velkost}` : null,
+    ].filter(Boolean).map((t) => `<li class="flex gap-2"><span aria-hidden="true">•</span><span>${esc(t)}</span></li>`).join("");
+    $("opr-zhrnutie").textContent = "Pre vyhodnotenie vašej obce otvorte odkaz z e-mailu, ktorý sme vám poslali.";
+  } else {
+    $("opr-nadpis").textContent = `Oprávnenosť pre ${OBEC.nazov}`;
+    const kontroly = [];
+    kontroly.push([(V.typ_ziadatela || []).includes(OBEC.typ), `Typ žiadateľa: ${NAZOV_TYPU[OBEC.typ] || OBEC.typ} (výzva: ${typy})`]);
+    if (V.kraje?.length || V.okresy?.length) {
+      const ok = (V.kraje || []).some((k) => norm(k) === norm(OBEC.kraj)) || (V.okresy || []).some((o) => norm(o) === norm(OBEC.okres));
+      kontroly.push([ok, `Územie: ${OBEC.okres || ""}, ${OBEC.kraj}`]);
+    } else {
+      kontroly.push([true, `Územie: celé Slovensko (${OBEC.okres || OBEC.kraj})`]);
+    }
+    if (V.len_nro) kontroly.push([OBEC.nro === true, "Najmenej rozvinutý okres"]);
+    if (V.len_mrk) kontroly.push([OBEC.mrk === true, "Obec v Atlase rómskych komunít"]);
+    if (velkost) {
+      const p = OBEC.pocet_obyvatelov;
+      const ok = p != null && (V.obyv_min == null || p >= V.obyv_min) && (V.obyv_max == null || p <= V.obyv_max);
+      kontroly.push([ok, `Veľkosť: ${p ?? "neznámy počet"} obyvateľov (výzva ${velkost})`]);
+    }
+    ul.innerHTML = kontroly.map(([ok, t]) => riadok(ok, t)).join("");
+    const spolu = kontroly.length, ok = kontroly.filter(([o]) => o).length;
+    $("opr-zhrnutie").textContent = ok === spolu
+      ? `Spĺňate ${ok} z ${spolu} podmienok, ktoré vieme overiť z dát.`
+      : `Podľa našich údajov spĺňate ${ok} z ${spolu} podmienok. Ak je údaj nesprávny, overte ho v znení výzvy.`;
+  }
+
+  // Co musi overit obec (zhodne s src/vyzvy/vyber.ts -> neoverene())
+  const neover = ["aktivity projektu podľa výzvy", "vlastníctvo pozemku alebo budovy"];
+  if (V.vyzaduje_phrsr) neover.push("súlad s programom rozvoja obce (PHRSR)");
+  if (V.vyzaduje_ius) neover.push("zaradenie projektu v IÚS kraja");
+  if (V.stupen_pd && V.stupen_pd !== "ziadna") neover.push(`projektová dokumentácia (${NAZOV_PD[V.stupen_pd]})`);
+  if (V.vyzaduje_povolenie) neover.push("povolenie stavby");
+  if (V.vo_pred_ziadostou) neover.push("ukončené verejné obstarávanie pred podaním");
+  $("opr-neoverene").innerHTML = neover.map((t) => `<li class="flex gap-2"><span aria-hidden="true" class="font-bold">?</span><span>${esc(t)}</span></li>`).join("");
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+//  ② Semafor: otazky
+// ═════════════════════════════════════════════════════════════════════════
+function textOtazky(q) {
+  if (q === "q7") return otazkaQ7(V).text;
+  if (q === "q3") return `Máte projektovú dokumentáciu v stupni, ktorý výzva vyžaduje (${NAZOV_PD[V.stupen_pd]})?`;
+  if (q === "q6") return "Vie obec zaplatiť spoluúčasť a predfinancovať projekt?";
+  return OTAZKY[q].text;
+}
+
+function vykresliOtazky() {
+  const platne = platneOtazky(V);
+  const ol = $("sem-otazky");
+  ol.innerHTML = "";
+  let poradie = 0;
+  for (const q of ["q1", "q2", "q3", "q4", "q5", "q6", "q7"]) {
+    if (!platne[q]) continue;   // netyka sa vyzvy: neukazujeme, rata sa ako splnena
+    poradie++;
+    const li = document.createElement("li");
+    li.dataset.q = q;
+    li.innerHTML = `
+      <p class="text-[15px] font-semibold leading-snug"><span class="text-slate2 mr-1">${poradie}.</span>${esc(textOtazky(q))}</p>
+      <div class="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="Odpoveď">
+        ${["ano", "nie", "neviem"].map((h) => `
+          <button type="button" class="odp rounded-md border border-line py-2.5 text-[15px] font-semibold hover:border-ink"
+                  data-q="${q}" data-h="${h}" aria-pressed="${odpovede[q] === h}">${{ ano: "Áno", nie: "Nie", neviem: "Neviem" }[h]}</button>`).join("")}
+      </div>
+      <p class="naprava mt-2 text-[14px]" hidden></p>
+      <div class="slot" id="slot-${q}"></div>`;
+    ol.appendChild(li);
+  }
+  // Jeden poslucha pre vsetky tlacidla
+  ol.addEventListener("click", (e) => {
+    const b = e.target.closest("button.odp");
+    if (!b) return;
+    const { q, h } = b.dataset;
+    odpovede[q] = h;
+    ol.querySelectorAll(`button[data-q="${q}"]`).forEach((x) => x.setAttribute("aria-pressed", String(x.dataset.h === h)));
+    // KRITICKE: NIE/NEVIEM pri Q3 alebo Q5 vyklopi formular Trhu dopytov priamo pod otazkou
+    if ((q === "q3" || q === "q5") && h !== "ano") otvorTrh(q === "q3" ? "pd" : "prieskum", `slot-${q}`, false);
+    if ((q === "q3" || q === "q5") && h === "ano") zatvorTrhAkJeV(`slot-${q}`);
+    ulozOdpovede();
+    prepocitaj();
+  });
+}
+
+// Ulozenie: localStorage hned, server s oneskorenim (len s tokenom obce)
+let casovac = null;
+function ulozOdpovede() {
+  uloz(`pt-semafor-${KOD}`, odpovede);
+  if (!TOKEN) return;
+  clearTimeout(casovac);
+  casovac = setTimeout(() => { rpc("uloz_semafor", { p_token: TOKEN, p_kod: KOD, p_odpovede: odpovede }).catch(() => {}); }, 600);
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+//  Reaktivny prepocet: semafor -> vysledok, napravy, prvy krok
+// ═════════════════════════════════════════════════════════════════════════
+const FARBY = {   // cele triedy (Tailwind ich musi najst v zdrojaku)
+  zelena:   "mt-5 rounded-lg border-l-4 px-4 py-3 border-emerald-600 bg-emerald-50",
+  oranzova: "mt-5 rounded-lg border-l-4 px-4 py-3 border-amber-500 bg-amber-50",
+  cervena:  "mt-5 rounded-lg border-l-4 px-4 py-3 border-red-600 bg-red-50",
+  neuplne:  "mt-5 rounded-lg border-l-4 px-4 py-3 border-line bg-pas",
+};
+const IKONA = { zelena: "🟢", oranzova: "🟠", cervena: "🔴", neuplne: "⚪" };
+
+function prepocitaj() {
+  semafor = vyhodnotSemafor(V, odpovede);
+  const s = semafor;
+  const box = $("sem-vysledok");
+  box.className = FARBY[s.stav];
+
+  let nadpis, text;
+  if (s.stav === "neuplne") {
+    nadpis = `Pripravení v ${s.pripravenost}`;
+    text = `Zostáva odpovedať na ${s.nezodpovedane.length} ${s.nezodpovedane.length === 1 ? "otázku" : s.nezodpovedane.length < 5 ? "otázky" : "otázok"}.`;
+  } else if (s.stav === "zelena") {
+    nadpis = "Pripravení: 7 zo 7";
+    text = "Môžete začať pripravovať žiadosť alebo poslať kartu poradcovi.";
+  } else if (s.stav === "oranzova") {
+    nadpis = `Stihnuteľné: pripravení v ${s.pripravenost}`;
+    text = s.dni_do_uzavierky != null
+      ? `Na nápravu potrebujete približne ${s.suma_napravy_dni} dní, do uzávierky zostáva ${s.dni_do_uzavierky}. Začnite prvým krokom nižšie.`
+      : "Výzva je otvorená, chýbajúce veci môžete doriešiť postupne.";
+  } else {
+    nadpis = "Na túto uzávierku nereálne";
+    text = (s.dovod === "nestihnete_sucet"
+      ? `Náprava zaberie približne ${s.suma_napravy_dni} dní, do uzávierky zostáva len ${s.dni_do_uzavierky}. `
+      : "") + (s.najblizsie_kolo
+        ? `Ďalšie kolo: ${datum(s.najblizsie_kolo)}. Pripravte sa naň už teraz.`
+        : "Ďalšie kolo zatiaľ nie je vyhlásené. Pripravte projekt, aby ste boli pri ďalšej výzve pripravení.");
+  }
+  box.innerHTML = `<p class="text-[16px] font-bold"><span aria-hidden="true">${IKONA[s.stav]}</span> ${esc(nadpis)}</p><p class="mt-1 text-[15px]">${esc(text)}</p>`;
+
+  // Pri kazdej NIE otazke: ako dlho trva naprava a ci je to blokujuce
+  for (const p of s.polozky) {
+    const li = document.querySelector(`li[data-q="${p.q}"]`);
+    if (!li) continue;
+    const el = li.querySelector(".naprava");
+    if (p.splnena === false) {
+      el.hidden = false;
+      el.className = `naprava mt-2 text-[14px] ${p.vaha === "cervena" ? "text-red-800" : "text-amber-900"}`;
+      el.textContent = `${p.vaha === "cervena" ? "🔴 Blokuje túto uzávierku." : "🟠 Dá sa doriešiť."} Náprava trvá ${p.naprava_text}.${p.neviem ? " Zistite od prednostu." : ""}`;
+    } else el.hidden = true;
+  }
+
+  vykresliKrok();
+  // Sekcia Pomoc (5) sa ukaze, az ked je NIE/NEVIEM pri Q3 alebo Q5
+  const potrebaTrhu = ["q3", "q5"].some((q) => odpovede[q] === "nie" || odpovede[q] === "neviem");
+  $("pomoc").hidden = !potrebaTrhu;
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+//  ③ Peniaze
+// ═════════════════════════════════════════════════════════════════════════
+const UPOZORNENIA = {
+  dph_nezadana_pocitame_ako_neopravnenu: "DPH sme počítali ako neoprávnenú (obec ju platí sama). Ak je pre vás oprávnená, zmeňte voľbu vyššie.",
+  pod_minimom_nfp: "Projekt je pod minimálnou výškou dotácie. Výzva by ho nemusela prijať.",
+  nad_maximom_nfp_doplaca_obec: "Projekt prekračuje maximálnu dotáciu. Rozdiel nad strop zaplatí obec.",
+  refundacia_obec_plati_vsetko_vopred: "",   // ma vlastny box nizsie
+};
+
+function nastavKalkulacku() {
+  $("pen-dph-box").hidden = V.dph_opravnena !== "podla_ziadatela";
+  ["pen-cena", "pen-neopr"].forEach((id) => $(id).addEventListener("input", prepocitajPeniaze));
+  document.querySelectorAll('input[name="pen-dph"]').forEach((r) => r.addEventListener("change", prepocitajPeniaze));
+  prepocitajPeniaze();
+}
+
+function prepocitajPeniaze() {
+  const cena = Number($("pen-cena").value);
+  const out = $("pen-vysledok");
+  if (!cena) {
+    peniaze = null;
+    out.innerHTML = `<p class="text-[14px] text-slate2">Zadajte odhadovanú cenu a hneď uvidíte, koľko zaplatí obec a koľko treba predfinancovať.</p>`;
+    vykresliKrok();
+    return;
+  }
+  const dph = document.querySelector('input[name="pen-dph"]:checked')?.value;
+  peniaze = spocitajPeniaze(V, {
+    cena_s_dph: cena,
+    neopravnene_s_dph: Number($("pen-neopr").value) || 0,
+    dph_je_opravnena: dph === "ano" ? true : dph === "nie" ? false : undefined,
+  });
+  const p = peniaze;
+  const r = (l, h, silne) => `<div class="flex justify-between gap-3 py-1.5 ${silne ? "font-bold text-[16px] border-t border-line mt-1 pt-2.5" : "text-[15px]"}"><span>${esc(l)}</span><span class="tabular-nums whitespace-nowrap">${esc(h)}</span></div>`;
+
+  let html = `<div class="rounded-lg bg-pas px-4 py-3">`
+    + r(`Spoluúčasť obce (${p.spoluucast_pct} %)`, eur(p.spoluucast))
+    + (p.neopravnene ? r("Neoprávnené výdavky", eur(p.neopravnene)) : "")
+    + (p.dph_neopravnena ? r("Neoprávnená DPH", eur(p.dph_neopravnena)) : "")
+    + (p.nad_stropom_nfp ? r("Nad maximom dotácie", eur(p.nad_stropom_nfp)) : "")
+    + r("Obec zaplatí natrvalo", eur(p.obec_zaplati_navzdy), true)
+    + r("Dotácia (odhad)", eur(p.nfp))
+    + `</div>`;
+
+  // Cash flow podla sposobu financovania
+  if (V.financovanie === "refundacia") {
+    html += `<div class="mt-3 rounded-lg border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-[15px]">
+      <p class="font-bold">⚠ Dotácia sa vypláca spätne</p>
+      <p class="mt-1">Obec musí dodávateľom najprv zaplatiť celých <b>${eur(p.max_vydavok_vopred)}</b>.
+      Dotácia sa vráti až po schválení žiadosti o platbu, čo trvá mesiace.</p>
+      <p class="mt-1">Potrebná rezerva: približne <b>${eur(p.predfinancovanie.do)}</b>.
+      Možnosti: rezervný fond, preklenovací úver, fakturácia po etapách.</p></div>`;
+  } else if (V.financovanie === "kombinacia") {
+    html += `<div class="mt-3 rounded-lg border-l-4 border-amber-500 bg-amber-50 px-4 py-3 text-[15px]">
+      Predfinancovanie závisí od spôsobu platby: od 0 € do približne <b>${eur(p.predfinancovanie.do)}</b>. Overte vo výzve.</div>`;
+  } else {
+    html += `<div class="mt-3 rounded-lg border-l-4 border-emerald-600 bg-emerald-50 px-4 py-3 text-[15px]">
+      ✓ Výzva umožňuje ${V.financovanie === "zalohova_platba" ? "zálohovú platbu" : "predfinancovanie"}, obec nemusí platiť všetko vopred. Overte podmienky vo výzve.</div>`;
+  }
+  const upoz = p.upozornenia.map((u) => UPOZORNENIA[u]).filter(Boolean);
+  if (upoz.length) html += `<ul class="mt-3 space-y-1 text-[14px] text-amber-900">${upoz.map((u) => `<li>• ${esc(u)}</li>`).join("")}</ul>`;
+  html += `<p class="mt-3 text-[13px] text-slate2">Všetky sumy sú odhad. Rozhodujúce sú podmienky výzvy.</p>`;
+  out.innerHTML = html;
+  vykresliKrok();   // suma spoluucasti ide aj do vzoru uznesenia
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+//  ④ Prvy krok
+// ═════════════════════════════════════════════════════════════════════════
+const POPIS_KROKU = {
+  uznesenie: "Dajte zastupiteľstvu schváliť podanie žiadosti a spolufinancovanie. Bez uznesenia sa žiadosť podať nedá.",
+  trh_pd: "Vyžiadajte si cenové ponuky na projektovú dokumentáciu. Uvidíte cenu aj termín dodania.",
+  trh_prieskum: "Zadajte prieskum trhu. Ponuky poslúžia ako podklad pre predpokladanú hodnotu zákazky.",
+  lv_prednosta: "Požiadajte prednostu o výpis z listu vlastníctva k pozemku alebo budove projektu.",
+  povolenie_stavby: "Podajte žiadosť o povolenie stavby, alebo si dajte potvrdiť, že ho projekt nepotrebuje.",
+  ius_kraj: "Kontaktujte kraj a zistite, kedy aktualizuje zásobník projektov IÚS a ako sa doň dostať.",
+  najst_poradcu: "Nájdite človeka alebo poradcu, ktorý žiadosť pripraví. Kartu mu potom pošlite.",
+  poslat_poradcovi: "Ste pripravení. Pošlite kartu poradcovi alebo začnite písať žiadosť.",
+};
+
+function vykresliKrok() {
+  if (!semafor) return;
+  const k = semafor.prvy_krok;
+  const neuplne = semafor.stav === "neuplne";
+  const tl = "inline-flex justify-center items-center rounded-md px-4 py-2.5 text-[15px] font-semibold";
+  const hlavne = `${tl} bg-ink text-white hover:bg-accent`;
+  const vedlajsie = `${tl} border border-line hover:border-accent`;
+
+  let akcie = "";
+  if (k.id === "uznesenie") {
+    akcie = k.vzor_uznesenia
+      ? `<button type="button" data-akcia="uznesenie-doc" class="${hlavne}">Stiahnuť vzor uznesenia</button>
+         <button type="button" data-akcia="uznesenie-kopia" class="${vedlajsie}">Kopírovať text</button>`
+      : `<a href="${esc(V.zdroj_url)}" target="_blank" rel="noopener noreferrer" class="${hlavne}">Znenie uznesenia je v prílohe výzvy ↗</a>`;
+  } else if (k.trh_dopytov) {
+    akcie = `<button type="button" data-akcia="trh" class="${hlavne}">${k.id === "trh_pd" ? "Získať ponuky na dokumentáciu" : "Zadať prieskum trhu"}</button>`;
+  } else {
+    akcie = `<button type="button" data-akcia="email" class="${hlavne}">${k.id === "poslat_poradcovi" ? "Poslať kartu poradcovi" : "Poslať úlohu e-mailom"}</button>`;
+  }
+  akcie += `<button type="button" data-akcia="ics" class="${vedlajsie}">Pridať do kalendára</button>`;
+
+  $("krok").innerHTML = `
+    ${neuplne ? `<p class="text-[13px] text-slate2 mb-2">Podľa doterajších odpovedí:</p>` : ""}
+    <p class="text-[17px] font-bold">${esc(k.nazov)}</p>
+    <p class="mt-1 text-[15px]">${esc(POPIS_KROKU[k.id])}</p>
+    <p class="mt-2 text-[15px]">Termín: <b>${datum(k.termin)}</b>${k.interna_uzavierka ? ` · interná uzávierka ${datum(k.interna_uzavierka)}` : ""}</p>
+    <div class="mt-4 flex flex-col sm:flex-row gap-2">${akcie}</div>`;
+}
+
+$("krok")?.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-akcia]")?.dataset.akcia;
+  if (!a) return;
+  const k = semafor.prvy_krok;
+  if (a === "uznesenie-doc") stiahniUznesenie();
+  if (a === "uznesenie-kopia") navigator.clipboard?.writeText(textUznesenia()).then(() => { e.target.textContent = "Skopírované ✓"; }).catch(() => {});
+  if (a === "trh") otvorTrh(k.id === "trh_pd" ? "pd" : "prieskum", k.id === "trh_pd" ? "slot-q3" : "slot-q5", true);
+  if (a === "email") posliEmailom(k);
+  if (a === "ics") stiahniIcs(k);
+});
+
+// Vzor uznesenia (Obecne zriadenie § 11 ods. 4). Predvyplneny, zvysok "____".
+function textUznesenia() {
+  const obec = OBEC?.nazov || "__________";
+  const suma = peniaze ? new Intl.NumberFormat("sk-SK", { maximumFractionDigits: 2 }).format(peniaze.spoluucast) : "__________";
+  const refund = V.financovanie === "refundacia" ? " a predfinancovania výdavkov do ich preplatenia poskytovateľom" : "";
+  return `UZNESENIE č. ___/${new Date().getFullYear()}
+Obecného zastupiteľstva v ${obec} zo dňa ________
+
+Obecné zastupiteľstvo v ${obec}
+podľa § 11 ods. 4 zákona č. 369/1990 Zb. o obecnom zriadení v znení neskorších predpisov
+
+A. schvaľuje
+1. predloženie žiadosti o dotáciu za účelom realizácie projektu „__________“, ktorý sa realizuje v rámci výzvy ${V.kod} (${V.poskytovatel}${V.program ? ", " + V.program : ""});
+2. zabezpečenie realizácie projektu v súlade s podmienkami poskytnutia pomoci;
+3. zabezpečenie finančných prostriedkov na spolufinancovanie projektu vo výške ${V.spoluucast_pct} % z celkových oprávnených výdavkov, t. j. najviac ${suma} €, z rozpočtu obce;
+4. zabezpečenie financovania prípadných neoprávnených výdavkov projektu${refund};
+
+B. poveruje
+starostu obce podpísať žiadosť a súvisiace dokumenty.
+
+---
+Vzor. Presné znenie si môže vyžadovať výzva. Pred zasadnutím ho overte so znením výzvy.`;
+}
+
+// .doc = HTML, ktore Word aj LibreOffice otvoria a daju upravit (bez kniznice)
+function stiahniUznesenie() {
+  const html = `<html><head><meta charset="utf-8"><title>Uznesenie</title></head><body style="font-family:Calibri,Arial;font-size:12pt">`
+    + textUznesenia().split("\n").map((r) => `<p style="margin:0 0 6pt">${esc(r) || "&nbsp;"}</p>`).join("") + `</body></html>`;
+  stiahni(new Blob(["\ufeff" + html], { type: "application/msword" }), `uznesenie-${V.kod}.doc`);
+}
+
+function odkazKarty() {
+  // Odkaz s tokenom zdiela obecne udaje a odpovede. Je urceny pre kolegov z uradu.
+  return location.href;
+}
+
+function posliEmailom(k) {
+  const predmet = `${V.nazov}: ${k.nazov}`;
+  const telo = `${POPIS_KROKU[k.id]}\n\nTermín: ${datum(k.termin)}\nVýzva: ${V.nazov} (${V.kod})${V.uzavierka ? `, uzávierka ${datum(V.uzavierka)}` : ""}\nKarta výzvy: ${odkazKarty()}`;
+  location.href = `mailto:?subject=${encodeURIComponent(predmet)}&body=${encodeURIComponent(telo)}`;
+}
+
+// ICS: jeden subor, az 3 udalosti (prvy krok, interna uzavierka, uzavierka)
+function stiahniIcs(k) {
+  const icsText = (s) => String(s).replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+  const d = (iso) => iso.replace(/-/g, "");
+  const dalsi = (iso) => new Date(Date.parse(iso) + 86400000).toISOString().slice(0, 10).replace(/-/g, "");
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+  const obec = OBEC?.nazov ? `${OBEC.nazov}: ` : "";
+  const udalosti = [
+    [k.termin, `${obec}prvý krok k výzve ${V.kod}`, `${k.nazov}. ${POPIS_KROKU[k.id]}`, ["-P2D"], "krok"],
+    [k.interna_uzavierka, `${obec}interná uzávierka ${V.kod}`, "Žiadosť má byť hotová, zostávajú 3 týždne na kontrolu a podanie.", ["-P7D"], "interna"],
+    [k.uzavierka, `Uzávierka výzvy ${V.kod}`, V.nazov, ["-P7D", "-P1D"], "uzavierka"],
+  ].filter(([dt]) => dt);
+  const riadky = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//PredTendrom.sk//Karta vyzvy//SK", "CALSCALE:GREGORIAN"];
+  for (const [dt, nazov, popis, alarmy, typ] of udalosti) {
+    riadky.push("BEGIN:VEVENT", `UID:${d(dt)}-${typ}-${V.kod.replace(/[^A-Za-z0-9-]/g, "")}@predtendrom.sk`, `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${d(dt)}`, `DTEND;VALUE=DATE:${dalsi(dt)}`,
+      `SUMMARY:${icsText(nazov)}`, `DESCRIPTION:${icsText(`${popis}\nKarta: ${odkazKarty()}`)}`, `URL:${odkazKarty()}`);
+    for (const a of alarmy) riadky.push("BEGIN:VALARM", "ACTION:DISPLAY", `DESCRIPTION:${icsText(nazov)}`, `TRIGGER:${a}`, "END:VALARM");
+    riadky.push("END:VEVENT");
+  }
+  riadky.push("END:VCALENDAR");
+  stiahni(new Blob([riadky.join("\r\n")], { type: "text/calendar;charset=utf-8" }), `vyzva-${V.kod}.ics`);
+}
+
+function stiahni(blob, nazov) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nazov;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+//  ⑤ Trh dopytov: dynamicky most
+// ═════════════════════════════════════════════════════════════════════════
+const UVOD = {
+  prieskum: ["Bez predpokladanej hodnoty neviete zvoliť správny postup obstarávania ani zadať rozpočet do žiadosti.",
+             "Popíšete, čo potrebujete (2 minúty). Firmy pošlú orientačné ceny, spravidla do 10 pracovných dní. Nie je to objednávka a k ničomu vás to nezaväzuje."],
+  pd:       ["Projektová dokumentácia je najčastejší dôvod, prečo obec výzvu nestihne.",
+             "Projektanti vám pošlú cenu a termín dodania. Uvidíte, či to do uzávierky ešte stihnete. Bezplatné a nezáväzné."],
+};
+
+function napojTrh() {
+  const f = $("trh-form");
+  // Predvyplnenie z karty
+  $("trh-predmet").value = `${V.nazov}${OBEC?.nazov ? ", " + OBEC.nazov : ""}`.slice(0, 200);
+  $("trh-do").value = plusDni(14);       // ~10 pracovnych dni
+  $("trh-do").min = plusDni(3);
+  $("trh-obec-box").hidden = !!OBEC;     // bez tokenu musi obec vyplnit nazov
+  f.querySelectorAll('input[name="druh"]').forEach((r) => r.addEventListener("change", () => nastavUvod(r.value)));
+  document.querySelectorAll("[data-otvor-trh]").forEach((b) =>
+    b.addEventListener("click", () => otvorTrh(b.dataset.otvorTrh, "slot-pomoc", true)));
+  f.addEventListener("submit", odosliTrh);
+}
+
+function nastavUvod(druh) {
+  $("trh-uvod").textContent = UVOD[druh][0];
+  $("trh-uvod2").textContent = UVOD[druh][1];
+}
+
+/** Vyklopi formular do slotu (pod otazku Q3/Q5 alebo do sekcie 5). */
+function otvorTrh(druh, slotId, posunut) {
+  const f = $("trh-form");
+  if (!$("trh-ok").hidden) return;                 // dopyt uz odisiel
+  const slot = $(slotId) || $("slot-pomoc");
+  slot.appendChild(f);
+  f.hidden = false;
+  f.querySelector(`input[name="druh"][value="${druh}"]`).checked = true;
+  nastavUvod(druh);
+  if (!trhOtvoreny) {                               // Turnstile len raz a az ked treba
+    trhOtvoreny = true;
+    window.ptFormular?.widget("#ts-karta");
+  }
+  if (posunut) f.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/** Ked starosta zmeni odpoved na ANO, formular pod tou otazkou zbalime. */
+function zatvorTrhAkJeV(slotId) {
+  const f = $("trh-form");
+  if (f.parentElement?.id !== slotId) return;
+  const ina = ["q3", "q5"].find((q) => `slot-${q}` !== slotId && ["nie", "neviem"].includes(odpovede[q]));
+  if (ina) otvorTrh(ina === "q3" ? "pd" : "prieskum", `slot-${ina}`, false);
+  else { f.hidden = true; $("slot-pomoc").appendChild(f); }
+}
+
+async function odosliTrh(e) {
+  e.preventDefault();
+  const chybaEl = $("trh-chyba");
+  chybaEl.textContent = "";
+  const druh = document.querySelector('#trh-form input[name="druh"]:checked')?.value;
+  const obec = (OBEC?.nazov || $("trh-obec").value).trim();
+  const email = $("trh-email").value.trim();
+  const predmet = $("trh-predmet").value.trim();
+  const popis = $("trh-popis").value.trim();
+  if (!druh) return (chybaEl.textContent = "Vyberte, čo potrebujete.");
+  if (!obec) return (chybaEl.textContent = "Vyplňte názov obce.");
+  if (!predmet) return (chybaEl.textContent = "Vyplňte predmet.");
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return (chybaEl.textContent = "Skontrolujte e-mail obce.");
+  if (!$("trh-suhlas").checked) return (chybaEl.textContent = "Potvrďte, že ide o prieskum trhu, nie o objednávku.");
+
+  const btn = $("trh-odoslat");
+  btn.disabled = true; btn.textContent = "Odosielame…";
+
+  // Strukturovany popis: z neho Marek / spracovanie zalozi dopyt na Trhu
+  const telo = [
+    `[Karta výzvy ${V.kod}] ${druh === "pd" ? "Projektová dokumentácia" : "Prieskum trhu"}`,
+    `Predmet: ${predmet}`,
+    popis ? `Popis: ${popis}` : null,
+    `Ponuky do: ${datum($("trh-do").value)}`,
+    `Výzva: ${V.nazov}${V.uzavierka ? `, uzávierka ${datum(V.uzavierka)}` : ""}`,
+    (V.nfp_min != null || V.nfp_max != null) ? `Rozsah dotácie: ${eur(V.nfp_min)} – ${eur(V.nfp_max)}` : null,
+    peniaze ? `Odhad ceny projektu: ${eur(peniaze.cena_s_dph)}` : null,
+  ].filter(Boolean).join("\n");
+
+  if (window.ptFormular?.pockaj) await window.ptFormular.pockaj(5000);
+  const v = await window.ptFormular.posli("servisny_dopyt", {
+    obec, kraj: OBEC?.kraj || null, kontakt_email: email, popis: telo, suhlas_zverejnit: true,
+  });
+  btn.disabled = false; btn.textContent = "Odoslať dopyt";
+
+  if (!v.ok) {
+    chybaEl.textContent = {
+      OVERENIE_CAKA: "Počkajte chvíľu, kým prebehne overenie, a skúste znova.",
+      OVERENIE: "Overenie sa nepodarilo. Obnovte stránku a skúste znova.",
+      PRILIS_VELA: "Odoslali ste veľa dopytov za krátky čas. Skúste to o hodinu.",
+      NEPLATNE: "Skontrolujte vyplnené údaje.",
+      SIET: "Chyba pripojenia. Skúste znova.",
+    }[v.kod] || "Dopyt sa nepodarilo odoslať. Skúste znova.";
+    return;
+  }
+  // Potvrdenie na mieste formulara
+  const ok = $("trh-ok");
+  $("trh-form").after(ok);
+  $("trh-form").hidden = true;
+  ok.hidden = false;
+  ok.innerHTML = `<p class="font-bold">✓ Dopyt sme prijali</p>
+    <p class="mt-1 text-[15px]">Zverejníme ho firmám z odboru${OBEC?.kraj ? ` v kraji ${esc(OBEC.kraj)}` : ""}. Ponuky prídu na ${esc(email)}.
+    Po termíne ${esc(datum($("trh-do").value))} vám pošleme súhrn cien ako podklad pre predpokladanú hodnotu zákazky.</p>`;
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+//  Zdielanie karty (hlavicka)
+// ═════════════════════════════════════════════════════════════════════════
+$("zdielaj").addEventListener("click", async () => {
+  const nazov = V ? V.nazov : "Karta výzvy";
+  if (navigator.share) { try { await navigator.share({ title: nazov, url: odkazKarty() }); return; } catch { /* zrusene */ } }
+  location.href = `mailto:?subject=${encodeURIComponent(nazov)}&body=${encodeURIComponent(`Pozrite si, prosím, túto výzvu a kontrolu pripravenosti:\n${odkazKarty()}`)}`;
+});
+
+start();
+</script>
+</body>
+</html>

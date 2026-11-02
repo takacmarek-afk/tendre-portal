@@ -100,6 +100,7 @@ SEKTOR_NAZOV = {
     "UPRATOVANIE": "upratovanie", "DOPRAVA_MECHANIZACIA": "doprava, mechanizácia",
     "STRAVOVANIE": "stravovanie", "OSTRAHA": "ostraha", "IT_TECHNIKA": "IT technika",
     "TLAC_KANCELARIA": "tlač, kancelária",
+    "ODPAD": "odpad, zber a vývoz",
     "PASPORTIZACIA_SPRAVA_BUDOV": "pasportizácia, správa budov",
     "UPRATOVANIE_TOVAR": "upratovanie – hygienický tovar",
     "OSTRAHA_TECHNIKA": "ostraha – zabezpečovacia technika",

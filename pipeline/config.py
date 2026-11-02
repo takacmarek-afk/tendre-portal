@@ -139,6 +139,26 @@ SEKTORY = {
                 "kanalizaci", "cistiaren odpadovych vod", "sanitarn"],
         },
     },
+    # ODPAD (rozhodnutie 2. 11. 2026): zber a vyvoz odpadu je pre obce vazna
+    # opakovana zmluva a dotacne vyzvy (zberny dvor, kompostaren) na nu
+    # nadvazuju. Je ZA kurenim a vodou: pri zhode skore vyhra skorsi sektor,
+    # takze "cistiaren odpadovych vod" ostane vo vode (tam ma vahu 2 a samotne
+    # "odpad" ma tu tiez len 2). Samotne slovo (odpad, vyvoz, zber, kuka) prah 3
+    # neprekroci; treba spojenie alebo dve slova ("vyvoz a zber" = 4).
+    "ODPAD": {
+        "cpv": "90500000-2",
+        "popis": "Zber, vyvoz a zneskodnenie odpadu",
+        "kluc": {
+            3: ["odpadov hospodarstv", "vyvoz odpad", "vyvozu odpad", "zvoz odpad",
+                "zber odpad", "zberu odpad", "komunaln odpad", "triedeny zber",
+                "triedeneho zberu", "separovan zber", "separovaneho zberu",
+                "zbern dvor", "zberneho dvor", "likvidaci odpad", "zneskodnen odpad",
+                "nakladani s odpad", "ulozenie odpad", "smeti",
+                "nadob na odpad", "kontajner na odpad", "biologicky rozlozitel",
+                "kompostar"],
+            2: ["odpad", "vyvoz", "zber", "kuka", "kontajner"],
+        },
+    },
     "STRECHY_IZOLACIE": {
         "cpv": "45260000-7",
         "popis": "Strechy, zateplenie, izolacie",
