@@ -1,0 +1,39 @@
+{
+  "kod": "VZOR-EF-ZD-2027",
+  "nazov": "VZOR (fiktívna výzva): Zberný dvor a kompostáreň pre obce",
+  "poskytovatel": "Environmentálny fond",
+  "zdroj_url": "https://www.envirofond.sk/",
+  "program": "Špecifikácia podpory 2027, činnosť L (fiktívne)",
+
+  "typ_ziadatela": ["obec", "mesto", "mestska_cast", "zdruzenie_obci"],
+  "kraje": [],
+  "okresy": [],
+  "len_nro": false,
+  "len_mrk": false,
+  "obyv_min": null,
+  "obyv_max": 5000,
+
+  "nfp_min": 30000,
+  "nfp_max": 400000,
+  "spoluucast_pct": 5,
+  "dph_opravnena": "podla_ziadatela",
+  "financovanie": "refundacia",
+
+  "vyhlasenie": "2026-12-01",
+  "uzavierka": "2027-02-26",
+  "kolo_uzavierky": ["2027-02-26", "2027-09-30"],
+
+  "vyzaduje_ius": false,
+  "vyzaduje_phrsr": true,
+  "stupen_pd": "DSP",
+  "vyzaduje_povolenie": true,
+  "vo_pred_ziadostou": false,
+
+  "aktivity": ["odpad"],
+  "signal_sektory": ["STAVEBNE_PRACE", "DOPRAVA_MECHANIZACIA"],
+
+  "uznesenie_vlastne_znenie": false,
+
+  "overil": null,
+  "overene_at": null
+}
