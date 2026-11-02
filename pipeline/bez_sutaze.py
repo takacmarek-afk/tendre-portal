@@ -40,10 +40,10 @@ VYNECHAT_PREDMET = re.compile(
 DODATOK_ZACIATOK = re.compile(r"^\s*(dodatok|dodatek|zmena|amendment)", re.I)
 VEREJNY_DODAVATEL = re.compile(
     r"ministerstvo|^mesto |^obec |samosprávny kraj|správa ciest|úrad|štátny podnik|národn"
-    r"|slovenská republika|fond", re.I)
+    r"|slovenská republika|fond|nemocnic|univerzit|akadémi|gymnázi|škola|skola", re.I)
 SEKTOROVY = re.compile(
     r"vodárensk|vodarensk|teplár|teplar|energet|elektr[áa]r|dopravn[ýy] podnik|plyn|letisk"
-    r"|železnic|zeleznic|pošta|posta", re.I)
+    r"|železnic|zeleznic|pošta|posta|distribučn|elektrizačn|letové prevádzkové", re.I)
 INHOUSE = re.compile(
     r"technické služby|technicke sluzby|správa|sprava|bytový podnik|mestsk[ýá] podnik|príspevková"
     r"|verejnoprospešné|rozvojové služby", re.I)
