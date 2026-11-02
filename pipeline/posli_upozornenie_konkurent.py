@@ -42,7 +42,7 @@ def obsah(riadky: list, dalsie: int = 0) -> dict:
     for r in riadky:
         zvyr = f"Hodnota zmluvy {_eur(r.get('price_total'))}"
         if r.get("odhad_vyhlasenia"):
-            zvyr += f" · odhad vyhlásenia tendra {_datum_sk(r['odhad_vyhlasenia'])}"
+            zvyr += f" · pripravte sa do {_datum_sk(r['odhad_vyhlasenia'])}"
         bloky.append({
             "titul": f"{r.get('nazov_firmy') or r.get('ico')} — zmluva končí {_datum_sk(r.get('effective_to'))}",
             "popis": f"{r.get('authority_name') or ''}: {r.get('subject') or ''}",

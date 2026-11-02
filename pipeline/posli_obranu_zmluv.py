@@ -52,7 +52,7 @@ def obsah(riadky: list, dalsie: int = 0) -> dict:
     for r in riadky:
         casti = [f"Vaša zmluva končí {_datum_sk(r.get('effective_to'))} ({_eur(r.get('price_total'))})"]
         if r.get("odhad_vyhlasenia"):
-            casti.append(f"odhad vyhlásenia tendra {_datum_sk(r['odhad_vyhlasenia'])}")
+            casti.append(f"pripravte sa do {_datum_sk(r['odhad_vyhlasenia'])}")
         pon = _ponuky(r.get("pocet_ponuk_naposledy"))
         if pon:
             casti.append(pon)

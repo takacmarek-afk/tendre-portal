@@ -388,7 +388,7 @@ function vykresli(d) {
       <span class="kz-z-meta">končí ${bezpecne(mesiacSk(z && z.mesiac_konca))} &middot; ${bezpecne(eurAleboPomlcka(z && z.hodnota))}</span></li>`).join('');
 
   const dotacie = dotN > 0
-    ? `<p class="kz-dalsie">Dotácie: <strong>${dotN}</strong> ${tvar(dotN, 'zmluva o dotácii', 'zmluvy o dotácii', 'zmlúv o dotácii')}${Number(d.dotacie_suma) > 0 ? ' v hodnote ' + bezpecne(eur(Number(d.dotacie_suma))) : ''}${cislo(d.dotacie_buduce_okna) > 0 ? `, z toho <strong>${cislo(d.dotacie_buduce_okna)}</strong> s očakávanou súťažou v najbližších mesiacoch` : ''}.</p>`
+    ? `<p class="kz-dalsie">Dotácie: <strong>${dotN}</strong> ${tvar(dotN, 'zmluva o dotácii', 'zmluvy o dotácii', 'zmlúv o dotácii')}${Number(d.dotacie_suma) > 0 ? ' v hodnote ' + bezpecne(eur(Number(d.dotacie_suma))) : ''}${cislo(d.dotacie_buduce_okna) > 0 ? `, z toho <strong>${cislo(d.dotacie_buduce_okna)}</strong> kde sa môže čoskoro obstarávať` : ''}.</p>`
     : '<p class="kz-dalsie">Dotácie: v registri sme žiadnu zmluvu o dotácii pre toto IČO nenašli.</p>';
   const uvo = uvoN > 0
     ? `<p class="kz-dalsie">Súťaže vo Vestníku (24 mesiacov): <strong>${uvoN}</strong> ${tvar(uvoN, 'výsledok', 'výsledky', 'výsledkov')}${d.uvo_priemer_ponuk !== null && d.uvo_priemer_ponuk !== undefined ? `, v priemere ${bezpecne(String(d.uvo_priemer_ponuk).replace('.', ','))} ${tvar(Math.round(Number(d.uvo_priemer_ponuk)), 'ponuka', 'ponuky', 'ponúk')} na súťaž` : ''}${cislo(d.uvo_slabe_konkurencie) > 0 ? `; <strong>${cislo(d.uvo_slabe_konkurencie)}</strong> ${tvar(cislo(d.uvo_slabe_konkurencie), 'súťaž mala', 'súťaže mali', 'súťaží malo')} len 1 až 2 ponuky` : ''}.</p>`

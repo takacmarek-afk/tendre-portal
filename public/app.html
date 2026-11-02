@@ -608,8 +608,8 @@
             <select id="f-radenie" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
                                           focus:outline-none focus:border-accent">
               <option value="moje">relevantné pre mňa</option>
-              <option value="signal">sila signálu</option>
-              <option value="tender">najbližší tender</option>
+              <option value="signal">priorita</option>
+              <option value="tender">najbližší termín prípravy</option>
               <option value="hodnota">najvyššia hodnota</option>
               <option value="konci">zmluva končí najskôr</option>
             </select>
@@ -617,7 +617,7 @@
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
           <div>
-            <label for="f-skore" class="block text-[12px] font-semibold text-slate2 mb-1">Minimálna sila signálu</label>
+            <label for="f-skore" class="block text-[12px] font-semibold text-slate2 mb-1">Minimálna priorita</label>
             <select id="f-skore" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
                                         focus:outline-none focus:border-accent">
               <option value="0">všetky</option>
@@ -659,7 +659,7 @@
               <input id="f-jeCas" type="checkbox" checked
                      class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
               <span>Len tie, kde ešte je čas
-                <span class="block text-[11px] text-slate2">skryje zákazky, kde tender už pravdepodobne beží</span>
+                <span class="block text-[11px] text-slate2">skryje zákazky, kde súťaž už môže bežať</span>
               </span>
             </label>
           </div>
@@ -700,7 +700,7 @@
               <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
                 <th class="px-4 py-3 w-20"
                     title="Poradie v rámci sektora: 85 znamená horná sedmina zákaziek vo vašom odbore. Porovnávať sa dá len v tom istom sektore. Nie je to pravdepodobnosť výhry.">
-                  Sila<br>signálu
+                  Priorita
                 </th>
                 <th class="px-4 py-3">Predmet</th>
                 <th class="px-4 py-3">Obstarávateľ</th>
@@ -723,16 +723,17 @@
         </div>
       </div>
       <p class="mt-4 text-[12px] leading-relaxed text-slate2 max-w-3xl">
-        Odhad vyhlásenia tendra je koniec zmluvy mínus 75 dní, prípadne
-        upravený podľa toho, ako dlhé zmluvy ten istý úrad zvykne podpisovať.
-        Je to odhad, nie istota. Pri zmluvách, ktoré končia do 90 dní, je
-        tender pravdepodobne už vyhlásený &mdash; overte si to vo Vestníku ÚVO.
+        &bdquo;Pripravte sa do&ldquo; je koniec zmluvy mínus 75 dní, upravený podľa toho,
+        ako dlhé zmluvy ten istý úrad zvykne podpisovať. Je to termín na vašu prípravu,
+        nie predpoveď, že úrad vyhlási súťaž. Úrad môže zmluvu aj predĺžiť alebo nakúpiť
+        bez súťaže. Pri zmluvách, ktoré končia do 90 dní, môže súťaž už bežať,
+        overte si to vo Vestníku ÚVO.
         Cenové porovnanie neberie do úvahy rozsah: upratovanie kancelárie
         a nemocnice sú v dátach obe &bdquo;upratovanie&ldquo;.
       </p>
       <p class="mt-3 text-[12px] leading-relaxed text-slate2 max-w-3xl">
-        <strong class="text-ink">Sila signálu</strong> je poradie v rámci
-        sektora, nie pravdepodobnosť výhry. Hodnota 85 znamená, že zákazka
+        <strong class="text-ink">Priorita</strong> je poradie v rámci
+        sektora, nie pravdepodobnosť tendra ani výhry. Hodnota 85 znamená, že zákazka
         patrí do hornej sedminy vo svojom odbore podľa toho, ako často ten
         úrad danú kategóriu obstaráva, koľko rôznych firiem u neho vyhralo
         a aká je hodnota zmluvy. Či ju vyhráte, z verejného registra
@@ -776,7 +777,7 @@
             <select id="d-radenie" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
                                           focus:outline-none focus:border-accent">
               <option value="nove">najnovšia dotácia</option>
-              <option value="okno">tender očakávame najskôr</option>
+              <option value="okno">obstarávanie možné najskôr</option>
               <option value="suma">najvyššia suma</option>
             </select>
           </div>
@@ -844,7 +845,7 @@
                 <th class="px-4 py-3">Prijímateľ</th>
                 <th class="px-4 py-3">Na čo</th>
                 <th class="px-4 py-3 text-right whitespace-nowrap">Suma</th>
-                <th class="px-4 py-3 whitespace-nowrap">Tender očakávame</th>
+                <th class="px-4 py-3 whitespace-nowrap">Možné obstarávanie</th>
               </tr>
             </thead>
             <tbody id="riadky-d"></tbody>
@@ -886,8 +887,8 @@
           bol <strong class="text-ink">382 dní</strong>, stredná polovica
           medzi 219 a 584 dňami. Typická dotácia 129&nbsp;094&nbsp;€.
           Neznamená to, že dotáciu dostali <em>vďaka</em> tej firme &mdash; obec,
-          ktorá si ju najme, je už typ obce, čo o peniaze ide. Na predpovedanie
-          to stačí, na zásluhu nie.
+          ktorá si ju najme, je už typ obce, čo o peniaze ide. Je to pozorovanie
+          z minulých dát, nie predpoveď pre konkrétnu obec.
         </p>
       </div>
 
@@ -989,7 +990,7 @@
             <input id="u-jeCas" type="checkbox" checked
                    class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
             <span>Len tie, kde ešte je čas
-              <span class="block text-[11px] text-slate2">skryje zmluvy, ktoré končia do 90 dní &mdash; tam súťaž už pravdepodobne beží</span>
+              <span class="block text-[11px] text-slate2">skryje zmluvy, ktoré končia do 90 dní &mdash; tam súťaž už môže bežať</span>
             </span>
           </label>
         </div>
@@ -1986,7 +1987,7 @@ function riadok(r, benchmark, sanca, mojIco, stavMap) {
 
   return `
     <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
-      <td data-popis="Sila signálu" class="px-4 py-4 align-top">
+      <td data-popis="Priorita" class="px-4 py-4 align-top">
         <span class="text-[18px] font-bold ${farbaSkore(r.skore)}">${r.skore ?? '—'}</span>
         <div class="text-[10px] text-slate2 leading-tight mt-0.5">
           ${sektor ? 'v sektore' : ''}
@@ -2021,9 +2022,9 @@ function riadok(r, benchmark, sanca, mojIco, stavMap) {
                   title="Pri stavbe koniec zmluvy neznamená ďalšiu súťaž. Pre stavebné firmy je silnejší signál v záložke Dotácie.">stavba sa neopakuje</div>`
           : neskoro
           ? `<div class="text-[11px] font-semibold text-amber-800 bg-amber-50
-                        rounded px-1.5 py-0.5 mt-1 inline-block">tender už pravdepodobne beží</div>`
+                        rounded px-1.5 py-0.5 mt-1 inline-block">súťaž už môže bežať</div>`
           : (r.odhad_vyhlasenia
-              ? `<div class="text-[12px] mt-1 whitespace-nowrap">tender približne ${bezpecne(dSk(r.odhad_vyhlasenia))}</div>`
+              ? `<div class="text-[12px] mt-1 whitespace-nowrap" title="Termín na prípravu: koniec zmluvy mínus 75 dní. Nie je to predpoveď súťaže.">pripravte sa do ${bezpecne(dSk(r.odhad_vyhlasenia))}</div>`
               : '')}
         ${typickyCyklus(r)}
       </td>
@@ -2616,11 +2617,11 @@ async function sExportom(tlacidloId, praca) {
 // povodnym nazvom (export robi select *, takze nove stlpce sa nestratia).
 const HLAVICKY_EXPORTU = {
   contract_id: 'ID zmluvy v CRZ', contract_id_alt: 'Druhé ID zmluvy v CRZ',
-  skore: 'Sila signálu', subject: 'Predmet zmluvy', sector: 'Sektor',
+  skore: 'Priorita', subject: 'Predmet zmluvy', sector: 'Sektor',
   authority_name: 'Obstarávateľ', authority_cin: 'IČO obstarávateľa',
   price_total: 'Hodnota (€)', cena_neuvedena: 'Cena neuvedená',
   effective_from: 'Zmluva od', effective_to: 'Zmluva končí',
-  odhad_vyhlasenia: 'Odhad vyhlásenia tendra', dni_do_konca: 'Dní do konca zmluvy',
+  odhad_vyhlasenia: 'Pripraviť sa do', dni_do_konca: 'Dní do konca zmluvy',
   mesto: 'Mesto', kraj: 'Kraj', supplier_name: 'Súčasný dodávateľ',
   dodavatel_od: 'Dodávateľ od', dodavatel_zmluv_celkom: 'Zmlúv dodávateľa so štátom',
   historicky_pocet: 'Zákaziek úradu v sektore', typicka_dlzka_dni: 'Typická dĺžka zmluvy úradu (dni)',
@@ -2663,7 +2664,7 @@ async function exportExcel(nazov, riadky) {
   const list = XLSX.utils.aoa_to_sheet([
     [`PredTendrom.sk — export ${dnes}`],
     ['Zdroj údajov: Služby Slovensko.Digital, s.r.o. a Centrálny register zmlúv'],
-    ['Odvodený produkt. Sektor, mesto, kraj, sila signálu a cenové porovnanie'],
+    ['Odvodený produkt. Sektor, mesto, kraj, priorita a cenové porovnanie'],
     ['sú naše výpočty, nie údaje zo zdroja. Pôvodné údaje zostávajú nezmenené.'],
     [`Podmienky: https://ekosystem.slovensko.digital/podmienky | Dátum spracovania: ${dnes}`],
     ['Údaje majú len informatívny charakter a nie sú právne záväzné.'],
@@ -4150,10 +4151,10 @@ function nastavDnes(supabase, ctx) {
   function sila(skore) {
     const s = Number(skore);
     if (!Number.isFinite(s)) return '';
-    const [text, trieda] = s >= 80 ? ['silný', 'bg-accent/10 text-accentDark']
-      : s >= 50 ? ['stredný', 'bg-[#F3F0E6] text-ink'] : ['nižší', 'bg-[#F3F0E6] text-slate2'];
+    const [text, trieda] = s >= 80 ? ['vysoká', 'bg-accent/10 text-accentDark']
+      : s >= 50 ? ['stredná', 'bg-[#F3F0E6] text-ink'] : ['nižšia', 'bg-[#F3F0E6] text-slate2'];
     return `<span class="inline-block text-[11px] font-semibold px-2 py-0.5 rounded ${trieda}"
-                  title="Sila signálu je poradie v rámci sektora (1 až 99), nie záruka tendra.">${bezpecne(text)} signál · ${bezpecne(String(Math.round(s)))}</span>`;
+                  title="Priorita je poradie v rámci sektora (1 až 99) podľa hodnoty zmluvy a histórie úradu. Nie je to pravdepodobnosť tendra.">priorita ${bezpecne(text)} · ${bezpecne(String(Math.round(s)))}</span>`;
   }
 
   const hodnota = (r) => r.cena_neuvedena ? 'neuvedená (rámcová zmluva)' : suma(r.price_total);
@@ -4222,12 +4223,12 @@ function nastavDnes(supabase, ctx) {
       zdroje: [ZDROJE.signaly],
       vykresli: ([riadky]) => {
         if (!riadky.length) {
-          return prazdnyStav(`${(ctx.vyber().zapnuty || ctx.jeStart) ? 'Pre váš výber' : 'Na celom Slovensku'} teraz nemáme žiadnu príležitosť so signálom na zobrazenie.`,
+          return prazdnyStav(`${(ctx.vyber().zapnuty || ctx.jeStart) ? 'Pre váš výber' : 'Na celom Slovensku'} teraz nemáme žiadnu príležitosť na zobrazenie.`,
             ctx.vyber().zapnuty && ctx.vyber().moze
               ? '<div class="dnes-akcie"><button type="button" class="dnes-btn" data-dnes-vyber>Zmeniť výber</button></div>' : '');
         }
         return `<ol class="list-none m-0 p-0">${riadky.map(r => polozkaPrilezitosti(r, { odznak: sila(r.skore) })).join('')}</ol>
-          <p class="text-[11px] text-slate2 mt-3">Rovnaký pohľad ako v záložke Končiace zmluvy: bez zmlúv, kde tender už pravdepodobne beží.</p>`;
+          <p class="text-[11px] text-slate2 mt-3">Rovnaký pohľad ako v záložke Končiace zmluvy: bez zmlúv, kde súťaž už môže bežať.</p>`;
       },
     },
     koncia: {
@@ -4264,7 +4265,7 @@ function nastavDnes(supabase, ctx) {
             ? `<p class="text-[12px] text-ink mt-1 font-medium">Úrad vyhlásil súťaž: ${z.vyzva_url && /^https?:\/\//.test(z.vyzva_url)
                 ? `<a class="text-accent hover:underline" href="${bezpecne(z.vyzva_url)}" target="_blank" rel="noopener noreferrer">${bezpecne(z.vyzva_nazov)}</a>`
                 : bezpecne(z.vyzva_nazov)}${z.vyzva_lehota ? ' (ponuky do ' + bezpecne(dSk(String(z.vyzva_lehota).slice(0, 10))) + ')' : ''}</p>`
-            : (z.odhad_vyhlasenia ? `<p class="text-[12px] text-slate2 mt-1">Odhad vyhlásenia tendra: ${bezpecne(dSk(z.odhad_vyhlasenia))}</p>` : '');
+            : (z.odhad_vyhlasenia ? `<p class="text-[12px] text-slate2 mt-1">Pripravte sa do: ${bezpecne(dSk(z.odhad_vyhlasenia))}</p>` : '');
           return `
           <li class="dnes-polozka">
             <p class="text-[13px] font-semibold text-ink">${bezpecne(z.authority_name) || '—'}</p>
@@ -4354,7 +4355,7 @@ function nastavDnes(supabase, ctx) {
       </div>
       <div id="dnes-vyzva" class="hidden mb-5 text-[13px] text-slate2"></div>
       <div class="dnes-stlpce">
-        ${karta('signaly', 'Najsilnejšie signály', 'Päť príležitostí s najsilnejším signálom')}
+        ${karta('signaly', 'Najvyššia priorita', 'Päť príležitostí s najvyššou prioritou')}
         ${karta('koncia', 'Končí čoskoro', 'Najbližšie končiace zmluvy')}
       </div>
       <div class="dnes-stlpce">
@@ -4980,7 +4981,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     const c = count ?? posledne.zmluvy.length;
     const POPIS_RADENIA = {
       tender: 'podľa najbližšieho tendra', hodnota: 'podľa hodnoty',
-      konci: 'podľa konca zmluvy', signal: 'podľa sily signálu',
+      konci: 'podľa konca zmluvy', signal: 'podľa priority',
     };
     const podla = POPIS_RADENIA[el('f-radenie').value] ?? '';
     const zaklad = c > posledne.zmluvy.length
@@ -4990,7 +4991,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     // databazy je presne ten druh "pomoci", ktory zakaznik objavi az vtedy,
     // ked mu nieco chyba — a vtedy prestane verit celemu zvysku.
     el('pocet').textContent = jeCas && skrytych > 0
-      ? `${zaklad} · ${cislo(skrytych)} ${tvar(skrytych, 'skrytá', 'skryté', 'skrytých')}, kde tender už pravdepodobne beží`
+      ? `${zaklad} · ${cislo(skrytych)} ${tvar(skrytych, 'skrytá', 'skryté', 'skrytých')}, kde súťaž už môže bežať`
       : zaklad;
     nastavViac('zmluvy', 'viac-z-obal', 'viac-z-stav', c, posledne.zmluvy.length);
   }
@@ -5203,7 +5204,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       if (t) sq = sq.or(`nazov.ilike.*${t}*,obstaravatel_nazov.ilike.*${t}*,vitaz_nazov.ilike.*${t}*`);
       const skr = await sq;
       if (moje !== poziadavka.uvo) return;
-      if (!skr.error && skr.count) text += ` · ${cislo(skr.count)} ${tvar(skr.count, 'skrytá', 'skryté', 'skrytých')}, kde súťaž už pravdepodobne beží`;
+      if (!skr.error && skr.count) text += ` · ${cislo(skr.count)} ${tvar(skr.count, 'skrytá', 'skryté', 'skrytých')}, kde súťaž už môže bežať`;
     }
     if (typ === 'koncia') text += ' · stavebné práce tu nie sú, stavba sa neopakuje';
     el('pocet-uvo').textContent = text;
