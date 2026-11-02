@@ -8,16 +8,16 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="canonical" href="https://predtendrom.sk/prihlasenie">
-<title>Prihlásenie — PredTendrom.sk</title>
-<meta name="description" content="Prihlásenie a registrácia do PredTendrom.sk — končiace zmluvy a dotácie pre firmy, ktoré dodávajú štátu a obciam.">
-<meta property="og:title" content="Prihlásenie — PredTendrom.sk">
-<meta property="og:description" content="Prihlásenie a registrácia do PredTendrom.sk — končiace zmluvy a dotácie pre firmy, ktoré dodávajú štátu a obciam.">
+<title>Prihlásenie | PredTendrom.sk</title>
+<meta name="description" content="Prihlásenie a registrácia do PredTendrom.sk: končiace zmluvy a dotácie pre firmy, ktoré dodávajú štátu a obciam.">
+<meta property="og:title" content="Prihlásenie | PredTendrom.sk">
+<meta property="og:description" content="Prihlásenie a registrácia do PredTendrom.sk: končiace zmluvy a dotácie pre firmy, ktoré dodávajú štátu a obciam.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://predtendrom.sk/prihlasenie.html">
 <meta property="og:locale" content="sk_SK">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Prihlásenie — PredTendrom.sk">
-<meta name="twitter:description" content="Prihlásenie a registrácia do PredTendrom.sk — končiace zmluvy a dotácie pre firmy, ktoré dodávajú štátu a obciam.">
+<meta name="twitter:title" content="Prihlásenie | PredTendrom.sk">
+<meta name="twitter:description" content="Prihlásenie a registrácia do PredTendrom.sk: končiace zmluvy a dotácie pre firmy, ktoré dodávajú štátu a obciam.">
 <meta property="og:image" content="https://predtendrom.sk/og-image.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -98,7 +98,7 @@
 <link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="/style.css">
 </head>
-<body class="font-sans text-ink bg-[#F3F0E6] min-h-screen flex items-center justify-center p-5">
+<body class="font-sans text-ink bg-[#F3F5F7] min-h-screen flex items-center justify-center p-5">
 
 <div class="w-full max-w-[420px]">
 
@@ -111,7 +111,7 @@
         <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
         <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
       </svg>
-      <span class="font-serif italic text-[22px] text-ink">predtendrom</span>
+      <span class="font-serif text-[19px] text-ink">predtendrom</span>
     </a>
     <p class="text-[14px] text-slate2 mt-1">Končiace zmluvy úradov a dotácie obcí</p>
   </div>
@@ -163,8 +163,7 @@
         <div>
           <label for="email" class="block text-[13px] font-semibold mb-1.5">Pracovný e-mail</label>
           <input id="email" type="email" required maxlength="254" autocomplete="email" inputmode="email"
-                 class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
-                        focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+                 class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
         </div>
 
         <!-- Cloudflare Turnstile: vykresli sa len ked je v config.js vyplneny
@@ -172,8 +171,7 @@
         <div id="ts-box" class="flex justify-center"></div>
 
         <button type="submit" id="odoslat"
-                class="w-full bg-accent text-white font-semibold py-3 rounded-md
-                       hover:bg-accentDark transition disabled:opacity-50">
+                class="w-full bg-accent text-white font-semibold py-3 rounded-md hover:bg-accentDark transition disabled:opacity-50">
           Poslať odkaz na prihlásenie
         </button>
 
@@ -187,8 +185,7 @@
     </div>
 
     <div id="hotovo" class="hidden text-center py-6">
-      <div class="w-12 h-12 rounded-full bg-accent/10 text-accent text-[22px]
-                  flex items-center justify-center mx-auto mb-5">&#9993;</div>
+      <div class="w-12 h-12 rounded-full bg-accent/10 text-accent text-[22px] flex items-center justify-center mx-auto mb-5">&#9993;</div>
       <h2 class="text-[18px] font-semibold">Skontrolujte si schránku</h2>
       <p class="mt-3 text-[14px] leading-relaxed text-slate2">
         Poslali sme odkaz na <strong id="poslane-na"></strong>.
@@ -213,8 +210,7 @@
             <label for="kod" class="block text-[13px] font-semibold mb-1.5">Kód z e-mailu</label>
             <input id="kod" type="text" inputmode="numeric" autocomplete="one-time-code"
                    maxlength="12" pattern="[0-9]*" placeholder="123456"
-                   class="w-full border border-line rounded-md px-3.5 py-2.5 text-[18px] tracking-[0.3em]
-                          focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+                   class="w-full border border-line rounded-md px-3.5 py-2.5 text-[18px] tracking-[0.3em] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
           </div>
           <button type="submit" id="kod-odoslat"
                   class="w-full bg-ink text-white font-semibold py-2.5 rounded-md hover:opacity-90 transition disabled:opacity-50">

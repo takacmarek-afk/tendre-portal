@@ -113,18 +113,18 @@
   #dnes .dnes-stlpce { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 #dnes .dnes-karta, #dnes .dnes-dlazdica {
-  background: #fff; border: 1px solid #E4DFD2; border-radius: .5rem; min-width: 0;
+  background: #fff; border: 1px solid #E1E5EA; border-radius: .5rem; min-width: 0;
   overflow-wrap: anywhere;
 }
 #dnes .dnes-karta { padding: 1rem 1.25rem; }
 #dnes .dnes-dlazdica { padding: .85rem 1rem; }
-#dnes .dnes-polozka { padding: .85rem 0; border-top: 1px solid #E4DFD2; min-width: 0; }
+#dnes .dnes-polozka { padding: .85rem 0; border-top: 1px solid #E1E5EA; min-width: 0; }
 #dnes .dnes-polozka:first-child { border-top: 0; padding-top: .25rem; }
 #dnes .dnes-akcie { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; }
 #dnes .dnes-btn {
   font: inherit; font-size: 12px; font-weight: 600; line-height: 1.2; cursor: pointer;
   min-height: 36px; padding: .4rem .75rem; border-radius: .375rem;
-  border: 1px solid #E4DFD2; background: #fff; color: #0B1220;
+  border: 1px solid #E1E5EA; background: #fff; color: #0B1220;
 }
 #dnes .dnes-btn:hover { border-color: #B25313; color: #B25313; }
 #dnes .dnes-btn:disabled { opacity: .55; cursor: default; }
@@ -136,9 +136,9 @@
 }
 #dnes .dnes-odkaz:hover { color: #B25313; text-decoration: underline; }
 #dnes button:focus-visible, #dnes a:focus-visible { outline: 2px solid #B25313; outline-offset: 2px; }
-#dnes .dnes-duch { height: 10px; border-radius: 5px; background: #E4DFD2; margin-top: .6rem; }
+#dnes .dnes-duch { height: 10px; border-radius: 5px; background: #E1E5EA; margin-top: .6rem; }
 #dnes .dnes-pruh { height: 10px; border-radius: 5px; background: #B25313; }
-#dnes .dnes-pruh-dno { height: 10px; border-radius: 5px; background: #F3F0E6; margin-top: .3rem; overflow: hidden; }
+#dnes .dnes-pruh-dno { height: 10px; border-radius: 5px; background: #F3F5F7; margin-top: .3rem; overflow: hidden; }
 
 /* ── OPRAVA: NEVIDITEĽNÝ TEXT V ROZBALENOM <select> (audit P3, 28.9.2026) ──
    #o-sektor/#o-kraj/#o-frekvencia v tmavom paneli "Nech vám to chodí samo"
@@ -157,7 +157,7 @@
 <link rel="stylesheet" href="/style.css">
 <style>.preskocit{position:absolute;left:-9999px;top:0;z-index:100;background:#0B1220;color:#fff;padding:.6rem 1rem;border-radius:.375rem;font-weight:600;font-size:14px}.preskocit:focus{left:1rem;top:1rem}</style>
 </head>
-<body class="font-sans text-ink bg-[#F3F0E6] min-h-screen">
+<body class="font-sans text-ink bg-[#F3F5F7] min-h-screen">
 <a href="#hlavny-obsah" class="preskocit">Preskočiť na obsah</a>
 
 <div id="nacitavam" class="min-h-screen flex items-center justify-center">
@@ -172,8 +172,7 @@
       Nastala neočakávaná chyba. Skúste stránku obnoviť. Ak potrvá,
       pošlite nám prosím text nižšie.
     </p>
-    <pre id="chyba-text" class="mt-4 text-[12px] bg-[#F3F0E6] border border-line
-         rounded p-3 overflow-x-auto whitespace-pre-wrap"></pre>
+    <pre id="chyba-text" class="mt-4 text-[12px] bg-[#F3F5F7] border border-line rounded p-3 overflow-x-auto whitespace-pre-wrap"></pre>
     <button onclick="location.reload()"
             class="mt-5 bg-accent text-white font-semibold px-5 py-2.5 rounded-md">
       Obnoviť
@@ -193,7 +192,7 @@
         <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
         <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
       </svg>
-        <span class="font-serif italic text-[22px] text-ink">predtendrom</span>
+        <span class="font-serif text-[19px] text-ink">predtendrom</span>
       </div>
     </div>
     <div class="bg-white border border-line rounded-lg p-7">
@@ -203,27 +202,24 @@
         zadarmo a platobnú kartu nepotrebujeme.
       </p>
 
-      <p id="onb-sprava" class="hidden mt-4 rounded-md bg-[#F3F0E6] border border-line px-3.5 py-2.5 text-[13px] leading-relaxed text-ink"></p>
+      <p id="onb-sprava" class="hidden mt-4 rounded-md bg-[#F3F5F7] border border-line px-3.5 py-2.5 text-[13px] leading-relaxed text-ink"></p>
 
       <form id="form-org" class="mt-6 space-y-4">
         <div>
           <label for="nazov" class="block text-[13px] font-semibold mb-1.5">Názov firmy</label>
           <input id="nazov" required maxlength="200" autocomplete="organization"
-                 class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
-                        focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+                 class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
         </div>
         <div>
           <label for="ico" class="block text-[13px] font-semibold mb-1.5">IČO</label>
           <input id="ico" required inputmode="numeric" maxlength="20" placeholder="12345678"
-                 class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px]
-                        focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+                 class="w-full border border-line rounded-md px-3.5 py-2.5 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
           <p class="mt-1.5 text-[12px] text-slate2">
             Portál poskytujeme len podnikateľským subjektom.
           </p>
         </div>
         <button type="submit" id="btn-org"
-                class="w-full bg-accent text-white font-semibold py-3 rounded-md
-                       hover:bg-accentDark transition disabled:opacity-50">
+                class="w-full bg-accent text-white font-semibold py-3 rounded-md hover:bg-accentDark transition disabled:opacity-50">
           Vytvoriť prístup
         </button>
         <p id="chyba-org" class="text-[13px] text-red-700 hidden"></p>
@@ -249,7 +245,7 @@
         <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
         <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
       </svg>
-          <span class="font-serif italic text-[18px] text-ink">predtendrom</span>
+          <span class="font-serif text-[18px] text-ink">predtendrom</span>
         </span>
         <span id="nazov-firmy" class="text-[14px] text-slate2 hidden sm:block"></span>
       </div>
@@ -296,11 +292,9 @@
       <p id="mv-chyba" class="hidden mt-4 text-[13px] text-red-700"></p>
       <div class="mt-6 flex flex-col sm:flex-row gap-3">
         <button id="mv-ulozit"
-                class="inline-flex justify-center items-center bg-ink text-white font-semibold text-[14px]
-                       px-5 py-3 rounded-md hover:bg-accent transition">Uložiť a zobraziť</button>
+                class="inline-flex justify-center items-center bg-ink text-white font-semibold text-[14px] px-5 py-3 rounded-md hover:bg-accent transition">Uložiť a zobraziť</button>
         <button id="mv-preskocit"
-                class="inline-flex justify-center items-center border border-line text-ink font-semibold
-                       text-[14px] px-5 py-3 rounded-md hover:border-accent transition">Zobraziť všetko</button>
+                class="inline-flex justify-center items-center border border-line text-ink font-semibold text-[14px] px-5 py-3 rounded-md hover:border-accent transition">Zobraziť všetko</button>
       </div>
     </div>
   </div>
@@ -326,7 +320,7 @@
         <span class="block mb-1">Zakladajúci kód <span class="text-slate2">(nepovinné)</span></span>
         <input id="modal-predplatne-kod" type="text" maxlength="40" autocomplete="off" spellcheck="false"
                placeholder="napr. ZAKLADATEL"
-               class="w-full border border-line rounded-md px-3 py-2 text-[14px] uppercase focus:outline-none focus:ring-2 focus:ring-accent">
+               class="w-full border border-line rounded-md px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent">
         <span class="block text-[12px] text-slate2 mt-1">Prvých 30 firiem: Start 240&nbsp;€ a Growth 590&nbsp;€ ročne, cena platí 2 roky. Len pri ročnej platbe.</span>
       </label>
       <p class="text-[12px] leading-relaxed text-slate2 mb-4">
@@ -342,8 +336,7 @@
       </label>
       <p id="modal-predplatne-chyba" class="hidden text-[13px] text-red-700 mb-3"></p>
       <button id="modal-predplatne-zaplatit"
-              class="w-full bg-accent text-white font-semibold px-5 py-3 rounded-md
-                     hover:bg-accentDark transition disabled:opacity-50">
+              class="w-full bg-accent text-white font-semibold px-5 py-3 rounded-md hover:bg-accentDark transition disabled:opacity-50">
         Zaplatiť
       </button>
     </div>
@@ -400,8 +393,7 @@
     </div>
 
     <div id="prazdny" class="hidden bg-white border border-line rounded-lg p-10 text-center">
-      <div class="w-12 h-12 rounded-full bg-slate2/10 text-slate2 text-[20px]
-                  flex items-center justify-center mx-auto mb-5">&#8987;</div>
+      <div class="w-12 h-12 rounded-full bg-slate2/10 text-slate2 text-[20px] flex items-center justify-center mx-auto mb-5">&#8987;</div>
       <h2 id="prazdny-h" class="text-[18px] font-serif font-semibold">Databáza sa ešte napĺňa</h2>
       <p id="prazdny-p" class="mt-3 text-[14px] leading-relaxed text-slate2 max-w-md mx-auto">
         Sťahujeme históriu zmlúv z Centrálneho registra. Prvé príležitosti sa
@@ -415,24 +407,21 @@
     <!-- Vlna 83: skusobne alebo zaplatene obdobie skoncilo. Appka sa
          nezobrazi, zakaznik vidi, co sa stalo a co moze urobit dalej. -->
     <div id="skoncene" class="hidden bg-white border border-line rounded-lg p-10 text-center max-w-2xl mx-auto">
-      <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-800 text-[20px]
-                  flex items-center justify-center mx-auto mb-5">&#8987;</div>
+      <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-800 text-[20px] flex items-center justify-center mx-auto mb-5">&#8987;</div>
       <h2 id="skoncene-h" class="text-[20px] font-serif font-semibold">Skúška skončila</h2>
       <p id="skoncene-p" class="mt-3 text-[14px] leading-relaxed text-slate2 max-w-md mx-auto"></p>
       <!-- Vlna 92: bezplatny prehlad po skonceni (RPC bezplatny_prehlad(), migracia 76).
            Pocty a 3 ukazky pre 1 kraj + 1 sektor z "Moj vyber"; bez sum a bez dodavatelov. -->
       <div id="skoncene-prehlad" class="hidden mt-6 text-left border border-line rounded-lg p-5 bg-paper">
-        <p class="text-[12px] font-semibold uppercase tracking-wide text-slate2">Bezplatný prehľad</p>
+        <p class="text-[12px] font-semibold text-slate2">Bezplatný prehľad</p>
         <p id="skoncene-prehlad-pocty" class="mt-2 text-[14px] leading-relaxed text-ink"></p>
         <ul id="skoncene-prehlad-ukazky" class="mt-3 space-y-2 text-[13px] text-slate2"></ul>
         <p class="mt-4 text-[12px] leading-relaxed text-slate2">Sumy, mená dodávateľov, odkazy na zmluvy, ostatné kraje
           a sektory a denný e-mail sú súčasťou plánov od 34&nbsp;€ mesačne.</p>
       </div>
       <div class="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
-        <button id="skoncene-plat" class="hidden inline-flex justify-center items-center bg-ink text-white
-                font-semibold text-[14px] px-5 py-3 rounded-md hover:bg-accent transition">Vybrať plán a pokračovať</button>
-        <a href="./cennik.html" class="inline-flex justify-center items-center border border-line text-ink
-                font-semibold text-[14px] px-5 py-3 rounded-md hover:border-accent transition">Pozrieť cenník</a>
+        <button id="skoncene-plat" class="hidden inline-flex justify-center items-center bg-ink text-white font-semibold text-[14px] px-5 py-3 rounded-md hover:bg-accent transition">Vybrať plán a pokračovať</button>
+        <a href="./cennik.html" class="inline-flex justify-center items-center border border-line text-ink font-semibold text-[14px] px-5 py-3 rounded-md hover:border-accent transition">Pozrieť cenník</a>
       </div>
       <p id="skoncene-vlastnik" class="hidden mt-5 text-[13px] text-slate2"></p>
       <p class="mt-5 text-[12px] text-slate2">Otázky? <a class="underline" href="mailto:info@predtendrom.sk">info@predtendrom.sk</a></p>
@@ -441,8 +430,7 @@
     <!-- MOJ VYBER (audit 27. 9. 2026, P1.3): kraje, sektory a velkost
          zakaziek z prveho prihlasenia. Predvoleny filter a radenie
          "relevantne pre mna" vo vsetkych zalozkach, da sa vypnut. -->
-    <div id="moj-vyber" class="hidden mb-4 bg-white border border-line rounded-lg px-4 py-3
-                               flex flex-wrap items-center justify-between gap-3">
+    <div id="moj-vyber" class="hidden mb-4 bg-white border border-line rounded-lg px-4 py-3 flex flex-wrap items-center justify-between gap-3">
       <label class="flex items-start gap-2 text-[13px] text-ink cursor-pointer">
         <input id="mv-pouzit" type="checkbox" checked
                class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
@@ -453,7 +441,7 @@
     <!-- Vlna 83: plan Start vidi len svoj vyber (2 kraje + 2 sektory). Pocet
          skrytych prilezitosti prichadza z start_skryte_pocty() (migracia 68). -->
     <div id="start-zamknute" class="hidden mb-4 rounded-lg px-4 py-3 text-[13px] leading-relaxed"
-         style="background:#F3F0E6;border:1px solid #E3DDC8"></div>
+         style="background:#F3F5F7;border:1px solid #DCE2E8"></div>
 
     <!-- Prepinac vrstiev -->
     <div id="zalozky" class="hidden flex items-center gap-1 mb-6 border-b border-line overflow-x-auto">
@@ -505,19 +493,16 @@
            1 174 px od vrchu. Kto uz odber zapnuty ma, nepotrebuje vidiet
            cely formular, staci mu jeden riadok a moznost ho otvorit. -->
       <div id="odber-zhrnutie"
-           class="hidden bg-ink text-white rounded-lg px-4 py-3
-                  flex items-center justify-between gap-3">
+           class="hidden bg-ink text-white rounded-lg px-4 py-3 flex items-center justify-between gap-3">
         <p class="text-[13px] text-white/85 leading-snug">
           <span class="font-semibold text-white">Prehľad e-mailom máte zapnutý:</span>
           <span id="o-zhrnutie-filtre"></span>
         </p>
         <span class="flex items-center gap-4 shrink-0">
           <button id="o-upravit"
-                  class="text-[13px] font-semibold underline underline-offset-2
-                         hover:text-white/80 whitespace-nowrap">Zmeniť</button>
+                  class="text-[13px] font-semibold underline underline-offset-2 hover:text-white/80 whitespace-nowrap">Zmeniť</button>
           <button id="o-vypnut"
-                  class="text-[13px] font-semibold underline underline-offset-2
-                         hover:text-white/80 whitespace-nowrap">Vypnúť prehľad</button>
+                  class="text-[13px] font-semibold underline underline-offset-2 hover:text-white/80 whitespace-nowrap">Vypnúť prehľad</button>
         </span>
       </div>
 
@@ -525,16 +510,14 @@
            polami jeden riadok a jedno tlacidlo. Sektor a kraj sa vezmu
            z Mojho vyberu; podrobnosti su pod "Nastaviť podrobne". -->
       <div id="odber-ponuka"
-           class="hidden bg-white border border-line rounded-lg px-4 py-3
-                  flex flex-wrap items-center justify-between gap-3">
+           class="hidden bg-white border border-line rounded-lg px-4 py-3 flex flex-wrap items-center justify-between gap-3">
         <p class="text-[13px] text-ink leading-snug">
           <span class="font-semibold">Prehľad e-mailom:</span>
           <span id="o-ponuka-text">nové príležitosti vám pošleme raz týždenne.</span>
         </p>
         <span class="flex items-center gap-4 shrink-0">
           <button id="o-rychlo" type="button"
-                  class="bg-ink text-white font-semibold px-4 py-1.5 rounded-md text-[13px]
-                         hover:bg-accentDark whitespace-nowrap">Zapnúť prehľad</button>
+                  class="bg-ink text-white font-semibold px-4 py-1.5 rounded-md text-[13px] hover:bg-accentDark whitespace-nowrap">Zapnúť prehľad</button>
           <button id="o-podrobne" type="button"
                   class="text-[13px] font-semibold text-accent hover:text-accentDark whitespace-nowrap">Nastaviť podrobne</button>
         </span>
@@ -554,20 +537,16 @@
           </div>
           <div class="flex flex-col sm:flex-row gap-2 lg:shrink-0">
             <select id="o-sektor" aria-label="Sektor"
-                    class="border border-white/20 bg-white/10 text-white rounded-md
-                           px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-white"></select>
+                    class="border border-white/20 bg-white/10 text-white rounded-md px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-white"></select>
             <select id="o-kraj" aria-label="Kraj"
-                    class="border border-white/20 bg-white/10 text-white rounded-md
-                           px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-white"></select>
+                    class="border border-white/20 bg-white/10 text-white rounded-md px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-white"></select>
             <select id="o-frekvencia" aria-label="Ako často chcete prehľad"
-                    class="border border-white/20 bg-white/10 text-white rounded-md
-                           px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-white">
+                    class="border border-white/20 bg-white/10 text-white rounded-md px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-white">
               <option value="tyzdenne">týždenne</option>
               <option value="denne">denne</option>
             </select>
             <button id="o-zapnut"
-                    class="bg-white text-ink font-semibold px-5 py-2 rounded-md
-                           hover:bg-white/90 transition text-[14px] whitespace-nowrap">
+                    class="bg-white text-ink font-semibold px-5 py-2 rounded-md hover:bg-white/90 transition text-[14px] whitespace-nowrap">
               Chcem ho dostávať
             </button>
           </div>
@@ -577,9 +556,7 @@
             Slack/Teams webhook (voliteľné) — rovnaký prehľad pošleme aj tam
           </label>
           <input id="o-webhook" type="url" placeholder="https://hooks.slack.com/services/…"
-                 class="w-full sm:max-w-md border border-white/20 bg-white/10 text-white rounded-md
-                        px-3 py-2 text-[14px] placeholder:text-white/40
-                        focus:outline-none focus:ring-2 focus:ring-white">
+                 class="w-full sm:max-w-md border border-white/20 bg-white/10 text-white rounded-md px-3 py-2 text-[14px] placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white">
         </div>
         <div class="mt-3">
           <label for="o-moje-ico" class="block text-[12px] text-white/60 mb-1">
@@ -588,9 +565,7 @@
             a cenovej hladine boli hore
           </label>
           <input id="o-moje-ico" type="text" inputmode="numeric" maxlength="20" placeholder="12345678"
-                 class="w-full sm:max-w-xs border border-white/20 bg-white/10 text-white rounded-md
-                        px-3 py-2 text-[14px] placeholder:text-white/40
-                        focus:outline-none focus:ring-2 focus:ring-white">
+                 class="w-full sm:max-w-xs border border-white/20 bg-white/10 text-white rounded-md px-3 py-2 text-[14px] placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white">
         </div>
         <p id="o-hlaska" class="hidden mt-4 text-[13px] text-white/80"></p>
       </div>
@@ -607,25 +582,21 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <label for="f-kraj" class="block text-[12px] font-semibold text-slate2 mb-1">Kraj</label>
-            <select id="f-kraj" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                       focus:outline-none focus:border-accent"></select>
+            <select id="f-kraj" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent"></select>
           </div>
           <div>
             <label for="f-sektor" class="block text-[12px] font-semibold text-slate2 mb-1">Sektor</label>
-            <select id="f-sektor" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                         focus:outline-none focus:border-accent"></select>
+            <select id="f-sektor" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent"></select>
           </div>
           <div>
             <label for="f-text" class="block text-[12px] font-semibold text-slate2 mb-1">Hľadať</label>
             <input id="f-text" type="search" placeholder="napr. ostraha Košice alebo upratovanie v Prešovskom kraji"
-                   class="w-full border border-line rounded-md px-3 py-2 text-[14px]
-                          focus:outline-none focus:border-accent">
+                   class="w-full border border-line rounded-md px-3 py-2 text-[14px] focus:outline-none focus:border-accent">
             <p id="f-rozpoznane" class="hidden mt-1 text-[12px] text-slate2"></p>
           </div>
           <div>
             <label for="f-radenie" class="block text-[12px] font-semibold text-slate2 mb-1">Zoradiť</label>
-            <select id="f-radenie" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                          focus:outline-none focus:border-accent">
+            <select id="f-radenie" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent">
               <option value="moje">relevantné pre mňa</option>
               <option value="signal">priorita</option>
               <option value="tender">najbližší termín prípravy</option>
@@ -637,8 +608,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-3">
           <div>
             <label for="f-skore" class="block text-[12px] font-semibold text-slate2 mb-1">Minimálna priorita</label>
-            <select id="f-skore" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                        focus:outline-none focus:border-accent">
+            <select id="f-skore" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent">
               <option value="0">všetky</option>
               <option value="50">50 a viac (horná polovica sektora)</option>
               <option value="75">75 a viac (horná štvrtina)</option>
@@ -654,8 +624,7 @@
                zoradenim "najblizsi tender", ktore vytahovalo presne opak. -->
           <div>
             <label for="f-predstih" class="block text-[12px] font-semibold text-slate2 mb-1">Predstih</label>
-            <select id="f-predstih" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                           focus:outline-none focus:border-accent">
+            <select id="f-predstih" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent">
               <option value="0">všetko</option>
               <option value="1-3">1 až 3 mesiace</option>
               <option value="3-6">3 až 6 mesiacov</option>
@@ -715,8 +684,8 @@
       <div class="bg-white border border-line rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="karty-mobil w-full text-left">
-            <thead class="bg-[#F3F0E6] border-b border-line">
-              <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+            <thead class="bg-[#F3F5F7] border-b border-line">
+              <tr class="text-[12px] font-semibold text-slate2">
                 <th class="px-4 py-3 w-20"
                     title="Poradie v rámci sektora: 85 znamená horná sedmina zákaziek vo vašom odbore. Porovnávať sa dá len v tom istom sektore. Nie je to pravdepodobnosť výhry.">
                   Priorita
@@ -772,19 +741,16 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <label for="d-kraj" class="block text-[12px] font-semibold text-slate2 mb-1">Kraj</label>
-            <select id="d-kraj" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                       focus:outline-none focus:border-accent"></select>
+            <select id="d-kraj" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent"></select>
           </div>
           <div>
             <label for="d-sektor" class="block text-[12px] font-semibold text-slate2 mb-1">Na čo</label>
-            <select id="d-sektor" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                         focus:outline-none focus:border-accent"></select>
+            <select id="d-sektor" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent"></select>
           </div>
           <div>
             <label for="d-text" class="block text-[12px] font-semibold text-slate2 mb-1">Hľadať</label>
             <input id="d-text" type="search" placeholder="obec, škola, účel"
-                   class="w-full border border-line rounded-md px-3 py-2 text-[14px]
-                          focus:outline-none focus:border-accent">
+                   class="w-full border border-line rounded-md px-3 py-2 text-[14px] focus:outline-none focus:border-accent">
           </div>
           <!-- Predvolene NAJNOVSIA, nie najvyssia suma. Podla sumy boli na
                prvej obrazovke 77-milionove elektricky v Kosiciach — zakazka,
@@ -793,8 +759,7 @@
                jedine radenie, pri ktorom ma zmysel vratit sa o tyzden. -->
           <div>
             <label for="d-radenie" class="block text-[12px] font-semibold text-slate2 mb-1">Zoradiť</label>
-            <select id="d-radenie" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                          focus:outline-none focus:border-accent">
+            <select id="d-radenie" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent">
               <option value="nove">najnovšia dotácia</option>
               <option value="okno">obstarávanie možné najskôr</option>
               <option value="suma">najvyššia suma</option>
@@ -812,8 +777,7 @@
                by to bola natrvalo prazdna volba. -->
           <div>
             <label for="d-stav" class="block text-[12px] font-semibold text-slate2 mb-1">Stav okna</label>
-            <select id="d-stav" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                       focus:outline-none focus:border-accent">
+            <select id="d-stav" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent">
               <option value="otvara">tender ešte len príde</option>
               <option value="otvorene">okno už je otvorené</option>
               <option value="0">všetko</option>
@@ -825,8 +789,7 @@
                projekty si zakaznik zapne tu. -->
           <div>
             <label for="d-min-suma" class="block text-[12px] font-semibold text-slate2 mb-1">Minimálna suma</label>
-            <select id="d-min-suma" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                           focus:outline-none focus:border-accent">
+            <select id="d-min-suma" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent">
               <option value="20000" selected>od 20 000 €</option>
               <option value="5000">od 5 000 € (aj menšie)</option>
               <option value="100000">od 100 000 €</option>
@@ -859,8 +822,8 @@
       <div class="bg-white border border-line rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="karty-mobil w-full text-left">
-            <thead class="bg-[#F3F0E6] border-b border-line">
-              <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+            <thead class="bg-[#F3F5F7] border-b border-line">
+              <tr class="text-[12px] font-semibold text-slate2">
                 <th class="px-4 py-3">Prijímateľ</th>
                 <th class="px-4 py-3">Na čo</th>
                 <th class="px-4 py-3 text-right whitespace-nowrap">Suma</th>
@@ -898,7 +861,7 @@
         ale dotáciu ešte nemajú. Je to najskorší signál, aký vieme dať:
         najprv príde dotácia, až potom obstarávanie.
       </p>
-      <div class="rounded-lg border border-line bg-[#F3F0E6] p-4 mb-5 max-w-3xl">
+      <div class="rounded-lg border border-line bg-[#F3F5F7] p-4 mb-5 max-w-3xl">
         <p class="text-[13px] leading-relaxed text-slate2">
           <strong class="text-ink">Odmerané, nie odhadnuté.</strong>
           Zo 101 obcí, ktoré si takú firmu najali, dotáciu potom dostalo
@@ -915,14 +878,12 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label for="zi-kraj" class="block text-[12px] font-semibold text-slate2 mb-1">Kraj</label>
-            <select id="zi-kraj" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                        focus:outline-none focus:border-accent"></select>
+            <select id="zi-kraj" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent"></select>
           </div>
           <div>
             <label for="zi-text" class="block text-[12px] font-semibold text-slate2 mb-1">Hľadať</label>
             <input id="zi-text" type="search" placeholder="obec, mesto, firma"
-                   class="w-full border border-line rounded-md px-3 py-2 text-[14px]
-                          focus:outline-none focus:border-accent">
+                   class="w-full border border-line rounded-md px-3 py-2 text-[14px] focus:outline-none focus:border-accent">
           </div>
         </div>
         <div class="flex items-center justify-between mt-3 pt-3 border-t border-line">
@@ -934,8 +895,8 @@
       <div class="bg-white border border-line rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="karty-mobil w-full text-left">
-            <thead class="bg-[#F3F0E6] border-b border-line">
-              <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+            <thead class="bg-[#F3F5F7] border-b border-line">
+              <tr class="text-[12px] font-semibold text-slate2">
                 <th class="px-4 py-3">Obec</th>
                 <th class="px-4 py-3">Kto jej to píše</th>
                 <th class="px-4 py-3 text-right whitespace-nowrap">Za koľko</th>
@@ -979,8 +940,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <div>
             <label for="u-typ" class="block text-[12px] font-semibold text-slate2 mb-1">Zobraziť</label>
-            <select id="u-typ" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                      focus:outline-none focus:border-accent">
+            <select id="u-typ" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent">
               <option value="koncia">Zmluvy zo súťaží, ktoré končia</option>
               <option value="vysledky">Kto nedávno vyhral</option>
               <option value="vyhlasene">Práve vyhlásené súťaže</option>
@@ -989,19 +949,16 @@
           </div>
           <div>
             <label for="u-kraj" class="block text-[12px] font-semibold text-slate2 mb-1">Kraj</label>
-            <select id="u-kraj" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                       focus:outline-none focus:border-accent"></select>
+            <select id="u-kraj" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent"></select>
           </div>
           <div>
             <label for="u-sektor" class="block text-[12px] font-semibold text-slate2 mb-1">Sektor</label>
-            <select id="u-sektor" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                         focus:outline-none focus:border-accent"></select>
+            <select id="u-sektor" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent"></select>
           </div>
           <div>
             <label for="u-text" class="block text-[12px] font-semibold text-slate2 mb-1">Hľadať</label>
             <input id="u-text" type="search" placeholder="zákazka, obstarávateľ, firma"
-                   class="w-full border border-line rounded-md px-3 py-2 text-[14px]
-                          focus:outline-none focus:border-accent">
+                   class="w-full border border-line rounded-md px-3 py-2 text-[14px] focus:outline-none focus:border-accent">
           </div>
         </div>
         <div id="u-jeCas-obal" class="mt-3">
@@ -1036,8 +993,8 @@
       <div class="bg-white border border-line rounded-lg overflow-hidden">
         <div class="overflow-x-auto">
           <table class="karty-mobil w-full text-left">
-            <thead class="bg-[#F3F0E6] border-b border-line">
-              <tr id="hlavicka-u" class="text-[12px] font-semibold uppercase tracking-wider text-slate2"></tr>
+            <thead class="bg-[#F3F5F7] border-b border-line">
+              <tr id="hlavicka-u" class="text-[12px] font-semibold text-slate2"></tr>
             </thead>
             <tbody id="riadky-u"></tbody>
           </table>
@@ -1082,7 +1039,7 @@
         <!-- Sledovanie konkretnych ICO (konkurencia/partneri). Panel je
              skryty, kym firma nesleduje aspon jednu. -->
         <div id="sledovane-firmy" class="hidden bg-white border border-line rounded-lg p-4 mb-5">
-          <h3 class="text-[12px] font-semibold text-slate2 uppercase tracking-wide mb-3">
+          <h3 class="text-[12px] font-semibold text-slate2 mb-3">
             Sledované firmy
           </h3>
           <div id="sledovane-firmy-zoznam" class="flex flex-wrap gap-2"></div>
@@ -1092,19 +1049,16 @@
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label for="s-sektor" class="block text-[12px] font-semibold text-slate2 mb-1">Hlavný sektor</label>
-              <select id="s-sektor" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                           focus:outline-none focus:border-accent"></select>
+              <select id="s-sektor" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent"></select>
             </div>
             <div>
               <label for="s-text" class="block text-[12px] font-semibold text-slate2 mb-1">Hľadať</label>
               <input id="s-text" type="search" placeholder="názov firmy alebo IČO"
-                     class="w-full border border-line rounded-md px-3 py-2 text-[14px]
-                            focus:outline-none focus:border-accent">
+                     class="w-full border border-line rounded-md px-3 py-2 text-[14px] focus:outline-none focus:border-accent">
             </div>
             <div>
               <label for="s-radenie" class="block text-[12px] font-semibold text-slate2 mb-1">Zoradiť podľa</label>
-              <select id="s-radenie" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white
-                                            focus:outline-none focus:border-accent">
+              <select id="s-radenie" class="w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outline-none focus:border-accent">
                 <option value="objem_eur">objemu zmlúv</option>
                 <option value="zmluv">počtu zmlúv</option>
                 <option value="uradov">počtu úradov</option>
@@ -1124,15 +1078,15 @@
         <div class="bg-white border border-line rounded-lg overflow-hidden">
           <div class="overflow-x-auto">
             <table class="karty-mobil w-full text-left">
-              <thead class="bg-[#F3F0E6] border-b border-line">
-                <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+              <thead class="bg-[#F3F5F7] border-b border-line">
+                <tr class="text-[12px] font-semibold text-slate2">
                   <th class="px-4 py-3">Dodávateľ</th>
                   <th class="px-4 py-3 text-right whitespace-nowrap">Objem</th>
                   <th class="px-4 py-3 text-right whitespace-nowrap">Zmlúv</th>
                   <th class="px-4 py-3 text-right whitespace-nowrap">Úradov</th>
                   <th class="px-4 py-3 text-right whitespace-nowrap">Priemerná zmluva</th>
                   <th class="px-4 py-3 whitespace-nowrap">Aktivita</th>
-                  <th class="px-4 py-3 whitespace-nowrap sticky right-0 bg-[#F3F0E6]"></th>
+                  <th class="px-4 py-3 whitespace-nowrap sticky right-0 bg-[#F3F5F7]"></th>
                 </tr>
               </thead>
               <tbody id="riadky-f"></tbody>
@@ -1149,7 +1103,7 @@
           </div>
         </div>
 
-        <div class="mt-5 bg-[#F3F0E6] border border-line rounded-lg p-4 max-w-3xl">
+        <div class="mt-5 bg-[#F3F5F7] border border-line rounded-lg p-4 max-w-3xl">
           <p class="text-[13px] leading-relaxed text-slate2">
             <strong class="text-ink">Ako to čítať.</strong> Sú to súčty zmlúv
             z Centrálneho registra za obdobie, ktoré máme stiahnuté &mdash; nie
@@ -1163,15 +1117,15 @@
         <!-- Cenovy prehlad podla sektora. Data z `ceny_sektor` — pipeline ich
              pocitala kazdy den, ale do 17.9.2026 sa nikde nezobrazovali. -->
         <div id="ceny-sektor-panel" class="hidden mt-5 bg-white border border-line rounded-lg overflow-hidden max-w-3xl">
-          <div class="px-4 py-3 border-b border-line bg-[#F3F0E6]">
-            <h3 class="text-[13px] font-semibold text-slate2 uppercase tracking-wide">
+          <div class="px-4 py-3 border-b border-line bg-[#F3F5F7]">
+            <h3 class="text-[13px] font-semibold text-slate2">
               Cenový prehľad podľa sektora
             </h3>
           </div>
           <div class="overflow-x-auto">
             <table class="karty-mobil w-full text-left">
-              <thead class="bg-[#F3F0E6] border-b border-line">
-                <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+              <thead class="bg-[#F3F5F7] border-b border-line">
+                <tr class="text-[12px] font-semibold text-slate2">
                   <th class="px-4 py-2">Sektor</th>
                   <th class="px-4 py-2 text-right whitespace-nowrap">Medián</th>
                   <th class="px-4 py-2 text-right whitespace-nowrap">Posledná cena</th>
@@ -1194,15 +1148,15 @@
         <!-- TAM: odhad velkosti trhu za sektor, poslednych 12 mesiacov.
              Data z `tam_sektor` (pipeline/analytics.py: tamSektora()). -->
         <div id="tam-sektor-panel" class="hidden mt-5 bg-white border border-line rounded-lg overflow-hidden max-w-3xl">
-          <div class="px-4 py-3 border-b border-line bg-[#F3F0E6]">
-            <h3 class="text-[13px] font-semibold text-slate2 uppercase tracking-wide">
+          <div class="px-4 py-3 border-b border-line bg-[#F3F5F7]">
+            <h3 class="text-[13px] font-semibold text-slate2">
               Veľkosť trhu podľa sektora (posledných 12 mesiacov)
             </h3>
           </div>
           <div class="overflow-x-auto">
             <table class="karty-mobil w-full text-left">
-              <thead class="bg-[#F3F0E6] border-b border-line">
-                <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+              <thead class="bg-[#F3F5F7] border-b border-line">
+                <tr class="text-[12px] font-semibold text-slate2">
                   <th class="px-4 py-2">Sektor</th>
                   <th class="px-4 py-2 text-right whitespace-nowrap">Objem</th>
                   <th class="px-4 py-2 text-right whitespace-nowrap">Zmlúv so známou cenou</th>
@@ -1227,15 +1181,15 @@
              filter "Hlavny sektor" hore vo formulari — bez vybraneho
              sektora nema zoberanie do jedneho rebricka zmysel. -->
         <div id="trhovy-podiel-panel" class="hidden mt-5 bg-white border border-line rounded-lg overflow-hidden max-w-3xl">
-          <div class="px-4 py-3 border-b border-line bg-[#F3F0E6]">
-            <h3 class="text-[13px] font-semibold text-slate2 uppercase tracking-wide">
+          <div class="px-4 py-3 border-b border-line bg-[#F3F5F7]">
+            <h3 class="text-[13px] font-semibold text-slate2">
               Kto vyhráva v sektore <span id="trhovy-podiel-sektor"></span>
             </h3>
           </div>
           <div class="overflow-x-auto">
             <table class="karty-mobil w-full text-left">
-              <thead class="bg-[#F3F0E6] border-b border-line">
-                <tr class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+              <thead class="bg-[#F3F5F7] border-b border-line">
+                <tr class="text-[12px] font-semibold text-slate2">
                   <th class="px-4 py-2">#</th>
                   <th class="px-4 py-2">Dodávateľ</th>
                   <th class="px-4 py-2 text-right whitespace-nowrap">Zmlúv</th>
@@ -1299,18 +1253,16 @@
         <h2 class="text-[17px] font-serif font-semibold">Pozvať kolegu</h2>
         <form id="form-pozvat" class="mt-3 flex flex-col sm:flex-row gap-2">
           <input id="pozvat-email" type="email" required maxlength="254" aria-label="E-mail kolegu" placeholder="kolega@vasafirma.sk"
-                 class="flex-1 border border-line rounded-md px-3.5 py-2.5 text-[15px]
-                        focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
+                 class="flex-1 border border-line rounded-md px-3.5 py-2.5 text-[15px] focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent">
           <button type="submit" id="btn-pozvat"
-                  class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md
-                         hover:bg-accentDark transition disabled:opacity-50 whitespace-nowrap">
+                  class="bg-accent text-white font-semibold px-5 py-2.5 rounded-md hover:bg-accentDark transition disabled:opacity-50 whitespace-nowrap">
             Poslať pozvánku
           </button>
         </form>
         <p id="pozvat-hlaska" class="hidden mt-3 text-[13px]"></p>
 
         <div id="team-cakajuce-obal" class="hidden mt-5 pt-5 border-t border-line">
-          <h3 class="text-[12px] font-semibold text-slate2 uppercase tracking-wide mb-3">
+          <h3 class="text-[12px] font-semibold text-slate2 mb-3">
             Čakajúce pozvánky
           </h3>
           <div id="team-cakajuce" class="divide-y divide-line"></div>
@@ -1963,7 +1915,7 @@ function farbaSkore(skore) {
 // nová dátová vrstva, len trieda na <select>.
 function farbaStavCrm(stav) {
   if (stav === 'ponuka') return 'border-accent text-accentDark bg-accent/5';
-  if (stav === 'nezaujima') return 'border-line text-slate2 bg-[#F3F0E6]';
+  if (stav === 'nezaujima') return 'border-line text-slate2 bg-[#F3F5F7]';
   if (stav === 'sledujeme') return 'border-line text-ink bg-white';
   return 'border-line text-slate2 bg-white';
 }
@@ -1980,8 +1932,7 @@ function crmStavSelect(typ, contractId, stavMap) {
     .join('');
   return `
     <select data-crm-stav="${typ}" data-crm-id="${contractId}" aria-label="Váš stav príležitosti"
-            class="mt-2 text-[11px] font-medium rounded px-1.5 py-1 border
-                   focus:outline-none focus:border-accent ${farbaStavCrm(aktualny)}"
+            class="mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus:border-accent ${farbaStavCrm(aktualny)}"
             title="Váš vlastný stav tejto príležitosti — vidíte len vy vo vašej firme.">
       ${options}
     </select>`;
@@ -2005,7 +1956,7 @@ function riadok(r, benchmark, sanca, mojIco, stavMap) {
     : suma(r.price_total);
 
   return `
-    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F5F7]">
       <td data-popis="Priorita" class="px-4 py-4 align-top">
         <span class="text-[18px] font-bold ${farbaSkore(r.skore)}">${r.skore ?? '—'}</span>
         <div class="text-[10px] text-slate2 leading-tight mt-0.5">
@@ -2017,8 +1968,7 @@ function riadok(r, benchmark, sanca, mojIco, stavMap) {
              style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
           ${bezpecne(r.subject)}
         </div>
-        ${sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5
-                     rounded bg-accent/10 text-accent">${sektor}</span>` : ''}
+        ${sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded bg-accent/10 text-accent">${sektor}</span>` : ''}
         ${ktoToMa(r)}
         ${poslednaSutaz(r)}
         ${sancaNaVyhru(r, sanca, mojIco)}
@@ -2040,8 +1990,7 @@ function riadok(r, benchmark, sanca, mojIco, stavMap) {
           ? `<div class="text-[11px] mt-1 text-slate2"
                   title="Pri stavbe koniec zmluvy neznamená ďalšiu súťaž. Pre stavebné firmy je silnejší signál v záložke Dotácie.">stavba sa neopakuje</div>`
           : neskoro
-          ? `<div class="text-[11px] font-semibold text-amber-800 bg-amber-50
-                        rounded px-1.5 py-0.5 mt-1 inline-block">súťaž už môže bežať</div>`
+          ? `<div class="text-[11px] font-semibold text-amber-800 bg-amber-50 rounded px-1.5 py-0.5 mt-1 inline-block">súťaž už môže bežať</div>`
           : (r.odhad_vyhlasenia
               ? `<div class="text-[12px] mt-1 whitespace-nowrap" title="Termín na prípravu: koniec zmluvy mínus 75 dní. Nie je to predpoveď súťaže.">pripravte sa do ${bezpecne(dSk(r.odhad_vyhlasenia))}</div>`
               : '')}
@@ -2072,8 +2021,7 @@ function odkazCrz(r, popis = 'Zmluva v CRZ') {
   // Odkaz vedie na cudzi web, takze rel=noopener. A `noreferrer` zamerne
   // NIE — nech CRZ vidi, ze im posielame navstevnikov.
   return `<a href="${bezpecne(url)}" target="_blank" rel="noopener"
-             class="inline-block mt-2 text-[12px] text-accent hover:text-accentDark
-                    hover:underline whitespace-nowrap"
+             class="inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline whitespace-nowrap"
              title="Otvorí pôvodnú zmluvu v Centrálnom registri zmlúv">${popis} ↗</a>`;
 }
 
@@ -2122,14 +2070,12 @@ function riadokDotacie(r, stavMap) {
   const odPodpisu = -dniOdDnes(r.podpisane);
   const nova = !Number.isNaN(odPodpisu) && odPodpisu >= 0 && odPodpisu <= DNI_NOVA_DOTACIA;
   return `
-    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F5F7]">
       <td data-hlavny class="px-4 py-4 align-top">
         <div class="text-[14px] font-medium leading-snug">
           ${bezpecne(r.prijimatel)}
-          ${nova ? `<span class="align-middle ml-1 text-[10px] font-semibold px-1.5 py-0.5
-                         rounded bg-emerald-50 text-emerald-800">NOVÁ</span>` : ''}
-          ${r.vyplatene ? `<span class="align-middle ml-1 text-[10px] font-semibold px-1.5 py-0.5
-                         rounded bg-slate-100 text-slate2"
+          ${nova ? `<span class="align-middle ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800">NOVÁ</span>` : ''}
+          ${r.vyplatene ? `<span class="align-middle ml-1 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate2"
                          title="Pôdohospodárska platobná agentúra túto dotáciu už vyplatila${r.vyplatene_fy ? ' (' + bezpecne(r.vyplatene_fy) + ')' : ''}. Platí až po zrealizovaní projektu, takže obstarávanie už prebehlo.">VYPLATENÁ – PROJEKT HOTOVÝ</span>` : ''}
         </div>
         <div class="text-[12px] text-slate2 mt-1">${bezpecne(r.poskytovatel)}${r.strany_vymenene
@@ -2154,8 +2100,7 @@ function riadokDotacie(r, stavMap) {
              style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
           ${bezpecne(r.ucel)}
         </div>`}
-        ${sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5
-                     rounded bg-accent/10 text-accent">${sektor}</span>` : ''}
+        ${sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded bg-accent/10 text-accent">${sektor}</span>` : ''}
         <div>${odkazCrz(r, jeGenerickyUcel(r.ucel) ? 'Otvoriť zmluvu s prílohou v CRZ' : 'Dotačná zmluva v CRZ')}</div>
       </td>
       <td data-popis="Suma" class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${suma(r.suma)}</td>
@@ -2181,8 +2126,7 @@ function oknoDotacie(r) {
   }
   if (!Number.isNaN(doKonca) && doKonca >= 0) {
     const sucho = doKonca <= 90;
-    return `<span class="text-[11px] font-semibold px-1.5 py-0.5 rounded
-                  ${sucho ? 'text-amber-800 bg-amber-50' : 'text-emerald-800 bg-emerald-50'}">
+    return `<span class="text-[11px] font-semibold px-1.5 py-0.5 rounded ${sucho ? 'text-amber-800 bg-amber-50' : 'text-emerald-800 bg-emerald-50'}">
               okno je otvorené
             </span>
             <div class="text-[12px] mt-1 whitespace-nowrap">do ${bezpecne(dSk(r.okno_do))}</div>
@@ -2196,7 +2140,7 @@ function riadokZiadatela(r) {
   const kde = [r.mesto, r.kraj].filter(Boolean).join(', ');
   const doDotacie = dniOdDnes(r.ocakavane);
   return `
-    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F5F7]">
       <td data-hlavny class="px-4 py-4 align-top">
         <div class="text-[14px] font-medium leading-snug">${bezpecne(r.obec)}</div>
         ${kde ? `<div class="text-[12px] text-slate2 mt-1">${bezpecne(kde)}</div>` : ''}
@@ -2239,8 +2183,7 @@ let UVO_POSLEDNA = new Map();
 function odkazUvo(url, popis = 'Zákazka na ÚVO') {
   if (!url) return '';
   return `<a href="${bezpecne(url)}" target="_blank" rel="noopener"
-             class="inline-block mt-2 text-[12px] text-accent hover:text-accentDark
-                    hover:underline whitespace-nowrap"
+             class="inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline whitespace-nowrap"
              title="Otvorí zákazku vo vyhľadávaní ÚVO">${popis} ↗</a>`;
 }
 
@@ -2255,8 +2198,7 @@ function jeSlabaKonkurencia(pocetPonuk) {
 function stitokKonkurencie(pocetPonuk) {
   if (!jeSlabaKonkurencia(pocetPonuk)) return '';
   const n = num(pocetPonuk);
-  return `<span class="inline-block text-[11px] font-semibold px-1.5 py-0.5 rounded
-               bg-emerald-50 text-emerald-800" title="Posledná súťaž mala len ${n} ${tvar(n, 'ponuku', 'ponuky', 'ponúk')} — konkurencia tu bola slabá.">
+  return `<span class="inline-block text-[11px] font-semibold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-800" title="Posledná súťaž mala len ${n} ${tvar(n, 'ponuku', 'ponuky', 'ponúk')} — konkurencia tu bola slabá.">
             slabá konkurencia
           </span>`;
 }
@@ -2344,8 +2286,7 @@ function riadokUvo(r, typ) {
   const nazov = r.cast_nazov && r.cast_nazov !== r.nazov
     ? `${bezpecne(r.nazov)}<div class="text-[12px] text-slate2 mt-1">${bezpecne(r.cast_nazov)}</div>`
     : bezpecne(r.nazov);
-  const stitok = sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5
-                     rounded bg-accent/10 text-accent">${sektor}</span>` : '';
+  const stitok = sektor ? `<span class="inline-block mt-2 text-[11px] font-semibold px-2 py-0.5 rounded bg-accent/10 text-accent">${sektor}</span>` : '';
   const obst = `<td data-popis="Obstarávateľ" data-blok class="px-4 py-4 align-top text-[14px] text-slate2">
         ${bezpecne(r.obstaravatel_nazov) || '—'}
         ${kraj ? `<div class="text-[12px] mt-1">${bezpecne(kraj)}</div>` : ''}
@@ -2361,7 +2302,7 @@ function riadokUvo(r, typ) {
          ${!Number.isNaN(dni) && dni > 0 ? `<div class="text-[11px] mt-0.5">o ${cislo(dni)} ${tvar(dni, 'deň', 'dni', 'dní')}</div>` : ''}`
       : '<span class="text-slate2">neuvedený</span>';
     return `
-    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F5F7]">
       <td data-hlavny class="px-4 py-4 align-top max-w-[420px]">
         <div class="text-[14px] font-medium leading-snug">${nazov}</div>
         ${stitok}
@@ -2384,7 +2325,7 @@ function riadokUvo(r, typ) {
   // vyhlasene / predbezne
   const dniL = r.lehota_ponuk ? dniOdDnes(String(r.lehota_ponuk).slice(0, 10)) : NaN;
   return `
-    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F5F7]">
       <td data-hlavny class="px-4 py-4 align-top max-w-[420px]">
         <div class="text-[14px] font-medium leading-snug">${nazov}</div>
         ${stitok}
@@ -2421,7 +2362,7 @@ function riadokDodavatela(r, sledovane, jePro) {
     : '<span class="text-slate2">—</span>';
 
   return `
-    <tr class="border-b border-line last:border-0 hover:bg-[#F3F0E6]">
+    <tr class="border-b border-line last:border-0 hover:bg-[#F3F5F7]">
       <td data-hlavny class="px-4 py-4 align-top max-w-[340px]">
         ${r.supplier_cin ? `
         <button type="button" data-profil="${bezpecne(r.supplier_cin)}" data-profil-nazov="${bezpecne(r.dodavatel)}"
@@ -2440,9 +2381,7 @@ function riadokDodavatela(r, sledovane, jePro) {
       <td class="px-4 py-4 align-top text-right whitespace-nowrap sticky right-0 bg-white">
         ${r.supplier_cin && jePro ? `
         <button type="button" data-sleduj="${bezpecne(r.supplier_cin)}" data-nazov="${bezpecne(r.dodavatel)}"
-                class="text-[12px] font-semibold px-2.5 py-1 rounded-md border transition
-                       ${jeSledovana ? 'bg-accent/10 border-accent text-accentDark'
-                                     : 'border-line text-slate2 hover:border-accent hover:text-accent'}">
+                class="text-[12px] font-semibold px-2.5 py-1 rounded-md border transition ${jeSledovana ? 'bg-accent/10 border-accent text-accentDark' : 'border-line text-slate2 hover:border-accent hover:text-accent'}">
           ${jeSledovana ? '★ Sledujem' : '☆ Sledovať'}
         </button>`
         : r.supplier_cin
@@ -2681,7 +2620,7 @@ async function exportExcel(nazov, riadky) {
   // rovnaky text ako predtym pri CSV exporte, len teraz ako riadky listu.
   const dnes = dnesLokalne();
   const list = XLSX.utils.aoa_to_sheet([
-    [`PredTendrom.sk — export ${dnes}`],
+    [`PredTendrom.sk: export ${dnes}`],
     ['Zdroj údajov: Služby Slovensko.Digital, s.r.o. a Centrálny register zmlúv'],
     ['Odvodený produkt. Sektor, mesto, kraj, priorita a cenové porovnanie'],
     ['sú naše výpočty, nie údaje zo zdroja. Pôvodné údaje zostávajú nezmenené.'],
@@ -2794,8 +2733,7 @@ function otvorPredplatneModal(supabase, aktualnyPlan) {
   const nazovPlanu = (window.PLANY?.plany || {})[aktualnyPlan]?.nazov;
   el('modal-predplatne-aktualny').textContent = nazovPlanu ? `Váš plán: ${nazovPlanu}` : '';
   zoznam.innerHTML = PREDPLATNE_PLANY.map((p, i) => `
-    <label class="flex items-start justify-between gap-3 border border-line rounded-md px-3 py-2.5
-                   text-[14px] cursor-pointer has-[:checked]:border-ink has-[:checked]:bg-[#F3F0E6]">
+    <label class="flex items-start justify-between gap-3 border border-line rounded-md px-3 py-2.5 text-[14px] cursor-pointer has-[:checked]:border-ink has-[:checked]:bg-[#F3F5F7]">
       <span class="flex items-start gap-2">
         <input type="radio" name="predplatne-volba" value="${p.plan}:${p.obdobie}" ${i === predvolene ? 'checked' : ''} class="mt-0.5">
         <span>
@@ -3121,17 +3059,15 @@ function obrazovkaBezPristupu(supabase, { nadpis, odseky, predmet }) {
         <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
         <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
       </svg>
-        <span class="font-serif italic text-[22px] text-ink">predtendrom</span>
+        <span class="font-serif text-[19px] text-ink">predtendrom</span>
       </div>
       </div>
       <div class="bg-white border border-line rounded-lg p-7 text-center">
-        <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 text-[22px]
-                    flex items-center justify-center mx-auto mb-5">&#9203;</div>
+        <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-700 text-[22px] flex items-center justify-center mx-auto mb-5">&#9203;</div>
         <h1 class="text-[19px] font-serif font-semibold">${nadpis}</h1>
         ${odseky.map((o, i) => `<p class="${i === 0 ? 'mt-3' : 'mt-4'} text-[14px] leading-relaxed text-slate2">${o}</p>`).join('')}
         <a href="mailto:info@predtendrom.sk?subject=${predmet}"
-           class="inline-block mt-6 bg-accent text-white font-semibold
-                  px-6 py-3 rounded-md hover:bg-accentDark transition">
+           class="inline-block mt-6 bg-accent text-white font-semibold px-6 py-3 rounded-md hover:bg-accentDark transition">
           Napísať nám
         </a>
         <p class="mt-4">
@@ -4227,7 +4163,7 @@ function nastavDnes(supabase, ctx) {
 
   // ── Vykreslenie jednotlivych casti ──────────────────────────────────────
   const prazdnaDlazdica = (nadpis, telo) =>
-    `<p class="text-[12px] font-semibold text-slate2 uppercase tracking-wide">${bezpecne(nadpis)}</p>${telo}`;
+    `<p class="text-[12px] font-semibold text-slate2">${bezpecne(nadpis)}</p>${telo}`;
 
   const kpiTelo = (cislo_, pod) => `
     <p class="font-serif text-[32px] leading-none mt-2 text-ink">${bezpecne(cislo_)}</p>
@@ -4241,7 +4177,7 @@ function nastavDnes(supabase, ctx) {
     const s = Number(skore);
     if (!Number.isFinite(s)) return '';
     const [text, trieda] = s >= 80 ? ['vysoká', 'bg-accent/10 text-accentDark']
-      : s >= 50 ? ['stredná', 'bg-[#F3F0E6] text-ink'] : ['nižšia', 'bg-[#F3F0E6] text-slate2'];
+      : s >= 50 ? ['stredná', 'bg-[#F3F5F7] text-ink'] : ['nižšia', 'bg-[#F3F5F7] text-slate2'];
     return `<span class="inline-block text-[11px] font-semibold px-2 py-0.5 rounded ${trieda}"
                   title="Priorita je poradie v rámci sektora (1 až 99) podľa hodnoty zmluvy a histórie úradu. Nie je to pravdepodobnosť tendra.">priorita ${bezpecne(text)} · ${bezpecne(String(Math.round(s)))}</span>`;
   }
@@ -4321,8 +4257,7 @@ function nastavDnes(supabase, ctx) {
         return `<p class="text-[12px] text-slate2">Hotovo ${hotovych} zo ${kroky.length}</p>
           <ol class="list-none m-0 p-0 mt-2">${kroky.map((k, i) => `
             <li class="dnes-polozka flex gap-3 items-start">
-              <span aria-hidden="true" class="shrink-0 w-6 h-6 rounded-full text-[12px] font-semibold flex items-center justify-center
-                ${k.hotovo ? 'bg-accent text-white' : 'border border-line text-slate2'}">${k.hotovo ? '✓' : i + 1}</span>
+              <span aria-hidden="true" class="shrink-0 w-6 h-6 rounded-full text-[12px] font-semibold flex items-center justify-center ${k.hotovo ? 'bg-accent text-white' : 'border border-line text-slate2'}">${k.hotovo ? '✓' : i + 1}</span>
               <div class="min-w-0">
                 <p class="text-[14px] font-medium ${k.hotovo ? 'text-slate2 line-through' : 'text-ink'}">${bezpecne(k.nadpis)}<span class="sr-only">${k.hotovo ? ' (hotové)' : ''}</span></p>
                 ${k.hotovo ? '' : `<p class="text-[12px] text-slate2 mt-0.5">${bezpecne(k.text)}</p>
@@ -5408,13 +5343,11 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       const posledna = d?.posledna_zmluva
         ? `naposledy ${bezpecne(dSk(d.posledna_zmluva))}`
         : 'zatiaľ bez zmluvy v stiahnutom období';
-      return `<span class="inline-flex items-center gap-2 text-[13px] bg-[#F3F0E6]
-                          border border-line rounded-full pl-3 pr-1.5 py-1">
+      return `<span class="inline-flex items-center gap-2 text-[13px] bg-[#F3F5F7] border border-line rounded-full pl-3 pr-1.5 py-1">
                 <span class="font-medium">${bezpecne(nazov)}</span>
                 <span class="text-slate2">· ${posledna}</span>
                 <button type="button" data-odsledovat="${bezpecne(ico)}"
-                        class="text-slate2 hover:text-red-600 rounded-full w-5 h-5
-                               flex items-center justify-center" title="Prestať sledovať">×</button>
+                        class="text-slate2 hover:text-red-600 rounded-full w-5 h-5 flex items-center justify-center" title="Prestať sledovať">×</button>
               </span>`;
     }).join('');
     obal.classList.remove('hidden');

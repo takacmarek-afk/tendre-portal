@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Redizajn 2. 11. 2026: font-serif je teraz alias na IBM Plex Sans (nadpisy).
+   Nadpisy bez explicitnej hrubky dostanu 600, aby nepôsobili slabo. */
+@layer components {
+  .font-serif { font-weight: 600; letter-spacing: -0.015em; }
+}

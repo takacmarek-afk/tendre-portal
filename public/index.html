@@ -8,7 +8,7 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="google-site-verification" content="JiYXwFxwzzNJjR7gFvfzr-L7-KpIeCqXCXbNz6jz2fI" />
-<title>PredTendrom.sk — končiace zmluvy úradov a dotácie obcí</title>
+<title>PredTendrom.sk: končiace zmluvy úradov a dotácie obcí</title>
 <meta name="description" content="Vidíte, ktorým úradom končia zmluvy vo vašom odbore, aké dotácie obce podpísali a ktoré si najali dotačného poradcu. Dáta z Centrálneho registra zmlúv. 14 dní zadarmo.">
 <link rel="canonical" href="https://predtendrom.sk/">
 <meta property="og:title" content="Končiace zmluvy úradov a dotácie obcí">
@@ -89,7 +89,7 @@
         <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
         <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
       </svg>
-      <span class="font-serif italic text-[19px] text-ink">predtendrom</span>
+      <span class="font-serif text-[19px] text-ink">predtendrom</span>
     </a>
     <!-- Menu az od lg, nie od md. Pri 768 az 1023 px sa styri polozky
          s odstupom gap-8 nezmestili vedla loga a tlacidiel a lamali sa
@@ -98,7 +98,6 @@
     <nav class="hidden lg:flex items-center gap-8 text-[14px] text-slate2">
       <a href="#vrstvy" class="hover:text-ink transition">Čo sledujeme</a>
       <a href="#konkurencia" class="hover:text-ink transition">Konkurencia</a>
-      <a href="#cena" class="hover:text-ink transition">Koľko to stojí</a>
       <a href="./cennik.html" class="hover:text-ink transition">Cenník</a>
       <a href="#hranice" class="hover:text-ink transition">Čo nerobíme</a>
       <!-- Druhe publikum (obce), zamerne odlisene farbou a oddelene
@@ -136,7 +135,6 @@
       <a href="./prihlasenie.html" class="mmenu-prihlasit py-2.5 border-b border-line text-ink font-medium hover:text-accent">Prihlásiť sa</a>
       <a href="#vrstvy" class="py-2.5 border-b border-line hover:text-ink">Čo sledujeme</a>
       <a href="#konkurencia" class="py-2.5 border-b border-line hover:text-ink">Konkurencia</a>
-      <a href="#cena" class="py-2.5 border-b border-line hover:text-ink">Koľko to stojí</a>
       <a href="./cennik.html" class="py-2.5 border-b border-line hover:text-ink">Cenník</a>
       <a href="#hranice" class="py-2.5 hover:text-ink">Čo nerobíme</a>
       <a href="./obce.html" class="py-2.5 mt-1 text-accent font-medium hover:text-accentDark">Pre obce a mestá &rarr;</a>
@@ -163,99 +161,54 @@
 </header>
 <div id="obsah" tabindex="-1"></div>
 
-<!-- ══════════════ HERO ══════════════
-     Tmavý "monitoring" panel — vedomá odlišnosť od bieleho SaaS vzoru
-     (badge + dve tlačidlá vedľa seba + fajočky), ktorý pôsobí takmer
-     identicky ako jeden z konkurentov (zistené 17.9.2026 porovnaním
-     screenshotov). Živý feed vpravo je zámerne označený ako ilustračný —
-     čísla vľavo dole sa naďalej ťahajú z `verejne_pocty` (žiadne natvrdo
-     zapísané číslo v tejto sekcii, presne z dôvodu, prečo to robí aj
-     sekcia ČÍSLA nižšie). -->
-<section class="bg-ink">
-  <div class="wrap py-16 md:py-24 grid lg:grid-cols-2 gap-12 lg:gap-10 items-center">
-
+<!-- ══════════════ HERO (redizajn 2. 11. 2026) ══════════════
+     Biele pozadie, nadpis bez patkoveho pisma, jedna farba na tlacidle.
+     Vpravo skutocne video z aplikacie (navod 1, 70 s) namiesto ilustracie:
+     navstevnik vidi produkt, nie dizajn. Nadpis je o tom, co firmy zaujima
+     najviac (audit 2. 11.): kto im konkuruje a za kolko. -->
+<section class="bg-paper border-b border-line">
+  <div class="wrap pt-12 pb-14 md:pt-16 md:pb-20 grid lg:grid-cols-[1fr_1.1fr] gap-10 lg:gap-14 items-center">
     <div>
-      <div class="flex items-center gap-2 text-[12px] font-medium tracking-wide text-amber uppercase mb-6">
-        <span class="w-2 h-2 rounded-full bg-amber"></span>
-        Živý monitoring &middot; Centrálny register zmlúv
-      </div>
-
-      <h1 class="font-serif text-[34px] leading-[1.18] md:text-[50px] md:leading-[1.14] text-paper">
-        Ktorému úradu končí zmluva vo vašom odbore?<br class="hidden md:block">
-        <em class="italic text-amber">Vidíte to mesiace vopred, nie až vo Vestníku.</em>
+      <h1 class="text-[34px] leading-[1.12] md:text-[46px] md:leading-[1.08] font-semibold tracking-[-0.02em] text-ink">
+        Kto robí zákazky vo vašom odbore, za koľko a kedy mu končí zmluva
       </h1>
-
-      <!-- "228 000+" je overena hodnota verejne_pocty.zmluv (17.9.2026:
-           228 848), zaokruhlena nadol na tisicky — floor+"+" ostava pravdive
-           aj ked cislo medzitym narastie. #hero-zmluv sa nizsie v zobrazPocty()
-           dotiahne na presnu zivu hodnotu, rovnaky zdroj ako #p-zmluv. -->
-      <p class="mt-7 text-[17px] md:text-[18px] leading-relaxed text-[#ADA795] max-w-lg">
-        PredTendrom sleduje <span id="hero-zmluv" class="font-semibold text-paper">233&nbsp;000+</span>
-        zmlúv v štáte a obciach a ukazuje, ktoré z nich končia, aké dotácie
-        obce podpísali a ktoré si práve najali dotačného poradcu. Všetko s dátumom
-        z verejných záznamov. Tendre nepredpovedáme, ukazujeme, kde sa o nich
-        dá začať rozprávať skôr.
+      <p class="mt-6 text-[17px] md:text-[18px] leading-relaxed text-slate2 max-w-[34rem]">
+        PredTendrom prechádza <span id="hero-zmluv" class="font-semibold text-ink">233&nbsp;000+</span>
+        zmlúv štátu a obcí z Centrálneho registra zmlúv. Vyberiete odbor a kraj
+        a uvidíte, ktorým úradom končí zmluva, kto ju dnes robí a za akú cenu.
+        Pripravíte sa skôr, než úrad vyhlási novú súťaž.
       </p>
-
-      <div class="mt-9 flex flex-wrap items-center gap-6">
-        <a href="./prihlasenie.html" class="inline-flex justify-center items-center bg-amber text-ink font-semibold px-6 py-3.5 rounded-md hover:bg-[#F3B65C] transition">
+      <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+        <a href="./prihlasenie.html" class="inline-flex justify-center items-center bg-accent text-white font-semibold px-6 py-3.5 rounded-md hover:bg-accentDark transition">
           Vyskúšať 14 dní zadarmo
         </a>
-        <a href="#vrstvy" class="text-[15px] text-[#D8D3C4] underline underline-offset-4 hover:text-amber transition">
-          Čo presne uvidím &rarr;
-        </a>
-        <a href="/kontrola" class="text-[15px] text-[#D8D3C4] underline underline-offset-4 hover:text-amber transition">
-          Kedy mi končia zmluvy? &rarr;
+        <a href="#ukazka" class="text-[15px] font-medium text-ink underline underline-offset-4 decoration-line hover:decoration-ink">
+          Skúsiť bez registrácie
         </a>
       </div>
-
-      <p class="mt-6 text-[12px] tracking-wide text-[#6E6858] font-mono uppercase">
-        Bez platobnej karty &middot; 14 dní zadarmo &middot; aktualizované každý pracovný deň
-      </p>
-    </div>
-
-    <div class="bg-[#111A2C] border border-white/10 rounded-xl p-6">
-      <div class="flex items-center justify-between pb-4">
-        <span class="text-[12px] tracking-wide text-[#8B8574] font-mono uppercase">Ukážka z našich dát</span>
-        <span class="text-[11px] text-[#4FD1C5] font-mono flex items-center gap-1.5">
-          <span class="w-1.5 h-1.5 rounded-full bg-[#4FD1C5]"></span> reálne záznamy
-        </span>
+      <p class="mt-4 text-[13px] text-slate2">Bez platobnej karty. Údaje aktualizujeme každý pracovný deň.</p>
+      <div class="mt-9 flex items-center gap-3">
+        <img src="./marek-zakladatel.jpg" alt="" width="44" height="44"
+             class="w-11 h-11 rounded-full object-cover" style="object-position:50% 20%">
+        <p class="text-[13px] leading-snug text-slate2">
+          <span class="text-ink font-medium">Marek Takáč</span>, zakladateľ. Na otázky odpovedám osobne:<br>
+          <a href="tel:+421905438454" class="text-ink hover:text-accent">0905 438 454</a>,
+          <a href="mailto:info@predtendrom.sk" class="text-ink hover:text-accent">info@predtendrom.sk</a>
+        </p>
       </div>
-      <div class="divide-y divide-white/5">
-        <div class="flex items-center gap-3 py-3">
-          <span class="w-2 h-2 rounded-full bg-amber shrink-0"></span>
-          <span class="font-mono text-[12px] text-[#ADA795] w-28 shrink-0">do 31. 12. 2026</span>
-          <span class="text-[13px] text-paper flex-1"><a href="https://www.crz.gov.sk/zmluva/12025195/" target="_blank" rel="noopener" class="underline underline-offset-2 decoration-white/30 hover:text-amber">Mesto Nitra</a> &mdash; údržba verejnej zelene, lokalita 11 (56&nbsp;389&nbsp;€)</span>
-          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Zelená údržba</span>
-        </div>
-        <div class="flex items-center gap-3 py-3">
-          <span class="w-2 h-2 rounded-full bg-amber shrink-0"></span>
-          <span class="font-mono text-[12px] text-[#ADA795] w-28 shrink-0">do 31. 12. 2026</span>
-          <span class="text-[13px] text-paper flex-1"><a href="https://www.crz.gov.sk/zmluva/8747444/" target="_blank" rel="noopener" class="underline underline-offset-2 decoration-white/30 hover:text-amber">Úrad práce, sociálnych vecí a rodiny Dolný Kubín</a> &mdash; bezpečnostná služba (35&nbsp;308&nbsp;€)</span>
-          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Ostraha</span>
-        </div>
-        <div class="flex items-center gap-3 py-3">
-          <span class="w-2 h-2 rounded-full bg-amber shrink-0"></span>
-          <span class="font-mono text-[12px] text-[#ADA795] w-28 shrink-0">do 11. 2. 2027</span>
-          <span class="text-[13px] text-paper flex-1"><a href="https://www.crz.gov.sk/zmluva/10407975/" target="_blank" rel="noopener" class="underline underline-offset-2 decoration-white/30 hover:text-amber">Univerzita Pavla Jozefa Šafárika v Košiciach</a> &mdash; deratizácia, dezinfekcia, dezinsekcia (59&nbsp;330&nbsp;€)</span>
-          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Služby</span>
-        </div>
-        <div class="flex items-center gap-3 py-3">
-          <span class="w-2 h-2 rounded-full bg-amber shrink-0"></span>
-          <span class="font-mono text-[12px] text-[#ADA795] w-28 shrink-0">do 31. 3. 2027</span>
-          <span class="text-[13px] text-paper flex-1"><a href="https://www.crz.gov.sk/zmluva/12866519/" target="_blank" rel="noopener" class="underline underline-offset-2 decoration-white/30 hover:text-amber">Nemocnica pre obvinených a odsúdených, Trenčín</a> &mdash; rámcová dohoda na pekárske výrobky (22&nbsp;601&nbsp;€)</span>
-          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Stravovanie</span>
-        </div>
-        <div class="flex items-center gap-3 py-3">
-          <span class="w-2 h-2 rounded-full bg-[#4FD1C5] shrink-0"></span>
-          <span class="font-mono text-[12px] text-[#ADA795] w-28 shrink-0">19. 9. 2025</span>
-          <span class="text-[13px] text-paper flex-1"><a href="https://www.crz.gov.sk/zmluva/11332551/" target="_blank" rel="noopener" class="underline underline-offset-2 decoration-white/30 hover:text-amber">Obec Seňa</a> &mdash; najala poradenskú firmu na žiadosť o dotáciu</span>
-          <span class="hidden sm:inline font-mono text-[11px] text-[#8B8574] shrink-0">Dotácia</span>
-        </div>
-      </div>
-      <div class="pt-3 font-mono text-[10px] leading-snug text-[#8B8574]">Záznamy z Centrálneho registra zmlúv (stav 13. 10. 2026), každý odkazuje na pôvodnú zmluvu. Dátum konca je podľa zmluvy; ak ho úrad predĺži dodatkom, nemusí platiť.</div>
     </div>
-
+    <figure class="m-0">
+      <div class="rounded-lg overflow-hidden border border-line shadow-[0_1px_2px_rgba(11,18,32,.06),0_12px_32px_-12px_rgba(11,18,32,.18)] bg-ink">
+        <video class="block w-full h-auto" controls playsinline preload="none"
+               poster="/navody/video-1.jpg" width="1280" height="720"
+               aria-label="Video: PredTendrom za 70 sekúnd">
+          <source src="/navody/video-1.mp4" type="video/mp4">
+        </video>
+      </div>
+      <figcaption class="mt-3 text-[13px] text-slate2">
+        Takto vyzerá aplikácia. Video má 70 sekúnd, ďalšie nájdete v <a href="/navody" class="text-ink underline underline-offset-2 hover:text-accent">návodoch</a>.
+      </figcaption>
+    </figure>
   </div>
 </section>
 
@@ -292,7 +245,7 @@
 </section>
 
 <!-- ══════════════ ČÍSLA ══════════════ -->
-<section class="border-y border-line bg-[#F3F0E6]">
+<section class="border-y border-line bg-[#F3F5F7]">
   <div class="wrap py-10 grid grid-cols-2 md:grid-cols-4 gap-8">
     <!-- Tieto dve cisla boli napisane natvrdo a uz sa rozisli so
          skutocnostou: "227 731" bolo zastarane a "4 200" nezodpovedalo
@@ -300,19 +253,19 @@
          ktoru pipeline prepise po kazdom behu. Kym sa nenacitaju, je tu
          pomlcka — radsej nic nez vymyslene cislo. -->
     <div>
-      <div id="p-zmluv" class="font-mono text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
+      <div id="p-zmluv" class="tabular-nums text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
       <div class="text-[13px] text-slate2 mt-1 leading-snug">zmlúv úradov v databáze</div>
     </div>
     <div>
-      <div id="p-prilezitosti" class="font-mono text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
+      <div id="p-prilezitosti" class="tabular-nums text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
       <div class="text-[13px] text-slate2 mt-1 leading-snug">sledovaných príležitostí práve teraz</div>
     </div>
     <div>
-      <div class="font-mono text-[28px] font-bold tracking-tight">8 krajov</div>
+      <div class="tabular-nums text-[28px] font-bold tracking-tight">8 krajov</div>
       <div class="text-[13px] text-slate2 mt-1 leading-snug">zmluvy z celého Slovenska, filtrujete región a sektor</div>
     </div>
     <div>
-      <div class="font-mono text-[28px] font-bold tracking-tight">14 dní</div>
+      <div class="tabular-nums text-[28px] font-bold tracking-tight">14 dní</div>
       <div class="text-[13px] text-slate2 mt-1 leading-snug">zadarmo, v rozsahu plánu Growth, bez platobnej karty</div>
     </div>
   </div>
@@ -331,7 +284,7 @@
   <div class="mt-14 grid md:grid-cols-2 lg:grid-cols-3 gap-6">
 
     <div class="border border-line rounded-lg p-8">
-      <div class="text-[12px] font-semibold uppercase tracking-wider text-slate2 mb-4">
+      <div class="text-[12px] font-semibold text-slate2 mb-4">
         Vrstva 1
       </div>
       <h3 class="text-[21px] font-semibold leading-snug">Zmluva, ktorá sa končí</h3>
@@ -341,21 +294,21 @@
         v decembri už musí pripravovať súťaž.
       </p>
       <p class="mt-4 text-[15px] leading-relaxed text-slate2">
-        Vidíte to hneď, ako sa zmluva zapíše do registra — teda pri jej podpise,
+        Vidíte to hneď, ako sa zmluva zapíše do registra, teda pri jej podpise,
         nie pri jej konci.
       </p>
       <div class="mt-6 pt-5 border-t border-line">
         <div class="text-[13px] text-slate2">Odstup do konca zmluvy</div>
         <div class="text-[17px] font-semibold mt-0.5">3 až 12 mesiacov</div>
         <div class="text-[12px] text-slate2 mt-1.5">
-          Zmluvy končiace skôr zobrazujeme tiež, ale označené &mdash; pri nich
+          Zmluvy končiace skôr zobrazujeme tiež, ale označené, pri nich
           už tender pravdepodobne beží.
         </div>
       </div>
     </div>
 
     <div class="border-2 border-ink rounded-lg p-8">
-      <div class="text-[12px] font-semibold uppercase tracking-wider text-accent mb-4">
+      <div class="text-[12px] font-semibold text-accent mb-4">
         Vrstva 2
       </div>
       <h3 class="text-[21px] font-semibold leading-snug">Obec, ktorá dostala peniaze</h3>
@@ -385,13 +338,13 @@
          (zalozka "Ziadaju o dotaciu"). Slubovat na uvodnej stranke nieco,
          co po prihlaseni nie je, je ta ista chyba ako e-mail, ktory nechodil. -->
     <div class="border border-line rounded-lg p-8">
-      <div class="text-[12px] font-semibold uppercase tracking-wider text-slate2 mb-4">
+      <div class="text-[12px] font-semibold text-slate2 mb-4">
         Vrstva 3
       </div>
       <h3 class="text-[21px] font-semibold leading-snug">Obec, ktorá o peniaze žiada</h3>
       <p class="mt-4 text-[15px] leading-relaxed text-slate2">
         Obec si zaplatí firmu, ktorá jej napíše žiadosť o dotáciu. Dotáciu
-        ešte nemá — ale už za ňou ide. A tá zmluva s tou firmou je verejná
+        ešte nemá, ale už za ňou ide. A tá zmluva s tou firmou je verejná
         od prvého dňa.
       </p>
       <p class="mt-4 text-[15px] leading-relaxed text-slate2">
@@ -405,7 +358,7 @@
            o poctoch uctov (dnes 0 realnych zakaznikov, take cislo by skodilo)
            konkretny, overitelny priklad z registra, s odkazmi rovno na CRZ.
            Rovnaky princip transparentnosti ako zdroje.html a odkazCrz(). -->
-      <p class="mt-4 text-[13px] leading-relaxed text-slate2 bg-[#F3F0E6] rounded-md px-4 py-3">
+      <p class="mt-4 text-[13px] leading-relaxed text-slate2 bg-[#F3F5F7] rounded-md px-4 py-3">
         Napríklad: <a href="https://www.crz.gov.sk/zmluva/11332551/" target="_blank" rel="noopener"
            class="text-accent hover:underline">obec Seňa</a> (Košický kraj) si
         19. septembra 2025 najala poradenskú firmu na žiadosť o dotáciu.
@@ -419,7 +372,7 @@
         <div class="text-[17px] font-semibold mt-0.5">medián 382 dní</div>
         <div class="text-[12px] text-slate2 mt-1.5">
           Za ten čas si môžete pripraviť referencie, kapacity a cenu.
-          Keď sa súťaž vyhlási, nezačínate od nuly &mdash; a súťaž je
+          Keď sa súťaž vyhlási, nezačínate od nuly, a súťaž je
           aj tak otvorená pre všetkých.
         </div>
       </div>
@@ -439,17 +392,17 @@
      Presunute sem z cennik.html (audit 18.9.2026) — najsilnejsi predajny
      argument na celom webe bol schovany az na tretom kliku, na podstranke
      cennika. Ostava aj tam (kto ide priamo na cennik, nech to vidi znova). -->
-<section class="border-y border-line bg-[#F3F0E6]">
+<section class="border-y border-line bg-[#F3F5F7]">
   <div class="wrap py-20 md:py-28">
     <h2 class="font-serif text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
       Prečo tieto čísla
     </h2>
     <p class="mt-5 text-[17px] leading-relaxed text-slate2 max-w-2xl">
       Väčšina nástrojov na trhu monitoruje tendre, ktoré sú už vyhlásené
-      alebo tesne pred vyhlásením — za ceny od pár eur mesačne po stovky
+      alebo tesne pred vyhlásením, za ceny od pár eur mesačne po stovky
       eur ročne. Niektoré už sledujú aj končiace zmluvy. PredTendrom spája
-      tri zdroje na jednom mieste — končiace zmluvy, podpísané dotácie a
-      obce, ktoré si práve najali dotačného poradcu — a ukazuje ich s dátumom, ktorý
+      tri zdroje na jednom mieste, končiace zmluvy, podpísané dotácie a
+      obce, ktoré si práve najali dotačného poradcu, a ukazuje ich s dátumom, ktorý
       je vo verejných záznamoch. Nepredpovedáme, že tender vznikne, ukazujeme,
       kde sa o ňom dá začať rozprávať skôr. Náš najlacnejší plán je drahší
       než jednoduché monitory vyhlásených tendrov, lebo platíte za iný druh
@@ -498,7 +451,7 @@
         </tbody>
       </table>
     </div>
-    <p class="mt-4 text-[12px] text-slate2">Overené 13. októbra 2026 z verejných cenníkov a webov uvedených nástrojov; ceny konkurentov sú bez DPH, naše sú konečné (nie sme platcami DPH). Funkcie sa menia &mdash; ak niečo nesedí, napíšte nám a opravíme to.</p>
+    <p class="mt-4 text-[12px] text-slate2">Overené 13. októbra 2026 z verejných cenníkov a webov uvedených nástrojov; ceny konkurentov sú bez DPH, naše sú konečné (nie sme platcami DPH). Funkcie sa menia, ak niečo nesedí, napíšte nám a opravíme to.</p>
     <a href="./cennik.html" class="mt-6 inline-flex items-center gap-1.5 text-[14px] font-semibold text-accent hover:text-accentDark transition">
       Pozrieť celý cenník &rarr;
     </a>
@@ -541,7 +494,7 @@
 </section>
 
 <!-- ══════════════ PROTI KOMU IDETE ══════════════ -->
-<section id="konkurencia" class="border-y border-line bg-[#F3F0E6]">
+<section id="konkurencia" class="border-y border-line bg-[#F3F5F7]">
   <div class="wrap py-20 md:py-28">
     <h2 class="font-serif text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
       Vedieť o zákazke je polovica. Druhá je vedieť, proti komu idete.
@@ -563,8 +516,7 @@
         <h3 class="text-[17px] font-semibold leading-snug">Kto je ešte aktívny</h3>
         <p class="mt-3 text-[14px] leading-relaxed text-slate2">
           Prvá a posledná zmluva každej firmy plus priemerná veľkosť zákazky.
-          Konkurent, ktorý naposledy vyhral pred tromi rokmi, už nie je hrozba
-          &mdash; a firma s desaťkrát väčšími zmluvami hrá inú ligu než vy.
+          Konkurent, ktorý naposledy vyhral pred tromi rokmi, už nie je hrozba, a firma s desaťkrát väčšími zmluvami hrá inú ligu než vy.
         </p>
       </div>
       <div class="bg-white border border-line rounded-lg p-6">
@@ -582,15 +534,14 @@
 <!-- ══════════════ KOĽKO TO STOJÍ ══════════════ -->
 <section id="cena" class="wrap py-20 md:py-28">
   <div class="max-w-3xl">
-    <span class="inline-block text-[12px] font-semibold uppercase tracking-wider
-                 text-accent bg-accent/10 border border-accent/20 rounded-full px-3 py-1">
+    <span class="inline-block text-[12px] font-semibold text-accent bg-accent/10 border border-accent/20 rounded-full px-3 py-1">
       Cenník
     </span>
     <h2 class="font-serif mt-6 text-[28px] md:text-[38px] font-bold tracking-tight leading-tight">
       Tri plány podľa veľkosti vášho obchodu.
     </h2>
     <p class="mt-5 text-[17px] leading-relaxed text-slate2">
-      Start, Growth aj Team &mdash; presný rozsah každého plánu je na stránke
+      Start, Growth aj Team, presný rozsah každého plánu je na stránke
       <a href="./cennik.html" class="text-accent hover:underline font-medium">cenníka</a>.
       Každý nový účet má prvých 14 dní zadarmo, bez platobnej karty.
     </p>
@@ -616,12 +567,12 @@
         odkazom, ktorý vám príde (bez hesla); potom v aplikácii doplníte
         názov firmy a IČO (IČO je povinné). Zoznam podľa vašej
         vlastnej histórie zákaziek zoradíte voliteľným poľom „Vaše IČO"
-        v nastaveniach &mdash; patrí do plánu Growth a vyššie a funguje aj
+        v nastaveniach, patrí do plánu Growth a vyššie a funguje aj
         počas skúšobnej doby.
       </p>
     </div>
 
-    <div class="border border-line rounded-lg p-8 bg-[#F3F0E6]">
+    <div class="border border-line rounded-lg p-8 bg-[#F3F5F7]">
       <h3 class="text-[19px] font-semibold">E-mailový prehľad</h3>
       <p class="mt-5 text-[15px] leading-relaxed text-slate2">
         Týždenný e-mail je súčasťou každého plánu, od Start vyššie. Len
@@ -649,12 +600,12 @@
            názov obce so vymyslenou sumou by vyzeral ako reálne dáta
            a to je presne to, čo na tomto portáli nechceme. -->
       <div class="mt-7">
-        <p class="text-[12px] font-semibold uppercase tracking-wider text-slate2">
+        <p class="text-[12px] font-semibold text-slate2">
           Takto vyzerá
         </p>
         <div class="mt-2 rounded-lg border border-line bg-white overflow-hidden">
           <div class="px-4 pt-4">
-            <div class="text-[13px] font-serif italic text-ink">predtendrom</div>
+            <div class="text-[13px] font-serif text-ink">predtendrom</div>
             <div class="mt-3 text-[15px] font-bold leading-snug">8 nových príležitostí</div>
             <p class="mt-1.5 text-[12px] leading-relaxed text-slate2">
               Od posledného e-mailu pribudlo v upratovaní (Prešovský kraj) toto.
@@ -674,7 +625,7 @@
                 Rámcová dohoda, súťaží sa o jednotkové ceny · zmluva končí 31. 1. 2027
               </div>
             </div>
-            <div class="px-4 py-2.5 text-[12px] text-slate2 italic">a ďalších šesť</div>
+            <div class="px-4 py-2.5 text-[12px] text-slate2">a ďalších šesť</div>
           </div>
           <div class="px-4 py-3.5 border-t border-line">
             <span class="inline-block bg-ink text-white text-[12px] font-semibold px-3.5 py-2 rounded">
@@ -692,8 +643,7 @@
       </div>
 
       <a href="./prihlasenie.html"
-         class="inline-block mt-6 bg-ink text-white font-semibold px-5 py-3
-                rounded-md hover:bg-accent transition text-[15px]">
+         class="inline-block mt-6 bg-ink text-white font-semibold px-5 py-3 rounded-md hover:bg-accent transition text-[15px]">
         Chcem ho dostávať
       </a>
     </div>
@@ -701,8 +651,7 @@
 
   <div class="mt-10">
     <a href="./cennik.html"
-       class="inline-block bg-ink text-white font-semibold px-5 py-3
-              rounded-md hover:bg-accent transition text-[15px]">
+       class="inline-block bg-ink text-white font-semibold px-5 py-3 rounded-md hover:bg-accent transition text-[15px]">
       Pozrieť celý cenník &rarr;
     </a>
   </div>
@@ -751,7 +700,7 @@
     <p class="mt-8 text-[14px] text-white/50 max-w-3xl leading-relaxed">
       Pri stavebných prácach je predstih z končiacich zmlúv slabší, pretože
       stavba sa nezopakuje. Preto je pre stavebné firmy zaujímavejšia vrstva
-      dotácií — obec, ktorá dostala peniaze na rekonštrukciu, bude stavbu
+      dotácií, obec, ktorá dostala peniaze na rekonštrukciu, bude stavbu
       obstarávať.
     </p>
   </div>
@@ -829,21 +778,20 @@
 </section>
 
 <!-- ══════════════ CTA ══════════════ -->
-<section id="registracia" class="border-t border-line bg-[#F3F0E6]">
+<section id="registracia" class="border-t border-line bg-[#F3F5F7]">
   <div class="wrap py-20 md:py-28">
     <div class="max-w-2xl mx-auto text-center">
       <h2 class="font-serif text-[28px] md:text-[40px] font-bold tracking-tight leading-tight">
         Pozrite sa, čo vám uniká
       </h2>
       <p class="mt-5 text-[17px] leading-relaxed text-slate2">
-        Zaregistrujte sa a hneď uvidíte celú databázu — končiace zmluvy aj
+        Zaregistrujte sa a hneď uvidíte celú databázu, končiace zmluvy aj
         dotácie, ktoré obce už dostali. 14 dní zadarmo, bez platobnej
         karty.
       </p>
 
       <a href="./prihlasenie.html"
-         class="inline-flex justify-center items-center mt-9 bg-accent text-white
-                font-semibold text-[16px] px-8 py-4 rounded-md hover:bg-accentDark transition">
+         class="inline-flex justify-center items-center mt-9 bg-accent text-white font-semibold text-[16px] px-8 py-4 rounded-md hover:bg-accentDark transition">
         Vyskúšať 14 dní zadarmo
       </a>
 
@@ -876,11 +824,11 @@
      tu dole: navstevnik tejto stranky je dodavatel a nechcem ho na zaciatku
      zmiest tym, ze mu ponukam nieco pre obce. Kto je starosta, doscrolluje
      alebo pride priamo na /obce.html. -->
-<section class="border-t border-line bg-[#F3F0E6]">
+<section class="border-t border-line bg-[#F3F5F7]">
   <div class="wrap py-12">
     <div class="md:flex md:items-center md:justify-between gap-8">
       <div class="max-w-[560px]">
-        <p class="text-[12px] font-semibold text-accent uppercase tracking-wider">Pre obce a mestá</p>
+        <p class="text-[12px] font-semibold text-accent">Pre obce a mestá</p>
         <h2 class="mt-2 text-[22px] font-semibold leading-snug">
           Ste obec a neviete, kde peniaze hľadať?
         </h2>
@@ -892,8 +840,7 @@
         </p>
       </div>
       <a href="./obce.html"
-         class="inline-block mt-6 md:mt-0 shrink-0 bg-ink text-white font-semibold
-                px-6 py-3 rounded-md hover:bg-accent transition text-[15px]">
+         class="inline-block mt-6 md:mt-0 shrink-0 bg-ink text-white font-semibold px-6 py-3 rounded-md hover:bg-accent transition text-[15px]">
         Otvoriť prehľad pre obce
       </a>
     </div>
@@ -914,28 +861,28 @@
         <div class="absolute inset-0 bg-amber" style="mix-blend-mode: multiply; opacity: 0.16;"></div>
       </div>
       <div class="text-center sm:text-left max-w-[640px]">
-        <p class="text-[12px] font-mono uppercase tracking-wider text-accent">Zakladateľ</p>
+        <p class="text-[12px] font-semibold text-accent">Zakladateľ</p>
         <h2 class="mt-1 font-serif text-[28px] text-ink">Marek Takáč</h2>
         <p class="mt-2 text-[15px] leading-relaxed text-slate2">
           Staviam PredTendrom.sk ako nástroj, ktorý by som ako dodávateľ sám
-          potreboval &mdash; nie ďalší dashboard, ale prehľad toho, čo úradom končí, skôr než to vyhlásia.
+          potreboval, nie ďalší dashboard, ale prehľad toho, čo úradom končí, skôr než to vyhlásia.
         </p>
         <div class="mt-4 flex flex-wrap items-center justify-center sm:justify-start gap-3">
           <a href="tel:+421905438454"
-             class="inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
+             class="inline-flex items-center gap-2 text-[14px] tabular-nums text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
             0905 438 454
           </a>
           <a href="mailto:info@predtendrom.sk"
-             class="inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
+             class="inline-flex items-center gap-2 text-[14px] tabular-nums text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
             info@predtendrom.sk
           </a>
           <a href="https://www.facebook.com/profile.php?id=1381441591712353" target="_blank" rel="noopener"
-             class="inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
+             class="inline-flex items-center gap-2 text-[14px] tabular-nums text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
             Facebook
           </a>
           <a href="https://www.instagram.com/predtendrom.sk/" target="_blank" rel="noopener"
-             class="inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
+             class="inline-flex items-center gap-2 text-[14px] tabular-nums text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
             Instagram
           </a>
         </div>
@@ -956,7 +903,7 @@
             <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
             <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
           </svg>
-          <span class="font-serif italic text-[16px] text-ink">predtendrom</span>
+          <span class="font-serif text-[16px] text-ink">predtendrom</span>
         </div>
         <p class="mt-3 text-[13px] leading-relaxed text-slate2">
           LoveHome s.r.o.<br>
@@ -1028,7 +975,7 @@
     z.forEach(function (r) {
       html += '<li class="p-4"><div class="flex flex-wrap items-baseline justify-between gap-2">' +
         '<span class="font-semibold text-[15px]">' + esc(r.urad) + '</span>' +
-        '<span class="font-mono text-[12px] text-slate2">končí ' + esc(datum(r.koniec)) + '</span></div>' +
+        '<span class="tabular-nums text-[12px] text-slate2">končí ' + esc(datum(r.koniec)) + '</span></div>' +
         '<p class="mt-1 text-[14px] text-slate2">' + esc(r.predmet) + (r.cena ? ' &middot; ' + esc(eur(r.cena)) : '') + '</p>' +
         '<a class="mt-1 inline-block text-[13px] text-accent hover:underline" target="_blank" rel="noopener" href="' + esc(odkazOk(r.odkaz)) + '">zmluva v Centrálnom registri zmlúv</a></li>';
     });

@@ -158,7 +158,7 @@ HLAVICKA = """<!doctype html>
         <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
         <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
       </svg>
-      <span class="font-serif italic text-[18px] text-ink">predtendrom</span>
+      <span class="font-serif text-[18px] text-ink">predtendrom</span>
     </a>
     <a href="/cennik" class="text-[13px] text-slate2 hover:text-ink">Cenník</a>
   </div>
@@ -250,7 +250,7 @@ def _vygeneruj_stranku(sector, agregat_row):
         # Staticke HTML je vzdy citatelne cez view-source/curl, CSS blur na
         # skutocnych datach by tu paywall neochranil (viz modulovy docstring).
         blok_zvysok = f"""
-    <div class="mt-3 rounded-lg border border-dashed border-line bg-[#F3F0E6] p-5 text-center">
+    <div class="mt-3 rounded-lg border border-dashed border-line bg-[#F3F5F7] p-5 text-center">
       <p class="text-[14px] text-slate2">+ {_cislo(zvysok)} {_tvar(zvysok, 'ďalšia zmluva', 'ďalšie zmluvy', 'ďalších zmlúv')} v tomto kraji a sektore.</p>
       <a href="/prihlasenie?utm_source=seo_{sektor_slug}_{kraj_slug}&utm_medium=organic&utm_campaign=programmatic_seo"
          class="mt-3 inline-block rounded-md bg-accent text-white text-[13px] font-medium px-4 py-2 hover:bg-accentDark">
@@ -290,11 +290,11 @@ def _vygeneruj_stranku(sector, agregat_row):
 
   <div class="mt-8 grid grid-cols-2 gap-3">
     <div class="rounded-lg border border-line bg-white p-4">
-      <div class="text-[22px] font-semibold font-mono">{_cislo(agregat_row['pocet'])}</div>
+      <div class="text-[22px] font-semibold tabular-nums">{_cislo(agregat_row['pocet'])}</div>
       <div class="text-[12px] text-slate2 mt-1">{_tvar(agregat_row['pocet'], 'končiaca zmluva', 'končiace zmluvy', 'končiacich zmlúv')}</div>
     </div>
     <div class="rounded-lg border border-line bg-white p-4">
-      <div class="text-[22px] font-semibold font-mono">{_suma(agregat_row['objem_eur'])}</div>
+      <div class="text-[22px] font-semibold tabular-nums">{_suma(agregat_row['objem_eur'])}</div>
       <div class="text-[12px] text-slate2 mt-1">spolu v týchto zmluvách</div>
     </div>
   </div>
@@ -336,7 +336,7 @@ def _vygeneruj_index_sektora(sector, agregaty):
   <div class="mt-8 grid sm:grid-cols-2 gap-3">
 {polozky}
   </div>
-  <div class="mt-8 rounded-lg border border-dashed border-line bg-[#F3F0E6] p-5 text-center">
+  <div class="mt-8 rounded-lg border border-dashed border-line bg-[#F3F5F7] p-5 text-center">
     <p class="text-[14px] text-slate2">Zoznam konkrétnych zmlúv, termín, dokedy sa pripraviť a upozornenia vo vašom kraji a sektore.</p>
     <a href="/prihlasenie?utm_source=seo_{sektor_info['slug']}_index&utm_medium=organic&utm_campaign=programmatic_seo"
        class="mt-3 inline-block rounded-md bg-accent text-white text-[13px] font-medium px-4 py-2 hover:bg-accentDark">

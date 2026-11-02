@@ -177,7 +177,7 @@
     wrap.setAttribute("aria-label", "Nastavenie cookies");
     wrap.style.cssText =
       "position:fixed;left:0;right:0;bottom:0;z-index:9999;" +
-      "background:#0B1220;color:#F7F3EA;font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;" +
+      "background:#0B1220;color:#FFFFFF;font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;" +
       "padding:16px 20px;box-shadow:0 -2px 16px rgba(0,0,0,.2);" +
       "display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;";
 
@@ -195,7 +195,7 @@
     btnOdmietnut.type = "button";
     btnOdmietnut.textContent = "Iba nevyhnutné";
     btnOdmietnut.style.cssText =
-      "background:transparent;color:#F7F3EA;border:1px solid #6B6558;border-radius:6px;" +
+      "background:transparent;color:#FFFFFF;border:1px solid #59636F;border-radius:6px;" +
       "padding:9px 16px;font-size:13px;cursor:pointer;";
 
     var btnPrijat = document.createElement("button");
