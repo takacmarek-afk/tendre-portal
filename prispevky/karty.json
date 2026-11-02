@@ -1,0 +1,325 @@
+[
+ {
+  "typ": "cislo",
+  "kicker": "Číslo týždňa · upratovanie",
+  "cislo": "120",
+  "nadpis": "zmlúv úradov na upratovanie sa skončí do 12 mesiacov.",
+  "pod": "Ide o 102 úradov po celom Slovensku. Medián zmluvy je 38 376 €.",
+  "subor": "2026-10-26-cislo",
+  "zdroj": "Zdroj: Centrálny register zmlúv, spracoval PredTendrom.sk, stav 23. 10. 2026"
+ },
+ {
+  "typ": "tip",
+  "kicker": "Tip na piatok",
+  "nadpis": "Keď úradu končí zmluva, má tri možnosti",
+  "body": [
+   "predĺži ju dodatkom,",
+   "kúpi službu bez súťaže (pri malej sume),",
+   "vyhlási nové obstarávanie."
+  ],
+  "pod": "Ktorú vyberie, vopred nevie nikto. Dátum konca je však verejný.",
+  "zdroj": "predtendrom.sk",
+  "subor": "2026-10-30-tip"
+ },
+ {
+  "typ": "stlpce",
+  "kicker": "Ostraha po krajoch",
+  "nadpis": "Kde končia zmluvy úradov na ostrahu",
+  "riadky": [
+   [
+    "Bratislavský",
+    18
+   ],
+   [
+    "Banskobystrický",
+    8
+   ],
+   [
+    "Žilinský",
+    5
+   ],
+   [
+    "Prešovský",
+    4
+   ],
+   [
+    "Nitriansky",
+    3
+   ],
+   [
+    "Trnavský",
+    1
+   ],
+   [
+    "Košický",
+    1
+   ],
+   [
+    "Trenčiansky",
+    1
+   ]
+  ],
+  "pod": "43 zmlúv do 12 mesiacov, medián 110 366 €.",
+  "subor": "2026-11-02-stlpce",
+  "zdroj": "Zdroj: Centrálny register zmlúv, spracoval PredTendrom.sk, stav 23. 10. 2026"
+ },
+ {
+  "typ": "tip",
+  "kicker": "Tip na piatok",
+  "nadpis": "Kde nájdete každú zmluvu úradu zadarmo",
+  "body": [
+   "Otvorte crz.gov.sk (Centrálny register zmlúv).",
+   "Vyhľadajte úrad alebo predmet zmluvy.",
+   "Otvorte zmluvu aj prílohy v PDF.",
+   "Pozrite si cenu, rozsah a dátum konca."
+  ],
+  "zdroj": "predtendrom.sk",
+  "subor": "2026-11-06-tip"
+ },
+ {
+  "typ": "cislo",
+  "kicker": "Číslo týždňa · stravovanie",
+  "cislo": "479",
+  "nadpis": "zmlúv úradov na stravovanie končí do 12 mesiacov.",
+  "pod": "245 úradov a organizácií. Medián zmluvy je 26 574 €.",
+  "subor": "2026-11-09-cislo",
+  "zdroj": "Zdroj: Centrálny register zmlúv, spracoval PredTendrom.sk, stav 23. 10. 2026"
+ },
+ {
+  "typ": "tip",
+  "kicker": "Tip na piatok",
+  "nadpis": "Referencie: čo si pripraviť skôr, než príde súťaž",
+  "body": [
+   "zoznam podobných zákaziek za posledné roky,",
+   "sumy a obdobie plnenia,",
+   "potvrdenia od objednávateľov,",
+   "kontakt, ktorý to vie potvrdiť."
+  ],
+  "zdroj": "predtendrom.sk",
+  "subor": "2026-11-13-tip"
+ },
+ {
+  "typ": "zmluva",
+  "kicker": "Končiaca zmluva týždňa",
+  "nadpis": "Najväčšia zmluva na upratovanie, ktorá končí za 6 až 12 mesiacov",
+  "urad": "Slovenská elektrizačná prenosová sústava, a.s.",
+  "predmet": "Zmluva na poskytovanie upratovacích služieb",
+  "suma": "404 860 €",
+  "koniec": "končí 30. 9. 2027",
+  "subor": "2026-11-16-zmluva",
+  "zdroj": "Zdroj: Centrálny register zmlúv, spracoval PredTendrom.sk, stav 23. 10. 2026"
+ },
+ {
+  "typ": "tip",
+  "kicker": "Pre prvých 30 firiem",
+  "nadpis": "Plán Start za 240 € ročne namiesto 340 €",
+  "body": [
+   "cena platí 2 roky,",
+   "kód ZAKLADATEL zadáte pri ročnej platbe,",
+   "najprv 14 dní zadarmo, bez karty,",
+   "do 30 dní vrátime peniaze, ak nebudete spokojní."
+  ],
+  "cislovane": false,
+  "zdroj": "predtendrom.sk/cennik",
+  "subor": "2026-11-20-tip"
+ },
+ {
+  "typ": "cislo",
+  "kicker": "Číslo týždňa · zeleň a zimná údržba",
+  "cislo": "37",
+  "nadpis": "zmlúv úradov na zeleň a zimnú údržbu končí do roka.",
+  "pod": "21 z nich už do 90 dní. Medián zmluvy je 74 098 €.",
+  "subor": "2026-11-23-cislo",
+  "zdroj": "Zdroj: Centrálny register zmlúv, spracoval PredTendrom.sk, stav 23. 10. 2026"
+ },
+ {
+  "typ": "tip",
+  "kicker": "Tip na piatok",
+  "nadpis": "Štyri veci, ktoré si v zmluve úradu prečítajte",
+  "body": [
+   "dátum konca a či sa dá predĺžiť,",
+   "cenu, ideálne jednotkovú (za m², hodinu, obed),",
+   "rozsah: koľko budov, plôch alebo ľudí,",
+   "výpovednú lehotu."
+  ],
+  "zdroj": "predtendrom.sk",
+  "subor": "2026-11-27-tip"
+ },
+ {
+  "typ": "stlpce",
+  "kicker": "Stavebné práce po krajoch",
+  "nadpis": "Kde končia zmluvy úradov na stavebné práce",
+  "riadky": [
+   [
+    "Bratislavský",
+    50
+   ],
+   [
+    "Banskobystrický",
+    23
+   ],
+   [
+    "Košický",
+    20
+   ],
+   [
+    "Nitriansky",
+    16
+   ],
+   [
+    "Trnavský",
+    16
+   ],
+   [
+    "Žilinský",
+    12
+   ],
+   [
+    "Prešovský",
+    9
+   ],
+   [
+    "Trenčiansky",
+    4
+   ]
+  ],
+  "pod": "154 zmlúv do 12 mesiacov, medián 89 858 €.",
+  "subor": "2026-11-30-stlpce",
+  "zdroj": "Zdroj: Centrálny register zmlúv, spracoval PredTendrom.sk, stav 23. 10. 2026"
+ },
+ {
+  "typ": "tip",
+  "kicker": "Tip na piatok",
+  "nadpis": "Kde sa objaví súťaž, keď ju úrad vyhlási",
+  "body": [
+   "vo Vestníku verejného obstarávania (ÚVO),",
+   "na profile obstarávateľa na stránke ÚVO,",
+   "v systéme, cez ktorý úrad súťaží (napríklad EVO alebo Josephine)."
+  ],
+  "zdroj": "predtendrom.sk",
+  "subor": "2026-12-04-tip"
+ },
+ {
+  "typ": "zmluva",
+  "kicker": "Končiaca zmluva týždňa",
+  "nadpis": "Zmluva na ostrahu, ktorá končí na jar 2027",
+  "urad": "Fakultná nemocnica Trnava",
+  "predmet": "Zmluva o poskytovaní strážnej služby",
+  "suma": "743 692 €",
+  "koniec": "končí 30. 4. 2027",
+  "subor": "2026-12-07-zmluva",
+  "zdroj": "Zdroj: Centrálny register zmlúv, spracoval PredTendrom.sk, stav 23. 10. 2026"
+ },
+ {
+  "typ": "tip",
+  "kicker": "Tip na piatok",
+  "nadpis": "Celková suma klame. Pozerajte cenu za mesiac.",
+  "body": [
+   "48 000 € na 24 mesiacov = 2 000 € mesačne,",
+   "30 000 € na 12 mesiacov = 2 500 € mesačne,",
+   "menšia zmluva tu má vyššiu mesačnú cenu."
+  ],
+  "cislovane": false,
+  "zdroj": "Ilustračný príklad · predtendrom.sk",
+  "subor": "2026-12-11-tip"
+ },
+ {
+  "typ": "cislo",
+  "kicker": "Číslo týždňa · všetky odbory",
+  "cislo": "1 158",
+  "nadpis": "zmlúv úradov končí v najbližších 12 mesiacoch.",
+  "pod": "578 úradov v 14 odboroch. Každú zmluvu si overíte v registri.",
+  "subor": "2026-12-14-cislo",
+  "zdroj": "Zdroj: Centrálny register zmlúv, spracoval PredTendrom.sk, stav 23. 10. 2026"
+ },
+ {
+  "typ": "tip",
+  "kicker": "Tip na nový rok",
+  "nadpis": "Tri kroky na január",
+  "body": [
+   "Vyberte 5 zmlúv vo svojom odbore, ktoré končia v roku 2027.",
+   "Pripravte si k nim referencie a cenu.",
+   "Zapnite si týždenný prehľad, nech vám nič neujde."
+  ],
+  "zdroj": "predtendrom.sk",
+  "subor": "2026-12-18-tip"
+ },
+ {
+  "typ": "stlpce",
+  "kicker": "Pre obce a mestá",
+  "nadpis": "Kto za posledné 3 mesiace podpísal dotácie s najviac obcami",
+  "riadky": [
+   [
+    "Fond na podporu umenia",
+    33
+   ],
+   [
+    "MIRRI",
+    26
+   ],
+   [
+    "Ministerstvo kultúry",
+    14
+   ],
+   [
+    "Ministerstvo práce",
+    13
+   ],
+   [
+    "Ministerstvo dopravy",
+    13
+   ],
+   [
+    "Ministerstvo živ. prostredia",
+    9
+   ],
+   [
+    "Ministerstvo obrany",
+    8
+   ]
+  ],
+  "pod": "Počet obcí s novou zmluvou o dotácii za 90 dní.",
+  "subor": "2026-11-24-stlpce",
+  "zdroj": "Zdroj: Centrálny register zmlúv, spracoval PredTendrom.sk, stav 23. 10. 2026"
+ },
+ {
+  "typ": "tip",
+  "kicker": "Pre starostov",
+  "nadpis": "Zmluvy, ktoré sa oplatí v obci skontrolovať",
+  "body": [
+   "odvoz odpadu,",
+   "stravovanie a upratovanie v škole a škôlke,",
+   "údržba zelene a zimná údržba,",
+   "verejné osvetlenie."
+  ],
+  "pod": "Pozrite sa, kedy končia. Na novú súťaž treba mesiace.",
+  "cislovane": false,
+  "zdroj": "predtendrom.sk/starosta",
+  "subor": "2026-12-01-tip"
+ },
+ {
+  "typ": "tip",
+  "kicker": "Pre obce a mestá",
+  "nadpis": "Ako dostať na súťaž viac ponúk",
+  "body": [
+   "Oznámte zákazku s dostatočným predstihom.",
+   "Opíšte predmet jasne a merateľne.",
+   "Nežiadajte viac referencií a obratu, než zákazka naozaj potrebuje."
+  ],
+  "zdroj": "predtendrom.sk/starosta",
+  "subor": "2026-12-08-tip"
+ },
+ {
+  "typ": "tip",
+  "kicker": "Pre obce a mestá · zadarmo",
+  "nadpis": "Mesačný prehľad dotácií e-mailom",
+  "body": [
+   "programy, z ktorých teraz chodia peniaze obciam,",
+   "výzvy, ktoré sme našli,",
+   "raz mesačne, odhlásenie jedným klikom."
+  ],
+  "cislovane": false,
+  "zdroj": "predtendrom.sk/obce",
+  "subor": "2026-12-15-tip"
+ }
+]
