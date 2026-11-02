@@ -81,3 +81,11 @@ def test_over_evo_vyradi_najdene():
     zz = z(9, authority_name="Obec Zemianske Sady", subject="Obecný úrad a kultúrny dom s. č. 42")
     zostava, n = b.over_evo([{"contract_id": 9}, {"contract_id": 1}], {9: zz, 1: z(1)}, Sess(), pauza=0)
     assert n == 1 and [r["contract_id"] for r in zostava] == [1]
+
+
+def test_skratky_a_ukoncenie():
+    assert "kultur" in b.slova("Zmena existujúceho KD rekonštrukcia")
+    r = [("Rekonštrukcia kultúrneho domu v obci Pečenice", "Obec Pečenice")]
+    zz = z(9, authority_name="Obec Pečenice", subject="Zmluvy o dielo - Zmena existujúceho KD rekonštrukcia")
+    assert b.evo_vysvetli(zz, r)
+    assert b.vyhodnot([z(1, subject="Dohoda o skončení Zmluvy o dielo")], [], [], DNES) == []

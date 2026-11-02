@@ -36,7 +36,7 @@ DNI_PREDBEZNE = 45
 
 VYNECHAT_PREDMET = re.compile(
     r"dodat|nfp|nenávratn|dotáci|príspev|zmluva o poskytnutí|o spolupráci|o pôžičk|úver|nájom|nájm"
-    r"|kúpna zmluva.*pozem|zámen", re.I)
+    r"|kúpna zmluva.*pozem|zámen|dohoda o skončení|ukončen|odstúpen|finančných prostriedkov", re.I)
 DODATOK_ZACIATOK = re.compile(r"^\s*(dodatok|dodatek|zmena|amendment)", re.I)
 VEREJNY_DODAVATEL = re.compile(
     r"ministerstvo|^mesto |^obec |samosprávny kraj|správa ciest|úrad|štátny podnik|národn"
@@ -57,11 +57,19 @@ def ico(v) -> str:
     return cisla.zfill(8) if cisla else ""
 
 
+SKRATKY = {r"\bkd\b": "kulturny dom", r"\bocu\b": "obecny urad", r"\bou\b": "obecny urad",
+           r"\bzs\b": "zakladna skola", r"\bms\b": "materska skola", r"\bcov\b": "cistiaren odpadovych vod",
+           r"\bdss\b": "domov socialnych sluzieb"}
+
+
 def slova(text) -> set:
     t = unicodedata.normalize("NFD", (text or "").lower())
     t = "".join(z for z in t if unicodedata.category(z) != "Mn")
     t = re.sub(r"[^a-z0-9 ]", " ", t)
-    return {w for w in t.split() if len(w) >= 4 and w not in STOP}
+    for vzor, plne in SKRATKY.items():
+        t = re.sub(vzor, plne, t)
+    # Prvých 6 písmen ako jednoduchý kmeň (kultúrny/kultúrneho -> kultur).
+    return {w[:6] for w in t.split() if len(w) >= 4 and w not in STOP}
 
 
 def podobnost(a: set, b: set) -> float:
@@ -168,7 +176,8 @@ def evo_vysvetli(z, riadky) -> bool:
     """Je medzi zákazkami na uvo.gov.sk zákazka toho istého úradu s podobným názvom?"""
     zs, us = slova(z.get("subject")), slova(z.get("authority_name"))
     for nazov, obst in riadky:
-        if podobnost(us, slova(obst)) >= 0.5 and podobnost(zs, slova(nazov)) >= PRAH_PODOBNOSTI:
+        # Mierny prah (0,25): radšej prehliadnuť nález, než neprávom označiť úrad.
+        if podobnost(us, slova(obst)) >= 0.5 and podobnost(zs, slova(nazov)) >= 0.25:
             return True
     return False
 
