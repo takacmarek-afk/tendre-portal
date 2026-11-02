@@ -54,3 +54,30 @@ def test_inhouse_predbezne_a_duplicita():
     assert r[0]["duplicita_k"] is None and r[1]["duplicita_k"] == 2
     s = b.suhrn(r)
     assert s["zmluv"] == 1 and s["duplicit"] == 1 and s["inhouse"] == 1
+
+
+HTML = """<table><thead><tr><th>Názov</th></tr></thead><tbody>
+<tr><td><a href="/x/547453">Obecný úrad a kultúrny dom s. č. 42 - prestavba a prístavba</a></td><td>Obec Zemianske Sady</td><td></td><td></td><td>22.12.2025</td><td>EVO</td></tr>
+<tr><td>Dodanie technológie pre zberný dvor</td><td>Obec Zemianske Sady</td></tr>
+</tbody></table>"""
+
+
+def test_evo_riadky_a_vysvetlenie():
+    r = b.evo_riadky(HTML)
+    assert r[0] == ("Obecný úrad a kultúrny dom s. č. 42 - prestavba a prístavba", "Obec Zemianske Sady")
+    zz = z(9, authority_name="Obec Zemianske Sady", subject="Zmluva o dielo - Obecný úrad a kultúrny dom s. č. 42")
+    assert b.evo_vysvetli(zz, r)
+    assert not b.evo_vysvetli(z(9, authority_name="Obec Iná"), r)
+    assert b.evo_dotazy(zz)[0] == "Zemianske Sady"
+
+
+def test_over_evo_vyradi_najdene():
+    class Odp:
+        ok = True
+        text = HTML
+    class Sess:
+        def get(self, *a, **k):
+            return Odp()
+    zz = z(9, authority_name="Obec Zemianske Sady", subject="Obecný úrad a kultúrny dom s. č. 42")
+    zostava, n = b.over_evo([{"contract_id": 9}, {"contract_id": 1}], {9: zz, 1: z(1)}, Sess(), pauza=0)
+    assert n == 1 and [r["contract_id"] for r in zostava] == [1]

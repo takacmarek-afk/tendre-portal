@@ -132,6 +132,69 @@ def vyhodnot(zmluvy, vysledky, vyzvy, dnes: date):
     return vysledok
 
 
+# ── Overenie cez vyhľadávanie zákaziek na uvo.gov.sk (EVO) ────────────────
+# Vestník nemá zákazky s nízkou hodnotou ani výsledky podlimitných súťaží.
+# Vyhľadávanie zákaziek na uvo.gov.sk ich má (aj "EVO zákazky"). Ručná
+# kontrola 2. 11. 2026: 5 zo 6 nálezov malo zákazku práve tam.
+EVO_URL = "https://www.uvo.gov.sk/vyhladavanie/vyhladavanie-zakaziek"
+_RIADOK = re.compile(r"<tr[^>]*>(.*?)</tr>", re.S | re.I)
+_BUNKA = re.compile(r"<td[^>]*>(.*?)</td>", re.S | re.I)
+_TAG = re.compile(r"<[^>]+>")
+_PREDPONA_URADU = re.compile(r"^(obec|mesto|mestská časť|mestska cast)\s+", re.I)
+
+
+def evo_riadky(html_text: str):
+    """HTML výsledkov vyhľadávania -> [(nazov zakazky, obstaravatel)]."""
+    import html as h
+    tbody = html_text.split("<tbody", 1)[-1]
+    out = []
+    for r in _RIADOK.findall(tbody):
+        bunky = [h.unescape(_TAG.sub(" ", b)).strip() for b in _BUNKA.findall(r)]
+        if len(bunky) >= 2 and bunky[0]:
+            out.append((" ".join(bunky[0].split()), " ".join(bunky[1].split())))
+    return out
+
+
+def evo_dotazy(z) -> list:
+    """Dva dotazy: meno uradu (bez 'Obec'/'Mesto') a najvyraznejsie slova predmetu."""
+    urad = _PREDPONA_URADU.sub("", (z.get("authority_name") or "").strip())
+    urad = " ".join(urad.split()[:3])
+    predmet = sorted((w for w in re.split(r"[^\wÀ-ž]+", z.get("subject") or "")
+                      if len(w) >= 6 and w.lower() not in STOP), key=len, reverse=True)[:3]
+    return [q for q in (urad, " ".join(predmet)) if q]
+
+
+def evo_vysvetli(z, riadky) -> bool:
+    """Je medzi zákazkami na uvo.gov.sk zákazka toho istého úradu s podobným názvom?"""
+    zs, us = slova(z.get("subject")), slova(z.get("authority_name"))
+    for nazov, obst in riadky:
+        if podobnost(us, slova(obst)) >= 0.5 and podobnost(zs, slova(nazov)) >= PRAH_PODOBNOSTI:
+            return True
+    return False
+
+
+def over_evo(riadky_vystupu, zmluvy_podla_id, sess, pauza=1.0):
+    """Z výstupu vyradí zmluvy, ku ktorým sa zákazka našla na uvo.gov.sk. -> (zostava, vysvetlenych)."""
+    import time
+    zostava, vysvetlene = [], 0
+    for r in riadky_vystupu:
+        z = zmluvy_podla_id[r["contract_id"]]
+        najdene = []
+        for q in evo_dotazy(z):
+            try:
+                odp = sess.get(EVO_URL, params={"nazovZakazky": q}, timeout=30)
+                if odp.ok:
+                    najdene += evo_riadky(odp.text)
+            except Exception as e:     # výpadok UVO nesmie zastaviť výpočet
+                log.warning("uvo.gov.sk vyhľadávanie zlyhalo: %s", type(e).__name__)
+            time.sleep(pauza)
+        if evo_vysvetli(z, najdene):
+            vysvetlene += 1
+        else:
+            zostava.append(r)
+    return zostava, vysvetlene
+
+
 def suhrn(riadky) -> dict:
     jedinecne = [r for r in riadky if not r["duplicita_k"]]
     return {
@@ -168,7 +231,11 @@ def main(argv=None) -> int:
     log.info("Nacitane: zmluv %d, vysledkov %d, vyziev %d", len(zmluvy), len(vysledky), len(vyzvy))
 
     riadky = vyhodnot(zmluvy, vysledky, vyzvy, dnes)
-    s = suhrn(riadky)
+    import requests
+    sess = requests.Session()
+    sess.headers["User-Agent"] = "PredTendrom.sk (info@predtendrom.sk)"
+    riadky, vysvetlene_evo = over_evo(riadky, {z["id"]: z for z in zmluvy}, sess)
+    s = {**suhrn(riadky), "vysvetlene_evo": vysvetlene_evo}
     log.info("Bez dohladatelnej sutaze: %s", s)
     print(f"::notice title=Zmluvy bez sutaze::{s}")
     if a.nasucho:
