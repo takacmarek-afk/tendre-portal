@@ -19,6 +19,12 @@ name: Oslovenie firiem
 # ══════════════════════════════════════════════════════════════════════════
 
 on:
+  # Automaticky beh (schvalil Marek 2. 11. 2026): pondelok az stvrtok o 9:13
+  # (zimny cas; v lete 10:13). Nadvazujuce kroky + 30 novych firiem zo vsetkych
+  # segmentov, najviac 45 e-mailov za den. Firmu, ktora odpovedala, treba
+  # zastavit krokom "zastav" (ICO), inak dostane dalsi krok.
+  schedule:
+    - cron: "13 8 * * 1-4"
   workflow_dispatch:
     inputs:
       krok:
@@ -81,12 +87,12 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
           KAMPAN_REPLY_TO: ${{ secrets.KAMPAN_REPLY_TO }}
-          KROK: ${{ inputs.krok }}
-          NASUCHO: ${{ inputs.nasucho }}
-          SEGMENTY: ${{ inputs.segmenty }}
-          NOVYCH: ${{ inputs.novych }}
+          KROK: ${{ inputs.krok || 'posli' }}
+          NASUCHO: ${{ github.event_name == 'schedule' && 'false' || inputs.nasucho }}
+          SEGMENTY: ${{ github.event_name == 'schedule' && 'UPRATOVANIE,OSTRAHA,STRAVOVANIE,ZELEN_ZIMNA_UDRZBA,UPRATOVANIE_TOVAR,OSTRAHA_TECHNIKA' || inputs.segmenty }}
+          NOVYCH: ${{ github.event_name == 'schedule' && '30' || inputs.novych }}
           KOMU: ${{ inputs.komu }}
-          MAX: ${{ inputs.max }}
+          MAX: ${{ github.event_name == 'schedule' && '45' || inputs.max }}
           ICO: ${{ inputs.ico }}
         run: |
           set -euo pipefail
@@ -104,14 +110,14 @@ jobs:
           esac
 
       - name: Zhrnutie (anotacia, bez e-mailovych adries)
-        if: inputs.krok == 'posli' && always()
+        if: (inputs.krok == 'posli' || github.event_name == 'schedule') && always()
         run: |
           [ -f beh.log ] || exit 0
           S=$(grep -E "Kontaktov|NASUCHO|OSTRO|HOTOVO|CHYBA|ERROR|krok [123] " beh.log | sed -E 's/<[^>]*>//; s/ -> [^ |]+@[^ |]+//; s/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+//g' | head -60 | sed ':a;N;$!ba;s/\n/%0A/g')
           echo "::notice title=Oslovenie firiem::$S"
 
       - name: Nahlad e-mailov
-        if: inputs.krok == 'posli' && always()
+        if: (inputs.krok == 'posli' || github.event_name == 'schedule') && always()
         uses: actions/upload-artifact@v4
         with:
           name: oslovenie-nahlad
