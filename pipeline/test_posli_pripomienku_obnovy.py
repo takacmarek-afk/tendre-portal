@@ -50,6 +50,12 @@ def test_datum_a_text():
     assert o["cta_url"].startswith("https://predtendrom.sk")
 
 
+def test_text_pri_automatickej_obnove():
+    o = po.obsah("growth", R["obdobie_konci"], True)
+    assert "automaticky obnoví" in o["uvod"] and "6. 11. 2026" in o["uvod"]
+    assert "zrušiť" in o["bloky"][0]["popis"] and "neobnovuje" not in o["uvod"]
+
+
 def test_poslanie_a_oznacenie():
     global sb
     sb = _Sb([R])

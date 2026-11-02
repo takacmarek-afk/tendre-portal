@@ -22,6 +22,13 @@
 //        az po nastaveni URL obchodnych podmienok v Dashboarde (Settings ->
 //        Public details -> Terms of service), inak vrati chybu. Preto je to
 //        vypnute, kym to Marek nenastavi.
+//    STRIPE_PREDPLATNE=true  -> (migracia 87, audit 2. 11. 2026) namiesto
+//        jednorazovej platby sa zalozi Stripe Subscription, ktora sa
+//        automaticky obnovuje (mesacne/rocne). Pred zapnutim: migracia 87,
+//        nasadit stripe-webhook a stripe-portal, vo webhooku pridat udalosti
+//        invoice.paid, customer.subscription.updated, customer.subscription.deleted,
+//        v Stripe zapnut Customer portal (zrusenie predplatneho) a v
+//        public/plany.js nastavit automatickaObnova: true (texty v appke).
 // =============================================================================
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -117,8 +124,9 @@ Deno.serve(async (req) => {
   // floating-point artefaktom (napr. 0.1 + 0.2 problem pri inych sumach).
   const centy = Math.round(Number(platba.suma) * 100);
 
+  const predplatne = Deno.env.get("STRIPE_PREDPLATNE") === "true";
   const parametre = new URLSearchParams({
-    mode: "payment",
+    mode: predplatne ? "subscription" : "payment",
     success_url: `${zaklad}?stav=uspech&ref=${platba.reference}`,
     cancel_url: `${zaklad}?stav=zrusene&ref=${platba.reference}`,
     // Oba spoluidentifikatory nastavene na to iste UUID - client_reference_id
@@ -130,9 +138,12 @@ Deno.serve(async (req) => {
     // a DIČ organizácie už máme v databáze z registrácie).
     locale: "sk",
     billing_address_collection: "required",
-    "custom_text[submit][message]":
-      "Predplatné sa neobnovuje automaticky — platba predĺži prístup o zvolené obdobie. " +
-      "Podmienky: predtendrom.sk/obchodne-podmienky",
+    "custom_text[submit][message]": predplatne
+      ? "Predplatné sa automaticky obnovuje každý " + (platba.obdobie === "rok" ? "rok" : "mesiac") +
+        ". Zrušiť ho môžete kedykoľvek v aplikácii (Predplatné), platí do konca zaplateného obdobia. " +
+        "Podmienky: predtendrom.sk/obchodne-podmienky"
+      : "Predplatné sa neobnovuje automaticky, platba predĺži prístup o zvolené obdobie. " +
+        "Podmienky: predtendrom.sk/obchodne-podmienky",
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": String(platba.mena).toLowerCase(),
     "line_items[0][price_data][unit_amount]": String(centy),
@@ -141,6 +152,11 @@ Deno.serve(async (req) => {
       (platba.zlava_kod === "ZAKLADATEL" ? " – zakladajúca cena" : ""),
   });
 
+  if (predplatne) {
+    parametre.set("line_items[0][price_data][recurring][interval]", platba.obdobie === "rok" ? "year" : "month");
+    parametre.set("subscription_data[metadata][reference]", platba.reference);
+    parametre.set("subscription_data[metadata][plan]", String(platba.plan));
+  }
   if (emailKupujuceho) parametre.set("customer_email", emailKupujuceho);
   if (Deno.env.get("STRIPE_TOS_CONSENT") === "true") {
     parametre.set("consent_collection[terms_of_service]", "required");

@@ -129,6 +129,51 @@ Deno.serve(async (req) => {
     console.log("stripe-webhook refund/spor:", dRefund);
     return new Response("OK", { status: 200 });
   }
+  // ── Automaticky obnovovane predplatne (migracia 87) ─────────────────────
+  if (typ === "invoice.paid" || typ === "customer.subscription.updated" || typ === "customer.subscription.deleted") {
+    const obj = udalost?.data?.object ?? {};
+    const sbPred = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    if (typ === "invoice.paid") {
+      // Prvu fakturu (subscription_create) spracuje checkout.session.completed.
+      if (obj.billing_reason !== "subscription_cycle") {
+        return new Response("OK (prva faktura)", { status: 200 });
+      }
+      const subId: string | undefined = typeof obj.subscription === "string"
+        ? obj.subscription
+        : obj.parent?.subscription_details?.subscription ?? obj.subscription?.id;
+      const koniec = Number(obj.lines?.data?.[0]?.period?.end ?? obj.period_end ?? 0);
+      if (!subId) return new Response("OK (bez predplatneho)", { status: 200 });
+      const { data: d, error: e } = await sbPred.rpc("obnov_predplatne_stripe", {
+        p_subscription_id: subId,
+        p_invoice_id: obj.id,
+        p_suma: Number(obj.amount_paid ?? 0) / 100,
+        p_obdobie_do: koniec > 0 ? new Date(koniec * 1000).toISOString() : null,
+      });
+      if (e) {
+        console.error("obnov_predplatne_stripe zlyhalo:", e);
+        return new Response("Chyba spracovania", { status: 500 });
+      }
+      console.log("stripe-webhook obnova:", d);
+      return new Response("OK", { status: 200 });
+    }
+    // Zrusenie v portali = cancel_at_period_end; pristup ostava do konca obdobia.
+    const aktivne = typ === "customer.subscription.updated" &&
+      !obj.cancel_at_period_end && !obj.cancel_at && ["active", "trialing", "past_due"].includes(obj.status);
+    const { data: d, error: e } = await sbPred.rpc("nastav_obnovu_stripe", {
+      p_subscription_id: obj.id,
+      p_auto: aktivne,
+    });
+    if (e) {
+      console.error("nastav_obnovu_stripe zlyhalo:", e);
+      return new Response("Chyba spracovania", { status: 500 });
+    }
+    console.log("stripe-webhook predplatne:", d);
+    return new Response("OK", { status: 200 });
+  }
+
   const NAS_STAV: Record<string, "zaplatena" | "zamietnuta"> = {
     "checkout.session.completed": "zaplatena",
     "checkout.session.async_payment_succeeded": "zaplatena",
@@ -181,6 +226,20 @@ Deno.serve(async (req) => {
       p_payment_intent: session.payment_intent,
     });
     if (ePi) console.error("zapis_payment_intent zlyhalo:", ePi);
+  }
+
+  // Rezim predplatneho: ulozit subscription a customer id (migracia 87).
+  if (stav === "zaplatena" && session?.mode === "subscription" && session?.subscription) {
+    const { error: ePred } = await sbServis.rpc("prepoj_predplatne_stripe", {
+      p_reference: referencia,
+      p_subscription_id: typeof session.subscription === "string" ? session.subscription : session.subscription?.id,
+      p_customer_id: typeof session.customer === "string" ? session.customer : session.customer?.id ?? null,
+      p_invoice_id: typeof session.invoice === "string" ? session.invoice : session.invoice?.id ?? null,
+    });
+    if (ePred) {
+      console.error("prepoj_predplatne_stripe zlyhalo:", ePred);
+      return new Response("Chyba spracovania", { status: 500 });
+    }
   }
 
   console.log("stripe-webhook spracovane:", data);

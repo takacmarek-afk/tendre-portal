@@ -43,13 +43,31 @@ def _datum_sk(iso) -> str:
     return f"{d.day}. {d.month}. {d.year}"
 
 
-def obsah(plan: str, obdobie_konci) -> dict:
+def obsah(plan: str, obdobie_konci, auto_obnova: bool = False) -> dict:
     nazov = PLANY.get(plan, plan or "")
     datum = _datum_sk(obdobie_konci)
+    if auto_obnova:
+        # Rocne predplatne s automatickou obnovou (migracia 87): upozornenie
+        # vopred, ze sa strhne platba, a ako ho zrusit.
+        return {
+            "titulok": "Vaše ročné predplatné sa čoskoro obnoví",
+            "uvod": (f"Plán {nazov} sa {datum} automaticky obnoví na ďalší rok "
+                     f"a z karty, ktorú máte uloženú v Stripe, sa strhne ročná platba."),
+            "bloky": [{
+                "titul": f"Plán {nazov}, obnova {datum}",
+                "popis": ("Ak chcete predplatné zrušiť alebo zmeniť kartu, v aplikácii "
+                          "kliknite na Predplatné a potom Spravovať predplatné a faktúry. "
+                          "Po zrušení vám prístup ostane do konca zaplateného obdobia."),
+            }],
+            "cta_text": "Otvoriť aplikáciu",
+            "cta_url": ODKAZ_APP,
+            "odhlasenie": ("Tento e-mail vám prišiel, lebo ste vlastníkom firmy "
+                           "s predplatným PredTendrom.sk. Otázky: info@predtendrom.sk."),
+        }
     return {
         "titulok": "Vaše predplatné čoskoro končí",
         "uvod": (f"Plán {nazov} máte zaplatený do {datum}. Predplatné sa "
-                 f"neobnovuje automaticky — po tomto dni sa prístup do "
+                 f"neobnovuje automaticky, po tomto dni sa prístup do "
                  f"aplikácie zatvorí, kým ho nepredĺžite."),
         "bloky": [{
             "titul": f"Plán {nazov} · platí do {datum}",
@@ -89,10 +107,10 @@ def main(argv=None) -> int:
 
     poslane = zlyhane = 0
     for r in riadky:
-        o = obsah(r.get("plan"), r.get("obdobie_konci"))
+        o = obsah(r.get("plan"), r.get("obdobie_konci"), bool(r.get("auto_obnova")))
         html = _obal(o["titulok"], o["uvod"], o["bloky"], o["cta_text"],
                      o["cta_url"], o["odhlasenie"])
-        predmet = f"PredTendrom.sk — {o['titulok']}"
+        predmet = f"PredTendrom.sk: {o['titulok']}"
         if posli(kluc, r["email"], predmet, html, args.nasucho):
             poslane += 1
             if not args.nasucho:

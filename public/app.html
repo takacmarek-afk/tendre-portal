@@ -325,10 +325,14 @@
       </label>
       <p class="text-[12px] leading-relaxed text-slate2 mb-4">
         Ceny sú konečné (nie sme platcom DPH, DPH sa nepripočítava).
-        Platba je jednorazová a predlží prístup o zvolené obdobie —
-        predplatné sa neobnovuje automaticky. Pokračovaním súhlasíte s
+        <span id="modal-predplatne-obnova">Platba je jednorazová a predĺži prístup o zvolené obdobie,
+        predplatné sa neobnovuje automaticky.</span> Pokračovaním súhlasíte s
         <a class="underline" href="/obchodne-podmienky" target="_blank" rel="noopener">obchodnými podmienkami</a>.
       </p>
+      <button id="modal-predplatne-sprava" type="button"
+              class="hidden w-full mb-3 border border-line text-ink font-semibold px-5 py-2.5 rounded-md hover:border-ink transition text-[14px]">
+        Spravovať predplatné a faktúry
+      </button>
       <!-- Len pre podnikatelov a obce (obchodne podmienky, bod 6; rozhodnutie 22. 10. 2026). -->
       <label class="flex items-start gap-2 text-[13px] leading-snug text-ink mb-4 cursor-pointer">
         <input id="modal-predplatne-b2b" type="checkbox" class="mt-0.5 w-4 h-4 rounded border-line accent-accent">
@@ -2687,9 +2691,12 @@ const PREDPLATNE_PLANY = ['start', 'growth'].flatMap(plan => {
   const p = (window.PLANY?.plany || {})[plan];
   if (!p) return [];
   const eur = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0') + '\u00a0€';
+  // Rocne je predvolene a prve (audit 2. 11. 2026): uspora je dva mesiace.
+  const uspora = p.mesiac * 12 - p.rok;
   return [
-    { plan, obdobie: 'mesiac', label: p.nazov, cena: `${eur(p.mesiac)} / mesiac` },
-    { plan, obdobie: 'rok',    label: p.nazov, cena: `${eur(p.rok)} / rok` },
+    { plan, obdobie: 'rok',    label: `${p.nazov}, ročne`, cena: `${eur(p.rok)} / rok`,
+      pozn: uspora > 0 ? `ušetríte ${eur(uspora)}` : '' },
+    { plan, obdobie: 'mesiac', label: `${p.nazov}, mesačne`, cena: `${eur(p.mesiac)} / mesiac`, pozn: '' },
   ];
 });
 
@@ -2728,7 +2735,28 @@ function otvorPredplatneModal(supabase, aktualnyPlan) {
   // hlavnej ceste skúška -> platba. Predvolíme Growth mesačne. Team/Poradca
   // zámerne ostávajú bez predvolenej možnosti (viď vyššie).
   if (predvolene < 0 && !['team', 'poradca', 'admin'].includes(aktualnyPlan)) {
-    predvolene = PREDPLATNE_PLANY.findIndex(p => p.plan === 'growth' && p.obdobie === 'mesiac');
+    predvolene = PREDPLATNE_PLANY.findIndex(p => p.plan === 'growth' && p.obdobie === 'rok');
+  }
+  const autoObnova = window.PLANY?.automatickaObnova === true;
+  el('modal-predplatne-obnova').textContent = autoObnova
+    ? 'Predplatné sa automaticky obnovuje každý mesiac alebo rok podľa zvoleného obdobia. Zrušiť ho môžete kedykoľvek tu v appke, prístup ostáva do konca zaplateného obdobia.'
+    : 'Platba je jednorazová a predĺži prístup o zvolené obdobie, predplatné sa neobnovuje automaticky.';
+  // Spravovanie (zrusenie obnovy, karta, faktury) cez Stripe portal; tlacidlo
+  // len ked firma ma Stripe predplatne (moj_stripe_zakaznik, migracia 87).
+  const sprava = el('modal-predplatne-sprava');
+  sprava.classList.add('hidden');
+  if (autoObnova) {
+    supabase.rpc('moj_stripe_zakaznik').then(({ data }) => { if (data) sprava.classList.remove('hidden'); }, () => {});
+    sprava.onclick = async () => {
+      sprava.disabled = true;
+      try {
+        const { data } = await supabase.functions.invoke('stripe-portal', { body: {} });
+        if (data?.ok && data.url) { location.href = data.url; return; }
+      } catch { /* nizsie */ }
+      sprava.disabled = false;
+      el('modal-predplatne-chyba').textContent = 'Správu predplatného sa nepodarilo otvoriť. Napíšte nám na info@predtendrom.sk.';
+      el('modal-predplatne-chyba').classList.remove('hidden');
+    };
   }
   const nazovPlanu = (window.PLANY?.plany || {})[aktualnyPlan]?.nazov;
   el('modal-predplatne-aktualny').textContent = nazovPlanu ? `Váš plán: ${nazovPlanu}` : '';
@@ -2737,7 +2765,7 @@ function otvorPredplatneModal(supabase, aktualnyPlan) {
       <span class="flex items-start gap-2">
         <input type="radio" name="predplatne-volba" value="${p.plan}:${p.obdobie}" ${i === predvolene ? 'checked' : ''} class="mt-0.5">
         <span>
-          <span class="block">${p.label}</span>
+          <span class="block">${p.label}${p.pozn ? ` <span class="text-[12px] font-semibold text-accent">${p.pozn}</span>` : ''}</span>
           <span class="block text-[12px] text-slate2 mt-0.5">${PREDPLATNE_POPIS[p.plan] || ''}</span>
         </span>
       </span>
@@ -4666,7 +4694,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     el('skoncene-h').textContent = skoncilaSkuska ? 'Skúška skončila' : 'Predplatné skončilo';
     el('skoncene-p').textContent = skoncilaSkuska
       ? 'Vaša skúšobná doba sa skončila. Údaje a nastavenia vašej firmy ostávajú uložené — po aktivácii plánu budete pokračovať presne tam, kde ste skončili.'
-      : 'Zaplatené obdobie sa skončilo a predplatné sa neobnovuje automaticky. Údaje a nastavenia vašej firmy ostávajú uložené — po úhrade budete pokračovať presne tam, kde ste skončili.';
+      : 'Zaplatené obdobie sa skončilo. Údaje a nastavenia vašej firmy ostávajú uložené — po úhrade budete pokračovať presne tam, kde ste skončili.';
     if (smiePlatit) {
       ukaz('skoncene-plat');
       el('skoncene-plat').addEventListener('click', () => otvorPredplatneModal(supabase, sub?.plan));
