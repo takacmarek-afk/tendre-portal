@@ -30,7 +30,7 @@
   "vo_pred_ziadostou": false,
 
   "aktivity": ["odpad"],
-  "signal_sektory": ["STAVEBNE_PRACE", "DOPRAVA_MECHANIZACIA"],
+  "signal_sektory": ["odpad", "STAVEBNE_PRACE", "DOPRAVA_MECHANIZACIA"],
 
   "uznesenie_vlastne_znenie": false,
 
