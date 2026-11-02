@@ -71,7 +71,7 @@
   "data": {
    "zalozka": "obsah"
   },
-  "text": "Končiace zmluvy (1 158)"
+  "text": "Končiace zmluvy (1 148)"
  },
  {
   "tag": "button",
@@ -80,7 +80,7 @@
   "data": {
    "zalozka": "dotacie"
   },
-  "text": "Dotácie (1 615)"
+  "text": "Dotácie (1 445)"
  },
  {
   "tag": "button",
@@ -107,16 +107,7 @@
   "data": {
    "zalozka": "dodavatelia"
   },
-  "text": "Dodávatelia (125)"
- },
- {
-  "tag": "button",
-  "id": null,
-  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
-  "data": {
-   "zalozka": "dopyty"
-  },
-  "text": "Dopyty od obcí"
+  "text": "Dodávatelia (124)"
  },
  {
   "tag": "button",
@@ -128,65 +119,37 @@
   "text": "Tím"
  },
  {
-  "tag": "select",
-  "id": "o-sektor",
-  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
+  "tag": "button",
+  "id": "o-rychlo",
+  "cls": "bg-ink text-white font-semibold px-4 py-1.5 rounded-md text-[13px] hover:bg-acce",
   "data": {},
-  "text": "všetky sektory\ndoprava, mechanizácia\nelektroinštalácie\nIT technika\nkúr"
- },
- {
-  "tag": "select",
-  "id": "o-kraj",
-  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
-  "data": {},
-  "text": "celé Slovensko\nBratislavský kraj\nTrnavský kraj\nTrenčiansky kraj\nNitria"
- },
- {
-  "tag": "select",
-  "id": "o-frekvencia",
-  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
-  "data": {},
-  "text": "týždenne\ndenne"
+  "text": "Zapnúť prehľad"
  },
  {
   "tag": "button",
-  "id": "o-zapnut",
-  "cls": "bg-white text-ink font-semibold px-5 py-2 rounded-md\n                           ",
+  "id": "o-podrobne",
+  "cls": "text-[13px] font-semibold text-accent hover:text-accentDark whitespace-nowrap",
   "data": {},
-  "text": "Chcem ho dostávať"
- },
- {
-  "tag": "input",
-  "id": "o-webhook",
-  "cls": "w-full sm:max-w-md border border-white/20 bg-white/10 text-white rounded-md\n    ",
-  "data": {},
-  "text": ""
- },
- {
-  "tag": "input",
-  "id": "o-moje-ico",
-  "cls": "w-full sm:max-w-xs border border-white/20 bg-white/10 text-white rounded-md\n    ",
-  "data": {},
-  "text": ""
+  "text": "Nastaviť podrobne"
  },
  {
   "tag": "select",
   "id": "s-sektor",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outlin",
   "data": {},
   "text": "všetky sektory\ndoprava, mechanizácia\nelektroinštalácie\nIT technika\nkúr"
  },
  {
   "tag": "input",
   "id": "s-text",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px]\n                     ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] focus:outline-none fo",
   "data": {},
   "text": ""
  },
  {
   "tag": "select",
   "id": "s-radenie",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outlin",
   "data": {},
   "text": "objemu zmlúv\npočtu zmlúv\npočtu úradov\nveľkosti zmluvy\nposlednej zmluvy"
  },
@@ -210,7 +173,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "31685455",
    "nazov": "ČaSS, spol. s r.o."
@@ -230,7 +193,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "47961066",
    "nazov": "Special Service International SK s. r. o."
@@ -250,7 +213,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "35956526",
    "nazov": "SLOVCLEAN, a. s."
@@ -270,7 +233,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "44390823",
    "nazov": "ATALIAN SK s.r.o."
@@ -290,7 +253,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36579769",
    "nazov": "LUX FACILITY MANAGEMENT, s.r.o."
@@ -310,7 +273,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "31644791",
    "nazov": "PRIMA INVEST, spol. s. r. o."
@@ -330,7 +293,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "35836644",
    "nazov": "KLINTON, s.r.o."
@@ -350,7 +313,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "51212706",
    "nazov": "ZET dip s.r.o."
@@ -370,7 +333,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "51868661",
    "nazov": "TSC Cleaning, s.r.o."
@@ -390,7 +353,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36365998",
    "nazov": "Juniper s. r. o."
@@ -410,7 +373,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "55136826",
    "nazov": "ALAVAN s.r.o., registrovaný sociálny podnik"
@@ -430,7 +393,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "51176386",
    "nazov": "GFservices s.r.o."
@@ -450,7 +413,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "54062292",
    "nazov": "FINXZA, s.r.o. - Registrovaný sociálny podnik"
@@ -470,7 +433,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "48070408",
    "nazov": "Goldrein Plus s.r.o."
@@ -490,7 +453,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "44656823",
    "nazov": "UMYTO s. r. o."
@@ -510,7 +473,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "47216174",
    "nazov": "Enfield, s.r.o."
@@ -530,7 +493,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "52929230",
    "nazov": "Turan Group s. r. o."
@@ -550,7 +513,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "52070131",
    "nazov": "GROW AGENCY, s.r.o."
@@ -570,7 +533,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "48264695",
    "nazov": "Verve Facility Services, s.r.o."
@@ -590,7 +553,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "31606300",
    "nazov": "BB KOMES-EXPORT-IMPORT s.r.o."
@@ -610,7 +573,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "31450911",
    "nazov": "EKORAD s.r.o."
@@ -630,7 +593,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36606693",
    "nazov": "ASANARATES s.r.o."
@@ -650,7 +613,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "46979760",
    "nazov": "SEHOS PLUS s.r.o."
@@ -670,7 +633,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36536351",
    "nazov": "Smarts SK, s.r.o."
@@ -690,7 +653,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "55326439",
    "nazov": "ESCAPO s.r.o."
@@ -710,7 +673,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "46812903",
    "nazov": "EDYMAX Facility Management SE"
@@ -730,30 +693,10 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "50926799",
    "nazov": "Solution, s.r.o."
-  },
-  "text": "☆ Sledovať"
- },
- {
-  "tag": "button",
-  "id": null,
-  "cls": "text-[14px] font-medium leading-snug text-left hover:text-accent hover:underline",
-  "data": {
-   "profil": "44325851",
-   "profilNazov": "TOPPRO S.R.O."
-  },
-  "text": "TOPPRO S.R.O."
- },
- {
-  "tag": "button",
-  "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
-  "data": {
-   "sleduj": "44325851",
-   "nazov": "TOPPRO S.R.O."
   },
   "text": "☆ Sledovať"
  },
@@ -770,7 +713,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "53550013",
    "nazov": "Jbitor s. r. o."
@@ -790,7 +733,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "55263020",
    "nazov": "Happy Cleaning s.r.o."
@@ -810,7 +753,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "51104008",
    "nazov": "ekoposs+s.r.o., soc.podnik"
@@ -830,7 +773,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "34103619",
    "nazov": "BOCKHOLD-Gruppe SLOWAKEI, s.r.o."
@@ -850,7 +793,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "46326138",
    "nazov": "Váš Komfort s.r.o."
@@ -870,7 +813,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "51217368",
    "nazov": "Eurokomp group s.r.o."
@@ -890,7 +833,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "50477595",
    "nazov": "UMYTEP SK s.r.o."
@@ -910,7 +853,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "51265494",
    "nazov": "Office cleaning s. r. o."
@@ -930,7 +873,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36167517",
    "nazov": "Integračné zariadenie KOR-GYM, n.o."
@@ -950,7 +893,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "44622961",
    "nazov": "AVANCE UM s.r.o."
@@ -970,7 +913,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "35829982",
    "nazov": "GreenClean Services s.r.o., Slowackého 27, 821 04 Bratislava"
@@ -990,7 +933,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "31381821",
    "nazov": "ProMinent Slovensko, s.r.o."
@@ -1010,7 +953,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36619639",
    "nazov": "SIMACEK Facility SK, s.r.o."
@@ -1030,7 +973,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "53570359",
    "nazov": "Clean Plus servis, s. r. o."
@@ -1050,7 +993,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "50019201",
    "nazov": "ORIOLA SK, s.r.o."
@@ -1070,7 +1013,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "50875566",
    "nazov": "TERAVAS, s.r.o."
@@ -1090,7 +1033,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "54389160",
    "nazov": "IMPLEO plus, s.r.o."
@@ -1110,7 +1053,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "50205391",
    "nazov": "AFM s.r.o."
@@ -1130,10 +1073,30 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "685852",
    "nazov": "Messer Tatragas, spol. s r.o."
+  },
+  "text": "☆ Sledovať"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "text-[14px] font-medium leading-snug text-left hover:text-accent hover:underline",
+  "data": {
+   "profil": "44193726",
+   "profilNazov": "EKOKANAL s.r.o."
+  },
+  "text": "EKOKANAL s.r.o."
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
+  "data": {
+   "sleduj": "44193726",
+   "nazov": "EKOKANAL s.r.o."
   },
   "text": "☆ Sledovať"
  },
@@ -1150,7 +1113,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "47556510",
    "nazov": "CLEANLUX SPOL. S R.O."
@@ -1170,7 +1133,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "45342610",
    "nazov": "T&T fix, s.r.o."
@@ -1190,7 +1153,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36477346",
    "nazov": "DDD Prešov, s.r.o."
@@ -1210,7 +1173,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36227897",
    "nazov": "EKOLAS, s.r.o."
@@ -1230,7 +1193,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "51046725",
    "nazov": "Lumacorp, s. r. o."
@@ -1250,7 +1213,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "34120840",
    "nazov": "ST - ING INVEST, s. r. o."
@@ -1270,7 +1233,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "47038969",
    "nazov": "Q-Zet servis s.r.o."
@@ -1290,7 +1253,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "56483058",
    "nazov": "Informátor - KE s. r. o."
@@ -1310,7 +1273,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "46945687",
    "nazov": "HEPA-SERVIS, s. r. o., Vyšnokubínska 203/171, 026 01 Vyšný Kubín"
@@ -1330,7 +1293,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "46059211",
    "nazov": "ORIOLA s.r.o."
@@ -1350,7 +1313,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36044822",
    "nazov": "BÁBOLNA BIO SLOVENSKO, s.r.o."
@@ -1370,7 +1333,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "53863631",
    "nazov": "Kvalitné služby, s.r.o."
@@ -1390,7 +1353,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "54789621",
    "nazov": "Jastreb s. r. o."
@@ -1410,7 +1373,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "53208064",
    "nazov": "TRYDON, s.r.o."
@@ -1430,7 +1393,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36421774",
    "nazov": "ĽUDMILA, s.r.o"
@@ -1450,7 +1413,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "55970745",
    "nazov": "UPRATO, s. r. o."
@@ -1470,7 +1433,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "681300",
    "nazov": "Odvoz a likvidácia odpadu a.s."
@@ -1490,7 +1453,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36354732",
    "nazov": "See Trade, s. r. o."
@@ -1510,7 +1473,7 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "37986856",
    "nazov": "TEEN CHALLENGE SLOVAKIA n.o."
@@ -1530,11 +1493,61 @@
  {
   "tag": "button",
   "id": null,
-  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition\n             ",
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
   "data": {
    "sleduj": "36481611",
    "nazov": "KA-LUX s.r.o."
   },
   "text": "☆ Sledovať"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "text-[14px] font-medium leading-snug text-left hover:text-accent hover:underline",
+  "data": {
+   "profil": "53512804",
+   "profilNazov": "Sociálny podnik Mesta Gelnica, s. r. o., r. s. p."
+  },
+  "text": "Sociálny podnik Mesta Gelnica, s. r. o., r. s. p."
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
+  "data": {
+   "sleduj": "53512804",
+   "nazov": "Sociálny podnik Mesta Gelnica, s. r. o., r. s. p."
+  },
+  "text": "☆ Sledovať"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "text-[14px] font-medium leading-snug text-left hover:text-accent hover:underline",
+  "data": {
+   "profil": "48054381",
+   "profilNazov": "derateco s.r.o."
+  },
+  "text": "derateco s.r.o."
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "text-[12px] font-semibold px-2.5 py-1 rounded-md border transition border-line t",
+  "data": {
+   "sleduj": "48054381",
+   "nazov": "derateco s.r.o."
+  },
+  "text": "☆ Sledovať"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "text-[14px] font-medium leading-snug text-left hover:text-accent hover:underline",
+  "data": {
+   "profil": "53561261",
+   "profilNazov": "PEVA Service s. r. o."
+  },
+  "text": "PEVA Service s. r. o."
  }
 ]

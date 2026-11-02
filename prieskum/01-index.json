@@ -32,13 +32,6 @@
   "id": null,
   "cls": "hover:text-ink transition",
   "data": {},
-  "text": "Koľko to stojí"
- },
- {
-  "tag": "a",
-  "id": null,
-  "cls": "hover:text-ink transition",
-  "data": {},
   "text": "Cenník"
  },
  {
@@ -72,58 +65,37 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-flex justify-center items-center bg-amber text-ink font-semibold px-6 py-",
+  "cls": "inline-flex justify-center items-center bg-accent text-white font-semibold px-6 ",
   "data": {},
   "text": "Vyskúšať 14 dní zadarmo"
  },
  {
   "tag": "a",
   "id": null,
-  "cls": "text-[15px] text-[#D8D3C4] underline underline-offset-4 hover:text-amber transit",
+  "cls": "text-[15px] font-medium text-ink underline underline-offset-4 decoration-line ho",
   "data": {},
-  "text": "Čo presne uvidím →"
+  "text": "Skúsiť bez registrácie"
  },
  {
   "tag": "a",
   "id": null,
-  "cls": "text-[15px] text-[#D8D3C4] underline underline-offset-4 hover:text-amber transit",
+  "cls": "text-ink hover:text-accent",
   "data": {},
-  "text": "Kedy mi končia zmluvy? →"
+  "text": "0905 438 454"
  },
  {
   "tag": "a",
   "id": null,
-  "cls": "underline underline-offset-2 decoration-white/30 hover:text-amber",
+  "cls": "text-ink hover:text-accent",
   "data": {},
-  "text": "Mesto Nitra"
+  "text": "info@predtendrom.sk"
  },
  {
   "tag": "a",
   "id": null,
-  "cls": "underline underline-offset-2 decoration-white/30 hover:text-amber",
+  "cls": "text-ink underline underline-offset-2 hover:text-accent",
   "data": {},
-  "text": "Úrad práce, sociálnych vecí a rodiny Dolný Kubín"
- },
- {
-  "tag": "a",
-  "id": null,
-  "cls": "underline underline-offset-2 decoration-white/30 hover:text-amber",
-  "data": {},
-  "text": "Univerzita Pavla Jozefa Šafárika v Košiciach"
- },
- {
-  "tag": "a",
-  "id": null,
-  "cls": "underline underline-offset-2 decoration-white/30 hover:text-amber",
-  "data": {},
-  "text": "Nemocnica pre obvinených a odsúdených, Trenčín"
- },
- {
-  "tag": "a",
-  "id": null,
-  "cls": "underline underline-offset-2 decoration-white/30 hover:text-amber",
-  "data": {},
-  "text": "Obec Seňa"
+  "text": "návodoch"
  },
  {
   "tag": "select",
@@ -191,21 +163,21 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-6 bg-ink text-white font-semibold px-5 py-3\n                roun",
+  "cls": "inline-block mt-6 bg-ink text-white font-semibold px-5 py-3 rounded-md hover:bg-",
   "data": {},
   "text": "Chcem ho dostávať"
  },
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block bg-ink text-white font-semibold px-5 py-3\n              rounded-md ",
+  "cls": "inline-block bg-ink text-white font-semibold px-5 py-3 rounded-md hover:bg-accen",
   "data": {},
   "text": "Pozrieť celý cenník →"
  },
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-flex justify-center items-center mt-9 bg-accent text-white\n              ",
+  "cls": "inline-flex justify-center items-center mt-9 bg-accent text-white font-semibold ",
   "data": {},
   "text": "Vyskúšať 14 dní zadarmo"
  },
@@ -219,35 +191,35 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-6 md:mt-0 shrink-0 bg-ink text-white font-semibold\n             ",
+  "cls": "inline-block mt-6 md:mt-0 shrink-0 bg-ink text-white font-semibold px-6 py-3 rou",
   "data": {},
   "text": "Otvoriť prehľad pre obce"
  },
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line",
+  "cls": "inline-flex items-center gap-2 text-[14px] tabular-nums text-ink border border-l",
   "data": {},
   "text": "0905 438 454"
  },
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line",
+  "cls": "inline-flex items-center gap-2 text-[14px] tabular-nums text-ink border border-l",
   "data": {},
   "text": "info@predtendrom.sk"
  },
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line",
+  "cls": "inline-flex items-center gap-2 text-[14px] tabular-nums text-ink border border-l",
   "data": {},
   "text": "Facebook"
  },
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-flex items-center gap-2 text-[14px] font-mono text-ink border border-line",
+  "cls": "inline-flex items-center gap-2 text-[14px] tabular-nums text-ink border border-l",
   "data": {},
   "text": "Instagram"
  },

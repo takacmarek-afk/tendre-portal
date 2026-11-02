@@ -71,7 +71,7 @@
   "data": {
    "zalozka": "obsah"
   },
-  "text": "Končiace zmluvy (1 158)"
+  "text": "Končiace zmluvy (1 148)"
  },
  {
   "tag": "button",
@@ -80,7 +80,7 @@
   "data": {
    "zalozka": "dotacie"
   },
-  "text": "Dotácie (1 615)"
+  "text": "Dotácie (1 445)"
  },
  {
   "tag": "button",
@@ -107,16 +107,7 @@
   "data": {
    "zalozka": "dodavatelia"
   },
-  "text": "Dodávatelia (125)"
- },
- {
-  "tag": "button",
-  "id": null,
-  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
-  "data": {
-   "zalozka": "dopyty"
-  },
-  "text": "Dopyty od obcí"
+  "text": "Dodávatelia (124)"
  },
  {
   "tag": "button",
@@ -128,72 +119,44 @@
   "text": "Tím"
  },
  {
-  "tag": "select",
-  "id": "o-sektor",
-  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
+  "tag": "button",
+  "id": "o-rychlo",
+  "cls": "bg-ink text-white font-semibold px-4 py-1.5 rounded-md text-[13px] hover:bg-acce",
   "data": {},
-  "text": "všetky sektory\ndoprava, mechanizácia\nelektroinštalácie\nIT technika\nkúr"
- },
- {
-  "tag": "select",
-  "id": "o-kraj",
-  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
-  "data": {},
-  "text": "celé Slovensko\nBratislavský kraj\nTrnavský kraj\nTrenčiansky kraj\nNitria"
- },
- {
-  "tag": "select",
-  "id": "o-frekvencia",
-  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
-  "data": {},
-  "text": "týždenne\ndenne"
+  "text": "Zapnúť prehľad"
  },
  {
   "tag": "button",
-  "id": "o-zapnut",
-  "cls": "bg-white text-ink font-semibold px-5 py-2 rounded-md\n                           ",
+  "id": "o-podrobne",
+  "cls": "text-[13px] font-semibold text-accent hover:text-accentDark whitespace-nowrap",
   "data": {},
-  "text": "Chcem ho dostávať"
- },
- {
-  "tag": "input",
-  "id": "o-webhook",
-  "cls": "w-full sm:max-w-md border border-white/20 bg-white/10 text-white rounded-md\n    ",
-  "data": {},
-  "text": ""
- },
- {
-  "tag": "input",
-  "id": "o-moje-ico",
-  "cls": "w-full sm:max-w-xs border border-white/20 bg-white/10 text-white rounded-md\n    ",
-  "data": {},
-  "text": ""
+  "text": "Nastaviť podrobne"
  },
  {
   "tag": "select",
   "id": "u-typ",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outlin",
   "data": {},
   "text": "Zmluvy zo súťaží, ktoré končia\nKto nedávno vyhral\nPráve vyhlásené súťa"
  },
  {
   "tag": "select",
   "id": "u-kraj",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outlin",
   "data": {},
   "text": "celé Slovensko\nBratislavský kraj\nTrnavský kraj\nTrenčiansky kraj\nNitria"
  },
  {
   "tag": "select",
   "id": "u-sektor",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outlin",
   "data": {},
   "text": "všetky sektory\ndoprava, mechanizácia\nelektroinštalácie\nIT technika\nkúr"
  },
  {
   "tag": "input",
   "id": "u-text",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px]\n                     ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] focus:outline-none fo",
   "data": {},
   "text": ""
  },
@@ -221,7 +184,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -235,7 +198,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -249,7 +212,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -263,7 +226,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -277,7 +240,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -291,7 +254,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -305,7 +268,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -319,7 +282,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -333,7 +296,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -347,7 +310,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -361,7 +324,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -375,7 +338,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -389,7 +352,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -403,7 +366,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -417,7 +380,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },
@@ -431,7 +394,7 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zákazka na ÚVO ↗"
  },

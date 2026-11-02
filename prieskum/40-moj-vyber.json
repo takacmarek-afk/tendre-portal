@@ -274,7 +274,7 @@
   "data": {
    "zalozka": "obsah"
   },
-  "text": "Končiace zmluvy (1 158)"
+  "text": "Končiace zmluvy (1 148)"
  },
  {
   "tag": "button",
@@ -283,7 +283,7 @@
   "data": {
    "zalozka": "dotacie"
   },
-  "text": "Dotácie (1 615)"
+  "text": "Dotácie (1 445)"
  },
  {
   "tag": "button",
@@ -310,16 +310,7 @@
   "data": {
    "zalozka": "dodavatelia"
   },
-  "text": "Dodávatelia (125)"
- },
- {
-  "tag": "button",
-  "id": null,
-  "cls": "zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap bo",
-  "data": {
-   "zalozka": "dopyty"
-  },
-  "text": "Dopyty od obcí"
+  "text": "Dodávatelia (124)"
  },
  {
   "tag": "button",
@@ -331,86 +322,58 @@
   "text": "Tím"
  },
  {
-  "tag": "select",
-  "id": "o-sektor",
-  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
+  "tag": "button",
+  "id": "o-rychlo",
+  "cls": "bg-ink text-white font-semibold px-4 py-1.5 rounded-md text-[13px] hover:bg-acce",
   "data": {},
-  "text": "všetky sektory\ndoprava, mechanizácia\nelektroinštalácie\nIT technika\nkúr"
- },
- {
-  "tag": "select",
-  "id": "o-kraj",
-  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
-  "data": {},
-  "text": "celé Slovensko\nBratislavský kraj\nTrnavský kraj\nTrenčiansky kraj\nNitria"
- },
- {
-  "tag": "select",
-  "id": "o-frekvencia",
-  "cls": "border border-white/20 bg-white/10 text-white rounded-md\n                       ",
-  "data": {},
-  "text": "týždenne\ndenne"
+  "text": "Zapnúť prehľad"
  },
  {
   "tag": "button",
-  "id": "o-zapnut",
-  "cls": "bg-white text-ink font-semibold px-5 py-2 rounded-md\n                           ",
+  "id": "o-podrobne",
+  "cls": "text-[13px] font-semibold text-accent hover:text-accentDark whitespace-nowrap",
   "data": {},
-  "text": "Chcem ho dostávať"
- },
- {
-  "tag": "input",
-  "id": "o-webhook",
-  "cls": "w-full sm:max-w-md border border-white/20 bg-white/10 text-white rounded-md\n    ",
-  "data": {},
-  "text": ""
- },
- {
-  "tag": "input",
-  "id": "o-moje-ico",
-  "cls": "w-full sm:max-w-xs border border-white/20 bg-white/10 text-white rounded-md\n    ",
-  "data": {},
-  "text": ""
+  "text": "Nastaviť podrobne"
  },
  {
   "tag": "select",
   "id": "f-kraj",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outlin",
   "data": {},
   "text": "celé Slovensko\nBratislavský kraj\nTrnavský kraj\nTrenčiansky kraj\nNitria"
  },
  {
   "tag": "select",
   "id": "f-sektor",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outlin",
   "data": {},
   "text": "všetky sektory\ndoprava, mechanizácia\nelektroinštalácie\nIT technika\nkúr"
  },
  {
   "tag": "input",
   "id": "f-text",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px]\n                     ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] focus:outline-none fo",
   "data": {},
   "text": ""
  },
  {
   "tag": "select",
   "id": "f-radenie",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outlin",
   "data": {},
-  "text": "relevantné pre mňa\nsila signálu\nnajbližší tender\nnajvyššia hodnota\nzml"
+  "text": "relevantné pre mňa\npriorita\nnajbližší termín prípravy\nnajvyššia hodnot"
  },
  {
   "tag": "select",
   "id": "f-skore",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outlin",
   "data": {},
   "text": "všetky\n50 a viac (horná polovica sektora)\n75 a viac (horná štvrtina)\n9"
  },
  {
   "tag": "select",
   "id": "f-predstih",
-  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white\n            ",
+  "cls": "w-full border border-line rounded-md px-3 py-2 text-[14px] bg-white focus:outlin",
   "data": {},
   "text": "všetko\n1 až 3 mesiace\n3 až 6 mesiacov\n6 až 12 mesiacov"
  },
@@ -461,14 +424,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "11920146"
@@ -494,14 +457,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "10916121"
@@ -527,14 +490,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "10937384"
@@ -560,14 +523,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "10959214"
@@ -593,14 +556,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "11931801"
@@ -626,14 +589,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "10959277"
@@ -659,14 +622,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "11302855"
@@ -692,14 +655,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "10959302"
@@ -725,14 +688,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "11230935"
@@ -758,50 +721,17 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "11913423"
-  },
-  "text": "bez stavu\nSledujeme\nPripravujeme ponuku\nNezaujíma nás"
- },
- {
-  "tag": "a",
-  "id": null,
-  "cls": "underline hover:text-ink",
-  "data": {},
-  "text": "Profil obstarávateľa"
- },
- {
-  "tag": "button",
-  "id": null,
-  "cls": "font-medium text-accent hover:text-accentDark hover:underline",
-  "data": {
-   "preklikDodavatel": "ALAVAN s.r.o."
-  },
-  "text": "ALAVAN s.r.o."
- },
- {
-  "tag": "a",
-  "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
-  "data": {},
-  "text": "Zmluva v CRZ ↗"
- },
- {
-  "tag": "select",
-  "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
-  "data": {
-   "crmStav": "zmluva",
-   "crmId": "12635977"
   },
   "text": "bez stavu\nSledujeme\nPripravujeme ponuku\nNezaujíma nás"
  },
@@ -824,17 +754,50 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "10959338"
+  },
+  "text": "bez stavu\nSledujeme\nPripravujeme ponuku\nNezaujíma nás"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "underline hover:text-ink",
+  "data": {},
+  "text": "Profil obstarávateľa"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "font-medium text-accent hover:text-accentDark hover:underline",
+  "data": {
+   "preklikDodavatel": "ALAVAN s.r.o."
+  },
+  "text": "ALAVAN s.r.o."
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "select",
+  "id": null,
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
+  "data": {
+   "crmStav": "zmluva",
+   "crmId": "12635977"
   },
   "text": "bez stavu\nSledujeme\nPripravujeme ponuku\nNezaujíma nás"
  },
@@ -857,14 +820,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "9227135"
@@ -890,14 +853,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "12266886"
@@ -923,14 +886,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "12736347"
@@ -956,50 +919,17 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "11978650"
-  },
-  "text": "bez stavu\nSledujeme\nPripravujeme ponuku\nNezaujíma nás"
- },
- {
-  "tag": "a",
-  "id": null,
-  "cls": "underline hover:text-ink",
-  "data": {},
-  "text": "Profil obstarávateľa"
- },
- {
-  "tag": "button",
-  "id": null,
-  "cls": "font-medium text-accent hover:text-accentDark hover:underline",
-  "data": {
-   "preklikDodavatel": "SEHOS PLUS s.r.o."
-  },
-  "text": "SEHOS PLUS s.r.o."
- },
- {
-  "tag": "a",
-  "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
-  "data": {},
-  "text": "Zmluva v CRZ ↗"
- },
- {
-  "tag": "select",
-  "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
-  "data": {
-   "crmStav": "zmluva",
-   "crmId": "11523464"
   },
   "text": "bez stavu\nSledujeme\nPripravujeme ponuku\nNezaujíma nás"
  },
@@ -1029,17 +959,50 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "11358439"
+  },
+  "text": "bez stavu\nSledujeme\nPripravujeme ponuku\nNezaujíma nás"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "underline hover:text-ink",
+  "data": {},
+  "text": "Profil obstarávateľa"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "font-medium text-accent hover:text-accentDark hover:underline",
+  "data": {
+   "preklikDodavatel": "SEHOS PLUS s.r.o."
+  },
+  "text": "SEHOS PLUS s.r.o."
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "select",
+  "id": null,
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
+  "data": {
+   "crmStav": "zmluva",
+   "crmId": "11523464"
   },
   "text": "bez stavu\nSledujeme\nPripravujeme ponuku\nNezaujíma nás"
  },
@@ -1069,14 +1032,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "10422977"
@@ -1102,14 +1065,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "12800387"
@@ -1135,14 +1098,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "12204589"
@@ -1168,14 +1131,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "10510386"
@@ -1201,14 +1164,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "12867438"
@@ -1234,14 +1197,14 @@
  {
   "tag": "a",
   "id": null,
-  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark\n                ",
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
   "data": {},
   "text": "Zmluva v CRZ ↗"
  },
  {
   "tag": "select",
   "id": null,
-  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border\n                   focus",
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
   "data": {
    "crmStav": "zmluva",
    "crmId": "12184820"
@@ -1254,5 +1217,47 @@
   "cls": "underline hover:text-ink",
   "data": {},
   "text": "Profil obstarávateľa"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "font-medium text-accent hover:text-accentDark hover:underline",
+  "data": {
+   "preklikDodavatel": "Clean space s.r.o."
+  },
+  "text": "Clean space s.r.o."
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "inline-block mt-2 text-[12px] text-accent hover:text-accentDark hover:underline ",
+  "data": {},
+  "text": "Zmluva v CRZ ↗"
+ },
+ {
+  "tag": "select",
+  "id": null,
+  "cls": "mt-2 text-[11px] font-medium rounded px-1.5 py-1 border focus:outline-none focus",
+  "data": {
+   "crmStav": "zmluva",
+   "crmId": "12359465"
+  },
+  "text": "bez stavu\nSledujeme\nPripravujeme ponuku\nNezaujíma nás"
+ },
+ {
+  "tag": "a",
+  "id": null,
+  "cls": "underline hover:text-ink",
+  "data": {},
+  "text": "Profil obstarávateľa"
+ },
+ {
+  "tag": "button",
+  "id": null,
+  "cls": "font-medium text-accent hover:text-accentDark hover:underline",
+  "data": {
+   "preklikDodavatel": "EFPROS services, s.r.o."
+  },
+  "text": "EFPROS services, s.r.o."
  }
 ]
