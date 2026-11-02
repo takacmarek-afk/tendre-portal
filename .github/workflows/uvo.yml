@@ -97,6 +97,17 @@ jobs:
           echo "Spustam: python uvo.py ${ARGS[*]}"
           python uvo.py "${ARGS[@]}"
 
+      # Zmluvy bez dohladatelnej sutaze (migracia 88): po kazdom ostrom behu
+      # znova porovna velke zmluvy z CRZ s Vestnikom. Do logu len pocty.
+      - name: Zmluvy bez dohladatelnej sutaze
+        if: github.event_name == 'schedule' || inputs.nasucho != true
+        continue-on-error: true
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python bez_sutaze.py
+
       - name: Spustit dalsi beh, ak zostavaju cisla (retazenie)
         if: |
           steps.uvo.outputs.zostava == 'true' &&
