@@ -42,11 +42,11 @@ try { localStorage.setItem('pt_admin_zariadenie','1'); localStorage.setItem('pt_
       .__hl{position:absolute;border:4px solid #B25313;border-radius:10px;box-shadow:0 0 0 9999px rgba(11,18,32,.28);
         z-index:2147483640;pointer-events:none;transition:all .4s}
       #__karta{position:fixed;inset:0;z-index:2147483647;display:flex;align-items:center;justify-content:center;
-        background:#0B1220;color:#F7F3EA;opacity:0;transition:opacity .45s;pointer-events:none;text-align:center;padding:6%}
+        background:#0B1220;color:#FFFFFF;opacity:0;transition:opacity .45s;pointer-events:none;text-align:center;padding:6%}
       #__karta.on{opacity:1}
-      #__karta.svetla{background:rgba(247,243,234,.97);color:#0B1220}
-      #__karta .k-logo{font:italic ${m?'26px':'34px'} 'Instrument Serif',serif;color:#B25313}
-      #__karta h1{font:400 ${m?'42px':'70px'}/1.08 'Instrument Serif',serif;margin:.35em 0 .25em}
+      #__karta.svetla{background:rgba(255,255,255,.97);color:#0B1220}
+      #__karta .k-logo{font:600 ${m?'22px':'28px'} 'IBM Plex Sans',sans-serif;letter-spacing:-.01em;color:#E0884A}
+      #__karta h1{font:600 ${m?'38px':'62px'}/1.1 'IBM Plex Sans',sans-serif;letter-spacing:-.02em;margin:.35em 0 .3em}
       #__karta p{font:400 ${m?'18px':'26px'}/1.45 'IBM Plex Sans',sans-serif;opacity:.85}
       #__karta ol{text-align:left;margin:1em auto 0;max-width:${m?'92%':'760px'};font:500 ${m?'20px':'30px'}/1.45 'IBM Plex Sans';padding-left:1.3em}
       #__karta ol li{margin:.35em 0}
@@ -257,15 +257,16 @@ async def video2(r: Rez):
     await r.klik('#mv-sektory label:has-text("upratovanie – hygienický tovar")', 0.8)
     await r.klik("#mv-ulozit", 2.5)
     await r.zalozka("dnes")
-    await r.cap("Na obrazovke Dnes vidíte, čo sa vo vašom výbere blíži.")
-    await r.rolovat(".dnes-karta", 100)
-    await r.w(3.5)
-    await r.cap("Zapnite si prehľad e-mailom. Raz týždenne vám pošleme nové zmluvy.")
+    await r.cap("Na obrazovke Dnes vás prevedú štyri prvé kroky.")
+    await r.rolovat("#dnes-h-kroky", 120)
+    await r.hl("#dnes-c-kroky", 3)
+    await r.bez_hl()
+    await r.cap("Koľko zmlúv vo vašom výbere končí do roka a za koľko.")
+    await r.hl("#dnes-c-zasoba", 3.5)
+    await r.bez_hl()
+    await r.cap("Prehľad e-mailom zapnete jedným klikom. Nové zmluvy vám prídu samy.")
     await r.rolovat("#odber-panel", 100)
-    await r.vyber("#o-sektor", "UPRATOVANIE")
-    await r.vyber("#o-kraj", "Bratislavský kraj")
-    await r.vyber("#o-frekvencia", "tyzdenne")
-    await r.hl("#o-zapnut", 3)
+    await r.hl("#o-rychlo", 3)
     await r.bez_hl()
     await r.koniec()
 
