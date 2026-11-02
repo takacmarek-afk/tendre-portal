@@ -61,7 +61,19 @@ SEKTORY_SEO = {
     # IT_TECHNIKA 95; zelen 35 a elektroinstalacie 29 by boli tenke).
     "STAVEBNE_PRACE": {"slug": "stavebne-prace", "nazov": "stavebné práce", "nazov_nom": "stavebné práce", "nazov_2": "stavebné práce"},
     "IT_TECHNIKA":    {"slug": "it-technika",    "nazov": "IT služby a výpočtovú techniku", "nazov_nom": "IT služby a výpočtová technika", "nazov_2": "IT služby a výpočtovú techniku"},
+    # Rozsirenie 2. 11. 2026 (audit, bod 3 Top 5): vsetky opakovane odbory.
+    # Kombinacie s nulou zmluv dostanu noindex a nie su v sitemap (tenky obsah).
+    "ZELEN_ZIMNA_UDRZBA":  {"slug": "zelen-zimna-udrzba", "nazov": "údržbu zelene a zimnú údržbu", "nazov_nom": "údržba zelene a zimná údržba", "nazov_2": "údržbu zelene a zimnú údržbu"},
+    "ELEKTROINSTALACIE":   {"slug": "elektroinstalacie",  "nazov": "elektroinštalácie", "nazov_nom": "elektroinštalácie", "nazov_2": "elektroinštalácie a revízie"},
+    "KURENIE_VODA_PLYN":   {"slug": "kurenie-voda-plyn",  "nazov": "kúrenie, vodu a plyn", "nazov_nom": "kúrenie, voda a plyn", "nazov_2": "kúrenie, vodu a plyn"},
+    "STRECHY_IZOLACIE":    {"slug": "strechy-izolacie",   "nazov": "strechy a zateplenie", "nazov_nom": "strechy a zateplenie", "nazov_2": "strechy a zateplenie"},
+    "OKNA_DVERE_POVRCHY":  {"slug": "okna-dvere-povrchy", "nazov": "okná, dvere a povrchy", "nazov_nom": "okná, dvere a povrchy", "nazov_2": "okná, dvere a povrchy"},
+    "DOPRAVA_MECHANIZACIA":{"slug": "doprava",            "nazov": "dopravu a mechanizáciu", "nazov_nom": "doprava a mechanizácia", "nazov_2": "dopravu a mechanizáciu"},
+    "TLAC_KANCELARIA":     {"slug": "tlac-kancelaria",    "nazov": "tlač a kancelárske potreby", "nazov_nom": "tlač a kancelárske potreby", "nazov_2": "tlač a kancelárske potreby"},
+    "PASPORTIZACIA_SPRAVA_BUDOV": {"slug": "sprava-budov", "nazov": "správu budov a pasportizáciu", "nazov_nom": "správa budov a pasportizácia", "nazov_2": "správu budov a pasportizáciu"},
 }
+
+HUB_CESTA = os.path.join(os.path.dirname(__file__), "..", "public", "konciace-zmluvy", "index.html")
 
 MESIACE_SK = ["", "januári", "februári", "marci", "apríli", "máji", "júni",
               "júli", "auguste", "septembri", "októbri", "novembri", "decembri"]
@@ -127,7 +139,7 @@ HLAVICKA = """<!doctype html>
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <title>{titul}</title>
 <meta name="description" content="{popis}">
-<meta name="robots" content="index,follow">
+<meta name="robots" content="{robots}">
 <link rel="canonical" href="https://predtendrom.sk/konciace-zmluvy/{cesta}">
 <meta property="og:title" content="{titul}">
 <meta property="og:description" content="{popis}">
@@ -199,7 +211,7 @@ def _popis_stranky(agregat_row, sektor_info, lokal):
     if not pocet:
         return (
             f"V {lokal} kraji sa momentálne neblíži ku koncu žiadna zmluva na {nazov}. "
-            f"Sledujte, ktoré sa uvoľnia — z Centrálneho registra zmlúv."
+            f"Sledujte, ktoré sa uvoľnia. Údaje z Centrálneho registra zmlúv."
         )
     zmluvy = _tvar(pocet, "zmluva", "zmluvy", "zmlúv")
     sloveso = _tvar(pocet, "sa blíži", "sa blížia", "sa blíži")
@@ -211,7 +223,7 @@ def _popis_stranky(agregat_row, sektor_info, lokal):
     )
     return (
         f"{_cislo(pocet)} {zmluvy} na {nazov} v {lokal} kraji {sloveso} ku koncu{spolu}. "
-        f"{dalsia} — z Centrálneho registra zmlúv."
+        f"{dalsia}, kto ich robí a za koľko. Údaje z Centrálneho registra zmlúv."
     )
 
 
@@ -241,7 +253,7 @@ def _vygeneruj_stranku(sector, agregat_row):
         )
     else:
         riadky_teaser = """      <div class="rounded-lg border border-line bg-white p-4 text-[14px] text-slate2">
-        Zatiaľ žiadna zmluva v tomto okne — skúste iný kraj alebo sa vráťte neskôr.
+        Teraz tu nekončí žiadna zmluva. Pozrite iný kraj nižšie alebo sa vráťte neskôr.
       </div>"""
 
     zvysok = max(0, agregat_row["pocet"] - len(agregat_row["teaser"]))
@@ -265,27 +277,29 @@ def _vygeneruj_stranku(sector, agregat_row):
     if sector == "STAVEBNE_PRACE":
         blok_zvysok += """
     <p class="mt-4 text-[13px] leading-relaxed text-slate2">
-      Pri stavbách koniec zmluvy spravidla neznamená novú súťaž — stavba sa dokončí.
-      Silnejší signál sú dotácie obcí, ktoré ešte len prídu.
+      Pri stavbách koniec zmluvy spravidla neznamená novú súťaž, stavba sa dokončí.
+      Pre stavebné firmy sú dôležitejšie dotácie obcí, ktoré ešte len prídu.
     </p>"""
 
     # OPRAVA (audit 29.9.2026): "v {kraj}" pouzival nominativ po predlozke
     # "v", ktora vyzaduje lokal ("v Bratislavský kraj" -> "v Bratislavskom
     # kraji"). "nazov_nom" rieši rovnaky problem pre sektor (OSTRAHA malo
     # v nazov ulozeny akuzativ "ostrahu", ktory v title cital ako "Ostrahu").
-    titul = f"Končiace zmluvy — {_velke_prve(sektor_info['nazov_nom'])} v {lokal} kraji | PredTendrom.sk"
+    titul = f"{_velke_prve(sektor_info['nazov_nom'])} v {lokal} kraji: končiace zmluvy úradov | PredTendrom.sk"
     popis = _popis_stranky(agregat_row, sektor_info, lokal)
 
     telo = f"""
 <section class="max-w-[900px] mx-auto px-5 pt-10 pb-8">
   <p class="inline-block text-[12px] font-semibold text-accent bg-accent/10 rounded-full px-3 py-1">
-    {_e(kraj)} · {sektor_info['nazov_nom']}
+    {_e(kraj)}, {sektor_info['nazov_nom']}
   </p>
   <h1 class="mt-5 text-[28px] sm:text-[34px] font-bold leading-tight tracking-tight">
     Komu v {lokal} kraji čoskoro skončí zmluva na {sektor_info['nazov_2']}
   </h1>
   <p class="mt-4 text-[16px] leading-relaxed text-slate2 max-w-[640px]">
-    Z Centrálneho registra zmlúv — zmluvy, ktoré sa reálne blížia ku koncu, nie prísľuby z Vestníka.
+    Zmluvy úradov, škôl a obcí z Centrálneho registra zmlúv, ktoré skončia v najbližších
+    mesiacoch. Keď zmluva skončí, úrad musí službu nakúpiť znova. Kto to vie skôr,
+    pripraví si ponuku v pokoji.
   </p>
 
   <div class="mt-8 grid grid-cols-2 gap-3">
@@ -304,15 +318,63 @@ def _vygeneruj_stranku(sector, agregat_row):
 {riadky_teaser}
   </div>
 {blok_zvysok}
+{_odkazy(sector, kraj)}
 </section>
 """
 
     aktualizovane = _datum(date.today().isoformat())
     return (
-        HLAVICKA.format(titul=titul, popis=popis, cesta=f"{sektor_slug}/{kraj_slug}")
+        HLAVICKA.format(titul=titul, popis=popis, cesta=f"{sektor_slug}/{kraj_slug}",
+                        robots="index,follow" if agregat_row["pocet"] else "noindex,follow")
         + telo
         + PATICKA.format(aktualizovane=aktualizovane)
     )
+
+
+def _odkazy(sector, kraj):
+    """Interne odkazy: rovnaky odbor v inych krajoch a ine odbory v tom istom
+    kraji. Pomahaju Googlu najst vsetky stranky a navstevnikovi preskocit."""
+    info = SEKTORY_SEO[sector]
+    kraje = " ".join(
+        f'<a href="/konciace-zmluvy/{info["slug"]}/{_slug(k)}" class="text-accent hover:underline">{_e(k.replace(" kraj", ""))}</a>'
+        for k in VSETKY_KRAJE if k != kraj)
+    odbory = " ".join(
+        f'<a href="/konciace-zmluvy/{i["slug"]}/{_slug(kraj)}" class="text-accent hover:underline">{_e(_velke_prve(i["nazov_nom"]))}</a>'
+        for s, i in SEKTORY_SEO.items() if s != sector)
+    return f"""
+  <h2 class="mt-10 text-[16px] font-semibold">{_velke_prve(info['nazov_nom'])} v iných krajoch</h2>
+  <p class="mt-2 text-[14px] leading-loose flex flex-wrap gap-x-4">{kraje}</p>
+  <h2 class="mt-6 text-[16px] font-semibold">Iné odbory v kraji</h2>
+  <p class="mt-2 text-[14px] leading-loose flex flex-wrap gap-x-4">{odbory}</p>
+  <p class="mt-4 text-[14px]"><a href="/konciace-zmluvy/" class="text-accent hover:underline">Všetky odbory a kraje</a></p>"""
+
+
+def _vygeneruj_hub(vsetky_agregaty):
+    """Rozcestnik /konciace-zmluvy/: vsetky odbory s poctom zmluv."""
+    riadky = []
+    for sector, agregaty in vsetky_agregaty.items():
+        info = SEKTORY_SEO[sector]
+        pocet = sum(int(r["pocet"] or 0) for r in agregaty)
+        riadky.append((pocet, f"""    <a href="/konciace-zmluvy/{info['slug']}/" class="block rounded-lg border border-line bg-white p-4 hover:border-accent transition">
+      <div class="text-[15px] font-semibold">{_e(_velke_prve(info['nazov_nom']))}</div>
+      <div class="text-[13px] text-slate2 mt-1">{_cislo(pocet)} {_tvar(pocet, 'končiaca zmluva', 'končiace zmluvy', 'končiacich zmlúv')}</div>
+    </a>"""))
+    polozky = "\n".join(t for _, t in sorted(riadky, key=lambda x: -x[0]))
+    telo = f"""
+<section class="max-w-[900px] mx-auto px-5 pt-10 pb-16">
+  <h1 class="text-[28px] sm:text-[34px] font-bold leading-tight tracking-tight">Končiace zmluvy úradov podľa odboru</h1>
+  <p class="mt-4 text-[16px] leading-relaxed text-slate2 max-w-[640px]">
+    Vyberte odbor a potom kraj. Pri každom uvidíte, koľko zmlúv štátu, škôl a obcí sa blíži ku koncu a za koľko.
+  </p>
+  <div class="mt-8 grid sm:grid-cols-2 gap-3">
+{polozky}
+  </div>
+</section>
+"""
+    return (HLAVICKA.format(titul="Končiace zmluvy úradov podľa odboru a kraja | PredTendrom.sk",
+                            popis="Ktorým úradom, školám a obciam končí zmluva na upratovanie, ostrahu, stravovanie, IT a ďalšie služby. Podľa odboru a kraja, z Centrálneho registra zmlúv.",
+                            cesta="", robots="index,follow")
+            + telo + PATICKA.format(aktualizovane=_datum(date.today().isoformat())))
 
 
 def _vygeneruj_index_sektora(sector, agregaty):
@@ -347,7 +409,8 @@ def _vygeneruj_index_sektora(sector, agregaty):
 """
     return (
         HLAVICKA.format(
-            titul=f"Končiace zmluvy — {_velke_prve(sektor_info['nazov_nom'])} | PredTendrom.sk",
+            titul=f"{_velke_prve(sektor_info['nazov_nom'])}: končiace zmluvy úradov podľa kraja | PredTendrom.sk",
+            robots="index,follow",
             popis=f"Prehľad končiacich zmlúv na {sektor_info['nazov']} za všetkých 8 krajov Slovenska.",
             # OPRAVA (audit 29.9.2026): prazdny kraj_slug davel rozbity canonical
             # ".../ostraha/.html" (chybajuci "index"). Rovnaky vzor ako subor sam:
@@ -366,7 +429,7 @@ def _zapis_sitemap(vsetky_kombinacie):
     dnes = date.today().isoformat()
     # U25 (5.10.2026): adresy BEZ .html (Cloudflare .html presmeruje 308);
     # index sektora ma koncove lomitko.
-    urls = [f"/konciace-zmluvy/{s}/" for s in sorted({k[0] for k in vsetky_kombinacie})] + [
+    urls = ["/konciace-zmluvy/"] + [f"/konciace-zmluvy/{s}/" for s in sorted({k[0] for k in vsetky_kombinacie})] + [
         f"/konciace-zmluvy/{sektor_slug}/{kraj_slug}" for sektor_slug, kraj_slug in vsetky_kombinacie
     ]
     polozky = "\n".join(f"  <url><loc>{baza}{u}</loc><lastmod>{dnes}</lastmod></url>" for u in urls)
@@ -411,7 +474,8 @@ def vygeneruj(vsetky_agregaty, vystup_dir=VYSTUP_DIR):
             with open(cesta, "w", encoding="utf-8") as f:
                 f.write(html)
             napisane.append(cesta)
-            kombinacie.append((sektor_slug, _slug(row["kraj"])))
+            if row["pocet"]:
+                kombinacie.append((sektor_slug, _slug(row["kraj"])))
 
         index_html = _vygeneruj_index_sektora(sector, agregaty)
         cesta_index = os.path.join(adresar, "index.html")
@@ -419,6 +483,11 @@ def vygeneruj(vsetky_agregaty, vystup_dir=VYSTUP_DIR):
             f.write(index_html)
         napisane.append(cesta_index)
 
+    if vsetky_agregaty:
+        hub = os.path.join(vystup_dir, "index.html")
+        with open(hub, "w", encoding="utf-8") as f:
+            f.write(_vygeneruj_hub(vsetky_agregaty))
+        napisane.append(hub)
     napisane.append(_zapis_sitemap(kombinacie))
     if _zaregistruj_v_robots():
         napisane.append(ROBOTS_CESTA)

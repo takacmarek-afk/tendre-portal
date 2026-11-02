@@ -67,14 +67,21 @@ with tempfile.TemporaryDirectory() as tmp:
 print("OK: sitemap bez .html, bez trh")
 
 # 5. Rozsirenie sektorov (5.10.2026): slugy, nadpisy, velke pismeno v title
-assert {v["slug"] for v in zmluvy.SEKTORY_SEO.values()} == {
-    "upratovanie", "stravovanie", "ostraha", "stavebne-prace", "it-technika"}
-for kluc, titul, slug in (("IT_TECHNIKA", "Končiace zmluvy — IT služby a výpočtová technika v trenčianskom kraji | PredTendrom.sk", "it-technika"),
-                          ("STAVEBNE_PRACE", "Končiace zmluvy — Stavebné práce v trenčianskom kraji | PredTendrom.sk", "stavebne-prace")):
+assert {"upratovanie", "stravovanie", "ostraha", "stavebne-prace", "it-technika", "doprava"} <= {
+    v["slug"] for v in zmluvy.SEKTORY_SEO.values()}
+assert len({v["slug"] for v in zmluvy.SEKTORY_SEO.values()}) == len(zmluvy.SEKTORY_SEO) == 13
+for kluc, titul, slug in (("IT_TECHNIKA", "IT služby a výpočtová technika v trenčianskom kraji: končiace zmluvy úradov | PredTendrom.sk", "it-technika"),
+                          ("STAVEBNE_PRACE", "Stavebné práce v trenčianskom kraji: končiace zmluvy úradov | PredTendrom.sk", "stavebne-prace")):
     h = zmluvy._vygeneruj_stranku(kluc, agregat(7, 50000.0, teaser))
     assert f"<title>{titul}</title>" in h, (kluc, re.search(r"<title>.*?</title>", h).group(0))
     assert f'href="https://predtendrom.sk/konciace-zmluvy/{slug}/trenciansky"' in h
     assert "It služby" not in h
-print("OK: nove sektory (title, canonical)")
+    assert '<meta name="robots" content="index,follow">' in h and "/konciace-zmluvy/ostraha/trenciansky" in h
+    assert f"/konciace-zmluvy/{slug}/kosicky" in h
+h0 = zmluvy._vygeneruj_stranku("OSTRAHA", agregat(0, None, []))
+assert '<meta name="robots" content="noindex,follow">' in h0
+hub = zmluvy._vygeneruj_hub({"OSTRAHA": [agregat(3, 1.0, teaser)], "UPRATOVANIE": [agregat(9, 1.0, teaser)]})
+assert hub.index("Upratovanie") < hub.index("Ostraha") and 'href="/konciace-zmluvy/ostraha/"' in hub
+print("OK: nove sektory (title, canonical, noindex pri nule, rozcestnik)")
 
 print("\nVSETKY TESTY PRESLI\n")
