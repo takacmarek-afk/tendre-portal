@@ -112,6 +112,8 @@ export const AKTIVITA_VZORY: Record<string, RegExp> = {
   cesty:      new RegExp(`miestn(a|ej|ych|e|u) komunik|chodník|${SKR("cest[ay]?")}|parkovisk|${SKR("most(a|y|u)?")}`, "iu"),
   voda:       new RegExp(`vodovod|kanaliz|čistiar|vodn(ý|é|ého) zdroj|retenč|dažďov|${SKR("ČOV")}`, "iu"),
   energetika: new RegExp(`zatepl|energetick|fotovolt|tepeln(é|ého) čerp|osvetlen|obnoviteľn`, "iu"),
+  byvanie:    new RegExp(`nájomn(é|ých|ého) byt|bytov(ý|ého|é) dom|bývani|sociáln(e|ych) byt`, "iu"),
+  socialne:   new RegExp(`sociáln(a|ej|u|e) služ|komunitn|terénn(a|ej|u) sociáln|opatrovateľ`, "iu"),
 };
 
 // --- Pomocne ------------------------------------------------------------------
