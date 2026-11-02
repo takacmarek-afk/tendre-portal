@@ -134,7 +134,8 @@ def obsah(krok: int, k: dict, miesta: int = 30) -> dict:
                 "Nastavíte ich v appke v časti Môj výber za 2 minúty. Ako presne, ukazuje "
                 "60-sekundové video:",
                 ("Pozrieť video: Nastavte si odbor a kraj", video(2)),
-                "Potom Vám raz týždenne pošleme nové končiace zmluvy e-mailom.",
+                "Potom na obrazovke Dnes kliknite na Zapnúť prehľad a nové končiace zmluvy "
+                "Vám budú chodiť e-mailom samy.",
                 ("Otvoriť PredTendrom", _odkaz(APP, krok)),
             ],
         }
