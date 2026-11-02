@@ -13,7 +13,7 @@
 // automatickaObnova: true az ked bezi Stripe predplatne (migracia 87,
 // STRIPE_PREDPLATNE=true v Edge Function). Prepina texty v appke.
 window.PLANY = {
-  "automatickaObnova": false,
+  "automatickaObnova": true,
   "skusobneDni": 14,
   "limitFiriemNaDopyt": 5,
   "plany": {

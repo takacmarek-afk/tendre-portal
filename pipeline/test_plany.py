@@ -84,8 +84,14 @@ def test_team_dalsi_pouzivatel_a_start_limit():
     assert "2 kraje a 2 sektory" in _stranky()["app.html"]
     assert "1 kraj a 1 sektor" not in _stranky()["app.html"]
     op = (PUB / "obchodne-podmienky.html").read_text(encoding="utf-8")
-    assert "neobnovuje automaticky" in op, "OP: predplatné sa neobnovuje automaticky"
-    assert "automaticky obnovuje" not in op
+    # Od 2. 11. 2026 (migracia 87): automaticka obnova, zrusenie kedykolvek.
+    # Texty v OP, cenniku a plany.js sa nesmu rozist.
+    obnova = plany().get("automatickaObnova") is True
+    if obnova:
+        assert "automaticky sa obnovuje" in op and "zrušiť kedykoľvek" in op, "OP: obnova a zrusenie"
+        assert "neobnovuje automaticky" not in cennik, "cenník: stále píše, že sa neobnovuje"
+    else:
+        assert "neobnovuje automaticky" in op, "OP: predplatné sa neobnovuje automaticky"
 
 
 def test_ziadne_podkopavanie_ceny():
