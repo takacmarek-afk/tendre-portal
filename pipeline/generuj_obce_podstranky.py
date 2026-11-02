@@ -369,6 +369,7 @@ STATICKE_STRANKY = [
     "/", "/cennik", "/obce", "/zdroje",
     "/starosta", "/prvych-100-dni", "/servis", "/kontrola", "/mapa",
     "/obstaravatel", "/obchodne-podmienky", "/ochrana-osobnych-udajov",
+    "/navody", "/partneri",
 ]
 
 
