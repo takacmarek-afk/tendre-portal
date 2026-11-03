@@ -1,0 +1,253 @@
+"""Doplni obce_register: pocet obyvatelov, NRO, MRK, ICO a typ (obec/mesto).
+
+Bezi v GitHub Actions (workflow "Pilot vyzvy"), kde su dosiahnutelne zdroje SU SR
+a RPO. Nahradza rucne CSV pre skripty/doplnenie-registra-obci.ts.
+
+ZDROJE
+  pocet obyvatelov  DATAcube SU SR, dataset om7102rr (obce, rocne), JSON-stat.
+                    Pre kazdu obec berieme NAJVACSIU hodnotu z buniek daneho roka,
+                    co je stlpec "spolu" (muzi a zeny su vzdy mensie).
+  NRO               zoznam MIRRI SR (19 okresov), stav stranky k 3. 11. 2026:
+                    mirri.gov.sk/sekcie/regionalny-rozvoj-2/najmenej-rozvinute-okresy/okresy/
+  MRK               Atlas romskych komunit 2019, verejna databaza (xlsx, UV SR)
+  ICO               kampan_obce_kontakty (ico + kod_obce), uz v databaze
+  typ               RPO (register pravnickych osob SU SR): nazov "Mesto ..." / "Obec ...",
+                    len pre obce s ICO
+
+    python obce_demografia.py            # na sucho: vypise statistiku (::notice::)
+    python obce_demografia.py --zapis    # zapise do obce_register
+
+Logy su verejne (verejne repo): vypisuju sa LEN pocty a struktura zdrojov,
+ziadne kontakty. Hodnoty sa nikdy neprepisu na null; nic sa nemaze.
+"""
+import argparse
+import io
+import logging
+import re
+import sys
+import unicodedata
+
+import requests
+
+import store
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
+log = logging.getLogger("demografia")
+UA = {"User-Agent": "tendre-portal/1.0 (open data client)"}
+KOD = re.compile(r"^SK0\d{3}(\d{6})$")
+
+NRO_OKRESY = [
+    "Bardejov", "Gelnica", "Kežmarok", "Košice - okolie", "Levoča", "Lučenec",
+    "Medzilaborce", "Michalovce", "Poltár", "Revúca", "Rimavská Sobota", "Rožňava",
+    "Sabinov", "Stará Ľubovňa", "Sobrance", "Stropkov", "Svidník", "Trebišov",
+    "Vranov nad Topľou",
+]
+ATLAS_URL = "https://www.romovia.vlada.gov.sk/site/assets/files/1111/ark2019_c_verejna.xlsx"
+DATACUBE = "https://data.statistics.sk/api/v2/dataset/om7102rr"
+
+
+def notice(text):
+    print(f"::notice::{text}", flush=True)
+
+
+def norm(s) -> str:
+    s = unicodedata.normalize("NFKD", str(s or ""))
+    s = "".join(c for c in s if not unicodedata.combining(c)).lower()
+    s = re.sub(r"^\s*okres\s+", "", s)
+    s = re.sub(r"\s*-\s*", "-", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+# ── Pocet obyvatelov ─────────────────────────────────────────────────────────
+def jsonstat_maxima(data: dict) -> dict:
+    """JSON-stat 2.0 dataset -> {6-miestny kod obce: najvacsia hodnota}."""
+    ids, sizes = data["id"], data["size"]
+    dims = data["dimension"]
+    # dimenzia s kodmi obci
+    obec_dim = None
+    for i, d in enumerate(ids):
+        idx = dims[d]["category"]["index"]
+        kluce = list(idx.keys()) if isinstance(idx, dict) else list(idx)
+        if sum(1 for k in kluce if KOD.match(k)) > min(1000, len(kluce) // 2):
+            obec_dim = i
+            break
+    if obec_dim is None:
+        raise ValueError(f"Nenasla sa dimenzia obci. Dimenzie: {ids}")
+    idx = dims[ids[obec_dim]]["category"]["index"]
+    poradie = sorted(idx, key=idx.get) if isinstance(idx, dict) else list(idx)
+    values = data["value"]
+    if isinstance(values, dict):
+        values = {int(k): v for k, v in values.items()}
+        get = values.get
+    else:
+        get = lambda n: values[n] if n < len(values) else None  # noqa: E731
+    # krok pre index obce v plochom poli (row-major)
+    krok = 1
+    for s in sizes[obec_dim + 1:]:
+        krok *= s
+    total = 1
+    for s in sizes:
+        total *= s
+    out = {}
+    for n in range(total):
+        v = get(n)
+        if v is None:
+            continue
+        o = (n // krok) % sizes[obec_dim]
+        m = KOD.match(poradie[o])
+        if not m:
+            continue
+        k = m.group(1)
+        out[k] = max(out.get(k, 0), int(v))
+    return out
+
+
+def stiahni_obyvatelov():
+    """Skusi niekolko tvarov URL (pocet dimenzii datasetu nepoznáme isto)."""
+    for rok in (2025, 2024):
+        for tvar in (f"/all/{rok}/all", f"/all/{rok}/all/all", f"/all/{rok}", f"/all/all/{rok}/all"):
+            url = f"{DATACUBE}{tvar}?lang=sk&type=json"
+            try:
+                r = requests.get(url, headers=UA, timeout=120)
+            except requests.RequestException as e:
+                log.warning("%s: %s", tvar, e)
+                continue
+            if r.status_code != 200 or not r.text.strip().startswith("{"):
+                notice(f"DATAcube {tvar}: HTTP {r.status_code}, {r.text[:80]!r}")
+                continue
+            data = r.json()
+            try:
+                vysl = jsonstat_maxima(data)
+            except Exception as e:  # noqa: BLE001
+                notice(f"DATAcube {tvar}: {e}; dims={data.get('id')} size={data.get('size')}")
+                continue
+            notice(f"DATAcube {tvar}: obci s poctom {len(vysl)}, dims={data.get('id')}")
+            if len(vysl) > 2500:
+                return vysl, rok
+    return {}, None
+
+
+# ── MRK (Atlas 2019) ──────────────────────────────────────────────────────────
+def stiahni_mrk():
+    """Vrati mnozinu 6-miestnych kodov obci z Atlasu, alebo set() pri zlyhani."""
+    import pandas as pd
+    r = requests.get(ATLAS_URL, headers=UA, timeout=120)
+    if r.status_code != 200:
+        notice(f"Atlas: HTTP {r.status_code}")
+        return set(), set()
+    listy = pd.read_excel(io.BytesIO(r.content), sheet_name=None, header=None, dtype=str)
+    kody, mena = set(), set()
+    for nazov, df in listy.items():
+        notice(f"Atlas list '{nazov}': {df.shape}, prvy riadok: {[str(x)[:20] for x in df.iloc[0].tolist()[:8]]}")
+        for col in df.columns:
+            hodnoty = df[col].dropna().astype(str).str.strip()
+            k6 = hodnoty[hodnoty.str.fullmatch(r"5\d{5}")]
+            if len(k6) > 300:
+                kody |= set(k6)
+                notice(f"Atlas: stlpec {col} v liste '{nazov}' ma {len(set(k6))} kodov obci")
+    return kody, mena
+
+
+# ── RPO: typ (mesto/obec) podla ICO ────────────────────────────────────────────
+def typ_z_rpo(ico: str):
+    try:
+        r = requests.get("https://api.statistics.sk/rpo/v1/search", params={"identifier": ico},
+                         headers=UA, timeout=30)
+        if r.status_code != 200:
+            return None
+        res = (r.json() or {}).get("results") or []
+        for z in res:
+            for fn in z.get("fullNames") or []:
+                v = norm(fn.get("value"))
+                if v.startswith("mesto ") or v.startswith("mestska cast"):
+                    return "mestska_cast" if v.startswith("mestska cast") else "mesto"
+                if v.startswith("obec "):
+                    return "obec"
+    except requests.RequestException:
+        return None
+    return None
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--zapis", action="store_true")
+    ap.add_argument("--bez-rpo", action="store_true")
+    a = ap.parse_args()
+    sb = store.klient()
+
+    stl = "kod,nazov,kraj,okres,ico,typ,pocet_obyvatelov,nro,mrk"
+    register, od = [], 0
+    while True:   # PostgREST vracia najviac 1000 riadkov na dotaz
+        kus = sb.table("obce_register").select(stl).order("kod").range(od, od + 999).execute().data
+        register += kus
+        if len(kus) < 1000:
+            break
+        od += 1000
+    notice(f"Register: {len(register)} obci")
+    po_kode6 = {KOD.match(r["kod"]).group(1): r for r in register if KOD.match(r["kod"])}
+
+    # ICO z kontaktov kampane (kod_obce = kod registra)
+    kontakty = sb.table("kampan_obce_kontakty").select("ico,kod_obce").not_.is_("kod_obce", "null").execute().data
+    ico_pre = {}
+    for k in kontakty:
+        if k.get("ico") and k.get("kod_obce"):
+            ico_pre[k["kod_obce"]] = re.sub(r"\D", "", k["ico"]).zfill(8)
+    notice(f"ICO z kontaktov: {len(ico_pre)}")
+
+    obyv, rok = stiahni_obyvatelov()
+    try:
+        mrk_kody, _ = stiahni_mrk()
+    except Exception as e:  # noqa: BLE001
+        notice(f"Atlas zlyhal: {e}")
+        mrk_kody = set()
+    nro = {norm(o) for o in NRO_OKRESY}
+
+    zmeny = []
+    stat = {"pocet": 0, "nro_true": 0, "mrk_true": 0, "ico": 0, "typ": 0}
+    for r in register:
+        m = KOD.match(r["kod"])
+        if not m:
+            continue
+        k6 = m.group(1)
+        z = dict(r)
+        if k6 in obyv:
+            z["pocet_obyvatelov"] = obyv[k6]
+            z["obyvatelia_k"] = f"{rok}-12-31"
+            stat["pocet"] += 1
+        z["nro"] = norm(r.get("okres")) in nro
+        stat["nro_true"] += z["nro"]
+        if mrk_kody:
+            z["mrk"] = k6 in mrk_kody
+            stat["mrk_true"] += z["mrk"]
+        if not r.get("ico") and r["kod"] in ico_pre:
+            z["ico"] = ico_pre[r["kod"]]
+            stat["ico"] += 1
+        zmeny.append(z)
+
+    if not a.bez_rpo:
+        s_ico = [z for z in zmeny if z.get("ico") and (z.get("typ") or "obec") == "obec"]
+        for z in s_ico:
+            t = typ_z_rpo(z["ico"])
+            if t and t != z.get("typ"):
+                z["typ"] = t
+                stat["typ"] += 1
+        notice(f"RPO: preverenych {len(s_ico)} obci, typ zmeneny {stat['typ']} (mesta, mestske casti)")
+
+    notice("Statistika: " + ", ".join(f"{k} {v}" for k, v in stat.items()) + f" | NRO okresov v registri: "
+           f"{len({norm(z.get('okres')) for z in zmeny if z['nro']})}/19")
+    if len(obyv) < 2500:
+        notice("POZOR: pocty obyvatelov sa nepodarilo nacitat (menej ako 2500 obci), stlpec sa nemeni")
+
+    if not a.zapis:
+        notice("Na sucho, nic sa nezapisalo.")
+        return 0
+    stlpce = ("kod", "nazov", "kraj", "okres", "ico", "typ", "pocet_obyvatelov", "obyvatelia_k", "nro", "mrk")
+    riadky = [{k: z.get(k) for k in stlpce} for z in zmeny]
+    for i in range(0, len(riadky), 500):
+        sb.table("obce_register").upsert(riadky[i:i + 500], on_conflict="kod").execute()
+    notice(f"Zapisane: {len(riadky)} obci")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

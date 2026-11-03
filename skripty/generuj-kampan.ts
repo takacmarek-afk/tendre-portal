@@ -169,6 +169,10 @@ function arg(meno: string, pred: string) { const i = process.argv.indexOf(`--${m
 
 async function main() {
   const zapis = process.argv.includes("--zapis");
+  // --do-db: e-maily do tabulky kampan_pilot (migracia 92) namiesto CSV. --tichy: bez nahladu
+  // a bez kontaktov vo vystupe (GitHub Actions: verejne logy). Obe pouziva workflow pilot-vyzvy.yml.
+  const doDb = process.argv.includes("--do-db");
+  const tichy = process.argv.includes("--tichy");
   const pocet = Number(arg("pocet", "50"));
   const seed = Number(arg("seed", "2411"));
   const odoslanie = new Date(`${arg("datum", "2026-11-24")}T08:00:00Z`);
@@ -224,7 +228,7 @@ async function main() {
   }
 
   if (!zapis) {
-    for (const p of pilot.slice(0, 3)) {
+    for (const p of (tichy ? [] : pilot.slice(0, 3))) {
       console.log("\n" + F.modra("┌" + "─".repeat(78)));
       console.log(F.modra("│ ") + F.seda(`Komu: ${p.kontakt.email}  ·  variant ${p.variant}  ·  skóre ${p.vyber.vyzvy.map((x) => x.skore).join("/")}`));
       console.log(F.modra("│ ") + F.tucne(`Predmet: ${predmet(p, vyzvy)}`));
@@ -239,12 +243,19 @@ async function main() {
     return;
   }
 
-  const riadky = [["ico", "email_obce", "predmet", "telo_text"],
-    ...pilot.map((p) => [p.obec.ico!, p.kontakt.email, predmet(p, vyzvy), teloEmailu(p, vyzvy)])];
-  writeFileSync(vystup, "﻿" + csv(riadky));
+  if (doDb) {
+    await vloz(d, "kampan_pilot", pilot.map((p) => ({
+      mesiac, ico: p.obec.ico!, email_obce: p.kontakt.email, predmet: predmet(p, vyzvy),
+      telo_text: teloEmailu(p, vyzvy), variant: p.variant,
+    })), "mesiac,ico", "prepis");
+  } else {
+    const riadky = [["ico", "email_obce", "predmet", "telo_text"],
+      ...pilot.map((p) => [p.obec.ico!, p.kontakt.email, predmet(p, vyzvy), teloEmailu(p, vyzvy)])];
+    writeFileSync(vystup, "﻿" + csv(riadky));
+  }
   // Zaznam vyberu: chrani pred dvojitym poslanim v tom istom mesiaci a sluzi na vyhodnotenie
   await vloz(d, "vyzvy_vyber", pilot.flatMap((p) => riadkyLogu(p.vyber, mesiac)), "mesiac,kod_obce,poradie", "ignoruj");
-  console.log(F.zelena(`\n✓ ${vystup}: ${pilot.length} e-mailov. Výber zapísaný do vyzvy_vyber (${mesiac}).`));
+  console.log(F.zelena(`\n✓ ${doDb ? "tabuľka kampan_pilot" : vystup}: ${pilot.length} e-mailov. Výber zapísaný do vyzvy_vyber (${mesiac}).`));
   console.log("E-maily sa NEODOSLALI. Pred odoslaním si CSV prezrite.");
 }
 
