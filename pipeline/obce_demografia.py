@@ -110,7 +110,7 @@ def stiahni_obyvatelov():
             try:
                 r = requests.get(url, headers=UA, timeout=120)
             except requests.RequestException as e:
-                log.warning("%s: %s", tvar, e)
+                notice(f"DATAcube {tvar}: {type(e).__name__} {str(e)[:120]}")
                 continue
             if r.status_code != 200 or not r.text.strip().startswith("{"):
                 notice(f"DATAcube {tvar}: HTTP {r.status_code}, {r.text[:80]!r}")
@@ -137,6 +137,10 @@ def stiahni_mrk():
         return set(), set()
     listy = pd.read_excel(io.BytesIO(r.content), sheet_name=None, header=None, dtype=str)
     kody, mena = set(), set()
+    if "obce" in listy:   # list 'obce': Kraj, Okres, Obec, Kod obce -> zaloha podla nazvu
+        df = listy["obce"]
+        for _, row in df.iloc[1:].iterrows():
+            mena.add((norm(row[2]), norm(row[1])))
     for nazov, df in listy.items():
         notice(f"Atlas list '{nazov}': {df.shape}, prvy riadok: {[str(x)[:20] for x in df.iloc[0].tolist()[:8]]}")
         for col in df.columns:
@@ -187,20 +191,39 @@ def main() -> int:
     po_kode6 = {KOD.match(r["kod"]).group(1): r for r in register if KOD.match(r["kod"])}
 
     # ICO z kontaktov kampane (kod_obce = kod registra)
-    kontakty = sb.table("kampan_obce_kontakty").select("ico,kod_obce").not_.is_("kod_obce", "null").execute().data
+    kontakty, od = [], 0
+    while True:
+        kus = sb.table("kampan_obce_kontakty").select("ico,kod_obce").order("ico").range(od, od + 999).execute().data
+        kontakty += kus
+        if len(kus) < 1000:
+            break
+        od += 1000
+    kody_reg = {r["kod"] for r in register}
+    tvary = {}
+    for k in kontakty:
+        kk = str(k.get("kod_obce") or "")
+        t = "prazdny" if not kk else ("register" if kk in kody_reg else f"iny dlzka {len(kk)}")
+        tvary[t] = tvary.get(t, 0) + 1
+    notice(f"Kontakty: {len(kontakty)}, kod_obce: {tvary}")
+    # kod_obce moze byt aj 6-miestny kod SU SR
+    po6 = {KOD.match(r["kod"]).group(1): r["kod"] for r in register if KOD.match(r["kod"])}
     ico_pre = {}
     for k in kontakty:
-        if k.get("ico") and k.get("kod_obce"):
-            ico_pre[k["kod_obce"]] = re.sub(r"\D", "", k["ico"]).zfill(8)
+        kk = str(k.get("kod_obce") or "")
+        kod = kk if kk in kody_reg else po6.get(kk[-6:]) if len(kk) >= 6 else None
+        if k.get("ico") and kod:
+            ico_pre[kod] = re.sub(r"\D", "", k["ico"]).zfill(8)
     notice(f"ICO z kontaktov: {len(ico_pre)}")
 
     obyv, rok = stiahni_obyvatelov()
     try:
-        mrk_kody, _ = stiahni_mrk()
+        mrk_kody, mrk_mena = stiahni_mrk()
     except Exception as e:  # noqa: BLE001
         notice(f"Atlas zlyhal: {e}")
-        mrk_kody = set()
+        mrk_kody, mrk_mena = set(), set()
     nro = {norm(o) for o in NRO_OKRESY}
+    okresy_reg = {norm(r.get("okres")) for r in register}
+    notice(f"NRO bez zhody v registri: {sorted(nro - okresy_reg)}; priklad okresov registra: {sorted(okresy_reg)[:6]}")
 
     zmeny = []
     stat = {"pocet": 0, "nro_true": 0, "mrk_true": 0, "ico": 0, "typ": 0}
@@ -217,7 +240,7 @@ def main() -> int:
         z["nro"] = norm(r.get("okres")) in nro
         stat["nro_true"] += z["nro"]
         if mrk_kody:
-            z["mrk"] = k6 in mrk_kody
+            z["mrk"] = k6 in mrk_kody or (norm(r["nazov"]), norm(r.get("okres"))) in mrk_mena
             stat["mrk_true"] += z["mrk"]
         if not r.get("ico") and r["kod"] in ico_pre:
             z["ico"] = ico_pre[r["kod"]]
