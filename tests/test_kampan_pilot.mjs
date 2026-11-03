@@ -10,15 +10,24 @@ import { join } from "node:path";
 import { VYZVY, validuj, riadok } from "../skripty/seed_vyzvy.ts";
 import { vzorka, variant, predmet, teloEmailu, csv, velkostnaSkupina } from "../skripty/generuj-kampan.ts";
 
-test("seeder: vsetky vyzvy prejdu validaciou, unikatne kody, neoverene", () => {
+test("seeder: validacia, unikatne kody, overene len s oficialnym kodom a zdrojom", () => {
   assert.ok(VYZVY.length >= 8);
   for (const v of VYZVY) assert.deepEqual(validuj(v), [], v.kod);
   assert.equal(new Set(VYZVY.map((v) => v.kod)).size, VYZVY.length);
   for (const v of VYZVY) {
-    const r = riadok(v);
-    assert.equal(r.overil, null);
-    assert.ok(!("kontrola" in r));
+    const r = riadok(v, new Date("2026-11-03T10:00:00Z"));
+    assert.ok(!("stav" in r) && !("zdroje" in r) && !("neoverene_udaje" in r));
+    if (v.stav === "overena") { assert.match(r.overil, /^Claude AI/); assert.equal(r.overene_at, "2026-11-03T10:00:00.000Z"); assert.ok(!v.kod.startsWith("NAVRH-")); }
+    else { assert.equal(r.overil, null); assert.equal(r.overene_at, null); }
   }
+  // vsetky riadky maju rovnake kluce (PostgREST hromadny insert)
+  const kluce = VYZVY.map((v) => Object.keys(riadok(v)).sort().join(","));
+  assert.equal(new Set(kluce).size, 1);
+  assert.ok(VYZVY.filter((v) => v.stav === "overena").length >= 2);
+});
+test("seeder: NAVRH- kod nemoze byt overeny", () => {
+  const v = { ...VYZVY.find((x) => x.stav === "na_kontrolu" && x.kod.startsWith("NAVRH-")), stav: "overena" };
+  assert.ok(validuj(v).some((c) => c.includes("oficialny kod")));
 });
 test("seeder: validacia chyta chyby", () => {
   const zla = { ...VYZVY[0], zdroj_url: "http://x", obyv_min: 10, obyv_max: 1, uzavierka: "2027-01-01", kolo_uzavierky: ["2027-02-01"] };
@@ -47,7 +56,7 @@ test("A/B stabilne", () => {
   assert.ok(["A", "B"].includes(variant("1")));
 });
 
-const V1 = { ...riadok(VYZVY[0]), kod: "X1", nazov: "Centrá opätovného použitia", uzavierka: "2027-02-26", kolo_uzavierky: ["2027-02-26"], financovanie: "refundacia", nfp_min: 30000, nfp_max: 400000 };
+const V1 = { ...riadok(VYZVY[0]), spoluucast_pct: 5, kod: "X1", nazov: "Centrá opätovného použitia", uzavierka: "2027-02-26", kolo_uzavierky: ["2027-02-26"], financovanie: "refundacia", nfp_min: 30000, nfp_max: 400000 };
 const PILOT = {
   obec: { kod: "SK0328516741", ico: "00328707", nazov: "Revúcka Lehota", kraj: "Banskobystrický kraj", okres: "Okres Revúca", pocet_obyvatelov: 250, karta_token: "11111111-2222-3333-4444-555555555555" },
   kontakt: { ico: "00328707", email: "obec@x.sk", token: "tok-1" },
@@ -123,4 +132,14 @@ test("CLI: na sucho nahlad, so --zapis CSV + log", async () => {
     assert.equal(zapisy[0].telo.length, 50);
     rmSync(dir, { recursive: true });
   } finally { s.close(); }
+});
+
+test("neznama spoluucast: e-mail ju netvrdi, kalkulacka nepocita", async () => {
+  const { spocitajPeniaze } = await import("../public/semafor.js");
+  assert.equal(spocitajPeniaze({ spoluucast_pct: null }, { cena_s_dph: 1000 }), null);
+  const m = new Map([["X1", { ...V1, spoluucast_pct: null }]]);
+  const t = teloEmailu(PILOT, m);
+  assert.match(t, /spoluúčasť podľa výzvy/);
+  assert.doesNotMatch(t, /null|undefined|NaN/);
+  assert.match(t, /overené podľa zverejnených podkladov/);
 });

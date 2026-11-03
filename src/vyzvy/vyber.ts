@@ -34,7 +34,7 @@ export interface VyzvaKarta {
   obyv_max: number | null;
   nfp_min: number | null;
   nfp_max: number | null;
-  spoluucast_pct: number;
+  spoluucast_pct: number | null;   // null = vyzva/zdroj ju neuvadza (migracia 91)
   dph_opravnena: "ano" | "nie" | "podla_ziadatela";
   financovanie: Financovanie;
   vyhlasenie: string | null;      // ISO datum

@@ -118,7 +118,7 @@ export function teloEmailu(p: Pilot, vyzvy: Map<string, VyzvaKarta>): string {
     return [
       ciara,
       `${i + 1}) ${v.nazov}`,
-      `   ${v.poskytovatel} · ${nfp}spoluúčasť ${v.spoluucast_pct} %`,
+      `   ${v.poskytovatel} · ${nfp}${v.spoluucast_pct != null ? `spoluúčasť ${v.spoluucast_pct} %` : "spoluúčasť podľa výzvy"}`,
       `   ${uz}`,
       v.financovanie === "refundacia" ? "   ⚠ Dotácia sa vypláca spätne, obec celý projekt najprv zaplatí." : null,
       "",
@@ -152,7 +152,7 @@ export function teloEmailu(p: Pilot, vyzvy: Map<string, VyzvaKarta>): string {
     "Služba je pre obce bezplatná.",
     "",
     "—",
-    `Údaje: Centrálny register zmlúv, Vestník ÚVO, výzvy poskytovateľov (ručne overené).`,
+    `Údaje: Centrálny register zmlúv, Vestník ÚVO, výzvy poskytovateľov (overené podľa zverejnených podkladov).`,
     "Nie sme poskytovateľ dotácie ani poradca. Rozhodujúce je vždy znenie výzvy.",
     `Nechcete tieto e-maily? ${WEB}/odhlasenie-obce.html?t=${p.kontakt.token}`,
     "Iný kontakt na úrad? Stačí odpovedať na tento e-mail.",

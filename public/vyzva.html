@@ -312,11 +312,16 @@ function vykresliHlavicku() {
     u.className += dni > 60 ? " bg-pas text-ink" : dni >= 30 ? " bg-amber-100 text-amber-900" : " bg-red-50 text-red-800";
   }
   if (V.nfp_min != null || V.nfp_max != null) {
-    $("h-nfp").textContent = `Dotácia ${V.nfp_min != null ? eur(V.nfp_min) : ""}${V.nfp_min != null && V.nfp_max != null ? " – " : ""}${V.nfp_max != null ? eur(V.nfp_max) : ""} · spoluúčasť ${V.spoluucast_pct} %`;
+    $("h-nfp").textContent = `Dotácia ${V.nfp_min != null ? eur(V.nfp_min) : ""}${V.nfp_min != null && V.nfp_max != null ? " – " : ""}${V.nfp_max != null ? eur(V.nfp_max) : ""} · ${spoluucastText()}`;
   } else {
-    $("h-nfp").textContent = `Spoluúčasť ${V.spoluucast_pct} %`;
+    $("h-nfp").textContent = spoluucastText();
   }
-  $("f-overene").textContent = V.overene_at ? `Výzvu sme ručne skontrolovali ${datum(V.overene_at)}.` : "";
+  $("f-overene").textContent = V.overene_at ? `Údaje výzvy sme overili ${datum(V.overene_at)} podľa zverejnených podkladov poskytovateľa.` : "";
+}
+
+// Spoluucast moze byt neznama (migracia 91): nikdy ju nedomyslame
+function spoluucastText() {
+  return V.spoluucast_pct != null ? `spoluúčasť ${V.spoluucast_pct} %` : "spoluúčasť podľa znenia výzvy";
 }
 
 // ═════════════════════════════════════════════════════════════════════════
@@ -496,6 +501,12 @@ const UPOZORNENIA = {
 };
 
 function nastavKalkulacku() {
+  if (V.spoluucast_pct == null) {
+    // Bez miery spolufinancovania by kalkulacka hadala. Radsej to povieme.
+    document.querySelectorAll("#pen-cena, #pen-neopr").forEach((el) => (el.closest("label").hidden = true));
+    $("pen-vysledok").innerHTML = `<p class="rounded-lg bg-pas px-4 py-3 text-[15px]">Mieru spolufinancovania zverejnené podklady neuvádzajú. Nájdete ju v znení výzvy (odkaz hore). Spoluúčasť obce pri eurofondoch býva spravidla 5 % oprávnených výdavkov, overte to však vo výzve.</p>`;
+    return;
+  }
   $("pen-dph-box").hidden = V.dph_opravnena !== "podla_ziadatela";
   ["pen-cena", "pen-neopr"].forEach((id) => $(id).addEventListener("input", prepocitajPeniaze));
   document.querySelectorAll('input[name="pen-dph"]').forEach((r) => r.addEventListener("change", prepocitajPeniaze));
@@ -608,6 +619,7 @@ $("krok")?.addEventListener("click", (e) => {
 // Vzor uznesenia (Obecne zriadenie § 11 ods. 4). Predvyplneny, zvysok "____".
 function textUznesenia() {
   const obec = OBEC?.nazov || "__________";
+  const pct = V.spoluucast_pct != null ? `${V.spoluucast_pct} %` : "___ %";
   const suma = peniaze ? new Intl.NumberFormat("sk-SK", { maximumFractionDigits: 2 }).format(peniaze.spoluucast) : "__________";
   const refund = V.financovanie === "refundacia" ? " a predfinancovania výdavkov do ich preplatenia poskytovateľom" : "";
   return `UZNESENIE č. ___/${new Date().getFullYear()}
@@ -619,7 +631,7 @@ podľa § 11 ods. 4 zákona č. 369/1990 Zb. o obecnom zriadení v znení neskor
 A. schvaľuje
 1. predloženie žiadosti o dotáciu za účelom realizácie projektu „__________“, ktorý sa realizuje v rámci výzvy ${V.kod} (${V.poskytovatel}${V.program ? ", " + V.program : ""});
 2. zabezpečenie realizácie projektu v súlade s podmienkami poskytnutia pomoci;
-3. zabezpečenie finančných prostriedkov na spolufinancovanie projektu vo výške ${V.spoluucast_pct} % z celkových oprávnených výdavkov, t. j. najviac ${suma} €, z rozpočtu obce;
+3. zabezpečenie finančných prostriedkov na spolufinancovanie projektu vo výške ${pct} z celkových oprávnených výdavkov, t. j. najviac ${suma} €, z rozpočtu obce;
 4. zabezpečenie financovania prípadných neoprávnených výdavkov projektu${refund};
 
 B. poveruje

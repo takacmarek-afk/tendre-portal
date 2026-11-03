@@ -247,6 +247,8 @@ export function prvyKrok(vyzva, polozky, d0) {
  *                     kombinacia → rozpatie 0 az NFP
  */
 export function spocitajPeniaze(vyzva, vstup) {
+  // Neznama miera spolufinancovania (migracia 91): nepocitame, UI to vysvetli
+  if (vyzva.spoluucast_pct == null) return null;
   const cena = Math.max(0, Number(vstup.cena_s_dph) || 0);
   const neopr = Math.min(cena, Math.max(0, Number(vstup.neopravnene_s_dph) || 0));
   const sadzba = vstup.sadzba_dph ?? 0.23;

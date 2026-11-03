@@ -20,3 +20,8 @@ node_modules/
 # do Marekovho priecinka, nie do repozitara. Starsie uz commitnute skripty
 # ostavaju v repe zamerne (ich odstranenie by ich zmazalo aj z disku).
 predtendrom-*.ps1
+
+# Pilot vyzvy pre obce: tajomstva a vystupy s e-mailami (repo je verejne)
+.env.pilot
+kampan_pilot*.csv
+doplnenie-nesparovane.csv

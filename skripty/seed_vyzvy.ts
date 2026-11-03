@@ -1,178 +1,205 @@
 // =============================================================================
-//  Seeder vyziev do vyzvy_karty (P2 pre kampan 24. 11. 2026)
+//  Seeder vyziev do vyzvy_karty (kampan 24. 11. 2026), automaticke overenie
 //
-//  ZASADA (Marekove pravidlo c. 3): stroj navrhne parametre, clovek ich za
-//  20 minut skontroluje. Preto seeder vklada vyzvy NEOVERENE (overil = null).
-//  Neoverena vyzva sa nikdy nezobrazi na karte ani neposle e-mailom. Kazda
-//  vyzva nesie zoznam "kontrola": co presne treba overit v zneni vyzvy.
+//  Kazda vyzva ma stav:
+//    "overena"     - Claude ju 3. 11. 2026 overil v ZVEREJNENYCH ZDROJOCH
+//                    poskytovatela (zdroje[]): kod, stav (vyhlasena/otvorena),
+//                    uzavierky, opravneni ziadatelia, uzemie. Seeder ju zapise
+//                    rovno ako overenu (overil = "Claude AI ...").
+//    "na_kontrolu" - vyzvu sa NEPODARILO potvrdit (len harmonogram, agregator,
+//                    alebo nevieme, ci uz bola vyhlasena). Zapise sa NEOVERENA,
+//                    takze nejde na kartu ani do e-mailu. Nic sa nevymysla.
 //
-//  Vsetky vyzvy nizsie su REALNE (zdroj_url) k 2. 11. 2026. Ziadna nie je
-//  vymyslena. Udaje, ktore zdroj neuvadza, su prazdne (null) alebo konzervativny
-//  predpoklad a su uvedene v "kontrola". Kod "NAVRH-..." = oficialny kod sme
-//  nenasli; pri overeni ho prepiste na kod z ITMS21.
+//  Udaje, ktore zdroj neuvadza (spoluucast, min/max prispevok, forma platby),
+//  su null alebo konzervativne nastavenie, ktore v karte vedie k otazke na obec
+//  ("overte vo vyzve"), nikdy nie k tvrdeniu. Zoznam je v "neoverene_udaje".
 //
 //  Spustenie:
-//    node --experimental-strip-types skripty/seed_vyzvy.ts               # na sucho + kontrolny zoznam
-//    node --experimental-strip-types skripty/seed_vyzvy.ts --zapis       # vlozi nove (existujuce necha)
-//    ... --zapis --prepisat                                              # prepise aj existujuce (zrusi ich overenie!)
-//    ... --over PSK-MZP-044-2026-DV-EFRR --overil "Marek Takáč"          # po rucnej kontrole oznaci ako overenu
+//    node --experimental-strip-types skripty/seed_vyzvy.ts            # na sucho: prehlad
+//    node --experimental-strip-types skripty/seed_vyzvy.ts --zapis    # zapise (upsert podla kodu)
+//    ... --over <KOD> --overil "Meno"                                 # rucne overenie dalsej vyzvy
 // =============================================================================
 
 import { db, vloz, uprav, citaj, F } from "./db.ts";
 import type { VyzvaKarta } from "../src/vyzvy/vyber.ts";
 
-type Seed = Omit<VyzvaKarta, "overil" | "overene_at"> & { uznesenie_vlastne_znenie: boolean; kontrola: string[] };
+export type Seed = Omit<VyzvaKarta, "overil" | "overene_at"> & {
+  uznesenie_vlastne_znenie: boolean;
+  stav: "overena" | "na_kontrolu";
+  zdroje: string[];             // kde sme to overili (ITMS21, poskytovatel)
+  neoverene_udaje: string[];    // co zdroj neuvadza; obec overi vo vyzve
+};
+
+export const OVERENE_K = "2026-11-03";
+export const OVERIL = `Claude AI (automaticky z verejných zdrojov ${OVERENE_K})`;
 
 const KRAJE_BEZ_BA = [
   "Trnavský kraj", "Trenčiansky kraj", "Nitriansky kraj", "Žilinský kraj",
   "Banskobystrický kraj", "Prešovský kraj", "Košický kraj",
 ];
 const SAMOSPRAVA: VyzvaKarta["typ_ziadatela"] = ["obec", "mesto", "mestska_cast", "zdruzenie_obci"];
-const HMG_2026 = "https://eurofondy.gov.sk/wp-content/uploads/2026/03/Program_Slovensko_harmonogram_planovanych_vyziev_2026_v_2_0.pdf";
+const HMG_V3 = "https://eurofondy.gov.sk/wp-content/uploads/2026/07/Program_Slovensko_harmonogram_planovanych_vyziev_2026_verzia_3_0.pdf";
+const SIEA = "https://www.siea.sk/strukturalne-fondy-eu/program-slovensko/vyzvy-implementovane-siea/";
 
-// Spolocne predpoklady pre Program Slovensko (kazdy je v "kontrola")
-const PS = {
-  spoluucast_pct: 5,
+// Konzervativne predvolby: neznamy udaj = null alebo nastavenie, pri ktorom
+// sa karta obce SPYTA (PD, povolenie, PHRSR), namiesto toho, aby nieco tvrdila.
+const ZAKLAD = {
+  spoluucast_pct: null,
   dph_opravnena: "podla_ziadatela" as const,
   financovanie: "kombinacia" as const,
   vyzaduje_phrsr: true,
   vo_pred_ziadostou: false,
   uznesenie_vlastne_znenie: false,
   obyv_min: null, obyv_max: null, nfp_min: null, nfp_max: null,
-  okresy: [] as string[],
+  kraje: [] as string[], okresy: [] as string[],
+  len_nro: false, len_mrk: false,
+  vyzaduje_ius: false,
+  stupen_pd: "DSP" as const, vyzaduje_povolenie: true,
 };
-const KONTROLA_PS = [
-  "spolufinancovanie obce (predpoklad 5 %)",
-  "forma financovania (refundácia / predfinancovanie / zálohová platba)",
-  "oprávnenosť DPH",
-  "min. a max. výška príspevku, limit obyvateľov",
-];
+const NEZNAME = ["miera spolufinancovania", "min. a max. výška príspevku", "forma financovania", "oprávnenosť DPH", "požadovaný stupeň PD"];
 
 export const VYZVY: Seed[] = [
+  // ── OVERENE ────────────────────────────────────────────────────────────────
   {
-    ...PS,
+    ...ZAKLAD,
+    stav: "overena",
+    kod: "PSK-SIEA-007-2024-ITI-EFRR",
+    nazov: "Energetická efektívnosť a využívanie OZE vo verejných budovách (IÚI)",
+    poskytovatel: "Slovenská inovačná a energetická agentúra",
+    program: "Program Slovensko, integrované územné investície",
+    zdroj_url: "https://portal.itms21.sk/vyhlasena-vyzva/?id=3633",
+    zdroje: [SIEA, "https://portal.itms21.sk/vyhlasena-vyzva/?id=3633"],
+    // SIEA: obce, mesta, VUC a ich rozpoctove a prispevkove organizacie; projekt musi byt
+    // v schvalenom projektovom zamere IUI a ziadatel zhodny so ziadatelom v nom.
+    typ_ziadatela: ["obec", "mesto", "mestska_cast", "VUC"],
+    vyhlasenie: "2025-01-13", uzavierka: null, kolo_uzavierky: [],   // otvorena vyzva
+    vyzaduje_ius: true,
+    aktivity: ["energetika"],
+    signal_sektory: ["STRECHY_IZOLACIE", "OKNA_DVERE_POVRCHY", "KURENIE_VODA_PLYN", "ELEKTROINSTALACIE"],
+    neoverene_udaje: [...NEZNAME, "hodnotiace kolá (otvorená výzva)"],
+  },
+  {
+    ...ZAKLAD,
+    stav: "overena",
+    kod: "PSK-SIEA-006-2024-DV-FST",
+    nazov: "Energetická efektívnosť verejných budov regiónu Hornej Nitry",
+    poskytovatel: "Slovenská inovačná a energetická agentúra",
+    program: "Program Slovensko, Fond na spravodlivú transformáciu",
+    zdroj_url: "https://portal.itms21.sk/vyhlasena-vyzva/?id=3531",
+    zdroje: [SIEA, "https://portal.itms21.sk/vyhlasena-vyzva/?id=3531"],
+    typ_ziadatela: ["obec", "mesto", "VUC"],
+    okresy: ["Okres Prievidza", "Okres Partizánske"],                  // SIEA: len tieto okresy
+    vyhlasenie: "2024-10-14", uzavierka: null, kolo_uzavierky: [],
+    aktivity: ["energetika"],
+    signal_sektory: ["STRECHY_IZOLACIE", "OKNA_DVERE_POVRCHY", "KURENIE_VODA_PLYN", "ELEKTROINSTALACIE"],
+    neoverene_udaje: [...NEZNAME, "hodnotiace kolá (otvorená výzva)"],
+  },
+  {
+    ...ZAKLAD,
+    stav: "overena",
+    kod: "PSK-UV-015-2026-DV-EFRR",
+    nazov: "Dostupné bývanie v obciach z Atlasu rómskych komunít",
+    poskytovatel: "Úrad vlády SR",
+    program: "Program Slovensko, 4P9 / RSO4.7",
+    zdroj_url: "https://portal.itms21.sk/vyhlasena-vyzva/?id=3794",
+    zdroje: ["https://romovia.vlada.gov.sk/sekcia-europskych-programov/programove-obdobie-2021-2027/aktuality/vyhlasenie-vyzvy-s-nazvom-dostupne-byvanie-v-obciach-z-atlasu-romskych-komunit/"],
+    typ_ziadatela: ["obec", "mesto"],
+    kraje: KRAJE_BEZ_BA, len_mrk: true,
+    // 1. kolo 4. 9. 2026, 2. kolo 30. 11. 2026 (vyhlasenie UV SR). Na kampan 24. 11.
+    // je to menej ako 30 dni, takze filter ju do e-mailu nezaradi; karta funguje.
+    vyhlasenie: "2026-07-13", uzavierka: "2026-11-30", kolo_uzavierky: ["2026-09-04", "2026-11-30"],
+    aktivity: ["byvanie"], signal_sektory: ["STAVEBNE_PRACE"],
+    neoverene_udaje: [...NEZNAME, "ďalšie kolá po 30. 11. 2026"],
+  },
+
+  // ── NA KONTROLU (do e-mailov nejdu) ───────────────────────────────────────
+  {
+    ...ZAKLAD,
+    stav: "na_kontrolu",
     kod: "PSK-MZP-044-2026-DV-EFRR",
     nazov: "Centrá opätovného použitia",
     poskytovatel: "Ministerstvo životného prostredia SR",
     program: "Program Slovensko, 2P2 / RSO2.6",
     zdroj_url: "https://portal.itms21.sk/vyhlasena-vyzva/?id=3816",
-    typ_ziadatela: SAMOSPRAVA,
-    kraje: KRAJE_BEZ_BA,                       // ITMS21: 8 krajov okrem Bratislavského
-    len_nro: false, len_mrk: false,
+    zdroje: ["https://www.minzp.sk/program-slovensko/vyzvy.html"],
+    typ_ziadatela: SAMOSPRAVA, kraje: KRAJE_BEZ_BA,
     vyhlasenie: "2026-09-04", uzavierka: null, kolo_uzavierky: [],
-    vyzaduje_ius: false, stupen_pd: "DSP", vyzaduje_povolenie: true,
     aktivity: ["odpad"], signal_sektory: ["ODPAD", "STAVEBNE_PRACE"],
-    kontrola: [...KONTROLA_PS, "uzávierky hodnotiacich kôl (dopytová výzva)", "stupeň PD a potreba povolenia stavby"],
+    neoverene_udaje: ["či je ešte otvorená a termíny kôl (ITMS21 sme nevedeli načítať)", "oprávnení žiadatelia", ...NEZNAME],
   },
   {
-    ...PS,
-    kod: "NAVRH-KF-VODA-2026",
+    ...ZAKLAD,
+    stav: "na_kontrolu",
+    kod: "NAVRH-MZP-KF-VODA-2026",
     nazov: "Výstavba kanalizácie, čistiarní odpadových vôd a vodovodov (Kohézny fond)",
     poskytovatel: "Ministerstvo životného prostredia SR",
     program: "Program Slovensko, Kohézny fond",
-    // sekundarny zdroj (agregator); oficialne znenie najst v ITMS21 a URL nahradit
     zdroj_url: "https://napisemprojekt.sk/dotacia-na-vystavbu-kanalizacie-cistiarni-odpadovych-vod-a-vodovodov-kohezny-fond-2026/",
+    zdroje: ["agregátor, oficiálny zdroj sme nenašli"],
     typ_ziadatela: SAMOSPRAVA,
-    kraje: [], len_nro: false, len_mrk: false,
     vyhlasenie: null, uzavierka: "2026-11-29", kolo_uzavierky: ["2026-11-29"],
-    vyzaduje_ius: false, stupen_pd: "DSP", vyzaduje_povolenie: true,
     aktivity: ["voda"], signal_sektory: ["KURENIE_VODA_PLYN", "STAVEBNE_PRACE"],
-    kontrola: ["OFICIÁLNY KÓD a URL v ITMS21 (zdroj je agregátor)", "uzávierka 29. 11. 2026 a ďalšie kolá",
-      "aglomerácie / veľkosť obcí", ...KONTROLA_PS],
+    neoverene_udaje: ["oficiálny kód a znenie", "uzávierka (podľa agregátora 29. 11. 2026)", ...NEZNAME],
   },
   {
-    ...PS,
-    kod: "NAVRH-PS-4P6-MIESTNE-SLUZBY",
-    nazov: "Miestne obecné služby (obce z Atlasu rómskych komunít)",
-    poskytovatel: "Úrad splnomocnenca vlády SR pre rómske komunity",
-    program: "Program Slovensko, 4P6 / ESO4.10",
-    zdroj_url: HMG_2026,
-    typ_ziadatela: ["obec", "mesto", "mestska_cast"],
-    kraje: [], len_nro: false, len_mrk: true,
-    vyhlasenie: null, uzavierka: null, kolo_uzavierky: [],
-    vyzaduje_ius: false, stupen_pd: "ziadna", vyzaduje_povolenie: false,
-    aktivity: ["socialne"], signal_sektory: [],
-    kontrola: ["či a kedy bola vyhlásená (harmonogram: 2Q/2026, otvorená do vyčerpania)", "OFICIÁLNY KÓD a URL",
-      "poskytovateľ (predpoklad: ÚSVRK)", ...KONTROLA_PS],
-  },
-  {
-    ...PS,
-    kod: "NAVRH-PS-4P9-BYVANIE-MRK",
-    nazov: "Dostupné bývanie v obciach z Atlasu rómskych komunít",
-    poskytovatel: "Úrad splnomocnenca vlády SR pre rómske komunity",
-    program: "Program Slovensko, 4P9 / RSO4.7",
-    zdroj_url: HMG_2026,
-    typ_ziadatela: ["obec", "mesto", "mestska_cast"],
-    kraje: [], len_nro: false, len_mrk: true,
-    vyhlasenie: null, uzavierka: null, kolo_uzavierky: [],
-    vyzaduje_ius: false, stupen_pd: "DSP", vyzaduje_povolenie: true,
-    aktivity: ["byvanie"], signal_sektory: ["STAVEBNE_PRACE"],
-    kontrola: ["či a kedy bola vyhlásená (harmonogram: 2Q/2026, otvorená do vyčerpania)", "OFICIÁLNY KÓD a URL",
-      "poskytovateľ", ...KONTROLA_PS],
-  },
-  {
-    ...PS,
-    kod: "NAVRH-PS-5P2-BYVANIE-IUS",
-    nazov: "Zabezpečenie prístupu k cenovo dostupnému a udržateľnému bývaniu (IÚS)",
+    ...ZAKLAD,
+    stav: "na_kontrolu",
+    kod: "NAVRH-MIRRI-KOMUNIKACIE-DO-1000",
+    nazov: "Výstavba a modernizácia miestnych komunikácií v obciach do 1 000 obyvateľov",
     poskytovatel: "Ministerstvo investícií, regionálneho rozvoja a informatizácie SR",
+    program: "Program Slovensko, 3P1 / RSO3.2",
+    zdroj_url: HMG_V3, zdroje: [HMG_V3],
+    typ_ziadatela: ["obec"], obyv_max: 1000,
+    vyhlasenie: null, uzavierka: null, kolo_uzavierky: [],
+    aktivity: ["cesty"], signal_sektory: ["STAVEBNE_PRACE", "DOPRAVA_MECHANIZACIA"],
+    neoverene_udaje: ["či bola vyhlásená (harmonogram: 3Q/2026, dopytová)", "oficiálny kód", ...NEZNAME],
+  },
+  {
+    ...ZAKLAD,
+    stav: "na_kontrolu",
+    kod: "NAVRH-MDSR-5P2-NAJOMNE-BYVANIE",
+    nazov: "Zabezpečenie prístupu k cenovo dostupnému bývaniu: nájomné sociálne bývanie (IÚS)",
+    poskytovatel: "Ministerstvo dopravy SR",
     program: "Program Slovensko, 5P2 / RSO5.3, integrované územné investície",
-    zdroj_url: HMG_2026,
+    zdroj_url: HMG_V3, zdroje: [HMG_V3],
     typ_ziadatela: ["obec", "mesto", "mestska_cast"],
-    kraje: [], len_nro: false, len_mrk: false,
     vyhlasenie: null, uzavierka: null, kolo_uzavierky: [],
-    vyzaduje_ius: true, stupen_pd: "DSP", vyzaduje_povolenie: true,
+    vyzaduje_ius: true,
     aktivity: ["byvanie"], signal_sektory: ["STAVEBNE_PRACE"],
-    kontrola: ["či a kedy bola vyhlásená (harmonogram: 2Q/2026)", "OFICIÁLNY KÓD a URL",
-      "poskytovateľ (predpoklad: MIRRI ako RO pre IÚZ)", "kraje (IÚS jednotlivých krajov)", ...KONTROLA_PS],
+    neoverene_udaje: ["či bola vyhlásená (harmonogram: 4Q/2026)", "oficiálny kód", ...NEZNAME],
   },
   {
-    ...PS,
-    kod: "NAVRH-PS-2P5-SIEA-BYVANIE",
-    nazov: "Podpora prístupu k cenovo dostupnému a udržateľnému bývaniu (SIEA)",
-    poskytovatel: "Slovenská inovačná a energetická agentúra",
-    program: "Program Slovensko, 2P5 / RSO2.11",
-    zdroj_url: HMG_2026,
-    typ_ziadatela: ["obec", "mesto", "mestska_cast"],
-    kraje: [], len_nro: false, len_mrk: false,
-    vyhlasenie: null, uzavierka: null, kolo_uzavierky: [],
-    vyzaduje_ius: false, stupen_pd: "DSP", vyzaduje_povolenie: true,
-    aktivity: ["byvanie", "energetika"], signal_sektory: ["STAVEBNE_PRACE", "STRECHY_IZOLACIE"],
-    kontrola: ["vyhlásenie (harmonogram: 4Q/2026, uzavretie 1Q/2027) a presná uzávierka", "OFICIÁLNY KÓD a URL",
-      "oprávnenosť obcí (harmonogram: aj subjekty územnej samosprávy)", ...KONTROLA_PS],
-  },
-  {
-    ...PS,
-    kod: "NAVRH-PS-2P4-VODA-IUS",
+    ...ZAKLAD,
+    stav: "na_kontrolu",
+    kod: "NAVRH-MIRRI-2P4-VODA-IUS",
     nazov: "Podpora bezpečného prístupu k vode a udržateľného vodného hospodárstva (IÚS)",
     poskytovatel: "Ministerstvo investícií, regionálneho rozvoja a informatizácie SR",
     program: "Program Slovensko, 2P4 / RSO2.5, integrované územné investície",
-    zdroj_url: HMG_2026,
+    zdroj_url: HMG_V3, zdroje: [HMG_V3],
     typ_ziadatela: SAMOSPRAVA,
-    kraje: [], len_nro: false, len_mrk: false,
     vyhlasenie: null, uzavierka: null, kolo_uzavierky: [],
-    vyzaduje_ius: true, stupen_pd: "DSP", vyzaduje_povolenie: true,
+    vyzaduje_ius: true,
     aktivity: ["voda"], signal_sektory: ["KURENIE_VODA_PLYN", "STAVEBNE_PRACE"],
-    kontrola: ["či a kedy bola vyhlásená (harmonogram: 2Q/2026, uzavretie 4Q/2029)", "OFICIÁLNY KÓD a URL",
-      "poskytovateľ a kraje", ...KONTROLA_PS],
+    neoverene_udaje: ["či bola vyhlásená (harmonogram: 3Q/2026, uzavretie 4Q/2029)", "oficiálny kód", ...NEZNAME],
   },
   {
-    ...PS,
-    kod: "NAVRH-PS-2P2-PREDCHADZANIE-ODPADOV",
+    ...ZAKLAD,
+    stav: "na_kontrolu",
+    kod: "NAVRH-MZP-2P2-PREDCHADZANIE-ODPADOV",
     nazov: "Podpora vybraných aktivít v oblasti predchádzania vzniku odpadov",
     poskytovatel: "Ministerstvo životného prostredia SR",
     program: "Program Slovensko, 2P2 / RSO2.6",
-    zdroj_url: HMG_2026,
-    typ_ziadatela: SAMOSPRAVA,
-    kraje: KRAJE_BEZ_BA, len_nro: false, len_mrk: false,
+    zdroj_url: "https://eurofondy.gov.sk/wp-content/uploads/2026/03/Program_Slovensko_harmonogram_planovanych_vyziev_2026_v_2_0.pdf",
+    zdroje: ["harmonogram 2026 v2.0"],
+    typ_ziadatela: SAMOSPRAVA, kraje: KRAJE_BEZ_BA,
     vyhlasenie: null, uzavierka: null, kolo_uzavierky: [],
-    vyzaduje_ius: false, stupen_pd: "ziadna", vyzaduje_povolenie: false,
+    stupen_pd: "ziadna", vyzaduje_povolenie: false,
     aktivity: ["odpad"], signal_sektory: ["ODPAD"],
-    kontrola: ["či a kedy bola vyhlásená (harmonogram: 2Q/2026, uzavretá dopytová) a uzávierka", "OFICIÁLNY KÓD a URL",
-      "kraje (predpoklad: bez Bratislavského)", "stupeň PD (aktivity môžu byť aj stavebné)", ...KONTROLA_PS],
+    neoverene_udaje: ["či bola vyhlásená a uzávierka (harmonogram: 2Q/2026, uzavretá)", "oficiálny kód", ...NEZNAME],
   },
 ];
 
-// --- Validacia (zrkadlo obmedzeni z migracie 89) -----------------------------
+// --- Validacia (zrkadlo obmedzeni z migracii 89 a 91) ---------------------------
 const TYPY = ["obec", "mesto", "mestska_cast", "zdruzenie_obci", "VUC"];
 const DATUM = /^\d{4}-\d{2}-\d{2}$/;
 export function validuj(v: Seed): string[] {
@@ -183,20 +210,22 @@ export function validuj(v: Seed): string[] {
   if (!v.typ_ziadatela.length || v.typ_ziadatela.some((t) => !TYPY.includes(t))) ch.push("typ_ziadatela");
   if (v.obyv_min != null && v.obyv_max != null && v.obyv_min > v.obyv_max) ch.push("obyv_min > obyv_max");
   if (v.nfp_min != null && v.nfp_max != null && v.nfp_min > v.nfp_max) ch.push("nfp_min > nfp_max");
-  if (!(v.spoluucast_pct >= 0 && v.spoluucast_pct <= 100)) ch.push("spoluucast_pct");
+  if (v.spoluucast_pct != null && !(v.spoluucast_pct >= 0 && v.spoluucast_pct <= 100)) ch.push("spoluucast_pct");
   if (!["ano", "nie", "podla_ziadatela"].includes(v.dph_opravnena)) ch.push("dph_opravnena");
   if (!["refundacia", "predfinancovanie", "zalohova_platba", "kombinacia"].includes(v.financovanie)) ch.push("financovanie");
   if (!["ziadna", "studia", "DSP", "DRS"].includes(v.stupen_pd)) ch.push("stupen_pd");
   for (const d of [v.vyhlasenie, v.uzavierka, ...v.kolo_uzavierky]) if (d != null && !DATUM.test(d)) ch.push(`datum ${d}`);
   if (v.uzavierka && v.kolo_uzavierky.length && !v.kolo_uzavierky.includes(v.uzavierka)) ch.push("uzavierka nie je v kolo_uzavierky");
-  if (!v.kontrola.length) ch.push("chyba zoznam kontrola");
+  if (v.stav === "overena" && (v.kod.startsWith("NAVRH-") || !v.zdroje.some((z) => /^https:\/\//.test(z)))) ch.push("overena vyzva musi mat oficialny kod a zdroj");
   return ch;
 }
 
-/** Riadok pre databazu: bez "kontrola", vzdy neovereny. */
-export function riadok(v: Seed) {
-  const { kontrola, ...r } = v;
-  return { ...r, overil: null, overene_at: null };
+/** Riadok pre databazu. Overene dostanu overil + cas, ostatne null. */
+export function riadok(v: Seed, teraz = new Date()) {
+  const { stav, zdroje, neoverene_udaje, ...r } = v;
+  return stav === "overena"
+    ? { ...r, overil: OVERIL, overene_at: teraz.toISOString() }
+    : { ...r, overil: null, overene_at: null };
 }
 
 // --- CLI ----------------------------------------------------------------------
@@ -204,46 +233,38 @@ function arg(meno: string) { const i = process.argv.indexOf(`--${meno}`); return
 
 async function main() {
   const zapis = process.argv.includes("--zapis");
-  const prepisat = process.argv.includes("--prepisat");
   const overKod = arg("over");
 
-  // 1) Rezim overenia jednej vyzvy (po rucnej kontrole)
   if (overKod) {
     const kto = arg("overil");
     if (!kto) throw new Error('Pri --over zadajte aj --overil "Meno"');
-    const d = db();
-    const n = await uprav(d, `vyzvy_karty?kod=eq.${encodeURIComponent(overKod)}`, { overil: kto, overene_at: new Date().toISOString() });
-    console.log(n ? F.zelena(`✓ ${overKod} je overená (${kto}). Odteraz sa zobrazí na karte a môže ísť do kampane.`) : F.cervena(`Výzvu ${overKod} sme v databáze nenašli.`));
+    const n = await uprav(db(), `vyzvy_karty?kod=eq.${encodeURIComponent(overKod)}`, { overil: kto, overene_at: new Date().toISOString() });
+    console.log(n ? F.zelena(`✓ ${overKod} je overená (${kto}).`) : F.cervena(`Výzvu ${overKod} sme v databáze nenašli.`));
     return;
   }
 
-  // 2) Validacia
   let chyby = 0;
-  console.log(F.tucne(`\n=== Seeder výziev (${zapis ? "ZÁPIS" : "NA SUCHO"}) – ${VYZVY.length} výziev ===\n`));
+  const ov = VYZVY.filter((v) => v.stav === "overena").length;
+  console.log(F.tucne(`\n=== Seeder výziev (${zapis ? "ZÁPIS" : "NA SUCHO"}): ${ov} overených, ${VYZVY.length - ov} na kontrolu ===\n`));
   for (const v of VYZVY) {
     const ch = validuj(v);
     chyby += ch.length;
-    console.log(`${ch.length ? F.cervena("✕") : F.zelena("✓")} ${F.tucne(v.kod)}  ${v.nazov}`);
-    console.log(F.seda(`   ${v.poskytovatel} · uzávierka ${v.uzavierka ?? "otvorená/neznáma"} · ${v.zdroj_url}`));
+    const znak = ch.length ? F.cervena("✕") : v.stav === "overena" ? F.zelena("✓ overená   ") : F.zlta("· na kontrolu");
+    console.log(`${znak} ${F.tucne(v.kod)}  ${v.nazov}`);
+    console.log(F.seda(`   uzávierka ${v.uzavierka ?? "otvorená / neuvedená"} · ${v.zdroj_url}`));
     if (ch.length) console.log(F.cervena(`   chyby: ${ch.join(", ")}`));
-    console.log(F.zlta(`   Overiť: ${v.kontrola.join(" | ")}`));
+    console.log(F.seda(`   Obec overí vo výzve: ${v.neoverene_udaje.join(" | ")}`));
   }
   if (chyby) throw new Error(`Validácia našla ${chyby} chýb, nič sa nezapísalo.`);
   if (new Set(VYZVY.map((v) => v.kod)).size !== VYZVY.length) throw new Error("Duplicitný kód výzvy.");
+  if (!zapis) { console.log(F.seda("\nNa sucho, nič sa nezapísalo. Pre zápis pridajte --zapis.")); return; }
 
-  if (!zapis) {
-    console.log(F.seda("\nNa sucho, nič sa nezapísalo. Pre zápis pridajte --zapis."));
-    return;
-  }
-
-  // 3) Zapis (neoverene). Bez --prepisat sa existujuce vyzvy nemenia.
   const d = db();
-  await vloz(d, "vyzvy_karty", VYZVY.map(riadok), "kod", prepisat ? "prepis" : "ignoruj");
+  // upsert: aktualne udaje zo seedera maju prednost (obsahuju aj overenie)
+  await vloz(d, "vyzvy_karty", VYZVY.map((v) => riadok(v)), "kod", "prepis");
   const v_db = await citaj<{ kod: string; overene_at: string | null }>(d, "vyzvy_karty?select=kod,overene_at");
   const nase = v_db.filter((x) => VYZVY.some((v) => v.kod === x.kod));
-  console.log(F.zelena(`\n✓ V databáze je ${nase.length}/${VYZVY.length} výziev zo seedera, overených ${nase.filter((x) => x.overene_at).length}.`));
-  console.log(`Ďalej: skontrolujte body "Overiť" v znení výzvy, opravte údaje (Supabase › Table editor › vyzvy_karty)`);
-  console.log(`a potom: node --experimental-strip-types skripty/seed_vyzvy.ts --over <KOD> --overil "Vaše meno"`);
+  console.log(F.zelena(`\n✓ Zapísané ${nase.length}/${VYZVY.length} výziev, overených ${nase.filter((x) => x.overene_at).length}.`));
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
