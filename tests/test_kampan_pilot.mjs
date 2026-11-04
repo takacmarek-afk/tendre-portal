@@ -93,7 +93,7 @@ function falosnyServer() {
     q.on("end", () => {
       const u = q.url;
       const json = (x) => { r.writeHead(200, { "Content-Type": "application/json" }); r.end(JSON.stringify(x)); };
-      if (q.method === "POST" && u.startsWith("/rest/v1/rpc/vyzvy_signaly_obci")) return json(obce);
+      if (u.startsWith("/rest/v1/rpc/vyzvy_signaly_obci")) return json(obce);
       if (q.method === "POST") { zapisy.push({ u, telo: JSON.parse(telo) }); r.writeHead(201); return r.end(); }
       if (u.startsWith("/rest/v1/vyzvy_karty")) return json([vyzva]);
       if (u.startsWith("/rest/v1/obce_register")) return json(obce.map((o) => ({ kod: o.kod, karta_token: "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee" })));

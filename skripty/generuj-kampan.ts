@@ -19,7 +19,7 @@
 // =============================================================================
 
 import { writeFileSync } from "node:fs";
-import { db, citaj, rpc, vloz, F } from "./db.ts";
+import { db, citaj, vloz, F } from "./db.ts";
 import { vyberVyzievPreObec, riadkyLogu, type ObecSignaly, type VyzvaKarta, type VysledokVyberu } from "../src/vyzvy/vyber.ts";
 
 const WEB = "https://predtendrom.sk";
@@ -183,7 +183,8 @@ async function main() {
   console.log(F.tucne(`\n=== Pilotná kampaň: výzvy pre obce (${zapis ? "ZÁPIS" : "NA SUCHO"}) ===`));
   const [vyzvyZoz, signaly, tokeny, kontakty, uzPoslane] = await Promise.all([
     citaj<VyzvaKarta>(d, "vyzvy_karty?select=*&overene_at=not.is.null"),
-    rpc<ObecSignaly[]>(d, "vyzvy_signaly_obci"),
+    // GET + strankovanie: PostgREST vracia najviac 1000 riadkov naraz (POST rpc by orezal)
+    citaj<ObecSignaly>(d, "rpc/vyzvy_signaly_obci"),
     citaj<{ kod: string; karta_token: string }>(d, "obce_register?select=kod,karta_token"),
     citaj<{ ico: string; email: string; token: string }>(d, "kampan_obce_kontakty?select=ico,email,token&stav=eq.ok&odhlasene_at=is.null"),
     citaj<{ kod_obce: string }>(d, `vyzvy_vyber?select=kod_obce&mesiac=eq.${mesiac}`),
