@@ -19,12 +19,12 @@ name: Oslovenie firiem
 # ══════════════════════════════════════════════════════════════════════════
 
 on:
-  # Automaticky beh (schvalil Marek 2. 11. 2026): pondelok az stvrtok o 9:13
-  # (zimny cas; v lete 10:13). Nadvazujuce kroky + 30 novych firiem zo vsetkych
+  # Automaticky beh (schvalil Marek 2. 11. 2026, posun na 8:17 4. 11.): pondelok az stvrtok o 8:17
+  # (zimny cas; v lete 9:17). Nadvazujuce kroky + 30 novych firiem zo vsetkych
   # segmentov, najviac 45 e-mailov za den. Firmu, ktora odpovedala, treba
   # zastavit krokom "zastav" (ICO), inak dostane dalsi krok.
   schedule:
-    - cron: "13 8 * * 1-4"
+    - cron: "17 7 * * 1-4"   # 8:17 SEC (zima); skor ako 9:13, lebo GitHub planovane behy oneskoruje a okno je 8:00-16:00
   workflow_dispatch:
     inputs:
       krok:
