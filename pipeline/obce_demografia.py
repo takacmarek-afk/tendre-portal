@@ -43,11 +43,21 @@ NRO_OKRESY = [
     "Vranov nad Topľou",
 ]
 ATLAS_URL = "https://www.romovia.vlada.gov.sk/site/assets/files/1111/ark2019_c_verejna.xlsx"
-DATACUBE = "https://data.statistics.sk/api/v2/dataset/om7102rr"
+DATACUBE = "https://data.statistics.sk/api/v2/dataset"
+DATASETY = ("om7101rr", "om7102rr")   # om7101rr cituje aj Wikipedia pri obciach
+
+
+# GitHub zobrazi najviac 10 anotacii na krok: zbierame ich a na konci vypiseme jednu.
+SPRAVY = []
 
 
 def notice(text):
-    print(f"::notice::{text}", flush=True)
+    print(text, flush=True)
+    SPRAVY.append(str(text))
+
+
+def vypis_suhrn():
+    print("::notice::" + " || ".join(SPRAVY).replace("\n", " ")[:3900], flush=True)
 
 
 def norm(s) -> str:
@@ -102,29 +112,65 @@ def jsonstat_maxima(data: dict) -> dict:
     return out
 
 
+WIKIDATA = "https://query.wikidata.org/sparql"
+SPARQL = """
+SELECT ?lau ?pop ?datum ?typLabel WHERE {
+  ?o wdt:P17 wd:Q214 ; wdt:P782 ?lau ; p:P1082 ?st .
+  ?st ps:P1082 ?pop . OPTIONAL { ?st pq:P585 ?datum }
+  OPTIONAL { ?o wdt:P31 ?typ }
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "sk". }
+}"""
+
+
+def wikidata_obyvatelia():
+    """Zaloha, ked je DATAcube nedostupny (z GitHub Actions byva): Wikidata.
+    Vrati ({kod6: (pocet, rok)}, {kod6: typ}). Pri viacerych udajoch berie najnovsi."""
+    r = requests.get(WIKIDATA, params={"query": SPARQL, "format": "json"},
+                     headers={**UA, "Accept": "application/sparql-results+json"}, timeout=180)
+    r.raise_for_status()
+    pocty, typy = {}, {}
+    for b in r.json()["results"]["bindings"]:
+        lau = re.sub(r"\D", "", b["lau"]["value"])
+        if len(lau) < 6:
+            continue
+        k6 = lau[-6:]
+        try:
+            pop = int(float(b["pop"]["value"]))
+        except ValueError:
+            continue
+        rok = int(b["datum"]["value"][:4]) if "datum" in b else 0
+        if k6 not in pocty or rok > pocty[k6][1]:
+            pocty[k6] = (pop, rok)
+        t = norm(b.get("typLabel", {}).get("value"))
+        if "mestska cast" in t:
+            typy[k6] = "mestska_cast"
+        elif t.startswith("mesto") and typy.get(k6) != "mestska_cast":
+            typy[k6] = "mesto"
+    return pocty, typy
+
+
 def stiahni_obyvatelov():
-    """Skusi niekolko tvarov URL (pocet dimenzii datasetu nepoznáme isto)."""
-    for rok in (2025, 2024):
-        for tvar in (f"/all/{rok}/all", f"/all/{rok}/all/all", f"/all/{rok}", f"/all/all/{rok}/all"):
-            url = f"{DATACUBE}{tvar}?lang=sk&type=json"
-            try:
-                r = requests.get(url, headers=UA, timeout=120)
-            except requests.RequestException as e:
-                notice(f"DATAcube {tvar}: {type(e).__name__} {str(e)[:120]}")
-                continue
-            if r.status_code != 200 or not r.text.strip().startswith("{"):
-                notice(f"DATAcube {tvar}: HTTP {r.status_code}, {r.text[:80]!r}")
-                continue
-            data = r.json()
-            try:
-                vysl = jsonstat_maxima(data)
-            except Exception as e:  # noqa: BLE001
-                notice(f"DATAcube {tvar}: {e}; dims={data.get('id')} size={data.get('size')}")
-                continue
-            notice(f"DATAcube {tvar}: obci s poctom {len(vysl)}, dims={data.get('id')}")
-            if len(vysl) > 2500:
-                return vysl, rok
-    return {}, None
+    """DATAcube SU SR (jeden rychly pokus), inak Wikidata.
+    Vrati ({kod6: pocet}, {kod6: rok}, {kod6: typ}, zdroj)."""
+    for ds in DATASETY:
+        url = f"{DATACUBE}/{ds}/all/2025/all?lang=sk&type=json"
+        try:
+            r = requests.get(url, headers=UA, timeout=20)
+            if r.status_code == 200 and r.text.strip().startswith("{"):
+                vysl = jsonstat_maxima(r.json())
+                if len(vysl) > 2500:
+                    return vysl, {k: 2025 for k in vysl}, {}, f"DATAcube {ds}"
+            notice(f"DATAcube {ds}: HTTP {r.status_code}")
+        except Exception as e:  # noqa: BLE001
+            notice(f"DATAcube {ds}: {type(e).__name__}")
+    try:
+        pocty, typy = wikidata_obyvatelia()
+        notice(f"Wikidata: obci s poctom {len(pocty)}, mesta/mestske casti {len(typy)}, "
+               f"roky udajov {sorted({r for _, r in pocty.values()})[-5:]}")
+        return ({k: v[0] for k, v in pocty.items()}, {k: v[1] for k, v in pocty.items()}, typy, "Wikidata")
+    except Exception as e:  # noqa: BLE001
+        notice(f"Wikidata: {type(e).__name__} {str(e)[:100]}")
+    return {}, {}, {}, None
 
 
 # ── MRK (Atlas 2019) ──────────────────────────────────────────────────────────
@@ -215,7 +261,7 @@ def main() -> int:
             ico_pre[kod] = re.sub(r"\D", "", k["ico"]).zfill(8)
     notice(f"ICO z kontaktov: {len(ico_pre)}")
 
-    obyv, rok = stiahni_obyvatelov()
+    obyv, roky, typy_wd, zdroj = stiahni_obyvatelov()
     try:
         mrk_kody, mrk_mena = stiahni_mrk()
     except Exception as e:  # noqa: BLE001
@@ -235,7 +281,8 @@ def main() -> int:
         z = dict(r)
         if k6 in obyv:
             z["pocet_obyvatelov"] = obyv[k6]
-            z["obyvatelia_k"] = f"{rok}-12-31"
+            if roky.get(k6):
+                z["obyvatelia_k"] = f"{roky[k6]}-12-31"
             stat["pocet"] += 1
         z["nro"] = norm(r.get("okres")) in nro
         stat["nro_true"] += z["nro"]
@@ -247,6 +294,15 @@ def main() -> int:
             stat["ico"] += 1
         zmeny.append(z)
 
+    # typ: najprv Wikidata (mesto / mestska cast podla kodu obce), potom RPO podla ICO
+    for z in zmeny:
+        k6 = KOD.match(z["kod"]).group(1)
+        if typy_wd.get(k6) and typy_wd[k6] != z.get("typ"):
+            z["typ"] = typy_wd[k6]
+            stat["typ"] += 1
+    if not a.bez_rpo and typ_z_rpo("00328715") is None:
+        notice("RPO nedostupne, typ len z Wikidata")
+        a.bez_rpo = True
     if not a.bez_rpo:
         s_ico = [z for z in zmeny if z.get("ico") and (z.get("typ") or "obec") == "obec"]
         for z in s_ico:
@@ -256,6 +312,7 @@ def main() -> int:
                 stat["typ"] += 1
         notice(f"RPO: preverenych {len(s_ico)} obci, typ zmeneny {stat['typ']} (mesta, mestske casti)")
 
+    notice(f"Zdroj obyvatelov: {zdroj}")
     notice("Statistika: " + ", ".join(f"{k} {v}" for k, v in stat.items()) + f" | NRO okresov v registri: "
            f"{len({norm(z.get('okres')) for z in zmeny if z['nro']})}/19")
     if len(obyv) < 2500:
@@ -273,4 +330,7 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    finally:
+        vypis_suhrn()
