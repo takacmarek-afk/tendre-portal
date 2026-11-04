@@ -76,4 +76,9 @@ jobs:
 
       - name: E-maily kampane do kampan_pilot
         if: inputs.kampan
-        run: node --experimental-strip-types --no-warnings skripty/generuj-kampan.ts --zapis --do-db --tichy --datum "${{ inputs.datum }}"
+        # Chybu (bez kontaktov) dame do anotacie, logy sa z verejneho repa citaju tazko
+        run: |
+          set -o pipefail
+          node --experimental-strip-types --no-warnings skripty/generuj-kampan.ts --zapis --do-db --tichy --datum "${{ inputs.datum }}" > vystup.txt 2>&1 \
+            || { echo "::error::$(grep -v '@' vystup.txt | tail -c 900 | tr '\n' ' ')"; exit 1; }
+          echo "::notice::$(grep -v '@' vystup.txt | tr '\n' ' ' | tail -c 900)"
