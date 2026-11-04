@@ -34,7 +34,7 @@ import store
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("demografia")
 UA = {"User-Agent": "tendre-portal/1.0 (open data client)"}
-KOD = re.compile(r"^SK0\d{3}(\d{6})$")
+KOD = re.compile(r"^SK0[0-9A-F]{3}(\d{6})$")   # okres moze mat pismeno (SK041A Stara Lubovna)
 
 NRO_OKRESY = [
     "Bardejov", "Gelnica", "Kežmarok", "Košice - okolie", "Levoča", "Lučenec",
