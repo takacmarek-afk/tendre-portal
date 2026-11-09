@@ -314,8 +314,9 @@ def hook_pre_firmu(kontakt, zmluvy, dnes):
     n12 = sum(1 for z in v if z["effective_to"] <= rok)
     if not v or n12 < 1:
         return None
+    suma12 = sum(float(z.get("price_total") or 0) for z in v if z["effective_to"] <= rok)
     v.sort(key=lambda z: -(float(z.get("price_total") or 0)))
-    return {"N": n12, "zmluvy": [{"urad": z["authority_name"], "predmet": _skrat(z["subject"]),
+    return {"N": n12, "suma12": suma12, "zmluvy": [{"urad": z["authority_name"], "predmet": _skrat(z["subject"]),
                                    "suma": ko.eur(z.get("price_total")), "koniec": z["effective_to"],
                                    "contract_id": z["contract_id"]} for z in v[:3]]}
 
@@ -326,6 +327,27 @@ def _skrat(t, n=90):
 
 
 # ── 3. texty (sekcia 3 planu predaja) ──────────────────────────────────────
+
+SEO_DIR = os.path.join(os.path.dirname(__file__), "..", "public", "konciace-zmluvy")
+
+
+def seo_cesta(segment, kraj):
+    """/konciace-zmluvy/<odbor>/<kraj> (programaticke SEO), ak stranka existuje.
+
+    9. 11. 2026: namiesto „zadajte odbor a kraj“ na titulke vedie odkaz rovno
+    na zoznam firminho odboru a kraja. Neexistujucu stranku nikdy neposleme."""
+    try:
+        from generuj_zmluvy_podstranky import SEKTORY_SEO, _slug
+    except Exception:   # pragma: no cover - chyba importu nesmie zastavit e-maily
+        return None
+    info = SEKTORY_SEO.get(segment)
+    if not info or not kraj:
+        return None
+    k = _slug(kraj)
+    if not os.path.exists(os.path.join(SEO_DIR, info["slug"], f"{k}.html")):
+        return None
+    return f"/konciace-zmluvy/{info['slug']}/{k}"
+
 
 def utm(cesta, krok, variant):
     return f"{WEB}{cesta}?utm_source=email&utm_medium=oslovenie&utm_campaign=firmy-k{krok}{variant.lower()}"
@@ -345,6 +367,9 @@ def zostav(krok, kontakt, hook, variant):
     urad_firmy = kontakt.get("posledny_urad")
     suma = f", {z1['suma']}" if z1.get("suma") else ""
     podpis = "S pozdravom\nMarek Takáč\nPredTendrom.sk"
+    suma12 = float(hook.get("suma12") or 0)
+    za_spolu = f" v hodnote aspoň {ko.eur(suma12)}" if suma12 >= 1000 else ""
+    seo = seo_cesta(seg, kraj)
     if krok == 1:
         predmet = (f"Zmluva na {odbor_kr} pre {z1['urad']} končí {mesiac_rok(z1['koniec'])}"
                    if variant == "A" else f"{n} {zml} na {odbor_kr} v {kraj_l} {konci} do roka")
@@ -354,10 +379,12 @@ def zostav(krok, kontakt, hook, variant):
             "Dobrý deň,",
             uvod + "Našiel som zmluvu, ktorá by Vás mohla zaujímať:",
             f"{z1['urad']} – {z1['predmet']}{suma}, končí {ko.datum_sk(z1['koniec'])}.",
-            f"V odbore {odbor} v {kraj_l} {konci} do 12 mesiacov {n} {zml} úradov. PredTendrom ich "
-            "zbiera na jedno miesto a raz týždenne Vám pošle nové, aby ste mali čas pripraviť sa "
-            "skôr, než úrad vyhlási súťaž.",
-            (["Ako to vyzerá, ukazuje krátke video: ",
+            f"V odbore {odbor} v {kraj_l} {konci} do 12 mesiacov {n} {zml} úradov{za_spolu}. "
+            "PredTendrom ich zbiera na jedno miesto a raz týždenne Vám pošle nové, aby ste mali čas "
+            "pripraviť sa skôr, než úrad vyhlási súťaž.",
+            (["Celý zoznam pre Váš odbor a kraj je bez registrácie tu: ",
+              ("a", "predtendrom.sk" + seo, utm(seo, 1, variant))] if seo else
+             ["Ako to vyzerá, ukazuje krátke video: ",
               ("a", "predtendrom.sk" + VIDEO_URL, utm(VIDEO_URL, 1, variant))] if VIDEO_URL else
              ["Ako to vyzerá, uvidíte bez registrácie na ",
               ("a", "predtendrom.sk", utm("/", 1, variant)),
@@ -374,9 +401,11 @@ def zostav(krok, kontakt, hook, variant):
             "Dobrý deň,",
             "nadväzujem na môj e-mail. Nie každá zmluva sa Vás týka, preto posielam ďalšie z Vášho kraja:",
             riadky,
-            ["Všetky si môžete pozrieť bez registrácie: na ",
-             ("a", "predtendrom.sk", utm("/", 2, variant)),
-             " zadajte odbor a kraj a hneď uvidíte končiace zmluvy."],
+            (["Všetky si môžete pozrieť bez registrácie: ",
+              ("a", "predtendrom.sk" + seo, utm(seo, 2, variant))] if seo else
+             ["Všetky si môžete pozrieť bez registrácie: na ",
+              ("a", "predtendrom.sk", utm("/", 2, variant)),
+              " zadajte odbor a kraj a hneď uvidíte končiace zmluvy."]),
             "Ak to pre Vás nie je, odpíšte „Nie“ a už nenapíšem.",
             "Marek Takáč"]}
     if krok == 3:

@@ -5845,9 +5845,14 @@ async function dashboard(supabase, rola, spravaPozvanky) {
         </label>`).join('');
     };
 
+    // Navrh z historie zmluv firmy v CRZ (migracia 93), len na predvyplnenie
+    // okna, ked vyber este nie je ulozeny. Nic sa neuklada bez pouzivatela,
+    // okrem automatickeho prveho vyberu nizsie (da sa hned zmenit).
+    let navrhVyberu = null;
     const otvorVyber = () => {
-      zaskrtavatka('mv-kraje', 'mv-kraj', KRAJE.map(k => [k, k.replace(' kraj', '')]), mojVyber?.kraje || []);
-      zaskrtavatka('mv-sektory', 'mv-sektor', sektory, mojVyber?.sektory || []);
+      const zaklad = mojVyber || navrhVyberu;
+      zaskrtavatka('mv-kraje', 'mv-kraj', KRAJE.map(k => [k, k.replace(' kraj', '')]), zaklad?.kraje || []);
+      zaskrtavatka('mv-sektory', 'mv-sektor', sektory, zaklad?.sektory || []);
       const v = mojVyber?.velkost || 'vsetko';
       el('mv-velkost').innerHTML = VELKOST_ZAKAZIEK.map(([k, t]) => `
         <label class="flex items-start gap-2 cursor-pointer">
@@ -5990,7 +5995,30 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     // Prvý krok po registrácii: kto ešte nemá uložený výber, dostane okno
     // (otvorí sa az po zobrazeni appky na konci dashboard()).
     // Start bez kraja alebo sektora nevidi nic (RLS), preto ho appka vypyta.
-    const chybaVyber = jeStart ? !(mojVyber?.kraje?.length && mojVyber?.sektory?.length) : !mojVyber;
+    let chybaVyber = jeStart ? !(mojVyber?.kraje?.length && mojVyber?.sektory?.length) : !mojVyber;
+    // 9. 11. 2026: novi pouzivatelia okno nevyplnili a nevideli nic svoje.
+    // Ak firma ma zmluvy v CRZ, prvy vyber nastavime sami podla nich
+    // (sektory + kraje uradov) a v paneli povieme preco. Bez zmluv alebo
+    // pri chybe RPC ostava povodne okno.
+    if (tabulkaJe && aktivny && chybaVyber && !mojVyber) {
+      try {
+        const { data, error } = await supabase.rpc('navrh_vyberu');
+        if (!error && data) {
+          const platne = new Set(sektory.map(([k]) => k));
+          const ns = (data.sektory || []).filter(s => platne.has(s)).slice(0, 2);
+          const nk = (data.kraje || []).filter(k => KRAJE.includes(k)).slice(0, 2);
+          if (ns.length || nk.length) navrhVyberu = { kraje: nk, sektory: ns, velkost: 'vsetko' };
+          if (ns.length && (!jeStart || nk.length) && await ulozVyber(navrhVyberu)) {
+            el('mv-pouzit').checked = true;
+            obnovPanel();
+            el('mv-text').textContent = `${sPopisomVyberu()} — nastavili sme podľa vašich zmlúv v CRZ`;
+            chybaVyber = false;
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
     if (tabulkaJe && aktivny && chybaVyber) otvorVyberNeskor = otvorVyber;
     nacitajStartZamknute();
   }

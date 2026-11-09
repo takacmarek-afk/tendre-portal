@@ -291,3 +291,24 @@ if __name__ == "__main__":
             mp.undo()
     print("VSETKO OK" if not chyby else f"{chyby} CHYB")
     sys.exit(1 if chyby else 0)
+
+
+def test_odkaz_vedie_na_zoznam_odboru_a_kraja_a_uvadza_sumu():
+    h = {**_hook(), "suma12": 1_480_000}
+    for krok in (1, 2):
+        s = of.zostav(krok, KONTAKT, h, "A")
+        text, telo = of.vyrenderuj(s, TOKEN)
+        assert "/konciace-zmluvy/ostraha/bratislavsky?utm_source=email" in telo, krok
+        assert "zadajte odbor a kraj" not in text
+        assert _slova_tela(text) <= 100, (krok, _slova_tela(text))
+    text, _ = of.vyrenderuj(of.zostav(1, KONTAKT, h, "B"), TOKEN)
+    assert "23 zmlúv úradov v hodnote aspoň 1 480 000 €" in text
+
+
+def test_neexistujuca_seo_stranka_ma_zaloznu_titulku(monkeypatch, tmp_path):
+    assert of.seo_cesta("NEEXISTUJE", "Bratislavský kraj") is None
+    assert of.seo_cesta("OSTRAHA", None) is None
+    monkeypatch.setattr(of, "SEO_DIR", str(tmp_path))   # stranka este nebola vygenerovana
+    s = of.zostav(1, KONTAKT, _hook(), "A")
+    text, _ = of.vyrenderuj(s, TOKEN)
+    assert "konciace-zmluvy" not in text and "predtendrom.sk" in text
