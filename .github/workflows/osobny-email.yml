@@ -1,0 +1,43 @@
+name: Osobny e-mail firme
+
+# Jeden osobny e-mail firme (pipeline/posli_osobny_email.py). Len rucne,
+# kazde pouzitie schvaluje Marek. Adresy sa hladaju podla ICO a nikde sa
+# nevypisuju (repo aj logy su verejne).
+
+on:
+  workflow_dispatch:
+    inputs:
+      ico:
+        description: "ICO firmy"
+        required: true
+      sablona:
+        description: "Sablona (pipeline/sablony/<meno>.txt)"
+        default: "po_skuske"
+      ostro:
+        description: "Naozaj odoslat"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  posli:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+      - run: pip install -r pipeline/requirements.txt
+      - name: Poslat
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
+          KAMPAN_REPLY_TO: ${{ secrets.KAMPAN_REPLY_TO }}
+        run: python posli_osobny_email.py --ico "${{ inputs.ico }}" --sablona "${{ inputs.sablona }}" ${{ inputs.ostro && '--ostro' || '' }}
