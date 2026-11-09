@@ -67,6 +67,16 @@ ODBOR = {   # sektor -> (genitiv "v odbore ...", akuzativ "zmluva na ...")
     "STRAVOVANIE": ("stravovania", "stravovanie"),
     "ZELEN_ZIMNA_UDRZBA": ("údržby zelene a zimnej údržby", "údržbu zelene"),
     "ODPAD": ("zberu a vývozu odpadu", "vývoz odpadu"),
+    # 9. 11. 2026: dalsie odbory (v povodnych 6 dochadzali nove firmy)
+    "STAVEBNE_PRACE": ("stavebných prác", "stavebné práce"),
+    "IT_TECHNIKA": ("IT služieb a techniky", "IT služby a techniku"),
+    "ELEKTROINSTALACIE": ("elektroinštalácií", "elektroinštalácie"),
+    "KURENIE_VODA_PLYN": ("kúrenia, vody a plynu", "kúrenie, vodu a plyn"),
+    "STRECHY_IZOLACIE": ("striech a zateplenia", "strechy a zateplenie"),
+    "OKNA_DVERE_POVRCHY": ("okien, dverí a povrchov", "okná, dvere a povrchy"),
+    "DOPRAVA_MECHANIZACIA": ("dopravy a mechanizácie", "dopravu a mechanizáciu"),
+    "TLAC_KANCELARIA": ("tlače a kancelárskych potrieb", "tlač a kancelárske potreby"),
+    "PASPORTIZACIA_SPRAVA_BUDOV": ("správy budov", "správu budov"),
 }
 # Kym nie je video 1 (plan predaja, sekcia 5), odkaz vedie na ukazku bez registracie.
 VIDEO_URL = os.getenv("KAMPAN_VIDEO_CESTA", "").strip()

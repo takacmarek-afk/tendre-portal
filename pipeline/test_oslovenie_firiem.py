@@ -357,3 +357,11 @@ def test_nacitaj_vlastne_berie_najvacsiu_bez_dodatkov_a_malych():
 
 def test_utm_s_parametrom_v_ceste():
     assert of.utm("/kontrola?ico=1", 1, "A", "obrana").endswith("/kontrola?ico=1&utm_source=email&utm_medium=oslovenie&utm_campaign=obrana-k1a")
+
+
+def test_vsetky_odbory_maju_text_a_kratky_email():
+    for seg in of.ODBOR:
+        for krok in (1, 2, 3):
+            s = of.zostav(krok, {**KONTAKT, "segment": seg}, _hook(), "B")
+            text, _ = of.vyrenderuj(s, TOKEN)
+            assert "_" not in s["predmet"] and _slova_tela(text) <= 100, (seg, krok, _slova_tela(text))
