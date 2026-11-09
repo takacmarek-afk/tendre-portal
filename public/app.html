@@ -3118,12 +3118,18 @@ function obrazovkaBezPristupu(supabase, { nadpis, odseky, predmet }) {
 
 // FIRMA_UZ_EXISTUJE (K1): firma s tym IČO uz ucet ma. Nikoho k nej nepripajame
 // automaticky — pristup da len vlastnik pozvankou.
-function obrazovkaFirmaUzExistuje(supabase) {
+// 9. 11. 2026 (migracia 94): kolega s overenym e-mailom na firemnej domene
+// sa k firme s 1 clenom pripoji sam; tato obrazovka ostava pre ostatnych.
+function obrazovkaFirmaUzExistuje(supabase, miestaPlne = false) {
   obrazovkaBezPristupu(supabase, {
     nadpis: 'Táto firma už prístup má',
     odseky: [
-      'Firma s týmto IČO už v PredTendrom.sk má účet. Prístup vám môže dať '
-        + 'vlastník účtu — pošle vám pozvánku (pozývanie kolegov je v pláne Team).',
+      miestaPlne
+        ? 'Váš kolega už PredTendrom.sk používa a k jeho plánu sa zadarmo pripojí jeden ďalší človek, '
+          + 'čo je už obsadené. Viac ľudí v jednej firme pridáva vlastník účtu pozvánkou v pláne Team.'
+        : 'Firma s týmto IČO už v PredTendrom.sk má účet. Prístup vám môže dať '
+          + 'vlastník účtu — pošle vám pozvánku (pozývanie kolegov je v pláne Team). '
+          + 'Ak sa prihlásite pracovným e-mailom firmy, pripojíme vás automaticky.',
       'Ak neviete, kto to je, napíšte nám na '
         + '<a class="text-accent hover:underline" href="mailto:info@predtendrom.sk">info@predtendrom.sk</a> '
         + 'a pomôžeme.',
@@ -3193,7 +3199,13 @@ function onboarding(supabase, sprava) {
     if (!data)  return zlyhalo(SPRAVA_ULOZENIE);
     if (data.ok || data.kod === 'UZ_V_FIRME') return location.reload();
 
-    if (data.kod === 'FIRMA_UZ_EXISTUJE') return obrazovkaFirmaUzExistuje(supabase);
+    if (data.kod === 'FIRMA_UZ_EXISTUJE') {
+      // Kolega z rovnakej firemnej domeny sa pripoji sam (migracia 94).
+      // Chyba RPC (napr. migracia este nebezi) = povodna obrazovka.
+      const { data: p, error: pe } = await supabase.rpc('pripoj_sa_k_firme', { p_ico: ico });
+      if (!pe && (p?.ok || p?.kod === 'UZ_V_FIRME')) return location.reload();
+      return obrazovkaFirmaUzExistuje(supabase, !pe && p?.kod === 'MIESTA_PLNE');
+    }
     if (data.kod === 'TRIAL_VYCERPANY') return obrazovkaTrialVycerpany(supabase);
     zlyhalo(SPRAVY[data.kod] ?? SPRAVA_ULOZENIE);
   });
