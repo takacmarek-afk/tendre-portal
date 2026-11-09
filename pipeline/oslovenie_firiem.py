@@ -605,6 +605,8 @@ def krok_posli(sb, a):
     novi = [x for x in rad if x[1] == 1]
     vlastne = nacitaj_vlastne(sb, [k["ico"] for k, _ in novi], dnes) if novi else {}
     novi.sort(key=lambda x: ico8(x[0]["ico"]) not in vlastne)   # stabilne: poradie inak ostava
+    log.info("Novych firiem na rade %d, z toho s vlastnou konciacou zmluvou (obrana) %d.",
+             len(novi), sum(1 for k, _ in novi if ico8(k["ico"]) in vlastne))
     rad = [x for x in rad if x[1] != 1] + novi[:max(0, a.novych)]
     zmluvy = nacitaj_zmluvy(sb, {k["segment"] for k, _ in rad if k.get("segment")} or set(segmenty), dnes)
 

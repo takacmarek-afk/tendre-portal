@@ -113,7 +113,7 @@ jobs:
         if: (inputs.krok == 'posli' || github.event_name == 'schedule') && always()
         run: |
           [ -f beh.log ] || exit 0
-          S=$(grep -E "Kontaktov|NASUCHO|OSTRO|HOTOVO|CHYBA|ERROR|krok [123] " beh.log | sed -E 's/<[^>]*>//; s/ -> [^ |]+@[^ |]+//; s/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+//g' | head -60 | sed ':a;N;$!ba;s/\n/%0A/g')
+          S=$(grep -E "Kontaktov|Novych firiem|NASUCHO|OSTRO|HOTOVO|CHYBA|ERROR|krok [123] " beh.log | sed -E 's/<[^>]*>//; s/ -> [^ |]+@[^ |]+//; s/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+//g' | head -60 | sed ':a;N;$!ba;s/\n/%0A/g')
           echo "::notice title=Oslovenie firiem::$S"
 
       - name: Nahlad e-mailov
