@@ -89,7 +89,7 @@ jobs:
           KAMPAN_REPLY_TO: ${{ secrets.KAMPAN_REPLY_TO }}
           KROK: ${{ inputs.krok || 'posli' }}
           NASUCHO: ${{ github.event_name == 'schedule' && 'false' || inputs.nasucho }}
-          SEGMENTY: ${{ github.event_name == 'schedule' && 'UPRATOVANIE,OSTRAHA,STRAVOVANIE,ZELEN_ZIMNA_UDRZBA,UPRATOVANIE_TOVAR,OSTRAHA_TECHNIKA' || inputs.segmenty }}
+          SEGMENTY: ${{ github.event_name == 'schedule' && 'UPRATOVANIE,OSTRAHA,STRAVOVANIE,ZELEN_ZIMNA_UDRZBA,UPRATOVANIE_TOVAR,OSTRAHA_TECHNIKA,STAVEBNE_PRACE,IT_TECHNIKA,ODPAD,ELEKTROINSTALACIE,KURENIE_VODA_PLYN,STRECHY_IZOLACIE,OKNA_DVERE_POVRCHY,DOPRAVA_MECHANIZACIA,TLAC_KANCELARIA,PASPORTIZACIA_SPRAVA_BUDOV' || inputs.segmenty }}
           NOVYCH: ${{ github.event_name == 'schedule' && '30' || inputs.novych }}
           KOMU: ${{ inputs.komu }}
           MAX: ${{ github.event_name == 'schedule' && '45' || inputs.max }}
