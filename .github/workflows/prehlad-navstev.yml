@@ -3,6 +3,8 @@ name: Prehlad navstev
 # Suhrnne cisla navstevnosti a lievika ako anotacia behu (bez osobnych udajov).
 on:
   workflow_dispatch: {}
+  schedule:
+    - cron: "41 6 * * 1"   # pondelok rano: tyzdenny lievik (cita ho tyzdenna kontrola)
 
 permissions:
   contents: read

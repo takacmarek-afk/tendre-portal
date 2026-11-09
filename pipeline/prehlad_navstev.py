@@ -47,5 +47,31 @@ except Exception as e:
 odh = sb.table("oslovenie_firiem_kontakty").select("ico", count="exact").not_.is_("odhlasene_at", "null").limit(1).execute().count
 ods = sb.table("oslovenie_firiem_odoslane").select("id", count="exact").eq("stav", "odoslane").limit(1).execute().count
 riadky.append(f"Oslovenie firiem: odoslanych {ods}, odhlasenych firiem {odh}")
+
+
+# ── Lievik za 7 dni (9. 11. 2026): kde ludia odpadavaju ─────────────────────
+def pocet(tabulka, filtre, stlpec="*"):
+    try:
+        return filtre(sb.table(tabulka).select(stlpec, count="exact")).limit(1).execute().count or 0
+    except Exception as e:   # tabulka/stlpec v starsej DB chyba -> lievik nespadne cely
+        return f"? ({type(e).__name__})"
+
+
+z_emailu = len({n["session_id"] or n["id"] for n in n7 if n.get("utm_source") == "email"})
+kontrola = len({n["session_id"] or n["id"] for n in n7 if (n.get("cesta") or "").startswith("/kontrola")})
+seo = len({n["session_id"] or n["id"] for n in n7 if (n.get("cesta") or "").startswith("/konciace-zmluvy")})
+lievik = [
+    ("e-maily odoslane", pocet("oslovenie_firiem_odoslane", lambda q: q.eq("stav", "odoslane").gte("odoslane_at", od7), "id")),
+    ("navstevy z e-mailu", z_emailu),
+    ("navstevy /konciace-zmluvy", seo),
+    ("navstevy /kontrola", kontrola),
+    ("nove firmy (skuska)", pocet("events", lambda q: q.eq("typ", "org_vytvorena").gte("created_at", od7))),
+    ("kolegovia pripojeni", pocet("events", lambda q: q.eq("typ", "kolega_pripojeny_domenou").gte("created_at", od7))),
+    ("vyber nastaveny/zmeneny", pocet("nastavenia_pouzivatela", lambda q: q.gte("upravene_at", od7), "user_id")),
+    ("platba zacata", pocet("platby", lambda q: q.gte("created_at", od7), "reference")),
+    ("platba zaplatena", pocet("platby", lambda q: q.eq("stav", "zaplatena").gte("created_at", od7), "reference")),
+]
+riadky.append("LIEVIK 7 dni: " + " → ".join(f"{k} {v}" for k, v in lievik))
+riadky.append(f"Zaplatenych platieb spolu: {pocet('platby', lambda q: q.eq('stav', 'zaplatena'), 'reference')}")
 print("\n".join(riadky))
 print("::notice title=Prehlad navstev::" + "%0A".join(riadky))
