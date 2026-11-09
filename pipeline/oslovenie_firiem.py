@@ -349,8 +349,64 @@ def seo_cesta(segment, kraj):
     return f"/konciace-zmluvy/{info['slug']}/{k}"
 
 
-def utm(cesta, krok, variant):
-    return f"{WEB}{cesta}?utm_source=email&utm_medium=oslovenie&utm_campaign=firmy-k{krok}{variant.lower()}"
+def utm(cesta, krok, variant, kampan="firmy"):
+    spoj = "&" if "?" in cesta else "?"
+    return f"{WEB}{cesta}{spoj}utm_source=email&utm_medium=oslovenie&utm_campaign={kampan}-k{krok}{variant.lower()}"
+
+
+# ── 3b. obrana: firme konci jej VLASTNA zmluva (9. 11. 2026) ───────────────
+# Silnejsi hacik nez cudzia zmluva: firma moze prist o zakaznika. Len prvy
+# e-mail; kroky 2 a 3 pokracuju ako doteraz (cudzie zmluvy, ponuka).
+OBRANA_OD_DNI, OBRANA_DO_DNI = 45, 365
+OBRANA_MIN_EUR = 10_000
+_DODATOK = re.compile(r"\bdodat", re.IGNORECASE)
+
+
+def nacitaj_vlastne(sb, ica, dnes):
+    """-> {ico8: zmluva} najvacsia vlastna zmluva firmy, ktora konci o 45 az 365 dni."""
+    od = (dnes + timedelta(days=OBRANA_OD_DNI)).isoformat()
+    do = (dnes + timedelta(days=OBRANA_DO_DNI)).isoformat()
+    kluce = sorted({ico8(i) for i in ica if ico8(i)})
+    najlepsia = {}
+    for i in range(0, len(kluce), 100):
+        cast = kluce[i:i + 100]
+        riadky = (sb.table("contracts")
+                  .select("id,supplier_cin,authority_name,subject,price_total,effective_to")
+                  .in_("supplier_cin", cast + [x.lstrip("0") for x in cast])
+                  .gte("effective_to", od).lte("effective_to", do)
+                  .execute().data)
+        for r in riadky:
+            cena = float(r.get("price_total") or 0)
+            if cena < OBRANA_MIN_EUR or not r.get("authority_name") or not r.get("subject"):
+                continue
+            if _DODATOK.search(r["subject"]):
+                continue
+            k = ico8(r["supplier_cin"])
+            if k not in najlepsia or cena > float(najlepsia[k]["price_total"] or 0):
+                najlepsia[k] = r
+    return najlepsia
+
+
+def zostav_obranu(kontakt, z, variant):
+    """Prvy e-mail pre firmu s vlastnou konciacou zmluvou."""
+    firma = kratky_nazov(kontakt["nazov"])
+    urad = " ".join(str(z["authority_name"]).split())
+    predmet_zml = _skrat(z["subject"], 80)
+    suma = ko.eur(z.get("price_total"))
+    predmet = (f"Vaša zmluva pre {urad} končí {mesiac_rok(z['effective_to'])}" if variant == "A"
+               else f"Kedy {urad} vyhlási novú súťaž na Vašu zmluvu?")
+    kontrola = f"/kontrola?ico={ico8(kontakt['ico'])}"
+    return {"predmet": _skrat(predmet, 120), "odstavce": [
+        "Dobrý deň,",
+        f"v Centrálnom registri zmlúv som videl, že {firma} pracuje pre {urad} na zmluve „{predmet_zml}“"
+        f"{' za ' + suma if suma else ''}. Zmluva končí {ko.datum_sk(z['effective_to'])}.",
+        "Ak ju úrad bude obstarávať znova, súťaž zvyčajne vyhlási niekoľko mesiacov pred koncom. "
+        "Kto ju zachytí neskoro, má na ponuku málo času a môže prísť o zákazníka.",
+        "PredTendrom sleduje Vestník a dá Vám vedieť, keď úrad súťaž vyhlási. Zároveň ukáže "
+        "ďalšie končiace zmluvy vo Vašom odbore.",
+        ["Kedy končia všetky Vaše zmluvy so štátom, uvidíte bez registrácie: ",
+         ("a", "predtendrom.sk/kontrola", utm(kontrola, 1, variant, "obrana"))],
+        "S pozdravom\nMarek Takáč\nPredTendrom.sk"]}
 
 
 def zostav(krok, kontakt, hook, variant):
@@ -544,22 +600,35 @@ def krok_posli(sb, a):
     odoslane = _vsetky(sb, "oslovenie_firiem_odoslane", "ico,krok,stav,odoslane_at")
     vylucene_ica = {ico8(r["ico"]) for r in _vsetky(sb, "organizations", "ico") if r.get("ico")}
     vylucene_emaily = {(r.get("email") or "").lower() for r in _vsetky(sb, "odber_firmy", "email")}
-    rad = na_rade(kontakty, odoslane, segmenty, vylucene_ica, vylucene_emaily, dnes, a.novych)
+    rad = na_rade(kontakty, odoslane, segmenty, vylucene_ica, vylucene_emaily, dnes, 10 ** 6)
+    # Novi s vlastnou konciacou zmluvou idu prvi (obrana), potom ostatni.
+    novi = [x for x in rad if x[1] == 1]
+    vlastne = nacitaj_vlastne(sb, [k["ico"] for k, _ in novi], dnes) if novi else {}
+    novi.sort(key=lambda x: ico8(x[0]["ico"]) not in vlastne)   # stabilne: poradie inak ostava
+    rad = [x for x in rad if x[1] != 1] + novi[:max(0, a.novych)]
     zmluvy = nacitaj_zmluvy(sb, {k["segment"] for k, _ in rad if k.get("segment")} or set(segmenty), dnes)
 
     spravy = []
     for k, krok in rad:
-        hook = hook_pre_firmu(k, zmluvy, dnes)
-        if not hook:
-            continue
         variant = variant_pre(k["ico"])
-        s = zostav(krok, k, hook, variant)
+        vlastna = vlastne.get(ico8(k["ico"])) if krok == 1 else None
+        if vlastna:
+            s = zostav_obranu(k, vlastna, variant)
+            ukazana = {"typ": "obrana", "urad": vlastna["authority_name"], "predmet": _skrat(vlastna["subject"]),
+                       "suma": ko.eur(vlastna.get("price_total")), "koniec": vlastna["effective_to"],
+                       "contract_id": vlastna["id"]}
+        else:
+            hook = hook_pre_firmu(k, zmluvy, dnes)
+            if not hook:
+                continue
+            s = zostav(krok, k, hook, variant)
+            ukazana = hook["zmluvy"][0]
         if not s:
             continue
         text, telo = vyrenderuj(s, k["token"])
         spravy.append({**s, "krok": krok, "variant": variant, "ico": k["ico"], "nazov": k["nazov"],
                        "email": k["email"], "token": k["token"], "segment": k.get("segment"),
-                       "kraj": k.get("kraj"), "hook": hook["zmluvy"][0], "text": text, "html": telo})
+                       "kraj": k.get("kraj"), "hook": ukazana, "text": text, "html": telo})
 
     dnes_odoslane = sum(1 for o in odoslane if o["stav"] != "chyba" and o["odoslane_at"][:10] == dnes.isoformat())
     kapacita = max(0, a.max - dnes_odoslane)

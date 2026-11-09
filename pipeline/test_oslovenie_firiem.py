@@ -312,3 +312,48 @@ def test_neexistujuca_seo_stranka_ma_zaloznu_titulku(monkeypatch, tmp_path):
     s = of.zostav(1, KONTAKT, _hook(), "A")
     text, _ = of.vyrenderuj(s, TOKEN)
     assert "konciace-zmluvy" not in text and "predtendrom.sk" in text
+
+
+# ── obrana: vlastna konciaca zmluva ──────────────────────────────────────────
+
+VLASTNA = {"id": 77, "supplier_cin": "36034762", "authority_name": "Mesto Senec",
+           "subject": "Zmluva o poskytovaní strážnej služby", "price_total": 180000,
+           "effective_to": "2027-03-31"}
+
+
+def test_obrana_text_kratky_s_vlastnou_zmluvou_a_kontrolou():
+    for v in ("A", "B"):
+        s = of.zostav_obranu(KONTAKT, VLASTNA, v)
+        text, telo = of.vyrenderuj(s, TOKEN)
+        assert _slova_tela(text) <= 100, _slova_tela(text)
+        assert "DUG pracuje pre Mesto Senec" in text
+        assert "180 000 €" in text and "31. 3. 2027" in text
+        assert "/kontrola?ico=36034762&utm_source=email&utm_medium=oslovenie&utm_campaign=obrana-k1" in text
+        for zakazane in ("predpoved", "zaruč", "garant", "väčšia šanca"):
+            assert zakazane not in text.lower()
+    assert of.zostav_obranu(KONTAKT, VLASTNA, "A")["predmet"] == "Vaša zmluva pre Mesto Senec končí v marci 2027"
+
+
+def test_nacitaj_vlastne_berie_najvacsiu_bez_dodatkov_a_malych():
+    riadky = [dict(VLASTNA),
+              dict(VLASTNA, id=78, price_total=500000, subject="Dodatok č. 3 k zmluve"),
+              dict(VLASTNA, id=79, price_total=5000),
+              dict(VLASTNA, id=80, supplier_cin="123", price_total=20000),
+              dict(VLASTNA, id=81, price_total=90000)]
+    class Q:
+        def select(self, *_): return self
+        def in_(self, *_): return self
+        def gte(self, *_): return self
+        def lte(self, *_): return self
+        def execute(self):
+            class R: pass
+            r = R(); r.data = riadky
+            return r
+    class SB:
+        def table(self, _): return Q()
+    v = of.nacitaj_vlastne(SB(), ["36034762", "00000123"], date(2026, 11, 9))
+    assert v["36034762"]["id"] == 77 and v["00000123"]["id"] == 80
+
+
+def test_utm_s_parametrom_v_ceste():
+    assert of.utm("/kontrola?ico=1", 1, "A", "obrana").endswith("/kontrola?ico=1&utm_source=email&utm_medium=oslovenie&utm_campaign=obrana-k1a")
