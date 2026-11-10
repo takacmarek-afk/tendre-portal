@@ -65,6 +65,30 @@ def spocitaj(kluc, teraz=None, _get=requests.get):
     return n24, n30
 
 
+def z_hlaviciek(kluc, _post=requests.post, _get=requests.get):
+    """-> (za den, za mesiac) alebo None. Kluc s pravom len na posielanie nesmie
+    citat zoznam e-mailov, ale Resend vracia spotrebu v hlavickach odpovede
+    (x-resend-daily-quota, x-resend-monthly-quota). Skusime /usage, potom
+    neplatny POST /emails bez prijemcu (nic sa neposle, vrati 422)."""
+    h = {"Authorization": f"Bearer {kluc}"}
+    for r in (lambda: _get("https://api.resend.com/usage", headers=h, timeout=30),
+              lambda: _post("https://api.resend.com/emails", headers=h, json={}, timeout=30)):
+        try:
+            odp = r()
+        except requests.RequestException:
+            continue
+        if odp.status_code == 200 and "usage" in odp.url:
+            try:
+                e = odp.json()["emails"]
+                return int(e["daily"]["used"]), int(e["monthly"]["used"])
+            except (KeyError, TypeError, ValueError):
+                pass
+        d, m = odp.headers.get("x-resend-daily-quota"), odp.headers.get("x-resend-monthly-quota")
+        if m is not None:
+            return int(d or 0), int(m)
+    return None
+
+
 def sprava(n24, n30):
     """-> (predmet, text) alebo None, ak sme pod prahom."""
     if n24 < PRAH * LIMIT_DEN and n30 < PRAH * LIMIT_MESIAC:
@@ -93,7 +117,15 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--nasucho", action="store_true")
     a = ap.parse_args(argv)
-    n24, n30 = spocitaj(os.environ["RESEND_API_KEY"])
+    kluc = os.environ["RESEND_API_KEY"]
+    try:
+        n24, n30 = spocitaj(kluc)
+    except requests.HTTPError:
+        z = z_hlaviciek(kluc)
+        if z is None:
+            print("::warning title=Limit e-mailov::Resend nevratil spotrebu (kluc len na posielanie).")
+            return 0
+        n24, n30 = z
     print(f"Resend: za 24 h {n24}/{LIMIT_DEN}, za 30 dni {n30}/{LIMIT_MESIAC}")
     print(f"::notice title=Limit e-mailov::24 h {n24}/{LIMIT_DEN}, 30 dni {n30}/{LIMIT_MESIAC}")
     s = sprava(n24, n30)
