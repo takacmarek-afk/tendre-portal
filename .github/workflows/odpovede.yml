@@ -1,0 +1,39 @@
+name: Odpovede na oslovenie
+
+# pipeline/odpovede.py: roztriedi odpovede v schranke marek@predtendrom.sk
+# (nie / auto / nedorucene / rucne). Do logu idu len pocty.
+# Planovany beh sa zapne az po skusobnom behu nasucho a suhlase Mareka.
+on:
+  workflow_dispatch:
+    inputs:
+      ostro:
+        description: "Ostro: zapisat stav a poslat zdvorile vety pri jasnom Nie"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: odpovede
+  cancel-in-progress: false
+
+jobs:
+  odpovede:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+      - run: pip install -r pipeline/requirements.txt
+      - name: Odpovede
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
+        run: python odpovede.py ${{ (github.event_name == 'schedule' || inputs.ostro) && '--ostro' || '' }}
