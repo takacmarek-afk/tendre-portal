@@ -169,17 +169,27 @@ def main(argv=None) -> int:
     nase = {r["message_id"].strip(): r["ico"] for r in vsetky(
         lambda o, d: sb.table("oslovenie_firiem_odoslane").select("message_id,ico")
         .order("id").range(o, d).execute()) if r.get("message_id")}
-    hotove = {r["message_id"] for r in vsetky(
-        lambda o, d: sb.table("oslovenie_odpovede").select("message_id").order("message_id").range(o, d).execute())}
+    try:
+        hotove = {r["message_id"] for r in vsetky(
+            lambda o, d: sb.table("oslovenie_odpovede").select("message_id").order("message_id").range(o, d).execute())}
+    except Exception:
+        if a.ostro:
+            raise   # bez tabulky (migracia 96) by sa odpovedalo opakovane
+        hotove = set()
 
     imap = imaplib.IMAP4_SSL(IMAP_HOST, 993)
     imap.login(SCHRANKA, heslo)
-    imap.select("INBOX", readonly=True)
     od = (date.today() - timedelta(days=DNI)).strftime("%d-%b-%Y")
-    _, ids = imap.search(None, f'(SINCE "{od}")')
     pocty, odpovedi = {}, []
-    for i in (ids[0].split() if ids and ids[0] else []):
-        _, d = imap.fetch(i, "(BODY.PEEK[])")
+    spravy = []
+    for priecinok in ("INBOX", "Spam"):
+        if imap.select(priecinok, readonly=True)[0] != "OK":
+            continue
+        _, ids = imap.search(None, f'(SINCE "{od}")')
+        for i in (ids[0].split() if ids and ids[0] else []):
+            _, d = imap.fetch(i, "(BODY.PEEK[])")
+            spravy.append(d)
+    for d in spravy:
         m = email.message_from_bytes(d[0][1])
         mid = (m.get("Message-ID") or "").strip()
         if not mid or mid in hotove:
