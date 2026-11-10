@@ -205,7 +205,9 @@ def test_rozober_cislo_pocita_xml_a_opravy():
     }
     vys, vyz, st = uvo.rozober_cislo(data, "193/2026")
     assert len(vys) == 2 and len(vyz) == 1
+    opravy = st.pop("opravy")
     assert st == {"oznameni": 4, "preskocenych": 1, "oprav_a_inych": 1}
+    assert len(opravy) == 1 and opravy[0]["zakazka_id"] == 565784 and opravy[0]["lehota_ponuk"]
     assert vys[0]["publikovane"] == "2026-09-22"
 
 
@@ -369,3 +371,36 @@ def test_email_obstaravatela():
     _, v = uvo.rozober(SUTAZ, "193/2026", "2026-09-22")
     assert v[0]["obstaravatel_email"] is None
     assert uvo._email("nie je email") is None
+
+
+def test_oprava_sutaze_ma_novu_lehotu():
+    r = uvo.rozober_opravu(OPRAVA, "194/2026", "2026-09-25")
+    assert len(r) == 1 and r[0]["zakazka_id"] == 565784 and r[0]["lehota_ponuk"] == "2026-10-05T09:00:00+02:00"
+    assert uvo.rozober_opravu(SUTAZ, "194/2026", None) == []      # nie je oprava
+
+
+class _Q:
+    def __init__(self, db, data=None): self.db, self.data, self.f = db, data, {}
+    def update(self, d): self.upd = d; return self
+    def eq(self, k, v): self.f[k] = v; return self
+    def lte(self, k, v): self.f["lte_" + k] = v; return self
+    def upsert(self, rows, on_conflict=None): self.db.vlozene += rows; return self
+    def execute(self):
+        if hasattr(self, "upd"):
+            zhoda = [r for r in self.db.riadky if r["zakazka_id"] == self.f["zakazka_id"] and r["cast_id"] == self.f["cast_id"]]
+            for r in zhoda:
+                r.update(self.upd)
+            return type("R", (), {"data": zhoda})()
+        return type("R", (), {"data": []})()
+
+
+class _SB:
+    def __init__(self, riadky): self.riadky, self.vlozene = riadky, []
+    def table(self, t): return _Q(self)
+
+
+def test_aplikuj_opravy_prepise_lehotu_alebo_vlozi():
+    sb = _SB([{"zakazka_id": 1, "cast_id": "LOT-0001", "lehota_ponuk": "stara"}])
+    n = uvo.aplikuj_opravy(sb, [{"zakazka_id": 1, "cast_id": "LOT-0001", "lehota_ponuk": "nova", "publikovane": "2026-10-01"},
+                                {"zakazka_id": 2, "cast_id": "LOT-0001", "lehota_ponuk": "x", "publikovane": "2026-10-01"}])
+    assert n == 1 and sb.riadky[0]["lehota_ponuk"] == "nova" and len(sb.vlozene) == 1

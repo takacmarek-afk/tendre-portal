@@ -1,0 +1,12 @@
+# Audit 10. 11. 2026: aktualizacie GitHub akcii a Python balikov (bezpecnostne opravy).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+  - package-ecosystem: pip
+    directory: /pipeline
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3

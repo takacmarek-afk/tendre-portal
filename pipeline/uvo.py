@@ -452,10 +452,22 @@ def _bez_duplicit(riadky, kluc):
     return out
 
 
+def rozober_opravu(formular, vestnik, publikovane):
+    """Oprava (korigendum) oznamenia o vyhlaseni -> riadky so zmenenymi udajmi (lehota,
+    hodnota). Audit 10. 11. 2026: opravy sa predtym preskakovali, takze pouzivatel
+    mohol vidiet povodnu lehotu na ponuky. Opravy vysledkov sa zatial nespracuju."""
+    nazov = (formular.get("name") or "").strip()
+    bez = re.sub(r"^oprava\s*[:\-–]?\s*", "", nazov, flags=re.IGNORECASE)
+    if bez == nazov:
+        return []
+    druh, riadky = rozober(dict(formular, name=bez), vestnik, publikovane)
+    return riadky if druh == "sutaz" else []
+
+
 def rozober_cislo(data, vestnik):
     """Celé číslo Vestníka -> (vysledky, vyzvy, statistika)."""
     publikovane = datum(data.get("bulletinPublishDate"))
-    vysledky, vyzvy = [], []
+    vysledky, vyzvy, opravy = [], [], []
     st = {"oznameni": 0, "preskocenych": 0, "oprav_a_inych": 0}
     for polozka in data.get("bulletinItemList") or []:
         st["oznameni"] += 1
@@ -472,12 +484,17 @@ def rozober_cislo(data, vestnik):
             continue
         if druh is None:
             st["oprav_a_inych"] += 1
+            try:
+                opravy.extend(r for r in rozober_opravu(formular, vestnik, publikovane) if r.get("zakazka_id"))
+            except Exception as e:       # zla oprava nesmie zhodit cislo
+                log.warning("Vestník %s, oprava %s: %s", vestnik, formular.get("id"), e)
         elif druh == "vysledok":
             vysledky.extend(riadky)
         else:
             vyzvy.extend(riadky)
     vysledky = _bez_duplicit(vysledky, ("oznamenie_id", "cast_id", "vitaz_ico"))
     vyzvy = _bez_duplicit(vyzvy, ("oznamenie_id", "cast_id"))
+    st["opravy"] = opravy                # zmeny lehot k uz vyhlasenym sutaziam
     return vysledky, vyzvy, st
 
 
@@ -554,9 +571,32 @@ def _upsert(sb, tabulka, riadky, konflikt):
         sb.table(tabulka).upsert(riadky[i:i + DAVKA], on_conflict=konflikt).execute()
 
 
+OPRAVA_POLIA = ("lehota_ponuk", "predpokladana_hodnota", "nazov", "cast_nazov", "trvanie_mesiace")
+
+
+def aplikuj_opravy(sb, opravy):
+    """Opravy prepisu lehotu a hodnotu povodnej sutaze (rovnaka zakazka_id a cast_id).
+    Ak povodna sutaz u nas nie je, oprava sa ulozi ako nova sutaz. -> pocet opravenych."""
+    hotovo = 0
+    for r in opravy:
+        zmena = {k: r[k] for k in OPRAVA_POLIA if r.get(k) is not None}
+        if not zmena:
+            continue
+        q = sb.table("uvo_vyzvy").update(zmena).eq("zakazka_id", r["zakazka_id"]).eq("cast_id", r.get("cast_id") or "")
+        if r.get("publikovane"):
+            q = q.lte("publikovane", r["publikovane"])
+        upravene = q.execute().data or []
+        if upravene:
+            hotovo += len(upravene)
+        else:
+            _upsert(sb, "uvo_vyzvy", [r], "oznamenie_id,cast_id")
+    return hotovo
+
+
 def uloz(sb, cislo_info, vysledky, vyzvy, st, publikovany):
     _upsert(sb, "uvo_vysledky", vysledky, "oznamenie_id,cast_id,vitaz_ico")
     _upsert(sb, "uvo_vyzvy", vyzvy, "oznamenie_id,cast_id")
+    st["opravene"] = aplikuj_opravy(sb, st.get("opravy") or [])
     # checkpoint až po úspešnom zápise riadkov
     sb.table("uvo_vestniky").upsert({
         "vestnik": cislo_info["vestnik"], "rok": cislo_info["rok"], "cislo": cislo_info["cislo"],
@@ -639,8 +679,8 @@ def main(argv=None):
         spolu["s_vitazom_ico"] += sum(1 for r in vysledky if r["vitaz_ico"])
         spolu["s_koncom"] += sum(1 for r in vysledky if r["koniec"])
         spolu["so_sektorom"] += sum(1 for r in vysledky + vyzvy if r["sektor"])
-        log.info("Vestník %s: %d oznámení, %d výsledkov, %d výziev, %d preskočených",
-                 c["vestnik"], st["oznameni"], len(vysledky), len(vyzvy), st["preskocenych"])
+        log.info("Vestník %s: %d oznámení, %d výsledkov, %d výziev, %d opráv súťaží, %d preskočených",
+                 c["vestnik"], st["oznameni"], len(vysledky), len(vyzvy), len(st["opravy"]), st["preskocenych"])
         if a.nasucho and spolu["cisel"] == 1:
             for r in vysledky[:3]:
                 log.info("  ukážka výsledku: %s", {k: r[k] for k in (
