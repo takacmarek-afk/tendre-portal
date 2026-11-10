@@ -8,7 +8,7 @@ on:
       skript:
         description: "Prehlad"
         type: choice
-        options: [poradcovia_prehlad, vyzvy_prehlad, trh_overenie, imap_sonda, itms_sonda, oprava_audit]
+        options: [poradcovia_prehlad, vyzvy_prehlad, trh_overenie, imap_sonda, itms_sonda, oprava_audit, itms_parovanie]
         default: poradcovia_prehlad
 
 permissions:
