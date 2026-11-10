@@ -195,7 +195,7 @@ def _bezpecne_text(t):
 
 def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie,
           odhlasovaci_odkaz=None):
-    """Jednoduchy a spolahlivy e-mail. Ziadne stlpce, ziadne obrazky.
+    """Jednoduchy a spolahlivy e-mail. Ziadne stlpce, jediny obrazok je logo (znacka.py).
 
     Tabulkovy layout a inline styly su tu zamerne: Outlook a Gmail ignoruju
     <style> v hlavicke aj vacsinu moderneho CSS. Co vyzera stroho, to dojde

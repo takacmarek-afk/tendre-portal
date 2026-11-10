@@ -206,7 +206,7 @@ def obsah(krok: int, k: dict, miesta: int = 30) -> dict:
     if krok == 12:
         kedy = _datum(k.get("trial_konci")) or "o 2 dni"
         odseky = [f"Vaša skúška PredTendrom končí {kedy}. "
-                  "Potom sa týždenný prehľad zastaví."]
+                  "Potom sa plný týždenný prehľad zastaví a ostane len skrátený, bez súm a mien dodávateľov."]
         if miesta > 0:
             odseky.append("Ak chcete pokračovať: prvým 30 firmám dávame ročný plán Start za 240 € "
                           "namiesto 340 €, cena platí 2 roky. Pri ročnej platbe zadáte kód "

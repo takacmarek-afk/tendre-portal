@@ -613,7 +613,7 @@ def zostav(krok, kontakt, hook, variant):
             "pošlem už len jeden tip. Obstarávania z eurofondov úrad vyhlási, keď mu schvália projekt, a lehoty "
             "na ponuky bývajú krátke. Kto má referencie, ceny a kapacity pripravené vopred, má výhodu.",
             f"PredTendrom môžete vyskúšať 14 dní zadarmo, bez platobnej karty. Prvým 30 firmám dávame "
-            f"ročný plán za {ZACIATOCNA_CENA} namiesto {BEZNA_CENA}.",
+            f"ročný plán Start za {ZACIATOCNA_CENA} namiesto {BEZNA_CENA}.",
             [("a", "Vyskúšať 14 dní zadarmo", utm("/prihlasenie", 3, variant, "eurofondy"))],
             "Ďakujem za Váš čas.\nMarek Takáč"]}
     if krok == 2:
@@ -642,7 +642,7 @@ def zostav(krok, kontakt, hook, variant):
             f"pošlem už len jeden tip. Ak úrad zmluvu na {odbor_kr} obstaráva znova, súťaž zvyčajne vyhlási "
             "niekoľko mesiacov pred jej koncom. Kto má referencie, ceny a kapacity pripravené vopred, má výhodu.",
             f"PredTendrom môžete vyskúšať 14 dní zadarmo, bez platobnej karty. Prvým 30 firmám dávame "
-            f"ročný plán za {ZACIATOCNA_CENA} namiesto {BEZNA_CENA}.",
+            f"ročný plán Start za {ZACIATOCNA_CENA} namiesto {BEZNA_CENA}.",
             [("a", "Vyskúšať 14 dní zadarmo", utm("/prihlasenie", 3, variant))],
             "Ďakujem za Váš čas.\nMarek Takáč"]}
     return None
