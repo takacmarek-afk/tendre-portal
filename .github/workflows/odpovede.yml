@@ -2,8 +2,11 @@ name: Odpovede na oslovenie
 
 # pipeline/odpovede.py: roztriedi odpovede v schranke marek@predtendrom.sk
 # (nie / auto / nedorucene / rucne). Do logu idu len pocty.
-# Planovany beh sa zapne az po skusobnom behu nasucho a suhlase Mareka.
+# Ostro 2x denne v pracovne dni (schvalil Marek 10. 11. 2026).
 on:
+  schedule:
+    - cron: "47 7 * * 1-5"    # ~8:47 SEC (zima)
+    - cron: "47 13 * * 1-5"   # ~14:47 SEC
   workflow_dispatch:
     inputs:
       ostro:
