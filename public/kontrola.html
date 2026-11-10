@@ -319,6 +319,36 @@ function karta(hodnota, popis) {
   return `<div class="kz-karta"><p class="kz-cislo">${bezpecne(hodnota)}</p><p class="kz-popis">${bezpecne(popis)}</p></div>`;
 }
 
+// Trh firmy (migracia 95, 10. 11. 2026): prilezitosti v jej odbore a krajoch,
+// sutaze s jedinou ponukou, otvorene sutaze. Len pocty a sumy.
+const POPIS_SEKTORA = {
+  STAVEBNE_PRACE: 'stavebné práce', STRECHY_IZOLACIE: 'strechy a zateplenie',
+  OKNA_DVERE_POVRCHY: 'okná, dvere a povrchy', ELEKTROINSTALACIE: 'elektroinštalácie',
+  KURENIE_VODA_PLYN: 'kúrenie, voda a plyn', ZELEN_ZIMNA_UDRZBA: 'zeleň a zimná údržba',
+  ODPAD: 'odpad', UPRATOVANIE: 'upratovanie', DOPRAVA_MECHANIZACIA: 'doprava a mechanizácia',
+  STRAVOVANIE: 'stravovanie', OSTRAHA: 'ostraha', IT_TECHNIKA: 'IT a technika',
+  TLAC_KANCELARIA: 'tlač a kancelária', PASPORTIZACIA_SPRAVA_BUDOV: 'správa budov',
+  UPRATOVANIE_TOVAR: 'hygienický tovar', OSTRAHA_TECHNIKA: 'zabezpečovacia technika',
+};
+function trhFirmy(t) {
+  if (!t || !t.sektor || !POPIS_SEKTORA[t.sektor]) return '';
+  const odbor = POPIS_SEKTORA[t.sektor];
+  const kraje = Array.isArray(t.kraje) && t.kraje.length
+    ? t.kraje.map(k => String(k).replace(' kraj', '')).join(', ') : 'celé Slovensko';
+  const p = cislo(t.prilezitosti_12m), obj = Number(t.prilezitosti_objem);
+  const v = cislo(t.vysledkov_24m), j = cislo(t.jedna_ponuka_24m), o = cislo(t.otvorene_sutaze);
+  if (!p && !v && !o) return '';
+  const karty = [
+    karta(p, `${tvar(p, 'zmluva iného dodávateľa končí', 'zmluvy iných dodávateľov končia', 'zmlúv iných dodávateľov končí')} do 12 mesiacov`),
+    karta(Number.isFinite(obj) && obj > 0 ? eur(obj) : '—', 'hodnota týchto zmlúv'),
+    karta(v ? `${Math.round(100 * j / v)} %` : '—', v ? `súťaží za 2 roky malo len 1 ponuku (${j} z ${v})` : 'súťaží s 1 ponukou'),
+    karta(o, `${tvar(o, 'otvorená súťaž', 'otvorené súťaže', 'otvorených súťaží')} vo Vestníku práve teraz`),
+  ].join('');
+  return `<h3 class="kz-h2">Váš trh: ${bezpecne(odbor)} · ${bezpecne(kraje)}</h3>
+    <p class="kz-dalsie">Odbor a kraje podľa vašich zmlúv v Centrálnom registri zmlúv.</p>
+    <div class="kz-karty">${karty}</div>`;
+}
+
 function skoncene(n) {
   if (n <= 0) return '';
   return `<p class="kz-dalsie">V posledných 6 mesiacoch navyše ${tvar(n, 'skončila', 'skončili', 'skončilo')} ${n} ${tvar(n, 'zmluva', 'zmluvy', 'zmlúv')}.</p>`;
@@ -345,6 +375,7 @@ function vykresli(d) {
         <p class="kz-stav">V registri zmlúv sme pre toto IČO nenašli žiadnu zmluvu, ktorá by končila v najbližších 24 mesiacoch. Register pokrýva len zmluvy zverejnené v Centrálnom registri zmlúv.${bezpecne(navyse)}</p>
       </div>
       ${skoncene(skonc)}
+      ${trhFirmy(d.trh)}
       <p class="kz-poznamka">Celý portál si môžete vyskúšať 14 dní zadarmo, bez platobnej karty: <a href="${CTA_HREF}">Vyskúšať 14 dní zadarmo</a>.</p>`;
     return;
   }
@@ -384,6 +415,7 @@ function vykresli(d) {
     <ul class="kz-zoznam">${riadky}</ul>
     ${dalsie}
     ${skoncene(skonc)}
+    ${trhFirmy(d.trh)}
     <div class="kz-cta-box">
       ${zObrany
         ? `<p style="font-weight:600;font-size:18px;line-height:1.4">Chcete vedieť, kedy úrad vyhlási novú súťaž na vašu zmluvu? Po registrácii vám to PredTendrom oznámi e-mailom.</p>
