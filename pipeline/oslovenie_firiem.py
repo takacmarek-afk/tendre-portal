@@ -313,6 +313,23 @@ def nacitaj_zmluvy(sb, segmenty, dnes):
     return riadky
 
 
+def nacitaj_eurofondy(sb, dnes):
+    """-> {(sektor, kraj): (pocet, objem)} pripravovanych obstaravani z eurofondov (migracia 97)."""
+    od = (dnes - timedelta(days=730)).isoformat()
+    out = {}
+    try:
+        riadky = _vsetky(sb, "itms_vo", "sektor,kraj,predpokladana_hodnota",
+                         lambda q: q.eq("stav", "Pripravované").gte("itms_updated_at", od).not_.is_("sektor", "null"))
+    except Exception as e:   # eurofondy su bonus, e-mail ide aj bez nich
+        log.warning("itms_vo: %s", type(e).__name__)
+        return out
+    for r in riadky:
+        k = (r.get("sektor"), r.get("kraj"))
+        n, obj = out.get(k, (0, 0.0))
+        out[k] = (n + 1, obj + float(r.get("predpokladana_hodnota") or 0))
+    return out
+
+
 def hook_pre_firmu(kontakt, zmluvy, dnes):
     """-> {N, top3} alebo None. Zmluvy v segmente a kraji firmy, nie jej vlastne."""
     seg, kraj, ico = kontakt.get("segment"), kontakt.get("kraj"), ico8(kontakt["ico"])
@@ -449,6 +466,19 @@ def zostav_obranu(kontakt, z, variant):
         "S pozdravom\nMarek Takáč\nPredTendrom.sk"]}
 
 
+EUROFONDY_MIN = 3
+
+
+def veta_eurofondy(hook, odbor_kr, kraj_l):
+    """10. 11. 2026: pripravovane obstaravania z eurofondov (ITMS21+), ak ich je aspon 3."""
+    n, obj = (hook or {}).get("eurofondy") or (0, 0)
+    if n < EUROFONDY_MIN:
+        return ""
+    za = f" za {ko.eur(obj)}" if obj >= 10000 else ""
+    return (f" Z eurofondov navyše úrady v kraji pripravujú ďalších {n} "
+            f"{'obstarávania' if 2 <= n <= 4 else 'obstarávaní'}{za}, ešte pred vyhlásením.")
+
+
 def zostav(krok, kontakt, hook, variant):
     """-> {predmet, odstavce} alebo None. Odstavec = str alebo [str | ('a', text, url)]."""
     seg = kontakt["segment"]
@@ -477,7 +507,7 @@ def zostav(krok, kontakt, hook, variant):
             f"{z1['urad']} – {z1['predmet']}{suma}, končí {ko.datum_sk(z1['koniec'])}.",
             f"V odbore {odbor} v {kraj_l} {konci} do 12 mesiacov {n} {zml} úradov{za_spolu}. "
             "PredTendrom ich zbiera na jedno miesto a raz týždenne Vám pošle nové, aby ste mali čas "
-            "pripraviť sa skôr, než úrad vyhlási súťaž.",
+            "pripraviť sa skôr, než úrad vyhlási súťaž." + veta_eurofondy(hook, odbor_kr, kraj_l),
             (["Prehľad pre Váš odbor a kraj nájdete bez registrácie tu: ",
               ("a", "predtendrom.sk" + seo, utm(seo, 1, variant))] if seo else
              ["Ako to vyzerá, ukazuje krátke video: ",
@@ -661,6 +691,7 @@ def krok_posli(sb, a):
     log.info("Odbor nesedel so zmluvami v CRZ, preskocene: %d.", odmietnuti)
     rad = [x for x in rad if x[1] != 1] + vybrani
     zmluvy = nacitaj_zmluvy(sb, {k["segment"] for k, _ in rad if k.get("segment")} or set(segmenty), dnes)
+    eurofondy = nacitaj_eurofondy(sb, dnes)
 
     spravy = []
     for k, krok in rad:
@@ -675,6 +706,7 @@ def krok_posli(sb, a):
             hook = hook_pre_firmu(k, zmluvy, dnes)
             if not hook:
                 continue
+            hook["eurofondy"] = eurofondy.get((k.get("segment"), k.get("kraj")))
             s = zostav(krok, k, hook, variant)
             ukazana = hook["zmluvy"][0]
         if not s:

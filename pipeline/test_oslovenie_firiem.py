@@ -428,3 +428,13 @@ def test_odbor_sedi_podla_zmluv_v_crz():
     assert of.odbor_sedi(_sb_pocty(100, 5), "1", "OSTRAHA", d) is False            # 5 % je malo
     assert of.odbor_sedi(_sb_pocty(0, 0), "1", "OSTRAHA", d) is True               # bez CRZ rozhoduje Vestnik
     assert of.odbor_sedi(_sb_pocty(10, 3), "1", None, d) is False
+
+
+def test_veta_o_eurofondoch():
+    h = {**_hook(), "suma12": 1_480_000, "eurofondy": (34, 12_400_000)}
+    s = of.zostav(1, {**KONTAKT, "segment": "STAVEBNE_PRACE"}, h, "A")
+    text, _ = of.vyrenderuj(s, TOKEN)
+    assert "Z eurofondov navyše úrady v kraji pripravujú ďalších 34 obstarávaní za 12" in text
+    assert _slova_tela(text) <= 120, _slova_tela(text)
+    s = of.zostav(1, KONTAKT, {**_hook(), "eurofondy": (2, 50000)}, "A")
+    assert "eurofond" not in of.vyrenderuj(s, TOKEN)[0]
