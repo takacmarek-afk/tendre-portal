@@ -337,16 +337,19 @@ function trhFirmy(t) {
     ? t.kraje.map(k => String(k).replace(' kraj', '')).join(', ') : 'celé Slovensko';
   const p = cislo(t.prilezitosti_12m), obj = Number(t.prilezitosti_objem);
   const v = cislo(t.vysledkov_24m), j = cislo(t.jedna_ponuka_24m), o = cislo(t.otvorene_sutaze);
-  if (!p && !v && !o) return '';
+  if (!p && !v && !o && !cislo(t.eurofondy_pripravovane)) return '';
   const karty = [
     karta(p, `${tvar(p, 'zmluva iného dodávateľa končí', 'zmluvy iných dodávateľov končia', 'zmlúv iných dodávateľov končí')} do 12 mesiacov`),
     karta(Number.isFinite(obj) && obj > 0 ? eur(obj) : '—', 'hodnota týchto zmlúv'),
     karta(v ? `${Math.round(100 * j / v)} %` : '—', v ? `súťaží za 2 roky malo len 1 ponuku (${j} z ${v})` : 'súťaží s 1 ponukou'),
     karta(o, `${tvar(o, 'otvorená súťaž', 'otvorené súťaže', 'otvorených súťaží')} vo Vestníku práve teraz`),
-  ].join('');
+  ];
+  const ef = cislo(t.eurofondy_pripravovane), efObj = Number(t.eurofondy_objem);
+  if (ef) karty.unshift(karta(ef, `${tvar(ef, 'obstarávanie z eurofondov úrady pripravujú', 'obstarávania z eurofondov úrady pripravujú', 'obstarávaní z eurofondov úrady pripravujú')}${Number.isFinite(efObj) && efObj > 0 ? ' za ' + eur(efObj) : ''}, ešte pred vyhlásením`));
+  const kartyHtml = karty.join('');
   return `<h3 class="kz-h2">Váš trh: ${bezpecne(odbor)} · ${bezpecne(kraje)}</h3>
     <p class="kz-dalsie">Odbor a kraje podľa vašich zmlúv v Centrálnom registri zmlúv.</p>
-    <div class="kz-karty">${karty}</div>`;
+    <div class="kz-karty">${kartyHtml}</div>`;
 }
 
 function skoncene(n) {

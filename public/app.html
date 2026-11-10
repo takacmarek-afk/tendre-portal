@@ -4177,6 +4177,13 @@ function nastavDnes(supabase, ctx) {
       })));
       return vysl;
     }),
+    eurofondy: () => sp('eurofondy', async () => {
+      const v = ctx.vyberZoznamy ? ctx.vyberZoznamy() : { sektory: [], kraje: [] };
+      const { data: d, error } = await supabase.rpc('itms_pripravovane', {
+        p_sektory: v.sektory.length ? v.sektory : null, p_kraje: v.kraje.length ? v.kraje : null });
+      if (error) throw error;
+      return d || { pocet: 0, polozky: [], zamknute: true };
+    }),
     obrana: () => sp('obrana', async () => {
       if (!ctx.jePro) return { zamknute: true };
       // Zmluvy vedene na ICO organizacie (z registracie); RPC z migracie 78.
@@ -4369,6 +4376,26 @@ function nastavDnes(supabase, ctx) {
           `;
       },
     },
+    eurofondy: {
+      zdroje: [ZDROJE.eurofondy],
+      vykresli: ([e]) => {
+        const p = Number(e.pocet) || 0, obj = Number(e.objem) || 0;
+        const uvod = `<p class="text-[13px] leading-relaxed text-ink">${kde() === 'vo vašom výbere' ? 'Vo vašom výbere' : 'Na celom Slovensku'} úrady pripravujú
+          <strong>${bezpecne(cislo(p))} ${tvar(p, 'obstarávanie', 'obstarávania', 'obstarávaní')}</strong> z eurofondov${obj ? ` za ${bezpecne(suma(obj))}` : ''}.
+          Súťaž ešte nie je vyhlásená, máte čas pripraviť sa.</p>`;
+        if (!p) return prazdnyStav('Vo vašom výbere teraz nie je žiadne pripravované obstarávanie z eurofondov.');
+        if (e.zamknute) return uvod + zamknutyNahlad('Názvy, úrady a sumy pripravovaných obstarávaní sú súčasťou plánu Growth a vyššie.');
+        const kus = (e.polozky || []).slice(0, 15);
+        return uvod + `<ol class="list-none m-0 p-0 mt-2">${kus.map(z => `
+          <li class="dnes-polozka">
+            <p class="text-[13px] font-semibold text-ink">${bezpecne(z.obstaravatel_nazov) || '—'}</p>
+            <p class="text-[14px] leading-snug mt-0.5">${bezpecne(z.nazov) || '(bez názvu)'}</p>
+            <p class="text-[12px] text-slate2 mt-1">${bezpecne(z.kraj || z.obstaravatel_obec || '')}${z.predpokladana_hodnota ? ' · predpokladaná hodnota ' + bezpecne(suma(z.predpokladana_hodnota)) : ''} · ${bezpecne(z.kod || '')}</p>
+          </li>`).join('')}</ol>
+          ${p > kus.length ? `<p class="text-[12px] text-slate2 mt-2">Zobrazujeme ${kus.length} najväčších z ${bezpecne(cislo(p))}.</p>` : ''}
+          <p class="text-[11px] text-slate2 mt-2">Zdroj: ITMS21+ (eurofondy), stav „Pripravované“. Úrad môže termín aj rozsah zmeniť.</p>`;
+      },
+    },
     obrana: {
       zdroje: [ZDROJE.obrana],
       vykresli: ([o]) => {
@@ -4485,6 +4512,7 @@ function nastavDnes(supabase, ctx) {
       </div>
       <div class="dnes-stlpce">
         ${karta('obrana', 'Vaše zmluvy', 'Vaše zmluvy, ktoré končia do 12 mesiacov')}
+        ${karta('eurofondy', 'Pripravované z eurofondov', 'Obstarávania, ktoré úrady pripravujú, ešte pred vyhlásením')}
       </div>
       <p class="text-[12px] leading-relaxed text-slate2 max-w-3xl">
         Zdroje údajov, oznámenie o úpravách a podmienky použitia nájdete v
@@ -6164,6 +6192,10 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       moze: !el('moj-vyber').classList.contains('hidden'),
     }),
     obmedz: (q) => sVyberom(q, { kraj: 'kraj', sektor: 'sector', suma: 'price_total' }, null, null),
+    // Eurofondy (migracia 98): sektory a kraje z Mojho vyberu, ak je zapnuty.
+    vyberZoznamy: () => vyberZapnuty() || jeStart
+      ? { sektory: mojVyber?.sektory ?? [], kraje: mojVyber?.kraje ?? [] }
+      : { sektory: [], kraje: [] },
     prepniNa: (kluc) => {
       document.querySelector(`[data-zalozka="${kluc}"]`)?.click();
       window.scrollTo?.({ top: 0 });
