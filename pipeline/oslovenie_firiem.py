@@ -328,7 +328,8 @@ def nacitaj_eurofondy(sb, dnes):
         k = (r.get("sektor"), r.get("kraj"))
         n, obj, top = out.get(k, (0, 0.0, []))
         h = float(r.get("predpokladana_hodnota") or 0)
-        if r.get("nazov") and r.get("obstaravatel_nazov"):
+        # do prikladov len nazvy, z ktorych je jasne, o co ide (nie holé "Stavebné práce")
+        if len((r.get("nazov") or "").strip()) >= 25 and r.get("obstaravatel_nazov"):
             top = sorted(top + [(h, r["obstaravatel_nazov"], r["nazov"])], key=lambda x: -x[0])[:2]
         out[k] = (n + 1, obj + h, top)
     return out
