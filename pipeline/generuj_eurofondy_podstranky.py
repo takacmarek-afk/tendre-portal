@@ -137,6 +137,10 @@ def _stranka(sektor, kraj, a, dostupne):
                      for k in VSETKY_KRAJE if k != kraj and (sektor, k) in dostupne)
     odbory = " ".join(f'<a href="/eurofondy/{i["slug"]}/{kslug}" class="text-accent hover:underline">{_e(_velke_prve(i["nazov_nom"]))}</a>'
                       for s, i in SEKTORY_SEO.items() if s != sektor and (s, kraj) in dostupne)
+    blok_kraje = (f'  <h2 class="mt-10 text-[16px] font-semibold">{_velke_prve(info["nazov_nom"])} z eurofondov v iných krajoch</h2>\n'
+                  f'  <p class="mt-2 text-[14px] leading-loose flex flex-wrap gap-x-4">{kraje}</p>') if kraje else ""
+    blok_odbory = ('  <h2 class="mt-6 text-[16px] font-semibold">Iné odbory v kraji</h2>\n'
+                   f'  <p class="mt-2 text-[14px] leading-loose flex flex-wrap gap-x-4">{odbory}</p>') if odbory else ""
     titul = f"{_velke_prve(info['nazov_nom'])} z eurofondov v {lokal} kraji: pripravované obstarávania | PredTendrom.sk"
     popis = (f"{_cislo(n)} {_obstaravani(n)} na {info['nazov']} z eurofondov v {lokal} kraji"
              f"{'' if _suma(a['objem']) == '—' else ', spolu ' + _suma(a['objem'])}. Úrady ich pripravujú, súťaž ešte nevyhlásili.")
@@ -169,10 +173,8 @@ def _stranka(sektor, kraj, a, dostupne):
 {priklady}
   </div>
 {blok_zvysok}
-{f"""  <h2 class="mt-10 text-[16px] font-semibold">{_velke_prve(info['nazov_nom'])} z eurofondov v iných krajoch</h2>
-  <p class="mt-2 text-[14px] leading-loose flex flex-wrap gap-x-4">{kraje}</p>""" if kraje else ""}
-{f"""  <h2 class="mt-6 text-[16px] font-semibold">Iné odbory v kraji</h2>
-  <p class="mt-2 text-[14px] leading-loose flex flex-wrap gap-x-4">{odbory}</p>""" if odbory else ""}
+{blok_kraje}
+{blok_odbory}
   <p class="mt-4 text-[14px]"><a href="/eurofondy/" class="text-accent hover:underline">Všetky odbory a kraje</a>{zmluvy}</p>
 </section>
 """

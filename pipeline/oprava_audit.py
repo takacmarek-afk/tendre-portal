@@ -55,8 +55,12 @@ def main():
         c = rozdelenie(sb, ico, od5)
         spolu = sum(c.values())
         sedi = (not spolu) or (c.get(seg, 0) >= of.ODBOR_MIN_ZMLUV and c.get(seg, 0) / spolu >= of.ODBOR_MIN_PODIEL)
+        if not spolu:
+            vysledok["bez zmluv v CRZ (rozhodol Vestnik)"] += 1
+            riadky.append(f"bez CRZ               | {ico} {(k.get('nazov') or '')[:40]:40} | {seg} | {k.get('kraj')} | stav {k.get('stav')} | kroky {sorted(o['krok'] for o in oo)}")
+            continue
         if sedi:
-            vysledok["odbor sedi"] += 1
+            vysledok["odbor sedi podla CRZ"] += 1
             continue
         if obrana and len(oo) == 1:
             vysledok["len obrana (vlastna zmluva), bez chyby"] += 1
