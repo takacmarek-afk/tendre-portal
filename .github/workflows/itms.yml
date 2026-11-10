@@ -44,8 +44,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-        # NASUCHO, kym Marek neschvali ostre posielanie
-        run: python posli_eurofondy_alert.py --nasucho
+        # ostro: schvalil Marek 10. 11. 2026
+        run: python posli_eurofondy_alert.py
       - name: SEO stranky /eurofondy/<odbor>/<kraj>
         working-directory: pipeline
         env:
