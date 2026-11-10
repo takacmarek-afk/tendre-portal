@@ -403,6 +403,30 @@ def nacitaj_vlastne(sb, ica, dnes):
     return najlepsia
 
 
+ODBOR_MIN_ZMLUV, ODBOR_MIN_PODIEL = 2, 0.15
+
+
+def odbor_sedi(sb, ico, segment, dnes):
+    """Pise sa firme o tomto odbore? (10. 11. 2026, odpoved VIDRA: zdravotnicka
+    firma dostala e-mail o hygienickom tovare podla jednej sutaze.)
+    Ak firma ma zmluvy v CRZ za 5 rokov, v odbore musi mat aspon 2 a aspon 15 %.
+    Bez zmluv v CRZ rozhoduje Vestnik (inu informaciu nemame)."""
+    if not segment:
+        return False
+    cin = [ico8(ico), ico8(ico).lstrip("0")]
+    od = (dnes - timedelta(days=1826)).isoformat()
+    q = lambda: sb.table("contracts").select("id", count="exact").in_("supplier_cin", cin).gte("signed_on", od)  # noqa: E731
+    try:
+        spolu = q().limit(1).execute().count or 0
+        if not spolu:
+            return True
+        v_odbore = q().eq("sector", segment).limit(1).execute().count or 0
+    except Exception as e:   # pri chybe radsej nepisat
+        log.warning("odbor_sedi %s: %s", ico8(ico), type(e).__name__)
+        return False
+    return v_odbore >= ODBOR_MIN_ZMLUV and v_odbore / spolu >= ODBOR_MIN_PODIEL
+
+
 def zostav_obranu(kontakt, z, variant):
     """Prvy e-mail pre firmu s vlastnou konciacou zmluvou."""
     firma = kratky_nazov(kontakt["nazov"])
@@ -626,7 +650,16 @@ def krok_posli(sb, a):
     novi.sort(key=lambda x: ico8(x[0]["ico"]) not in vlastne)   # stabilne: poradie inak ostava
     log.info("Novych firiem na rade %d, z toho s vlastnou konciacou zmluvou (obrana) %d.",
              len(novi), sum(1 for k, _ in novi if ico8(k["ico"]) in vlastne))
-    rad = [x for x in rad if x[1] != 1] + novi[:max(0, a.novych)]
+    vybrani, odmietnuti = [], 0
+    for x in novi:
+        if len(vybrani) >= max(0, a.novych):
+            break
+        if ico8(x[0]["ico"]) in vlastne or odbor_sedi(sb, x[0]["ico"], x[0].get("segment"), dnes):
+            vybrani.append(x)
+        else:
+            odmietnuti += 1
+    log.info("Odbor nesedel so zmluvami v CRZ, preskocene: %d.", odmietnuti)
+    rad = [x for x in rad if x[1] != 1] + vybrani
     zmluvy = nacitaj_zmluvy(sb, {k["segment"] for k, _ in rad if k.get("segment")} or set(segmenty), dnes)
 
     spravy = []

@@ -401,3 +401,30 @@ def test_zastav_podla_domeny(monkeypatch):
                                                         {"ico": "22222222", "email": "b@ina.sk"}])
     of.krok_zastav(SB(), ["@vidra.sk", "@gmail.com", "33333333"], "odpovedal")
     assert zmeny == [("11111111", "odpovedal"), ("33333333", "odpovedal")]
+
+
+def _sb_pocty(spolu, v_odbore):
+    class Q:
+        def __init__(self): self.sek = False
+        def select(self, *a, **k): return self
+        def in_(self, *a): return self
+        def gte(self, *a): return self
+        def eq(self, *a): self.sek = True; return self
+        def limit(self, *a): return self
+        def execute(self):
+            class R: pass
+            r = R(); r.count = v_odbore if self.sek else spolu
+            return r
+
+    class SB:
+        def table(self, _): return Q()
+    return SB()
+
+
+def test_odbor_sedi_podla_zmluv_v_crz():
+    d = date(2026, 11, 10)
+    assert of.odbor_sedi(_sb_pocty(40, 1), "1", "UPRATOVANIE_TOVAR", d) is False   # VIDRA: 1 z 40
+    assert of.odbor_sedi(_sb_pocty(10, 3), "1", "OSTRAHA", d) is True
+    assert of.odbor_sedi(_sb_pocty(100, 5), "1", "OSTRAHA", d) is False            # 5 % je malo
+    assert of.odbor_sedi(_sb_pocty(0, 0), "1", "OSTRAHA", d) is True               # bez CRZ rozhoduje Vestnik
+    assert of.odbor_sedi(_sb_pocty(10, 3), "1", None, d) is False
