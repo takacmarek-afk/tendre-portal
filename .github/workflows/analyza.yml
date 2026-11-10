@@ -8,7 +8,7 @@ on:
       skript:
         description: "Prehlad"
         type: choice
-        options: [poradcovia_prehlad, vyzvy_prehlad, trh_overenie]
+        options: [poradcovia_prehlad, vyzvy_prehlad, trh_overenie, imap_sonda]
         default: poradcovia_prehlad
 
 permissions:
@@ -31,4 +31,5 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
         run: python "${{ inputs.skript }}.py"
