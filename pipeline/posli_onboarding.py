@@ -185,6 +185,8 @@ def obsah(krok: int, k: dict, miesta: int = 30) -> dict:
                 + (f"v odbore {odbor} {kde}" if odbor else "vo Vašom odbore a kraji")
                 + ", koľkým úradom a za koľko. Je to najrýchlejší spôsob, ako zistiť, s kým "
                 "budete súťažiť.",
+                "V záložke Súťaže ÚVO zapnite filter „Len kde chýba konkurencia“: uvidíte súťaže, "
+                "kde podali ponuku najviac 2 firmy. Tam má nový dodávateľ najväčšiu šancu.",
                 ("Pozrieť video (75 sekúnd)", video(4)),
             ],
         }
