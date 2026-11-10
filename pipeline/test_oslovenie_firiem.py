@@ -435,7 +435,7 @@ def test_odbor_sedi_podla_zmluv_v_crz():
 
 def test_veta_o_eurofondoch():
     h = {**_hook(), "suma12": 1_480_000, "eurofondy": (34, 12_400_000)}
-    s = of.zostav(1, {**KONTAKT, "segment": "STAVEBNE_PRACE"}, h, "A")
+    s = of.zostav(1, KONTAKT, h, "A")   # ostraha: eurofondy len ako veta
     text, _ = of.vyrenderuj(s, TOKEN)
     assert "Z eurofondov navyše úrady v kraji pripravujú ďalších 34 obstarávaní za 12" in text
     assert _slova_tela(text) <= 120, _slova_tela(text)
@@ -467,8 +467,25 @@ def test_stavby_prvy_email_vedie_eurofondmi(tmp_path, monkeypatch):
 
 def test_eurofondy_nie_ked_je_malo_alebo_iny_odbor_alebo_chyba_stranka(tmp_path, monkeypatch):
     h = _hook(); h["eurofondy"] = (34, 1e6, [])
+    monkeypatch.setattr(of, "EU_DIR", str(tmp_path / "prazdne"))
     assert of.zostav_eurofondy(dict(KONTAKT, segment="STAVEBNE_PRACE"), h, "A") is None   # stranka neexistuje
     _eu_strana(tmp_path, monkeypatch)
     assert of.zostav_eurofondy(KONTAKT, h, "A") is None                                    # ostraha
     h["eurofondy"] = (9, 1e6, [])
     assert of.zostav_eurofondy(dict(KONTAKT, segment="STAVEBNE_PRACE"), h, "A") is None   # malo
+
+
+def test_stavby_kroky_2_a_3_tiez_eurofondy(tmp_path, monkeypatch):
+    _eu_strana(tmp_path, monkeypatch)
+    k = dict(KONTAKT, segment="STAVEBNE_PRACE")
+    top = [(5e6, "Obec Hraň", "Stavebné práce - ČOV a kanalizácia - Hraň"), (4e6, "Mesto A", "Rekonštrukcia budovy školy A"),
+           (3e6, "Mesto B", "Výstavba novej materskej školy B"), (2e6, "Obec C", "Rekonštrukcia miestnych komunikácií C")]
+    h = _hook(); h["eurofondy"] = (34, 2e7, top)
+    for v in ("A", "B"):
+        for krok in (2, 3):
+            s = of.zostav(krok, k, h, v)
+            text, telo = of.vyrenderuj(s, TOKEN)
+            assert "končí" not in text.split("--")[0] and "eurofondy-k" in telo, (krok, v)
+            assert _slova_tela(text) <= 100, (krok, v, _slova_tela(text))
+    assert "materskej školy B" in of.vyrenderuj(of.zostav(2, k, h, "A"), TOKEN)[0]
+    assert "ČOV" not in of.vyrenderuj(of.zostav(2, k, h, "A"), TOKEN)[0]   # krok 1 uz ukazal

@@ -330,7 +330,7 @@ def nacitaj_eurofondy(sb, dnes):
         h = float(r.get("predpokladana_hodnota") or 0)
         # do prikladov len nazvy, z ktorych je jasne, o co ide (nie holé "Stavebné práce")
         if len((r.get("nazov") or "").strip()) >= 25 and r.get("obstaravatel_nazov"):
-            top = sorted(top + [(h, r["obstaravatel_nazov"], r["nazov"])], key=lambda x: -x[0])[:2]
+            top = sorted(top + [(h, r["obstaravatel_nazov"], r["nazov"])], key=lambda x: -x[0])[:4]
         out[k] = (n + 1, obj + h, top)
     return out
 
@@ -492,7 +492,7 @@ def veta_eurofondy(hook, odbor_kr, kraj_l):
 EU_HLAVNE = {"STAVEBNE_PRACE", "STRECHY_IZOLACIE", "KURENIE_VODA_PLYN",
              "OKNA_DVERE_POVRCHY", "ELEKTROINSTALACIE"}
 EU_HLAVNE_MIN = 10
-EU_HLAVNE_ZAPNUTE = False   # zapnut az po schvaleni ukazky Marekom
+EU_HLAVNE_ZAPNUTE = True    # schvalil Marek 10. 11. 2026
 
 
 def eurofondy_cesta(segment, kraj):
@@ -508,6 +508,13 @@ def eurofondy_cesta(segment, kraj):
     if not os.path.exists(os.path.join(EU_DIR, info["slug"], f"{k}.html")):
         return None
     return f"/eurofondy/{info['slug']}/{k}"
+
+
+def eu_vedie(kontakt, hook):
+    """Vedie tuto firmu seria eurofondami (stavebny odbor, dost dat, stranka existuje)?"""
+    eu = (hook or {}).get("eurofondy")
+    return bool(EU_HLAVNE_ZAPNUTE and kontakt.get("segment") in EU_HLAVNE and eu
+                and eu[0] >= EU_HLAVNE_MIN and eurofondy_cesta(kontakt.get("segment"), kontakt.get("kraj")))
 
 
 def zostav_eurofondy(kontakt, hook, variant):
@@ -528,7 +535,7 @@ def zostav_eurofondy(kontakt, hook, variant):
     uvod = (f"vo Vestníku verejného obstarávania som videl, že {firma} robí zákazky pre {urad_firmy}."
             if urad_firmy else f"vo Vestníku verejného obstarávania som videl, že {firma} robí zákazky pre verejný sektor.")
     priklady = "\n".join(f"• {_skrat(u, 60)} – {_skrat(nz, 70)}" + (f", {ko.eur(h)}" if h >= 1000 else "")
-                         for h, u, nz in top)
+                         for h, u, nz in top[:2])
     return {"predmet": _skrat(predmet, 120), "odstavce": [
         "Dobrý deň,",
         uvod + f" Úrady a obce v {kraj_l} majú v projektoch z eurofondov pripravených {n} obstarávaní "
@@ -581,6 +588,33 @@ def zostav(krok, kontakt, hook, variant):
               ("a", "predtendrom.sk", utm("/", 1, variant)),
               " – stačí zadať odbor a kraj."]),
             podpis]}
+    eu = eu_vedie(kontakt, hook)
+    eu_top = list((hook.get("eurofondy") or (0, 0, []))[2:3] or [[]])[0] if eu else []
+    if krok == 2 and eu and len(eu_top) >= 3:
+        # stavby: koniec zmluvy neznamena novu sutaz, pokracujeme eurofondmi
+        riadky = "\n".join(f"• {_skrat(u, 60)} – {_skrat(nz, 70)}" + (f", {ko.eur(h)}" if h >= 1000 else "")
+                            for h, u, nz in eu_top[2:4])
+        predmet = (f"Ďalšie pripravované obstarávania na {odbor_kr} v {kraj_l}" if variant == "A"
+                   else f"Čo úrady v {kraj_l} pripravujú na {odbor_kr}")
+        return {"predmet": _skrat(predmet, 120), "odstavce": [
+            "Dobrý deň,",
+            "nadväzujem na môj e-mail. Z obstarávaní, ktoré úrady v kraji pripravujú z eurofondov, posielam ďalšie:",
+            riadky,
+            [f"Ak chcete, pošleme Vám zadarmo raz týždenne nové vyhlásené súťaže na {odbor_kr} v {kraj_l}, "
+             f"bez registrácie: ", ("a", "predtendrom.sk", utm(odber_cesta(seg, kraj), 2, variant, "eurofondy"))],
+            "Ak to pre Vás nie je, odpíšte „Nie“ a už nenapíšem.",
+            "Marek Takáč"]}
+    if krok == 3 and eu:
+        predmet = (f"Posledný e-mail o obstarávaniach na {odbor_kr}" if variant == "A"
+                   else f"Ako sa pripraviť na súťaže z eurofondov v {kraj_l}")
+        return {"predmet": _skrat(predmet, 120), "odstavce": [
+            "Dobrý deň,",
+            "pošlem už len jeden tip. Obstarávania z eurofondov úrad vyhlási, keď mu schvália projekt, a lehoty "
+            "na ponuky bývajú krátke. Kto má referencie, ceny a kapacity pripravené vopred, má výhodu.",
+            f"PredTendrom môžete vyskúšať 14 dní zadarmo, bez platobnej karty. Prvým 30 firmám dávame "
+            f"ročný plán za {ZACIATOCNA_CENA} namiesto {BEZNA_CENA}.",
+            [("a", "Vyskúšať 14 dní zadarmo", utm("/prihlasenie", 3, variant, "eurofondy"))],
+            "Ďakujem za Váš čas.\nMarek Takáč"]}
     if krok == 2:
         dalsie = hook["zmluvy"][1:3]
         if not dalsie:
