@@ -412,8 +412,8 @@ def zostav_obranu(kontakt, z, variant):
         f"{' za ' + suma if suma else ''}. Zmluva končí {ko.datum_sk(z['effective_to'])}.",
         "Ak ju úrad bude obstarávať znova, súťaž zvyčajne vyhlási niekoľko mesiacov pred koncom. "
         "Kto ju zachytí neskoro, má na ponuku málo času a môže prísť o zákazníka.",
-        "PredTendrom sleduje Vestník a dá Vám vedieť, keď úrad súťaž vyhlási. Zároveň ukáže "
-        "ďalšie končiace zmluvy vo Vašom odbore.",
+        "PredTendrom sleduje Vestník a dá Vám vedieť, keď úrad súťaž vyhlási."
+        + (" Zároveň ukáže ďalšie končiace zmluvy vo Vašom odbore." if kontakt.get("segment") in ODBOR else ""),
         ["Kedy končia všetky Vaše zmluvy so štátom, uvidíte bez registrácie: ",
          ("a", "predtendrom.sk/kontrola", utm(kontrola, 1, variant, "obrana"))],
         "S pozdravom\nMarek Takáč\nPredTendrom.sk"]}
@@ -610,10 +610,13 @@ def krok_posli(sb, a):
     odoslane = _vsetky(sb, "oslovenie_firiem_odoslane", "ico,krok,stav,odoslane_at")
     vylucene_ica = {ico8(r["ico"]) for r in _vsetky(sb, "organizations", "ico") if r.get("ico")}
     vylucene_emaily = {(r.get("email") or "").lower() for r in _vsetky(sb, "odber_firmy", "email")}
-    rad = na_rade(kontakty, odoslane, segmenty, vylucene_ica, vylucene_emaily, dnes, 10 ** 6)
+    # 10. 11. 2026: aj firmy bez nasho odboru (836 kontaktov) — tie dostanu
+    # len e-mail o VLASTNEJ konciacej zmluve (obrana), ktory odbor nepotrebuje.
+    rad = na_rade(kontakty, odoslane, list(segmenty) + [None], vylucene_ica, vylucene_emaily, dnes, 10 ** 6)
     # Novi s vlastnou konciacou zmluvou idu prvi (obrana), potom ostatni.
     novi = [x for x in rad if x[1] == 1]
     vlastne = nacitaj_vlastne(sb, [k["ico"] for k, _ in novi], dnes) if novi else {}
+    novi = [x for x in novi if x[0].get("segment") in segmenty or ico8(x[0]["ico"]) in vlastne]
     novi.sort(key=lambda x: ico8(x[0]["ico"]) not in vlastne)   # stabilne: poradie inak ostava
     log.info("Novych firiem na rade %d, z toho s vlastnou konciacou zmluvou (obrana) %d.",
              len(novi), sum(1 for k, _ in novi if ico8(k["ico"]) in vlastne))

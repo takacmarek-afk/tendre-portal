@@ -365,3 +365,19 @@ def test_vsetky_odbory_maju_text_a_kratky_email():
             s = of.zostav(krok, {**KONTAKT, "segment": seg}, _hook(), "B")
             text, _ = of.vyrenderuj(s, TOKEN)
             assert "_" not in s["predmet"] and _slova_tela(text) <= 100, (seg, krok, _slova_tela(text))
+
+
+def test_obrana_bez_odboru_nesluby_odbor():
+    s = of.zostav_obranu({**KONTAKT, "segment": None}, VLASTNA, "A")
+    text, _ = of.vyrenderuj(s, TOKEN)
+    assert "vo Vašom odbore" not in text and "dá Vám vedieť" in text
+    s = of.zostav_obranu(KONTAKT, VLASTNA, "A")
+    assert "vo Vašom odbore" in of.vyrenderuj(s, TOKEN)[0]
+
+
+def test_na_rade_berie_aj_firmy_bez_odboru_ked_sa_pyta():
+    k = [dict(KONTAKT, ico="1", segment=None), dict(KONTAKT, ico="2")]
+    r = of.na_rade(k, [], ["OSTRAHA", None], set(), set(), date(2026, 11, 10), 10)
+    assert [x[0]["ico"] for x in r] == ["1", "2"]
+    r = of.na_rade(k, [], ["OSTRAHA"], set(), set(), date(2026, 11, 10), 10)
+    assert [x[0]["ico"] for x in r] == ["2"]
