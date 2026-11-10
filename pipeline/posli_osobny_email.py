@@ -20,6 +20,8 @@ from email.message import EmailMessage
 from email.utils import formatdate, make_msgid
 from pathlib import Path
 
+import znacka
+
 SMTP_HOST, SMTP_PORT = "smtp.zoho.eu", 465
 SMTP_USER = "marek@predtendrom.sk"
 ODOSIELATEL = f"Marek Takáč <{SMTP_USER}>"
@@ -55,7 +57,9 @@ def zostav(komu, kopia, predmet, text, reply_to):
     m["Subject"] = predmet
     m["Date"] = formatdate(localtime=True)
     m["Message-ID"] = make_msgid(domain="predtendrom.sk")
+    text, telo = znacka.osobny_email(text)
     m.set_content(text)
+    m.add_alternative(telo, subtype="html")
     return m
 
 

@@ -38,7 +38,7 @@ SCHRANKA = "marek@predtendrom.sk"
 ODOSIELATEL = "Marek Takáč z PredTendrom.sk <marek@predtendrom.sk>"
 DNI = 21
 VETA = ("Dobrý deň,\n\nďakujem za odpoveď, ďalej Vás už nebudem kontaktovať.\n\n"
-        "Pekný deň,\nMarek Takáč\nPredTendrom.sk\n")
+        "Pekný deň,\nMarek Takáč\nzakladateľ PredTendrom.sk | predtendrom.sk\n")
 
 _AUTO_PREDMET = re.compile(r"automatic|automatick|mimo kancel|out of office|autoreply|auto-reply|"
                            r"dovolenk|neprítomn|nepritomn|abwesend|nedostupn", re.I)

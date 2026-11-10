@@ -1,3 +1,4 @@
+import znacka
 """Testy oslovenia firiem (bez siete a DB)."""
 import re
 from datetime import date, datetime
@@ -113,7 +114,7 @@ def _hook():
 
 
 def _slova_tela(text):
-    telo = text.split("\n--\n")[0]
+    telo = text.split("\n--\n")[0].split("Marek Takáč")[0]   # podpis sa nepocita
     return len(re.findall(r"\S+", telo))
 
 
@@ -128,7 +129,9 @@ def test_tri_kroky_do_100_slov_a_bez_predpovede():
                 assert zakazane not in nizke, (krok, zakazane)
             assert "odhlasenie-firmy.html?t=" + TOKEN in text and "LoveHome s.r.o." in text
             assert "Vestníka verejného obstarávania" in text
-            assert "<img" not in telo   # ziadny sledovaci pixel
+            # ziadny sledovaci pixel: jediny obrazok je logo v podpise
+            assert re.findall(r'<img src="([^"]+)"', telo) == [znacka.LOGO_URL]
+            assert znacka.FACEBOOK in telo and znacka.INSTAGRAM in text
 
 
 def test_krok1_obsahuje_skutocnu_zmluvu_a_urad_firmy():

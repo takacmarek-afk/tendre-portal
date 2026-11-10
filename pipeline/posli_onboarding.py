@@ -29,6 +29,8 @@ from datetime import date, datetime, timezone
 
 import requests
 
+import znacka
+
 from posli_email import PAUZA_S, RESEND_URL, _sektor_text, _sklon
 
 logging.basicConfig(level=logging.INFO,
@@ -233,22 +235,24 @@ def zostav(o: dict, token: str) -> "tuple[str, str]":
                 raise ValueError(f"cudzi odkaz {url!r}")
             txt += [f"{text}: {url}", ""]
             htm.append(f'<p style="margin:0 0 14px;"><a href="{html.escape(url)}" '
-                       f'style="color:#1a56c4;font-weight:600;">{html.escape(text)}</a></p>')
+                       f'style="color:{znacka.AKCENT};font-weight:600;">{html.escape(text)}</a></p>')
         else:
             txt += [odsek, ""]
             htm.append(f'<p style="margin:0 0 14px;">{html.escape(odsek)}</p>')
-    txt += ["Marek Takáč", "PredTendrom.sk", "",
+    txt += [znacka.podpis_text(), "",
             "Ak máte otázku, odpovedzte na tento e-mail, číta ho priamo Marek.",
             f"Nechcete tieto tipy? Odhlásiť: {odhlas}",
             "LoveHome s.r.o., Černyševského 40, 851 01 Bratislava, IČO 47 586 362"]
-    htm.append('<p style="margin:0 0 14px;">Marek Takáč<br>PredTendrom.sk</p>')
+    htm.append(znacka.podpis_html(logo=False))
     telo = "\n".join(htm)
-    return (f"""<!doctype html><html lang="sk"><body style="margin:0;padding:24px 16px;background:#ffffff;">
-<div style="max-width:560px;font:15px/1.6 Arial,sans-serif;color:#0f1a2b;">
+    return (f"""<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:24px 16px;background:#ffffff;">
+<div style="max-width:560px;font:15px/1.6 {znacka.PISMO};color:{znacka.INK};">
+<div style="padding:0 0 14px;margin:0 0 20px;border-bottom:3px solid {znacka.AKCENT};">{znacka.logo_html()}</div>
 {telo}
-<p style="margin:24px 0 0;padding-top:12px;border-top:1px solid #e4e8ee;font:12px/1.6 Arial,sans-serif;color:#8a929e;">
+<p style="margin:24px 0 0;padding-top:12px;border-top:1px solid {znacka.LINKA};font:12px/1.6 {znacka.PISMO};color:{znacka.SVETLA};">
 Ak máte otázku, odpovedzte na tento e-mail, číta ho priamo Marek.<br>
 Nechcete tieto tipy? <a href="{html.escape(odhlas)}" style="color:#8a929e;">Odhlásiť</a>.<br>
+{znacka.socialne_html()}<br>
 LoveHome s.r.o., Černyševského 40, 851 01 Bratislava, IČO 47 586 362</p>
 </div></body></html>""", "\n".join(txt))
 

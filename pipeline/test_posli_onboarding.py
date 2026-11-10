@@ -1,3 +1,4 @@
+import znacka
 """Testy uvitacich e-mailov (bez siete a DB)."""
 import re
 from datetime import datetime, timedelta, timezone
@@ -103,7 +104,7 @@ def test_odkazy_len_na_predtendrom():
     for krok in po.KROKY:
         htm, _ = po.zostav(po.obsah(krok, _k(1)), TOKEN)
         for u in re.findall(r'href="([^"]+)"', htm):
-            assert u.startswith("https://predtendrom.sk/"), u
+            assert u.startswith("https://predtendrom.sk") or u in znacka.SOCIALNE, u
 
 
 def test_nasucho_nic_neposle(monkeypatch):
