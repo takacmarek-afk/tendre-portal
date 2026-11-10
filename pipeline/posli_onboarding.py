@@ -125,6 +125,21 @@ def obsah(krok: int, k: dict, miesta: int = 30) -> dict:
     odbor = _sektor_text(k.get("sektor")) if k.get("sektor") else ""
     kde = v_kraji(k.get("kraj") or "")
     video = lambda n: _odkaz(f"{NAVODY}#video-{n}", krok)  # noqa: E731
+    # Audit 10. 11. 2026: bez odboru/kraja vznikali vety "(, Prešovský kraj)",
+    # "(stravovanie, None)" a "končí ." — popis vyberu sa sklada len z toho, co je.
+    vyber = ", ".join(x for x in (odbor, k.get("kraj")) if x)
+    if krok == 0 and vyber:
+        return {
+            "predmet": "Váš prehľad je pripravený",
+            "odseky": [
+                f"vitajte v PredTendrom. Váš výber je nastavený: {vyber}. Ak chcete iný odbor "
+                "alebo kraj, zmeníte ho v appke v časti Môj výber.",
+                "Na obrazovke Dnes kliknite na Zapnúť prehľad a nové končiace zmluvy Vám budú "
+                "chodiť e-mailom samy. Ako appka funguje, ukazuje 60-sekundové video:",
+                ("Pozrieť video: Nastavte si odbor a kraj", video(2)),
+                ("Otvoriť PredTendrom", _odkaz(APP, krok)),
+            ],
+        }
     if krok == 0:
         return {
             "predmet": "Váš prehľad je pripravený",
@@ -142,9 +157,14 @@ def obsah(krok: int, k: dict, miesta: int = 30) -> dict:
     if krok == 1:
         n = int(k.get("pocet_zmluv") or 0)
         z = k.get("najblizsia") or {}
-        prvy = (f"vo Vašom výbere ({odbor}, {k.get('kraj')}) končí do 12 mesiacov {n} "
-                f"{_sklon(n, 'zmluva', 'zmluvy', 'zmlúv')}.")
-        if z:
+        v_zatvorke = f" ({vyber})" if vyber else ""
+        if n:
+            prvy = (f"vo Vašom výbere{v_zatvorke} končí do 12 mesiacov {n} "
+                    f"{_sklon(n, 'zmluva', 'zmluvy', 'zmlúv')}.")
+        else:
+            prvy = (f"vo Vašom výbere{v_zatvorke} teraz do 12 mesiacov nekončí žiadna zmluva. "
+                    "Skúste v časti Môj výber pridať ďalší kraj alebo odbor.")
+        if z and n:
             prvy += f" Jedna z najbližších: {z.get('urad')} – {z.get('predmet')}, končí {_datum(z.get('koniec'))}."
         return {
             "predmet": (f"{n} {_sklon(n, 'zmluva', 'zmluvy', 'zmlúv')} vo Vašom výbere končí do roka"
@@ -180,7 +200,8 @@ def obsah(krok: int, k: dict, miesta: int = 30) -> dict:
             ],
         }
     if krok == 12:
-        odseky = [f"Vaša skúška PredTendrom končí {_datum(k.get('trial_konci'))}. "
+        kedy = _datum(k.get("trial_konci")) or "o 2 dni"
+        odseky = [f"Vaša skúška PredTendrom končí {kedy}. "
                   "Potom sa týždenný prehľad zastaví."]
         if miesta > 0:
             odseky.append("Ak chcete pokračovať: prvým 30 firmám dávame ročný plán Start za 240 € "

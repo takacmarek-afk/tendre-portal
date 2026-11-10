@@ -4712,6 +4712,14 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     if (smiePlatit) {
       ukaz('skoncene-plat');
       el('skoncene-plat').addEventListener('click', () => otvorPredplatneModal(supabase, sub?.plan));
+      // Audit 10. 11. 2026: zakladajuca cena bola len v e-maile a v okne platby,
+      // nie na obrazovke, kde sa o platbe rozhoduje.
+      supabase.rpc('zakladajuce_miesta').then(({ data, error }) => {
+        const m = Number(data);
+        if (error || !(m > 0)) return;
+        el('skoncene-p').textContent += ` Prvým 30 firmám dávame ročný plán Start za 240 € namiesto 340 € `
+          + `a Growth za 590 € namiesto 890 € (kód ZAKLADATEL pri platbe, ostáva ${m} ${tvar(m, 'miesto', 'miesta', 'miest')}).`;
+      }).catch(() => {});
     } else {
       el('skoncene-vlastnik').textContent = 'Plán môže aktivovať vlastník alebo admin vašej firmy — požiadajte ho o to.';
       ukaz('skoncene-vlastnik');

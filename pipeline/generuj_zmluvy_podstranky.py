@@ -198,6 +198,21 @@ PATICKA = """
   </div>
   <p class="pt-pravne text-[12px] text-slate2 text-center py-4 border-t border-line"><a href="/obchodne-podmienky" class="underline hover:text-ink">Obchodné podmienky</a> &middot; <a href="/ochrana-osobnych-udajov" class="underline hover:text-ink">Ochrana osobných údajov</a> &middot; <a href="#" onclick="window.ptCookieNastavenia&amp;&amp;window.ptCookieNastavenia();return false;" class="underline hover:text-ink">Nastavenia cookies</a></p>
 </footer>
+<script>
+// Audit 10. 11. 2026: kto prisiel zo studeneho e-mailu (utm_source=email),
+// nesie si zdroj aj do registracie, inak by sa v lieviku ratal ako SEO.
+(function () {{
+  var q = new URLSearchParams(location.search);
+  if (q.get('utm_source') !== 'email') return;
+  document.querySelectorAll('a[href^="/prihlasenie"]').forEach(function (a) {{
+    var u = new URL(a.getAttribute('href'), location.origin);
+    u.searchParams.set('utm_source', 'email');
+    u.searchParams.set('utm_medium', q.get('utm_medium') || 'oslovenie');
+    u.searchParams.set('utm_campaign', (q.get('utm_campaign') || 'firmy') + '-seo');
+    a.setAttribute('href', u.pathname + u.search);
+  }});
+}})();
+</script>
 </body>
 </html>
 """
@@ -350,6 +365,12 @@ def _vygeneruj_stranku(sector, agregat_row):
     )
 
 
+# Odbory, pre ktore sa v tomto behu naozaj generuju stranky (nastavi
+# vygeneruj()). Audit 10. 11. 2026: odbor bez dat (sprava budov) sa
+# preskocil, ale ostatne stranky nan odkazovali -> 104 rozbitych odkazov.
+DOSTUPNE_SEKTORY = set()
+
+
 def _odkazy(sector, kraj):
     """Interne odkazy: rovnaky odbor v inych krajoch a ine odbory v tom istom
     kraji. Pomahaju Googlu najst vsetky stranky a navstevnikovi preskocit."""
@@ -359,7 +380,8 @@ def _odkazy(sector, kraj):
         for k in VSETKY_KRAJE if k != kraj)
     odbory = " ".join(
         f'<a href="/konciace-zmluvy/{i["slug"]}/{_slug(kraj)}" class="text-accent hover:underline">{_e(_velke_prve(i["nazov_nom"]))}</a>'
-        for s, i in SEKTORY_SEO.items() if s != sector)
+        for s, i in SEKTORY_SEO.items()
+        if s != sector and (not DOSTUPNE_SEKTORY or s in DOSTUPNE_SEKTORY))
     return f"""
   <h2 class="mt-10 text-[16px] font-semibold">{_velke_prve(info['nazov_nom'])} v iných krajoch</h2>
   <p class="mt-2 text-[14px] leading-loose flex flex-wrap gap-x-4">{kraje}</p>
@@ -481,6 +503,8 @@ def vygeneruj(vsetky_agregaty, vystup_dir=VYSTUP_DIR):
     (okrem zapisu suborov), rovnaky vzor ako generuj_obce_podstranky.vygeneruj."""
     napisane = []
     kombinacie = []
+    DOSTUPNE_SEKTORY.clear()
+    DOSTUPNE_SEKTORY.update(vsetky_agregaty)
 
     for sector, agregaty in vsetky_agregaty.items():
         sektor_slug = SEKTORY_SEO[sector]["slug"]
