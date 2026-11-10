@@ -31,5 +31,6 @@ jobs:
         working-directory: pipeline
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_ADMIN_KEY: ${{ secrets.RESEND_ADMIN_KEY }}
           ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
         run: python limit_emailov.py ${{ (github.event_name == 'workflow_dispatch' && inputs.nasucho) && '--nasucho' || '' }}

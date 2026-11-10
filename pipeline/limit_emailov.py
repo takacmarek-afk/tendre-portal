@@ -117,13 +117,14 @@ def main(argv=None):
     ap = argparse.ArgumentParser()
     ap.add_argument("--nasucho", action="store_true")
     a = ap.parse_args(argv)
-    kluc = os.environ["RESEND_API_KEY"]
+    # RESEND_ADMIN_KEY (pravo "Full access") vie citat spotrebu; posielaci kluc nie.
+    kluc = os.environ.get("RESEND_ADMIN_KEY") or os.environ["RESEND_API_KEY"]
     try:
         n24, n30 = spocitaj(kluc)
     except requests.HTTPError:
         z = z_hlaviciek(kluc)
         if z is None:
-            print("::warning title=Limit e-mailov::Resend nevratil spotrebu (kluc len na posielanie).")
+            print("::warning title=Limit e-mailov::Resend nevratil spotrebu. Treba GitHub secret RESEND_ADMIN_KEY (Full access).")
             return 0
         n24, n30 = z
     print(f"Resend: za 24 h {n24}/{LIMIT_DEN}, za 30 dni {n30}/{LIMIT_MESIAC}")
