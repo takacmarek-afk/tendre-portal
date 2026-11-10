@@ -441,3 +441,34 @@ def test_veta_o_eurofondoch():
     assert _slova_tela(text) <= 120, _slova_tela(text)
     s = of.zostav(1, KONTAKT, {**_hook(), "eurofondy": (2, 50000)}, "A")
     assert "eurofond" not in of.vyrenderuj(s, TOKEN)[0]
+
+
+def _eu_strana(tmp_path, monkeypatch):
+    d = tmp_path / "eurofondy" / "stavebne-prace"; d.mkdir(parents=True)
+    (d / "bratislavsky.html").write_text("x")
+    monkeypatch.setattr(of, "EU_DIR", str(tmp_path / "eurofondy"))
+    monkeypatch.setattr(of, "EU_HLAVNE_ZAPNUTE", True)
+
+
+def test_stavby_prvy_email_vedie_eurofondmi(tmp_path, monkeypatch):
+    _eu_strana(tmp_path, monkeypatch)
+    k = dict(KONTAKT, segment="STAVEBNE_PRACE")
+    h = _hook(); h["eurofondy"] = (34, 12_400_000, [(2_100_000, "Mesto Senec", "Rekonštrukcia ZŠ Tajovského"),
+                                                    (900_000, "Obec Ivanka pri Dunaji", "Prístavba MŠ")])
+    for v in ("A", "B"):
+        s = of.zostav(1, k, h, v)
+        text, telo = of.vyrenderuj(s, TOKEN)
+        assert "34" in s["predmet"] and "Rekonštrukcia ZŠ Tajovského" in text
+        assert "/eurofondy/stavebne-prace/bratislavsky?utm_source=email" in telo and "eurofondy-k1" in telo
+        assert _slova_tela(text) <= 100, _slova_tela(text)
+    # krok 2 pokracuje ako doteraz
+    assert "eurofondy" not in of.zostav(2, k, h, "A")["predmet"].lower()
+
+
+def test_eurofondy_nie_ked_je_malo_alebo_iny_odbor_alebo_chyba_stranka(tmp_path, monkeypatch):
+    h = _hook(); h["eurofondy"] = (34, 1e6, [])
+    assert of.zostav_eurofondy(dict(KONTAKT, segment="STAVEBNE_PRACE"), h, "A") is None   # stranka neexistuje
+    _eu_strana(tmp_path, monkeypatch)
+    assert of.zostav_eurofondy(KONTAKT, h, "A") is None                                    # ostraha
+    h["eurofondy"] = (9, 1e6, [])
+    assert of.zostav_eurofondy(dict(KONTAKT, segment="STAVEBNE_PRACE"), h, "A") is None   # malo

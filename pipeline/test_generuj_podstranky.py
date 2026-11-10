@@ -70,8 +70,8 @@ print("OK: sitemap bez .html, bez trh")
 assert {"upratovanie", "stravovanie", "ostraha", "stavebne-prace", "it-technika", "doprava"} <= {
     v["slug"] for v in zmluvy.SEKTORY_SEO.values()}
 assert len({v["slug"] for v in zmluvy.SEKTORY_SEO.values()}) == len(zmluvy.SEKTORY_SEO) == 14
-for kluc, titul, slug in (("IT_TECHNIKA", "IT služby a výpočtová technika v trenčianskom kraji: končiace zmluvy úradov | PredTendrom.sk", "it-technika"),
-                          ("STAVEBNE_PRACE", "Stavebné práce v trenčianskom kraji: končiace zmluvy úradov | PredTendrom.sk", "stavebne-prace")):
+for kluc, titul, slug in (("IT_TECHNIKA", "IT služby a výpočtová technika v Trenčianskom kraji: končiace zmluvy úradov | PredTendrom.sk", "it-technika"),
+                          ("STAVEBNE_PRACE", "Stavebné práce v Trenčianskom kraji: končiace zmluvy úradov | PredTendrom.sk", "stavebne-prace")):
     h = zmluvy._vygeneruj_stranku(kluc, agregat(7, 50000.0, teaser))
     assert f"<title>{titul}</title>" in h, (kluc, re.search(r"<title>.*?</title>", h).group(0))
     assert f'href="https://predtendrom.sk/konciace-zmluvy/{slug}/trenciansky"' in h

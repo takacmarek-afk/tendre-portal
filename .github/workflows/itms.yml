@@ -8,7 +8,11 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: commit-main
+  cancel-in-progress: false
 
 jobs:
   itms:
@@ -28,3 +32,22 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python itms_klasifikuj.py
+      - name: SEO stranky /eurofondy/<odbor>/<kraj>
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python generuj_eurofondy_podstranky.py
+      - name: Commitnut stranky, ak sa zmenili
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/eurofondy/ public/sitemap-eurofondy.xml public/robots.txt
+          if git diff --cached --quiet; then
+            echo "Ziadna zmena."
+          else
+            git commit -m "Automaticky vygenerovane: SEO podstranky eurofondy"
+            git pull --rebase origin main
+            git push
+          fi

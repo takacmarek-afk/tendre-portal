@@ -254,7 +254,7 @@ def _vygeneruj_stranku(sector, agregat_row):
     sektor_slug = sektor_info["slug"]
     kraj_slug = _slug(kraj)
     kraj_bez_slova = kraj.replace(" kraj", "")
-    lokal = LOKAL_KRAJA.get(kraj, kraj_bez_slova.lower() + "om")
+    lokal = _velke_prve(LOKAL_KRAJA.get(kraj, kraj_bez_slova.lower() + "om"))  # "v Košickom kraji" (10. 11. 2026)
 
     if agregat_row["teaser"]:
         riadky_teaser = "\n".join(
@@ -386,12 +386,16 @@ def _odkazy(sector, kraj):
         f'<a href="/konciace-zmluvy/{i["slug"]}/{_slug(kraj)}" class="text-accent hover:underline">{_e(_velke_prve(i["nazov_nom"]))}</a>'
         for s, i in SEKTORY_SEO.items()
         if s != sector and (not DOSTUPNE_SEKTORY or s in DOSTUPNE_SEKTORY))
+    # 10. 11. 2026: odkaz na pripravovane obstaravania z eurofondov, ak stranka existuje
+    eu = os.path.join(os.path.dirname(__file__), "..", "public", "eurofondy", info["slug"], f"{_slug(kraj)}.html")
+    eurofondy = (f' · <a href="/eurofondy/{info["slug"]}/{_slug(kraj)}" class="text-accent font-semibold hover:underline">'
+                 f'Pripravované obstarávania z eurofondov v kraji</a>' if os.path.exists(eu) else "")
     return f"""
   <h2 class="mt-10 text-[16px] font-semibold">{_velke_prve(info['nazov_nom'])} v iných krajoch</h2>
   <p class="mt-2 text-[14px] leading-loose flex flex-wrap gap-x-4">{kraje}</p>
   <h2 class="mt-6 text-[16px] font-semibold">Iné odbory v kraji</h2>
   <p class="mt-2 text-[14px] leading-loose flex flex-wrap gap-x-4">{odbory}</p>
-  <p class="mt-4 text-[14px]"><a href="/konciace-zmluvy/" class="text-accent hover:underline">Všetky odbory a kraje</a></p>"""
+  <p class="mt-4 text-[14px]"><a href="/konciace-zmluvy/" class="text-accent hover:underline">Všetky odbory a kraje</a>{eurofondy}</p>"""
 
 
 def _vygeneruj_hub(vsetky_agregaty):

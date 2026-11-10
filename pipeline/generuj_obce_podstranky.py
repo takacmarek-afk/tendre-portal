@@ -184,7 +184,7 @@ def _vygeneruj_stranku_kraja(row, spolu_sprostredkovatelia):
     kraj = row["kraj"]
     slug = _slug(kraj)
     kraj_bez_slova = kraj.replace(" kraj", "")
-    lokal = LOKAL_KRAJA.get(kraj, kraj_bez_slova.lower() + "om")  # fallback, ale VSETKY_KRAJE pokryva vsetky
+    lokal = LOKAL_KRAJA.get(kraj, kraj_bez_slova.lower() + "om").capitalize()  # "v Košickom kraji" (10. 11. 2026)
 
     sprostredkovatelia_v_kraji = [
         s for s in spolu_sprostredkovatelia

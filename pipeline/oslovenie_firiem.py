@@ -315,19 +315,22 @@ def nacitaj_zmluvy(sb, segmenty, dnes):
 
 
 def nacitaj_eurofondy(sb, dnes):
-    """-> {(sektor, kraj): (pocet, objem)} pripravovanych obstaravani z eurofondov (migracia 97)."""
+    """-> {(sektor, kraj): (pocet, objem, [(hodnota, urad, nazov)] top 2)} pripravovanych obstaravani z eurofondov (migracia 97)."""
     od = (dnes - timedelta(days=730)).isoformat()
     out = {}
     try:
-        riadky = _vsetky(sb, "itms_vo", "sektor,kraj,predpokladana_hodnota",
+        riadky = _vsetky(sb, "itms_vo", "sektor,kraj,predpokladana_hodnota,nazov,obstaravatel_nazov",
                          lambda q: q.eq("stav", "Pripravované").gte("itms_updated_at", od).not_.is_("sektor", "null"))
     except Exception as e:   # eurofondy su bonus, e-mail ide aj bez nich
         log.warning("itms_vo: %s", type(e).__name__)
         return out
     for r in riadky:
         k = (r.get("sektor"), r.get("kraj"))
-        n, obj = out.get(k, (0, 0.0))
-        out[k] = (n + 1, obj + float(r.get("predpokladana_hodnota") or 0))
+        n, obj, top = out.get(k, (0, 0.0, []))
+        h = float(r.get("predpokladana_hodnota") or 0)
+        if r.get("nazov") and r.get("obstaravatel_nazov"):
+            top = sorted(top + [(h, r["obstaravatel_nazov"], r["nazov"])], key=lambda x: -x[0])[:2]
+        out[k] = (n + 1, obj + h, top)
     return out
 
 
@@ -357,6 +360,7 @@ def _skrat(t, n=90):
 # ── 3. texty (sekcia 3 planu predaja) ──────────────────────────────────────
 
 SEO_DIR = os.path.join(os.path.dirname(__file__), "..", "public", "konciace-zmluvy")
+EU_DIR = os.path.join(os.path.dirname(__file__), "..", "public", "eurofondy")
 
 
 def seo_cesta(segment, kraj):
@@ -472,12 +476,68 @@ EUROFONDY_MIN = 3
 
 def veta_eurofondy(hook, odbor_kr, kraj_l):
     """10. 11. 2026: pripravovane obstaravania z eurofondov (ITMS21+), ak ich je aspon 3."""
-    n, obj = (hook or {}).get("eurofondy") or (0, 0)
+    n, obj = ((hook or {}).get("eurofondy") or (0, 0))[:2]
     if n < EUROFONDY_MIN:
         return ""
     za = f" za {ko.eur(obj)}" if obj >= 10000 else ""
     return (f" Z eurofondov navyše úrady v kraji pripravujú ďalších {n} "
             f"{'obstarávania' if 2 <= n <= 4 else 'obstarávaní'}{za}, ešte pred vyhlásením.")
+
+
+# ── 3c. eurofondy ako hlavny hacik pre stavebne odbory (10. 11. 2026) ──────
+# Pri stavbach koniec zmluvy spravidla neznamena novu sutaz (stavba sa
+# dokonci). Silnejsie su obstaravania, ktore urady uz maju v projektoch
+# z eurofondov a este ich nevyhlasili (ITMS21+). Len prvy e-mail.
+EU_HLAVNE = {"STAVEBNE_PRACE", "STRECHY_IZOLACIE", "KURENIE_VODA_PLYN",
+             "OKNA_DVERE_POVRCHY", "ELEKTROINSTALACIE"}
+EU_HLAVNE_MIN = 10
+EU_HLAVNE_ZAPNUTE = False   # zapnut az po schvaleni ukazky Marekom
+
+
+def eurofondy_cesta(segment, kraj):
+    """/eurofondy/<odbor>/<kraj>, ak stranka existuje (generuj_eurofondy_podstranky)."""
+    try:
+        from generuj_zmluvy_podstranky import SEKTORY_SEO, _slug
+    except Exception:   # pragma: no cover
+        return None
+    info = SEKTORY_SEO.get(segment)
+    if not info or not kraj:
+        return None
+    k = _slug(kraj)
+    if not os.path.exists(os.path.join(EU_DIR, info["slug"], f"{k}.html")):
+        return None
+    return f"/eurofondy/{info['slug']}/{k}"
+
+
+def zostav_eurofondy(kontakt, hook, variant):
+    """-> {predmet, odstavce} alebo None (malo dat alebo chyba stranka)."""
+    seg, kraj = kontakt.get("segment"), kontakt.get("kraj")
+    eu = (hook or {}).get("eurofondy")
+    cesta = eurofondy_cesta(seg, kraj)
+    if not EU_HLAVNE_ZAPNUTE or seg not in EU_HLAVNE or not eu or eu[0] < EU_HLAVNE_MIN or not cesta:
+        return None
+    n, obj, top = (tuple(eu) + ([],))[:3]
+    odbor, odbor_kr = ODBOR.get(seg, (seg.lower(), seg.lower()))
+    kraj_l = KRAJ_LOKAL.get(kraj, kraj)
+    firma = kratky_nazov(kontakt["nazov"])
+    urad_firmy = kontakt.get("posledny_urad")
+    za = f" za {ko.eur(obj)}" if obj >= 10000 else ""
+    predmet = (f"{n} obstarávaní na {odbor_kr} v {kraj_l} sa pripravuje, ešte nie sú vyhlásené"
+               if variant == "A" else f"Eurofondy: úrady v {kraj_l} pripravujú {n} obstarávaní na {odbor_kr}")
+    uvod = (f"vo Vestníku verejného obstarávania som videl, že {firma} robí zákazky pre {urad_firmy}."
+            if urad_firmy else f"vo Vestníku verejného obstarávania som videl, že {firma} robí zákazky pre verejný sektor.")
+    priklady = "\n".join(f"• {_skrat(u, 60)} – {_skrat(nz, 70)}" + (f", {ko.eur(h)}" if h >= 1000 else "")
+                         for h, u, nz in top)
+    return {"predmet": _skrat(predmet, 120), "odstavce": [
+        "Dobrý deň,",
+        uvod + f" Úrady a obce v {kraj_l} majú v projektoch z eurofondov pripravených {n} obstarávaní "
+        f"na {odbor_kr}{za}. Súťaže ešte nevyhlásili" + (", napríklad:" if priklady else "."),
+        *([priklady] if priklady else []),
+        "PredTendrom ich sleduje a dá Vám vedieť, keď úrad súťaž vyhlási. "
+        "Kto o nej vie vopred, má čas pripraviť si ponuku.",
+        ["Celý prehľad pre Váš kraj nájdete bez registrácie tu: ",
+         ("a", "predtendrom.sk" + cesta, utm(cesta, 1, variant, "eurofondy"))],
+        "S pozdravom\nMarek Takáč\nPredTendrom.sk"]}
 
 
 def zostav(krok, kontakt, hook, variant):
@@ -498,6 +558,9 @@ def zostav(krok, kontakt, hook, variant):
     za_spolu = f" v hodnote aspoň {ko.eur(suma12)}" if suma12 >= 1000 else ""
     seo = seo_cesta(seg, kraj)
     if krok == 1:
+        eu = zostav_eurofondy(kontakt, hook, variant)
+        if eu:
+            return eu
         predmet = (f"Zmluva na {odbor_kr} pre {z1['urad']} končí {mesiac_rok(z1['koniec'])}"
                    if variant == "A" else f"{n} {zml} na {odbor_kr} v {kraj_l} {konci} do roka")
         uvod = (f"vo Vestníku verejného obstarávania som videl, že {firma} pracuje pre {urad_firmy}. "
