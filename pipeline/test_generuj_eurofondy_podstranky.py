@@ -37,3 +37,11 @@ def test_escapuje_nazov():
     agr = g.agreguj([dict(_r(1), nazov="<script>x</script>")])
     html = g._stranka("STAVEBNE_PRACE", "Košický kraj", agr[("STAVEBNE_PRACE", "Košický kraj")], set(agr))
     assert "<script>x" not in html and "&lt;script&gt;" in html
+
+
+def test_stara_stranka_sa_zmaze(tmp_path):
+    rob = tmp_path / "r.txt"; rob.write_text("")
+    stara = tmp_path / "e" / "odpad"; stara.mkdir(parents=True); (stara / "kosicky.html").write_text("x")
+    g.vygeneruj(g.agreguj([_r(1)]), str(tmp_path / "e"), str(tmp_path / "s.xml"), str(rob))
+    assert not (stara / "kosicky.html").exists()
+    assert (tmp_path / "e" / "stavebne-prace" / "kosicky.html").exists()

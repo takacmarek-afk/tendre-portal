@@ -230,6 +230,14 @@ def vygeneruj(agr, vystup_dir=VYSTUP_DIR, sitemap=SITEMAP_CESTA, robots=ROBOTS_C
         if a["pocet"] >= MIN_INDEX:
             urls.append(cesta_stranky(s, k))
     os.makedirs(vystup_dir, exist_ok=True)
+    # stranky kombinacii, ktore uz nemaju ziadne pripravovane obstaravanie, zmazat
+    # (inak by ostali na webe so starymi cislami)
+    zive = {os.path.abspath(p) for p in napisane}
+    for koren, _, subory in os.walk(vystup_dir):
+        for sub in subory:
+            cesta = os.path.abspath(os.path.join(koren, sub))
+            if sub.endswith(".html") and sub != "index.html" and cesta not in zive:
+                os.remove(cesta)
     with open(os.path.join(vystup_dir, "index.html"), "w", encoding="utf-8") as f:
         f.write(_hub(agr))
     dnes = date.today().isoformat()
