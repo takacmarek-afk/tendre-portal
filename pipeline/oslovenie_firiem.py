@@ -320,7 +320,8 @@ def nacitaj_eurofondy(sb, dnes):
     out = {}
     try:
         riadky = _vsetky(sb, "itms_vo", "sektor,kraj,predpokladana_hodnota,nazov,obstaravatel_nazov",
-                         lambda q: q.eq("stav", "Pripravované").gte("itms_updated_at", od).not_.is_("sektor", "null"))
+                         lambda q: q.eq("stav", "Pripravované").gte("itms_updated_at", od).not_.is_("sektor", "null")
+                         .is_("vyhlasene_zistene_at", "null"))
     except Exception as e:   # eurofondy su bonus, e-mail ide aj bez nich
         log.warning("itms_vo: %s", type(e).__name__)
         return out

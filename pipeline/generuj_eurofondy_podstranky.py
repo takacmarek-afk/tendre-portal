@@ -253,7 +253,7 @@ def hlavne():
     od = (date.today() - timedelta(days=DNI_CERSTVOST)).isoformat()
     riadky = vsetky(lambda a, b: sb.table("itms_vo")
                     .select("id,sektor,kraj,nazov,obstaravatel_nazov,predpokladana_hodnota")
-                    .eq("stav", "Pripravované").gte("itms_updated_at", od)
+                    .eq("stav", "Pripravované").gte("itms_updated_at", od).is_("vyhlasene_zistene_at", "null")
                     .order("id").range(a, b).execute())
     agr = agreguj(riadky)
     if not agr:

@@ -32,6 +32,20 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python itms_klasifikuj.py
+      - name: Ktore pripravovane uz urad vyhlasil (parovanie s Vestnikom)
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python itms_parovanie.py --zapis
+      - name: Upozornenie pouzivatelom (vyhlasene z eurofondov)
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        # NASUCHO, kym Marek neschvali ostre posielanie
+        run: python posli_eurofondy_alert.py --nasucho
       - name: SEO stranky /eurofondy/<odbor>/<kraj>
         working-directory: pipeline
         env:

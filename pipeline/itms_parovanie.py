@@ -13,7 +13,8 @@ import sys
 import unicodedata
 from collections import Counter, defaultdict
 
-PRAH = 0.5
+PRAH = 0.75            # z analyzy 10. 11. 2026: pod 0,75 uz pribudaju zle pary
+_TYP = ("dozor", "dokumentaci", "projektov")   # dozor/projekt nie je ta ista zakazka ako stavba
 _STOP = {"a", "na", "v", "vo", "pre", "s", "so", "z", "zo", "k", "do", "o", "pri", "od", "obce", "obec", "mesta",
          "mesto", "stavebne", "prace", "praca", "dodavka", "dodanie", "zakazka", "cast", "projekt", "projektu",
          "c", "ii", "i", "iii", "sk", "the", "and", "-", "–"}
@@ -33,7 +34,12 @@ def ico_kluc(ico):
 
 
 def podobnost(itms, vyzva):
-    """0..1: zhoda nazvu (podiel slov ITMS nazvu, ktore su vo vyzve) + bonus za hodnotu."""
+    """0..1: zhoda nazvu (podiel slov ITMS nazvu, ktore su vo vyzve) + bonus za hodnotu.
+    Stavebny dozor alebo projektova dokumentacia sa paruje len s rovnakym typom."""
+    n1 = _norm(itms.get("nazov"))
+    n2 = _norm(" ".join(filter(None, [vyzva.get("nazov"), vyzva.get("cast_nazov")])))
+    if any((t in n1) != (t in n2) for t in _TYP):
+        return 0.0
     a = tokeny(itms.get("nazov"))
     b = tokeny(" ".join(filter(None, [vyzva.get("nazov"), vyzva.get("cast_nazov")])))
     if not a or not b:
@@ -78,6 +84,33 @@ def _minus30(iso):
         return "0000"
 
 
+def zapis(sb):
+    """Denne: pripravovane obstaravania, ktore uz urad vyhlasil -> itms_vo.vyhlasene_* (migracia 99)."""
+    from datetime import datetime, timezone
+    from strankuj import vsetky
+    itms = vsetky(lambda a, b: sb.table("itms_vo").select(
+        "id,nazov,obstaravatel_ico,predpokladana_hodnota,itms_created_at")
+        .eq("stav", "Pripravované").is_("vyhlasene_zistene_at", "null").order("id").range(a, b).execute())
+    vyzvy = vsetky(lambda a, b: sb.table("uvo_vyzvy").select(
+        "oznamenie_id,typ,obstaravatel_ico,nazov,cast_nazov,predpokladana_hodnota,publikovane,lehota_ponuk,url")
+        .eq("typ", "sutaz").order("id").range(a, b).execute())
+    pary = paruj(itms, vyzvy)
+    teraz = datetime.now(timezone.utc).isoformat()
+    for r, v, skore in pary:
+        url = str(v.get("url") or "")
+        sb.table("itms_vo").update({
+            "vyhlasene_oznamenie_id": v.get("oznamenie_id"),
+            "vyhlasene_nazov": (v.get("cast_nazov") or v.get("nazov") or "")[:300],
+            "vyhlasene_url": url if re.match(r"^https://(www\.)?(uvo\.gov\.sk|ted\.europa\.eu)/", url) else None,
+            "vyhlasene_publikovane": v.get("publikovane"),
+            "vyhlasene_lehota": v.get("lehota_ponuk"),
+            "vyhlasene_skore": skore,
+            "vyhlasene_zistene_at": teraz,
+        }).eq("id", r["id"]).execute()
+    print(f"Pripravovanych {len(itms)}, z nich uz vyhlasenych vo Vestniku: {len(pary)}")
+    return len(pary)
+
+
 def analyza():
     import os
     from supabase import create_client
@@ -110,5 +143,9 @@ def analyza():
 
 
 if __name__ == "__main__":
-    if "--analyza" in sys.argv or len(sys.argv) == 1:
+    if "--zapis" in sys.argv:
+        import os
+        from supabase import create_client
+        zapis(create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"]))
+    else:
         sys.exit(analyza())
