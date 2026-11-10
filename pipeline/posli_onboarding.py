@@ -209,7 +209,7 @@ def obsah(krok: int, k: dict, miesta: int = 30) -> dict:
                   "Potom sa plný týždenný prehľad zastaví a ostane len skrátený, bez súm a mien dodávateľov."]
         if miesta > 0:
             odseky.append("Ak chcete pokračovať: prvým 30 firmám dávame ročný plán Start za 240 € "
-                          "namiesto 340 €, cena platí 2 roky. Pri ročnej platbe zadáte kód "
+                          "namiesto 340 € na prvý rok. Pri ročnej platbe zadáte kód "
                           "ZAKLADATEL.")
         else:
             odseky.append("Ak chcete pokračovať, plán Start stojí 34 € mesačne alebo 340 € ročne.")

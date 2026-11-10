@@ -125,6 +125,40 @@ Deno.serve(async (req) => {
   const centy = Math.round(Number(platba.suma) * 100);
 
   const predplatne = Deno.env.get("STRIPE_PREDPLATNE") === "true";
+
+  // 10. 11. 2026 (rozhodnutie Mareka): zakladajuca cena plati LEN PRVY ROK.
+  // Pri predplatnom sa predplatne zalozi za beznu cenu a zakladajuca cena je
+  // jednorazovy kupon na prvu faktúru (duration=once). Obnova potom ide za
+  // beznu cenu bez rucneho zasahu. Prva platba = platba.suma (urcila DB).
+  let centyRiadok = centy;
+  let kupon: string | null = null;
+  if (predplatne && platba.zlava_kod === "ZAKLADATEL") {
+    const sbCena = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const { data: bezna } = await sbCena.from("cenove_plany").select("suma")
+      .eq("plan", platba.plan).eq("obdobie", platba.obdobie).single();
+    const centyBezne = Math.round(Number(bezna?.suma ?? 0) * 100);
+    if (centyBezne > centy) {
+      const k = await fetch(`${STRIPE_API}/coupons`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${STRIPE_SECRET_KEY}`, "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          amount_off: String(centyBezne - centy),
+          currency: String(platba.mena).toLowerCase(),
+          duration: "once",
+          max_redemptions: "1",
+          name: "Zakladajúca cena (prvý rok)",
+          "metadata[reference]": String(platba.reference),
+        }),
+      });
+      if (!k.ok) {
+        console.error("Stripe kupon zlyhal:", k.status, await k.text());
+        return json({ ok: false, kod: "STRIPE_PLATBA_ZLYHALA" }, 502);
+      }
+      kupon = (await k.json()).id;
+      centyRiadok = centyBezne;
+    }
+  }
+
   const parametre = new URLSearchParams({
     mode: predplatne ? "subscription" : "payment",
     success_url: `${zaklad}?stav=uspech&ref=${platba.reference}`,
@@ -139,18 +173,20 @@ Deno.serve(async (req) => {
     locale: "sk",
     billing_address_collection: "required",
     "custom_text[submit][message]": predplatne
-      ? "Predplatné sa automaticky obnovuje každý " + (platba.obdobie === "rok" ? "rok" : "mesiac") +
+      ? (kupon ? `Zakladajúca cena platí prvý rok, potom sa predplatné obnovuje za ${centyRiadok / 100} € ročne. ` : "") +
+        "Predplatné sa automaticky obnovuje každý " + (platba.obdobie === "rok" ? "rok" : "mesiac") +
         ". Zrušiť ho môžete kedykoľvek v aplikácii (Predplatné), platí do konca zaplateného obdobia. " +
         "Podmienky: predtendrom.sk/obchodne-podmienky"
       : "Predplatné sa neobnovuje automaticky, platba predĺži prístup o zvolené obdobie. " +
         "Podmienky: predtendrom.sk/obchodne-podmienky",
     "line_items[0][quantity]": "1",
     "line_items[0][price_data][currency]": String(platba.mena).toLowerCase(),
-    "line_items[0][price_data][unit_amount]": String(centy),
+    "line_items[0][price_data][unit_amount]": String(centyRiadok),
     "line_items[0][price_data][product_data][name]":
       `${NAZOV_PLANU[platba.plan] ?? platba.plan} (${platba.obdobie === "rok" ? "ročné" : "mesačné"} predplatné)` +
-      (platba.zlava_kod === "ZAKLADATEL" ? " – zakladajúca cena" : ""),
+      (platba.zlava_kod === "ZAKLADATEL" && !kupon ? " – zakladajúca cena" : ""),
   });
+  if (kupon) parametre.set("discounts[0][coupon]", kupon);
 
   if (predplatne) {
     parametre.set("line_items[0][price_data][recurring][interval]", platba.obdobie === "rok" ? "year" : "month");

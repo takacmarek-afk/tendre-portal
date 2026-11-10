@@ -97,6 +97,17 @@ jobs:
           ICO: ${{ inputs.ico }}
         run: |
           set -euo pipefail
+          # 10. 11. 2026: GitHub planovany beh oneskoril o 8 hodin (15:38 UTC).
+          # Mimo okna 8:00-16:00 sa nic neposiela; planovany beh vtedy skonci
+          # bez chyby (posiela aj naplanovana uloha o 8:21, unikatnost ico+krok
+          # zabrani dvojitemu poslaniu).
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            H=$(TZ=Europe/Bratislava date +%H)
+            if [ "$H" -lt 8 ] || [ "$H" -ge 16 ]; then
+              echo "::notice::Planovany beh prisiel o $H:00 (mimo 8-16), nic sa neposiela."
+              exit 0
+            fi
+          fi
           SUCHO=()
           if [ "$NASUCHO" = "true" ]; then SUCHO=(--nasucho); fi
           case "$KROK" in

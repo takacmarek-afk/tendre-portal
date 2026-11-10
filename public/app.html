@@ -321,7 +321,7 @@
         <input id="modal-predplatne-kod" type="text" maxlength="40" autocomplete="off" spellcheck="false"
                placeholder="napr. ZAKLADATEL"
                class="w-full border border-line rounded-md px-3 py-2 text-[14px] focus:outline-none focus:ring-2 focus:ring-accent">
-        <span class="block text-[12px] text-slate2 mt-1">Prvých 30 firiem: Start 240&nbsp;€ a Growth 590&nbsp;€ ročne, cena platí 2 roky. Len pri ročnej platbe.</span>
+        <span class="block text-[12px] text-slate2 mt-1">Prvých 30 firiem: Start 240&nbsp;€ a Growth 590&nbsp;€ za prvý rok, potom bežná cena. Len pri ročnej platbe.</span>
       </label>
       <p class="text-[12px] leading-relaxed text-slate2 mb-4">
         Ceny sú konečné (nie sme platcom DPH, DPH sa nepripočítava).
@@ -2721,7 +2721,7 @@ const PREDPLATNE_CHYBY = {
   NEPLATNY_KOD: 'Tento kód nepoznáme. Skontrolujte ho, prípadne pole nechajte prázdne.',
   KOD_LEN_ROCNE: 'Zakladajúci kód platí len pri ročnej platbe plánu Start alebo Growth.',
   KOD_VYCERPANY: 'Všetkých 30 zakladajúcich miest je už obsadených. Pole s kódom nechajte prázdne.',
-  KOD_SKONCIL: 'Zakladajúca cena platila 2 roky od prvej platby a už skončila. Pole s kódom nechajte prázdne.',
+  KOD_SKONCIL: 'Zakladajúca cena platila prvý rok od prvej platby a už skončila. Pole s kódom nechajte prázdne.',
 };
 
 function otvorPredplatneModal(supabase, aktualnyPlan) {
@@ -4746,7 +4746,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
         const m = Number(data);
         if (error || !(m > 0)) return;
         el('skoncene-p').textContent += ` Prvým 30 firmám dávame ročný plán Start za 240 € namiesto 340 € `
-          + `a Growth za 590 € namiesto 890 € (kód ZAKLADATEL pri platbe, ostáva ${m} ${tvar(m, 'miesto', 'miesta', 'miest')}).`;
+          + `a Growth za 590 € namiesto 890 € na prvý rok (kód ZAKLADATEL pri platbe, ostáva ${m} ${tvar(m, 'miesto', 'miesta', 'miest')}).`;
       }).catch(() => {});
     } else {
       el('skoncene-vlastnik').textContent = 'Plán môže aktivovať vlastník alebo admin vašej firmy — požiadajte ho o to.';
