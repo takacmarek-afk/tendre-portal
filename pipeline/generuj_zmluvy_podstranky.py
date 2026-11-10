@@ -273,6 +273,23 @@ def _vygeneruj_stranku(sector, agregat_row):
     else:
         blok_zvysok = ""
 
+    # 10. 11. 2026: ludia zo studeneho e-mailu prisli, ale nikto nesiel dalej.
+    # Vyzva bola len v strede stranky (na mobile pod cookie listou). Hned pod
+    # cislami je teraz jasny dalsi krok s rovnakym slubom ako v e-maile.
+    if zvysok > 0:
+        p = agregat_row["pocet"]
+        blok_hore = f"""
+  <div class="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+    <a href="/prihlasenie?utm_source=seo_{sektor_slug}_{kraj_slug}&utm_medium=organic&utm_campaign=programmatic_seo&utm_content=hore"
+       class="inline-flex justify-center items-center rounded-md bg-accent text-white text-[15px] font-semibold px-5 py-3 hover:bg-accentDark">
+      Pozrieť {_tvar(p, 'celú', 'všetky', 'všetkých')} {_cislo(p)} {_tvar(p, 'zmluvu', 'zmluvy', 'zmlúv')}
+    </a>
+    <span class="text-[13px] leading-snug text-slate2">14 dní zadarmo, bez platobnej karty.<br class="hidden sm:inline">
+      Nové končiace zmluvy Vám potom pošleme e-mailom.</span>
+  </div>"""
+    else:
+        blok_hore = ""
+
     # Pri stavbach koniec zmluvy spravidla neznamena novu sutaz (stavba sa
     # dokonci), preto o tom tento sektor otvorene hovori (audit 6. 10. 2026).
     if sector == "STAVEBNE_PRACE":
@@ -314,6 +331,7 @@ def _vygeneruj_stranku(sector, agregat_row):
     </div>
   </div>
 
+{blok_hore}
   <h2 class="mt-10 text-[18px] font-semibold">Príklady</h2>
   <div class="mt-4 grid gap-3">
 {riadky_teaser}

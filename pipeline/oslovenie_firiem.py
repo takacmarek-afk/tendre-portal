@@ -448,7 +448,7 @@ def zostav(krok, kontakt, hook, variant):
             f"V odbore {odbor} v {kraj_l} {konci} do 12 mesiacov {n} {zml} úradov{za_spolu}. "
             "PredTendrom ich zbiera na jedno miesto a raz týždenne Vám pošle nové, aby ste mali čas "
             "pripraviť sa skôr, než úrad vyhlási súťaž.",
-            (["Celý zoznam pre Váš odbor a kraj je bez registrácie tu: ",
+            (["Prehľad pre Váš odbor a kraj nájdete bez registrácie tu: ",
               ("a", "predtendrom.sk" + seo, utm(seo, 1, variant))] if seo else
              ["Ako to vyzerá, ukazuje krátke video: ",
               ("a", "predtendrom.sk" + VIDEO_URL, utm(VIDEO_URL, 1, variant))] if VIDEO_URL else
