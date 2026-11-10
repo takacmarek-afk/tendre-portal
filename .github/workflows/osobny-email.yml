@@ -13,6 +13,10 @@ on:
       sablona:
         description: "Sablona (pipeline/sablony/<meno>.txt)"
         default: "po_skuske"
+      oslovenie:
+        description: "Adresat = adresa z oslovenia firiem (nie clenovia uctu)"
+        type: boolean
+        default: false
       ostro:
         description: "Naozaj odoslat"
         type: boolean
@@ -40,4 +44,4 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
           KAMPAN_REPLY_TO: ${{ secrets.KAMPAN_REPLY_TO }}
-        run: python posli_osobny_email.py --ico "${{ inputs.ico }}" --sablona "${{ inputs.sablona }}" ${{ inputs.ostro && '--ostro' || '' }}
+        run: python posli_osobny_email.py --ico "${{ inputs.ico }}" --sablona "${{ inputs.sablona }}" ${{ inputs.ostro && '--ostro' || '' }} ${{ inputs.oslovenie && '--oslovenie' || '' }}

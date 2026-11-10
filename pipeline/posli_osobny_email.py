@@ -64,12 +64,21 @@ def main(argv=None):
     p.add_argument("--ico", required=True)
     p.add_argument("--sablona", required=True)
     p.add_argument("--ostro", action="store_true")
+    p.add_argument("--oslovenie", action="store_true",
+                   help="adresat = adresa, na ktoru sme firmu oslovili (oslovenie_firiem_kontakty)")
     a = p.parse_args(argv)
     ico = "".join(ch for ch in a.ico if ch.isdigit()).zfill(8)
     predmet, text = nacitaj_sablonu(a.sablona)
 
     from supabase import create_client
     sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
+    if a.oslovenie:
+        k = sb.table("oslovenie_firiem_kontakty").select("email").eq("ico", ico).execute().data
+        komu, kopia = ([k[0]["email"].lower()] if k and k[0].get("email") else []), []
+        if not komu:
+            print(f"::error::Firma {ico} nie je v oslovenych.")
+            return 1
+        return odosli(a, komu, kopia, predmet, text)
     org = sb.table("organizations").select("id").eq("ico", ico).execute().data
     if not org:
         print(f"::error::Firma s ICO {ico} nema ucet.")
@@ -90,6 +99,10 @@ def main(argv=None):
     if not komu:
         print("::error::Firma nema ziadneho clena s e-mailom.")
         return 1
+    return odosli(a, komu, kopia, predmet, text)
+
+
+def odosli(a, komu, kopia, predmet, text):
     print(f"::notice::Sablona '{a.sablona}': komu {len(komu)}, kopia {len(kopia)}, predmet: {predmet}")
     if not a.ostro:
         print("::notice::NASUCHO - nic neodoslane.")
