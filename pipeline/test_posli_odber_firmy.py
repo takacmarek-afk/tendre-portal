@@ -135,3 +135,27 @@ if __name__ == "__main__":
     for n, f in list(globals().items()):
         if n.startswith("test_") and callable(f):
             f(); print("OK", n)
+
+
+VYZVY = [{"nazov": "Strážna služba areálu", "cast_nazov": None, "obstaravatel_nazov": "Mesto Senec",
+          "lehota_ponuk": "2026-11-20T10:00:00+00:00", "predpokladana_hodnota": 120000,
+          "url": "https://www.uvo.gov.sk/vyhladavanie/vyhladavanie-zakaziek/detail/123"},
+         {"nazov": "Ostraha", "cast_nazov": "Časť 2", "obstaravatel_nazov": "Obec X",
+          "lehota_ponuk": "2026-11-25", "predpokladana_hodnota": None, "url": "https://zly.sk/x"}]
+
+
+def test_tyzdenny_prehlad_s_novymi_sutazami():
+    import posli_odber_firmy as m
+    r = {"sektor": "OSTRAHA", "kraj": "Bratislavský kraj"}
+    o = m.obsah(6, r, {"celkom": 0, "zoznam": []}, VYZVY)
+    assert o is not None and o["predmet"].startswith("2 nové súťaže a končiace zmluvy")
+    texty = " ".join(b["titul"] + " " + b.get("popis", "") + " " + b.get("zvyraznene", "") for b in o["bloky"])
+    assert "Mesto Senec — ponuky do 20. 11. 2026" in texty and "120\xa0000" in texty
+    assert "zly.sk" not in texty and "Časť 2" in texty
+    assert m.obsah(6, r, {"celkom": 0, "zoznam": []}, []) is None
+
+
+def test_prvy_email_pridava_sutaze_na_koniec():
+    import posli_odber_firmy as m
+    o = m.obsah(1, {"sektor": "OSTRAHA", "kraj": None}, {"celkom": 0, "zoznam": []}, VYZVY[:1])
+    assert o["bloky"][0]["titul"].startswith("Nové vyhlásené súťaže (1)")

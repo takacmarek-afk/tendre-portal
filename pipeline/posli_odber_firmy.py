@@ -22,6 +22,7 @@ import os
 import re
 import sys
 import time
+from datetime import date
 
 from supabase import create_client
 
@@ -37,6 +38,16 @@ ODKAZ_SKUSKA = "https://predtendrom.sk/prihlasenie.html"
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
 CRZ_RE = re.compile(r"^https://www\.crz\.gov\.sk/zmluva/\d+/?$")
 MAX_NA_BEH = 40
+# 10. 11. 2026 (prieskum trhu): vyhlasene sutaze su na trhu zakladna sluzba
+# (TenderMonitor 4,99 €, UVOzakazky 0–19 €, Stotles ich ma zadarmo). Davame ich
+# zadarmo v tyzdennom prehlade; platene ostavaju konciace zmluvy a analyzy.
+KRAJ_NUTS = {
+    "Bratislavský kraj": "SK010", "Trnavský kraj": "SK021", "Trenčiansky kraj": "SK022",
+    "Nitriansky kraj": "SK023", "Žilinský kraj": "SK031", "Banskobystrický kraj": "SK032",
+    "Prešovský kraj": "SK041", "Košický kraj": "SK042",
+}
+VYZVA_URL_RE = re.compile(r"^https://(www\.uvo\.gov\.sk|ted\.europa\.eu)/")
+MAX_VYZVIEV = 5
 
 
 def odkaz_odhlasenia(token) -> "str | None":
@@ -58,6 +69,38 @@ def _eur(n) -> str:
 
 def _crz(url) -> str:
     return url if CRZ_RE.match(str(url or "")) else "https://www.crz.gov.sk/"
+
+
+def nove_vyzvy(sb, sektor, kraj, dnes):
+    """Sutaze z Vestnika UVO za posledny tyzden v odbore a kraji, s lehotou aspon 3 dni."""
+    from datetime import timedelta
+    q = (sb.table("uvo_vyzvy")
+         .select("nazov,cast_nazov,obstaravatel_nazov,lehota_ponuk,predpokladana_hodnota,url")
+         .eq("typ", "sutaz")
+         .gte("publikovane", (dnes - timedelta(days=8)).isoformat())
+         .gte("lehota_ponuk", (dnes + timedelta(days=3)).isoformat()))
+    if sektor:
+        q = q.eq("sektor", sektor)
+    if kraj in KRAJ_NUTS:
+        q = q.like("nuts", KRAJ_NUTS[kraj] + "%")
+    return q.order("lehota_ponuk").limit(MAX_VYZVIEV).execute().data or []
+
+
+def bloky_vyzviev(vyzvy) -> list:
+    if not vyzvy:
+        return []
+    bloky = [{"titul": f"Nové vyhlásené súťaže ({len(vyzvy)})",
+              "popis": "Tento týždeň vo Vestníku verejného obstarávania vo vašom výbere:"}]
+    for v in vyzvy:
+        nazov = v.get("cast_nazov") or v.get("nazov") or ""
+        hodnota = _eur(v.get("predpokladana_hodnota"))
+        url = v.get("url") if VYZVA_URL_RE.match(str(v.get("url") or "")) else "https://www.uvo.gov.sk/"
+        bloky.append({
+            "titul": f"{v.get('obstaravatel_nazov') or '—'} — ponuky do {_datum(v.get('lehota_ponuk'))}",
+            "popis": nazov[:200] + (f" · predpokladaná hodnota {hodnota}" if hodnota else ""),
+            "zvyraznene": f"Súťaž vo Vestníku: {url}",
+        })
+    return bloky
 
 
 def bloky_zmluv(d) -> list:
@@ -88,7 +131,7 @@ KROKY_POSTUP = [
 ]
 
 
-def obsah(n: int, r: dict, d) -> "dict | None":
+def obsah(n: int, r: dict, d, vyzvy=None) -> "dict | None":
     """E-mail c. n (1 = prvy) pre riadok r. `d` = vysledok odber_firmy_zmluvy.
     None = tento e-mail sa neposle (tyzdenny prehlad bez zmluv)."""
     odbor = _sektor_text(r.get("sektor")) or "váš odbor"
@@ -96,6 +139,7 @@ def obsah(n: int, r: dict, d) -> "dict | None":
     vyber = f"{odbor}, {kde}"
     celkom = int((d or {}).get("celkom") or 0)
     bloky = bloky_zmluv(d)
+    bv = bloky_vyzviev(vyzvy)
     pocet = f"{celkom} {_sklon(celkom, 'zmluva', 'zmluvy', 'zmlúv')}"
     odhl = ("Tento e-mail vám prišiel, lebo ste na predtendrom.sk požiadali o týždenný prehľad "
             f"končiacich zmlúv (odbor: {odbor}, {kde}) a súhlas ste potvrdili. "
@@ -109,7 +153,7 @@ def obsah(n: int, r: dict, d) -> "dict | None":
                 f"Ďakujeme za potvrdenie. Pre výber ({vyber}) teraz nemáme žiadnu zmluvu, ktorá končí "
                 "v najbližších 12 mesiacoch. Keď sa nejaká objaví, pošleme vám ju.")
         return dict(zakl, predmet=f"Váš prehľad končiacich zmlúv: {vyber}",
-                    titulok=f"Končiace zmluvy: {vyber}", uvod=uvod, bloky=bloky)
+                    titulok=f"Končiace zmluvy: {vyber}", uvod=uvod, bloky=bloky + bv)
     if n == 2:
         uvod = ("Zmluva, ktorá sa končí, ešte neznamená súťaž. Úrad ju môže predĺžiť dodatkom, zadať nákup "
                 "bez súťaže alebo vyhlásiť nové obstarávanie. Čo urobí, vopred nevieme a nesľubujeme. "
@@ -133,12 +177,15 @@ def obsah(n: int, r: dict, d) -> "dict | None":
                 "so sumami a dodávateľmi a môžete si nastaviť e-mailový prehľad.")
         return dict(zakl, predmet=f"Všetky končiace zmluvy: {vyber}", titulok="Chcete vidieť všetky?",
                     uvod=uvod, bloky=bloky, cta_text="Vyskúšať 14 dní zadarmo")
-    # n >= 5: tyzdenny prehlad; bez zmluv sa neposiela
-    if not bloky:
+    # n >= 5: tyzdenny prehlad; bez zmluv aj bez novych sutazi sa neposiela
+    if not bloky and not bv:
         return None
-    return dict(zakl, predmet=f"Týždenný prehľad: {vyber}", titulok="Tri ďalšie končiace zmluvy",
-                uvod=f"V tomto výbere ({vyber}) končí v najbližších 12 mesiacoch {pocet}. Tri z nich:",
-                bloky=bloky)
+    nv = len(vyzvy or [])
+    predmet = (f"{nv} {_sklon(nv, 'nová súťaž', 'nové súťaže', 'nových súťaží')} a končiace zmluvy: {vyber}"
+               if nv else f"Týždenný prehľad: {vyber}")
+    uvod = (f"V tomto výbere ({vyber}) končí v najbližších 12 mesiacoch {pocet}. Tri z nich:"
+            if bloky else f"Nové vyhlásené súťaže vo vašom výbere ({vyber}):")
+    return dict(zakl, predmet=predmet, titulok="Týždenný prehľad", uvod=uvod, bloky=bv + bloky)
 
 
 def text_verzia(o: dict, odkaz_odhl: str) -> str:
@@ -192,7 +239,12 @@ def main(argv=None) -> int:
                 log.error("odber_firmy_zmluvy() zlyhalo pre riadok %s: %s", r.get("id"), e)
                 zlyhane += 1
                 continue
-        o = obsah(n, r, d)
+        try:
+            vyzvy = nove_vyzvy(sb, r.get("sektor"), r.get("kraj"), date.today()) if n != 3 else []
+        except Exception as e:   # nove sutaze su bonus, bez nich e-mail ide aj tak
+            log.warning("nove_vyzvy() zlyhalo pre riadok %s: %s", r.get("id"), e)
+            vyzvy = []
+        o = obsah(n, r, d, vyzvy)
         if o is None:
             # Tyzdenny prehlad bez zmluv: neposielame, ale posunieme krok a termin.
             preskocene += 1

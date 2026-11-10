@@ -295,12 +295,14 @@ if __name__ == "__main__":
 
 def test_odkaz_vedie_na_zoznam_odboru_a_kraja_a_uvadza_sumu():
     h = {**_hook(), "suma12": 1_480_000}
-    for krok in (1, 2):
-        s = of.zostav(krok, KONTAKT, h, "A")
-        text, telo = of.vyrenderuj(s, TOKEN)
-        assert "/konciace-zmluvy/ostraha/bratislavsky?utm_source=email" in telo, krok
-        assert "zadajte odbor a kraj" not in text
-        assert _slova_tela(text) <= 100, (krok, _slova_tela(text))
+    s = of.zostav(1, KONTAKT, h, "A")
+    text, telo = of.vyrenderuj(s, TOKEN)
+    assert "/konciace-zmluvy/ostraha/bratislavsky?utm_source=email" in telo
+    assert "zadajte odbor a kraj" not in text and _slova_tela(text) <= 100
+    # krok 2: bezplatny tyzdenny prehlad cez titulku s predvyplnenym vyberom
+    text, telo = of.vyrenderuj(of.zostav(2, KONTAKT, h, "A"), TOKEN)
+    assert "/?sektor=OSTRAHA&amp;kraj=Bratislavsk%C3%BD+kraj&amp;utm_source=email" in telo
+    assert "zadarmo raz týždenne nové vyhlásené súťaže" in text and _slova_tela(text) <= 100
     text, _ = of.vyrenderuj(of.zostav(1, KONTAKT, h, "B"), TOKEN)
     assert "23 zmlúv úradov v hodnote aspoň 1 480 000 €" in text
 

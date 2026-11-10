@@ -995,14 +995,14 @@
     var f = document.createElement('form');
     f.id = 'uk-odber'; f.className = 'mt-6 border border-line rounded-lg p-4'; f.noValidate = true;
     f.innerHTML =
-      '<p class="text-[15px] font-semibold">Chcete každý týždeň ďalšie končiace zmluvy z tohto výberu?</p>' +
-      '<p class="mt-1 text-[13px] text-slate2">Pošleme vám e-mailom tri zmluvy s odkazom do registra. Bez registrácie, odhlásiť sa dá jedným kliknutím.</p>' +
+      '<p class="text-[15px] font-semibold">Posielať vám zadarmo každý týždeň nové súťaže a končiace zmluvy z tohto výberu?</p>' +
+      '<p class="mt-1 text-[13px] text-slate2">Nové vyhlásené súťaže z Vestníka a tri končiace zmluvy s odkazom do registra. Bez registrácie, odhlásiť sa dá jedným kliknutím.</p>' +
       '<div class="mt-3 flex flex-col sm:flex-row gap-3">' +
         '<input id="uk-email" type="email" autocomplete="email" maxlength="254" placeholder="vas@email.sk" class="flex-1 border border-line rounded-md px-3 py-2.5 text-[15px] bg-white focus:outline-none focus:border-accent">' +
         '<button id="uk-odber-btn" type="submit" class="bg-ink text-white font-semibold px-6 py-2.5 rounded-md hover:bg-accent transition text-[15px]">Posielať prehľad</button>' +
       '</div>' +
       '<label class="mt-3 flex gap-2 items-start text-[12px] text-slate2"><input id="uk-suhlas" type="checkbox" class="mt-1">' +
-        '<span>Súhlasím, že mi LoveHome s.r.o. bude na túto adresu posielať týždenný prehľad končiacich zmlúv (odbor: ' + esc(odbor) + ', ' + esc(kde) + '). ' +
+        '<span>Súhlasím, že mi LoveHome s.r.o. bude na túto adresu posielať týždenný prehľad nových súťaží a končiacich zmlúv (odbor: ' + esc(odbor) + ', ' + esc(kde) + '). ' +
         'Súhlas potvrdím odkazom v e-maile a môžem ho kedykoľvek odvolať. <a href="./ochrana-osobnych-udajov" class="underline">Ochrana osobných údajov</a></span></label>' +
       '<p id="uk-odber-hlaska" class="mt-2 text-[13px] text-slate2" role="status" aria-live="polite"></p>';
     out.appendChild(f);
@@ -1043,7 +1043,19 @@
     } catch (err) { hlaska('Ukážku sa nepodarilo načítať. Skúste to prosím neskôr.'); }
     btn.disabled = false; btn.textContent = 'Ukázať 3 zmluvy';
   });
-  window.addEventListener('load', function () { if (window.ptFormular) window.ptFormular.widget('#uk-ts'); });
+  window.addEventListener('load', function () {
+    if (window.ptFormular) window.ptFormular.widget('#uk-ts');
+    // 10. 11. 2026: odkaz z e-mailu alebo SEO stranky (?sektor=OSTRAHA&kraj=...)
+    // rovno ukaze 3 zmluvy a ponuku bezplatneho tyzdenneho prehladu.
+    var q = new URLSearchParams(location.search);
+    var s = q.get('sektor'), k = q.get('kraj');
+    var selS = document.getElementById('uk-sektor'), selK = document.getElementById('uk-kraj');
+    if (!s || ![].some.call(selS.options, function (o) { return o.value === s; })) return;
+    selS.value = s;
+    if (k && [].some.call(selK.options, function (o) { return o.value === k; })) selK.value = k;
+    document.getElementById('ukazka').scrollIntoView({ block: 'start' });
+    if (form.requestSubmit) form.requestSubmit(); else form.dispatchEvent(new Event('submit', { cancelable: true }));
+  });
 })();
 </script>
 <script>

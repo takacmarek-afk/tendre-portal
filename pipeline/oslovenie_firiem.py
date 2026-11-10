@@ -359,6 +359,12 @@ def seo_cesta(segment, kraj):
     return f"/konciace-zmluvy/{info['slug']}/{k}"
 
 
+def odber_cesta(segment, kraj):
+    """Titulka s predvyplnenym odborom a krajom: rovno ukaze zmluvy a ponuku odberu."""
+    from urllib.parse import urlencode
+    return "/?" + urlencode({k: v for k, v in (("sektor", segment), ("kraj", kraj)) if v})
+
+
 def utm(cesta, krok, variant, kampan="firmy"):
     spoj = "&" if "?" in cesta else "?"
     return f"{WEB}{cesta}{spoj}utm_source=email&utm_medium=oslovenie&utm_campaign={kampan}-k{krok}{variant.lower()}"
@@ -467,11 +473,11 @@ def zostav(krok, kontakt, hook, variant):
             "Dobrý deň,",
             "nadväzujem na môj e-mail. Nie každá zmluva sa Vás týka, preto posielam ďalšie z Vášho kraja:",
             riadky,
-            (["Všetky si môžete pozrieť bez registrácie: ",
-              ("a", "predtendrom.sk" + seo, utm(seo, 2, variant))] if seo else
-             ["Všetky si môžete pozrieť bez registrácie: na ",
-              ("a", "predtendrom.sk", utm("/", 2, variant)),
-              " zadajte odbor a kraj a hneď uvidíte končiace zmluvy."]),
+            # 10. 11. 2026: bezplatny tyzdenny prehlad (nove sutaze + konciace
+            # zmluvy) ako najnizsi prah — staci e-mail, bez registracie.
+            [f"Ak chcete, pošleme Vám zadarmo raz týždenne nové vyhlásené súťaže a končiace zmluvy "
+             f"na {odbor_kr} v {kraj_l}, bez registrácie: ",
+             ("a", "predtendrom.sk", utm(odber_cesta(seg, kraj), 2, variant))],
             "Ak to pre Vás nie je, odpíšte „Nie“ a už nenapíšem.",
             "Marek Takáč"]}
     if krok == 3:

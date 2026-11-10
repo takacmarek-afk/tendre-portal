@@ -291,6 +291,8 @@ def _vygeneruj_stranku(sector, agregat_row):
     # 10. 11. 2026: ludia zo studeneho e-mailu prisli, ale nikto nesiel dalej.
     # Vyzva bola len v strede stranky (na mobile pod cookie listou). Hned pod
     # cislami je teraz jasny dalsi krok s rovnakym slubom ako v e-maile.
+    from urllib.parse import urlencode
+    _odber_q = urlencode({"sektor": sector, "kraj": kraj}).replace("&", "&amp;")
     if zvysok > 0:
         p = agregat_row["pocet"]
         blok_hore = f"""
@@ -301,7 +303,9 @@ def _vygeneruj_stranku(sector, agregat_row):
     </a>
     <span class="text-[13px] leading-snug text-slate2">14 dní zadarmo, bez platobnej karty.<br class="hidden sm:inline">
       Nové končiace zmluvy Vám potom pošleme e-mailom.</span>
-  </div>"""
+  </div>
+  <p class="mt-3 text-[13px] text-slate2">Bez registrácie:
+    <a href="/?{_odber_q}#ukazka" class="text-accent font-semibold hover:underline">posielať mi zadarmo každý týždeň nové súťaže a končiace zmluvy</a></p>"""
     else:
         blok_hore = ""
 
