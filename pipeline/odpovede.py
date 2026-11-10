@@ -156,7 +156,7 @@ def main(argv=None) -> int:
     from strankuj import vsetky
     from oslovenie_firiem import _FREEMAIL, ico8
     sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
-    heslo = os.environ["ZOHO_SMTP_PASSWORD"]
+    heslo = os.environ.get("ZOHO_IMAP_PASSWORD") or os.environ["ZOHO_SMTP_PASSWORD"]
 
     kontakty = vsetky(lambda o, d: sb.table("oslovenie_firiem_kontakty").select("ico,email")
                       .order("ico").range(o, d).execute())

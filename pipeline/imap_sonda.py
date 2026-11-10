@@ -14,7 +14,7 @@ nase = {(r.get("message_id") or "").strip() for r in sb.table("oslovenie_firiem_
 riadky = [f"Nasich odoslanych s Message-ID: {len(nase)}"]
 try:
     m = imaplib.IMAP4_SSL("imap.zoho.eu", 993)
-    m.login("marek@predtendrom.sk", os.environ["ZOHO_SMTP_PASSWORD"])
+    m.login("marek@predtendrom.sk", os.environ.get("ZOHO_IMAP_PASSWORD") or os.environ["ZOHO_SMTP_PASSWORD"])
     typ, zoznam = m.list()
     priecinky = [z.decode(errors="ignore").split(' "/" ')[-1].strip('"') for z in (zoznam or [])]
     riadky.append("IMAP prihlasenie OK; priecinky: " + ", ".join(priecinky[:15]))
