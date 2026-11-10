@@ -38,6 +38,11 @@ POVOLENE_ANON = {
     "odhlas_odber_firmy", "odhlas_odber_obce", "odhlas_odber_prehladu", "odober_clena",
     "poradcovia_mojich_dopytov", "prvych_100_dni_suhrn", "verejny_cenovy_median", "vyzvy_signaly_obci",
     "zakladajuce_miesta", "zatvor_dopyt", "zmaz_stav_prilezitosti",
+    # overene 10. 11. 2026: kontroluju auth.uid() alebo tajny token v tele
+    "odober_clena_firmy", "onboarding_odhlas", "oslovenie_firiem_odhlas", "over_servisny_token",
+    "oznac_servis_prevzaty", "potvrd_odber_firmy", "potvrd_odber_obce", "pozvi_clena", "prijmi_obec_pozvanku",
+    "prijmi_pozvanku", "uloz_semafor", "uprav_kontakt_obce", "uprav_kontakt_poradcu", "vytvor_pozvanku",
+    "zaloz_organizaciu", "zaloz_poradcu_profil",
 }
 
 
