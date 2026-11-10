@@ -10,6 +10,7 @@ Na verejnych strankach (index, cennik, prihlasenie) sa nic neodosiela.
 """
 import asyncio
 import shutil
+import os
 import subprocess
 import sys
 import tempfile
@@ -80,6 +81,25 @@ class Rez:
         self.pg, self.mobil = pg, mobil
         self.t0 = t0 or time.monotonic()
         self.medzery = []          # (od, do) v sekundach od zaciatku nahravky: nacitavanie, vystrihne sa
+        self.zvuky = []            # (cas od zaciatku nahravky, mp3) — hovoreny komentar (videa/hlas.py)
+        self.hlas = os.environ.get("HLAS_ZAPNUTY") == "1"
+
+    async def povedz(self, text, s=0.0):
+        """Vygeneruje hlas (cas generovania sa z videa vystrihne), zapise udalost
+        a pocka, kym dohovori (aspon s sekund). Bez hlasu len pocka s."""
+        import re
+        text = re.sub(r"<[^>]+>", " ", text or "").strip()
+        if not self.hlas or not text:
+            await self.w(s)
+            return
+        import hlas as H
+        a = time.monotonic() - self.t0
+        mp3, dlzka = await asyncio.to_thread(H.povedz, text)
+        b = time.monotonic() - self.t0
+        if b - a > 0.05:
+            self.medzery.append((a + 0.02, b))
+        self.zvuky.append((time.monotonic() - self.t0 + 0.15, mp3))
+        await self.w(max(s, dlzka + 0.45))
 
     async def w(self, s):
         await self.pg.wait_for_timeout(int(s * 1000))
@@ -104,19 +124,20 @@ class Rez:
         self.medzery.append((a + 0.15, time.monotonic() - self.t0 - 0.1))
         await self.w(0.6)
 
-    async def cap(self, t, s=0.0):
+    async def cap(self, t, s=0.0, hovor=None):
         await self.pg.evaluate("t => window.__pt.cap(t)", t)
-        await self.w(s)
+        await self.povedz(hovor or t, s)
 
     async def karta(self, nadpis, text="", s=3.5, cislo=None, body=None, svetla=False, nechat=False):
-        html = f'<div><div class="k-logo">predtendrom{" · návod " + str(cislo) + " / 6" if cislo else ""}</div><h1>{nadpis}</h1>'
+        html = f'<div><div class="k-logo">predtendrom{" · návod " + str(cislo) + " / 7" if cislo else ""}</div><h1>{nadpis}</h1>'
         if text:
             html += f"<p>{text}</p>"
         if body:
             html += "<ol>" + "".join(f"<li>{b}</li>" for b in body) + "</ol>"
         html += "</div>"
         await self.pg.evaluate("([h, s]) => window.__pt.karta(h, s)", [html, svetla])
-        await self.w(s)
+        hovor = " ".join(x for x in [nadpis, text] if x) + ("".join(" " + b for b in body) if body else "")
+        await self.povedz(hovor.replace("<br>", " "), s)
         if nechat:
             self.koniec_at = time.monotonic() - self.t0
             return
@@ -376,13 +397,33 @@ async def video6(r: Rez):
     await r.bez_hl()
     await r.vyber(f"{PRVY} [data-crm-stav]", "", 0.8)
     await r.ide(WEB + "/cennik")
-    await r.cap("Prvým 30 firmám: ročný plán Start za 240 € s kódom ZAKLADATEL.")
+    await r.cap("Prvým 30 firmám: plán Start za 240 € na prvý rok, s kódom ZAKLADATEL.")
     await r.rolovat_o(500)
     await r.w(4)
     await r.koniec()
 
 
-SCENARE = {1: video1, 2: video2, 3: video3, 4: video4, 5: video5, 6: video6}
+async def video7(r: Rez):
+    await r.ide(WEB + "/eurofondy/")
+    await r.karta("Pripravované obstarávania z eurofondov", "Zákazky, ktoré úrady chystajú, ešte pred vyhlásením.", 3.5, cislo=7)
+    await r.cap("Úrady a obce ich majú v projektoch z eurofondov. Súťaž ešte nevyhlásili.", 2)
+    await r.rolovat_o(350)
+    await r.w(1.5)
+    await r.ide(WEB + "/eurofondy/stavebne-prace/kosicky")
+    await r.cap("Pre každý odbor a kraj: počet, hodnota a najväčšie obstarávania. Bez registrácie.", 2.5)
+    await r.rolovat_o(420)
+    await r.w(2)
+    await r.ide(APP)
+    await r.zalozka("dnes")
+    await r.cap("V appke ich vidíte na obrazovke Dnes, pre váš výber.")
+    await r.rolovat("#dnes-h-eurofondy", 160)
+    await r.hl("#dnes-c-eurofondy", 3.5)
+    await r.bez_hl()
+    await r.cap("Keď úrad súťaž vyhlási, pošleme vám e-mail s odkazom a lehotou na ponuky.", 2)
+    await r.koniec()
+
+
+SCENARE = {1: video1, 2: video2, 3: video3, 4: video4, 5: video5, 6: video6, 7: video7}
 
 
 def ffmpeg(*args):
@@ -426,8 +467,29 @@ async def nahraj(p, stav, n, mobil, cielovy_subor):
     podm = [f"gte(t,{od:.2f})"] + ([f"lte(t,{do:.2f})"] if do else [])
     podm += [f"not(between(t,{a:.2f},{b:.2f}))" for a, b in r.medzery if b > a and a > od]
     vf = f"fps=30,select='{'*'.join(podm)}',setpts=N/30/TB,scale={ciel}:flags=lanczos"
-    ffmpeg("-i", str(webm), "-vf", vf, "-c:v", "libx264", "-preset", "slow", "-crf", "24",
-           "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an", str(cielovy_subor))
+    if not r.zvuky:
+        ffmpeg("-i", str(webm), "-vf", vf, "-c:v", "libx264", "-preset", "slow", "-crf", "24",
+               "-pix_fmt", "yuv420p", "-movflags", "+faststart", "-an", str(cielovy_subor))
+    else:
+        nemy = tmp / "nemy.mp4"
+        ffmpeg("-i", str(webm), "-vf", vf, "-c:v", "libx264", "-preset", "slow", "-crf", "24",
+               "-pix_fmt", "yuv420p", "-an", str(nemy))
+        rezy = [(a, b) for a, b in r.medzery if b > a and a > od]
+
+        def vystup_cas(t):
+            """cas v nahravke -> cas vo vystrihnutom videu"""
+            return t - od - sum(min(b, t) - a for a, b in rezy if a < t)
+
+        vstupy, filtre = ["-i", str(nemy)], []
+        for k, (t, mp3) in enumerate(r.zvuky, start=1):
+            ms = max(0, int(vystup_cas(t) * 1000))
+            vstupy += ["-i", str(mp3)]
+            filtre.append(f"[{k}:a]adelay={ms}|{ms},aresample=48000[a{k}]")
+        mix = "".join(f"[a{k}]" for k in range(1, len(r.zvuky) + 1))
+        filtre.append(f"{mix}amix=inputs={len(r.zvuky)}:normalize=0,loudnorm=I=-16:TP=-1.5,apad[aout]")
+        ffmpeg(*vstupy, "-filter_complex", ";".join(filtre), "-map", "0:v", "-map", "[aout]",
+               "-c:v", "copy", "-c:a", "aac", "-b:a", "128k", "-shortest", "-movflags", "+faststart",
+               str(cielovy_subor))
     shutil.rmtree(tmp, ignore_errors=True)
 
 

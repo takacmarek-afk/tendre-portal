@@ -13,11 +13,16 @@ on:
     inputs:
       krok:
         type: choice
-        options: [prieskum, nahraj, cisla]
+        options: [prieskum, nahraj, cisla, hlas-ukazka]
         default: prieskum
       videa:
         description: "Ktore videa (napr. 1,2,3); prazdne = vsetky"
         default: ""
+      hlas:
+        description: "Hovoreny komentar"
+        type: choice
+        options: [ziadny, lukas, viktoria]
+        default: ziadny
 
 permissions:
   contents: write
@@ -39,12 +44,18 @@ jobs:
           python-version: "3.11"
       - name: Instalacia
         run: |
-          pip install supabase playwright imageio-ffmpeg
+          pip install supabase playwright imageio-ffmpeg edge-tts requests
           python -m playwright install --with-deps chromium
           ln -sf "$(python -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')" /usr/local/bin/ffmpeg || sudo ln -sf "$(python -c 'import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())')" /usr/local/bin/ffmpeg
           ffmpeg -version | head -1
+      - name: Ukazka hlasov
+        if: inputs.krok == 'hlas-ukazka'
+        env:
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
+        run: python videa/hlas.py ukazka vystup/hlas
       - name: Ukazkovy ucet a prihlasovaci odkaz
-        if: inputs.krok != 'cisla'
+        if: inputs.krok != 'cisla' && inputs.krok != 'hlas-ukazka'
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -62,6 +73,10 @@ jobs:
         if: inputs.krok == 'nahraj'
         env:
           VIDEA: ${{ inputs.videa }}
+          HLAS_ZAPNUTY: ${{ inputs.hlas != 'ziadny' && '1' || '0' }}
+          HLAS: ${{ inputs.hlas }}
+          AZURE_SPEECH_KEY: ${{ secrets.AZURE_SPEECH_KEY }}
+          AZURE_SPEECH_REGION: ${{ secrets.AZURE_SPEECH_REGION }}
         run: python videa/nahraj.py "$RUNNER_TEMP/odkaz.txt" vystup/videa "$VIDEA"
       - name: Ulozit do vetvy videa-vystup
         run: |
