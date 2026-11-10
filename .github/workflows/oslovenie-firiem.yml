@@ -53,7 +53,7 @@ on:
         type: string
         default: "30"
       ico:
-        description: "ICO firiem, ktore odpovedali (krok zastav)"
+        description: "ICO alebo @domena firiem, ktore odpovedali (krok zastav), oddelene ciarkou"
         type: string
         default: ""
 

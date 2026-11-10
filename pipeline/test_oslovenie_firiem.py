@@ -383,3 +383,21 @@ def test_na_rade_berie_aj_firmy_bez_odboru_ked_sa_pyta():
     assert [x[0]["ico"] for x in r] == ["1", "2"]
     r = of.na_rade(k, [], ["OSTRAHA"], set(), set(), date(2026, 11, 10), 10)
     assert [x[0]["ico"] for x in r] == ["2"]
+
+
+def test_zastav_podla_domeny(monkeypatch):
+    zmeny = []
+
+    class Q:
+        def update(self, d): self.d = d; return self
+        def eq(self, k, v): zmeny.append((v, self.d["stav"])); return self
+        def execute(self):
+            class R: data = [1]
+            return R()
+
+    class SB:
+        def table(self, _): return Q()
+    monkeypatch.setattr(of, "_vsetky", lambda *a, **k: [{"ico": "11111111", "email": "a@vidra.sk"},
+                                                        {"ico": "22222222", "email": "b@ina.sk"}])
+    of.krok_zastav(SB(), ["@vidra.sk", "@gmail.com", "33333333"], "odpovedal")
+    assert zmeny == [("11111111", "odpovedal"), ("33333333", "odpovedal")]

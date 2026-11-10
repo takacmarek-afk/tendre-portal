@@ -707,10 +707,25 @@ def krok_posli(sb, a):
 
 
 def krok_zastav(sb, ica, stav):
-    for ico in ica:
-        r = (sb.table("oslovenie_firiem_kontakty").update({"stav": stav, "upravene_at": "now()"})
-             .eq("ico", ico8(ico)).execute())
-        log.info("%s -> %s (%s)", ico8(ico), stav, "ok" if r.data else "nenajdene")
+    """Polozka je ICO alebo domena e-mailu (@firma.sk) — z preposlanej odpovede
+    je domena vidiet hned, ICO nie (10. 11. 2026). Vypisuje len ICO a pocty."""
+    for pol in ica:
+        pol = pol.strip().lower()
+        if pol.startswith("@"):
+            dom = pol[1:]
+            if not re.fullmatch(r"[a-z0-9.-]+\.[a-z]{2,}", dom) or dom in _FREEMAIL:
+                log.error("Domena %s sa neda pouzit (neplatna alebo verejna schranka).", dom)
+                continue
+            najdene = [k["ico"] for k in _vsetky(sb, "oslovenie_firiem_kontakty", "ico,email")
+                       if (k.get("email") or "").lower().endswith("@" + dom)]
+        else:
+            najdene = [ico8(pol)]
+        for ico in najdene:
+            r = (sb.table("oslovenie_firiem_kontakty").update({"stav": stav, "upravene_at": "now()"})
+                 .eq("ico", ico).execute())
+            log.info("%s -> %s (%s)", ico, stav, "ok" if r.data else "nenajdene")
+        if not najdene:
+            log.info("%s: nenajdene", pol)
     return 0
 
 
