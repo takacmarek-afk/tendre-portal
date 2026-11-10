@@ -48,6 +48,8 @@ from email.utils import formatdate, make_msgid, parseaddr
 
 import requests
 
+import znacka
+
 log = logging.getLogger("kampan")
 
 # Studene e-maily NEJDU cez Resend: jeho Acceptable Use Policy zakazuje
@@ -438,6 +440,13 @@ def vyrenderuj(sprava, token):
     odhl = _odhlasenie_url(token)
     txt_casti, html_casti = [], []
     for o in sprava["odstavce"]:
+        if isinstance(o, str) and o.startswith("S pozdravom"):
+            # 10. 11. 2026: znackovy podpis (logo, web, Facebook, Instagram)
+            tel = o.split("\n")[2:]  # pripadny telefon za podpisom
+            txt_casti.append("S pozdravom\n\n" + znacka.podpis_text() + "".join("\n" + x for x in tel))
+            html_casti.append('<p style="margin:0 0 10px;">S pozdravom</p>' + znacka.podpis_html()
+                              + "".join(f'<p style="margin:6px 0 0;font-size:13px;">{html.escape(x)}</p>' for x in tel))
+            continue
         casti = o if isinstance(o, list) else [o]
         t, h = [], []
         for c in casti:
@@ -446,7 +455,7 @@ def vyrenderuj(sprava, token):
                 if not url.startswith(WEB + "/"):
                     raise ValueError(f"Odkaz musi viest na predtendrom.sk: {url}")
                 t.append(f"{text} ({url})")
-                h.append(f'<a href="{html.escape(url)}" style="color:#1a56c4;">{html.escape(text)}</a>')
+                h.append(f'<a href="{html.escape(url)}" style="color:{znacka.AKCENT};font-weight:600;">{html.escape(text)}</a>')
             else:
                 t.append(c)
                 h.append(html.escape(c).replace("\n", "<br>"))
@@ -457,10 +466,10 @@ def vyrenderuj(sprava, token):
     text = "\n\n".join(txt_casti) + f"\n\n--\n{paticka}{odhl}\n" \
         "LoveHome s.r.o., Černyševského 40, 851 01 Bratislava, IČO 47 586 362"
     telo = (
-        '<!doctype html><html lang="sk"><body style="margin:0;padding:16px;'
-        'font:15px/1.6 Arial,sans-serif;color:#0f1a2b;background:#ffffff;">'
+        '<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:16px;'
+        f'font:15px/1.6 {znacka.PISMO};color:{znacka.INK};background:#ffffff;">'
         '<div style="max-width:580px;">' + "".join(html_casti)
-        + '<p style="margin:24px 0 0;padding-top:12px;border-top:1px solid #e4e8ee;'
+        + f'<p style="margin:28px 0 0;padding-top:12px;border-top:1px solid {znacka.LINKA};'
           'font-size:12px;line-height:1.6;color:#8a929e;">'
         + html.escape(paticka) + f'<a href="{html.escape(odhl)}" style="color:#8a929e;">odhlásiť</a>.<br>'
         "LoveHome s.r.o., Černyševského 40, 851 01 Bratislava, IČO 47 586 362</p>"

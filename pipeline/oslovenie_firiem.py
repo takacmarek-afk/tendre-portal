@@ -45,6 +45,7 @@ import unicodedata
 from datetime import date, datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
+import znacka
 import kampan_obce as ko   # posli_smtp, zostav_spravu, SMTP nastavenia
 
 log = logging.getLogger("oslovenie")
@@ -557,6 +558,14 @@ def vyrenderuj(sprava, token):
     odhl = odhlasenie_url(token)
     txt, htm = [], []
     for o in sprava["odstavce"]:
+        if isinstance(o, str) and "Marek Takáč" in o:
+            # 10. 11. 2026: znackovy podpis (logo, web, Facebook, Instagram).
+            # Pred menom moze byt pozdrav ("S pozdravom", "Ďakujem za Váš čas.").
+            uvod = o.split("Marek Takáč")[0].strip()
+            txt.append((uvod + "\n\n" if uvod else "") + znacka.podpis_text())
+            htm.append((f'<p style="margin:0 0 10px;">{html.escape(uvod).replace(chr(10), "<br>")}</p>'
+                        if uvod else "") + znacka.podpis_html())
+            continue
         casti = o if isinstance(o, list) else [o]
         t, h = [], []
         for c in casti:
@@ -565,7 +574,7 @@ def vyrenderuj(sprava, token):
                 if not url.startswith(WEB + "/"):
                     raise ValueError(f"Odkaz musi viest na predtendrom.sk: {url}")
                 t.append(f"{text} ({url})")
-                h.append(f'<a href="{html.escape(url)}" style="color:#1a56c4;">{html.escape(text)}</a>')
+                h.append(f'<a href="{html.escape(url)}" style="color:{znacka.AKCENT};font-weight:600;">{html.escape(text)}</a>')
             else:
                 t.append(c)
                 h.append(html.escape(c).replace("\n", "<br>"))
@@ -575,10 +584,10 @@ def vyrenderuj(sprava, token):
                "Ak už nechcete dostávať žiadne správy, odhláste sa tu: ")
     text = ("\n\n".join(txt) + f"\n\n--\n{paticka}{odhl}\nalebo odpovedzte „Odhlásiť“.\n"
             f"{PATICKA_FIRMA}. Zásady: {WEB}/ochrana-osobnych-udajov")
-    telo = ('<!doctype html><html lang="sk"><body style="margin:0;padding:16px;'
-            'font:15px/1.6 Arial,sans-serif;color:#0f1a2b;background:#ffffff;">'
+    telo = ('<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:16px;'
+            f'font:15px/1.6 {znacka.PISMO};color:{znacka.INK};background:#ffffff;">'
             '<div style="max-width:580px;">' + "".join(htm)
-            + '<p style="margin:24px 0 0;padding-top:12px;border-top:1px solid #e4e8ee;'
+            + f'<p style="margin:28px 0 0;padding-top:12px;border-top:1px solid {znacka.LINKA};'
               'font-size:12px;line-height:1.6;color:#8a929e;">'
             + html.escape(paticka) + f'<a href="{html.escape(odhl)}" style="color:#8a929e;">odhlásiť</a>'
             " alebo odpovedzte „Odhlásiť“.<br>" + html.escape(PATICKA_FIRMA)

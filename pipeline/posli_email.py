@@ -51,6 +51,7 @@ import requests
 from supabase import create_client
 
 from strankuj import vsetky
+import znacka
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s %(levelname)-7s %(name)-9s %(message)s",
@@ -219,7 +220,7 @@ def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie,
         <tr><td style="padding:14px 0;border-bottom:1px solid #e4e8ee;">
           <div style="font:600 15px/1.4 Arial,sans-serif;color:#0f1a2b;">{t(b.get('titul'))}</div>
           <div style="font:14px/1.5 Arial,sans-serif;color:#5a6472;margin-top:4px;">{t(b.get('popis'))}</div>
-          {f'<div style="font:600 14px/1.4 Arial,sans-serif;color:#1a56c4;margin-top:6px;">{t(zvyr)}</div>' if zvyr else ''}
+          {f'<div style="font:600 14px/1.4 Arial,sans-serif;color:{znacka.AKCENT};margin-top:6px;">{t(zvyr)}</div>' if zvyr else ''}
         </td></tr>""")
 
     titulok, uvod = t(titulok), t(uvod)
@@ -235,19 +236,16 @@ def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie,
             raise ValueError("Odhlasovaci odkaz musi viest na predtendrom.sk, "
                              f"dostal som {odhlasovaci_odkaz!r}")
         odk = _bezpecne(odhlasovaci_odkaz)
-        odhlasit_html = f'Odhlásiť odber: <a href="{odk}" style="color:#1a56c4;">{odk}</a><br>'
+        odhlasit_html = f'Odhlásiť odber: <a href="{odk}" style="color:{znacka.SVETLA};">{odk}</a><br>'
 
     return f"""<!doctype html>
-<html lang="sk"><body style="margin:0;padding:0;background:#f5f6f8;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f6f8;">
+<html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#F7F3EA;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#F7F3EA;">
 <tr><td align="center" style="padding:24px 12px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
          style="max-width:560px;background:#ffffff;border:1px solid #e4e8ee;border-radius:8px;">
-    <tr><td style="padding:22px 24px 0;">
-      <div style="font:700 17px/1.2 Arial,sans-serif;color:#0f1a2b;">
-        PredTendrom<span style="color:#1a56c4;">.sk</span></div>
-    </td></tr>
-    <tr><td style="padding:16px 24px 0;">
+    {znacka.hlavicka_html()}
+    <tr><td style="padding:20px 24px 0;">
       <div style="font:700 20px/1.3 Arial,sans-serif;color:#0f1a2b;">{titulok}</div>
       <div style="font:14px/1.6 Arial,sans-serif;color:#5a6472;margin-top:8px;">{uvod}</div>
     </td></tr>
@@ -255,7 +253,7 @@ def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie,
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">{''.join(casti)}</table>
     </td></tr>
     <tr><td style="padding:22px 24px;">
-      <a href="{cta_url}" style="display:inline-block;background:#0f1a2b;color:#ffffff;
+      <a href="{cta_url}" style="display:inline-block;background:{znacka.AKCENT};color:#ffffff;
          font:600 15px/1 Arial,sans-serif;text-decoration:none;padding:13px 22px;border-radius:6px;">
         {cta_text}</a>
     </td></tr>
@@ -265,6 +263,7 @@ def _obal(titulok, uvod, bloky, cta_text, cta_url, odhlasenie,
         Majú informatívny charakter, pred rozhodnutím si ich overte v zdroji.<br><br>
         {odhlasenie}<br>
         {odhlasit_html}
+        {znacka.socialne_html()}<br>
         LoveHome s.r.o., Černyševského 40, 851 01 Bratislava, IČO 47 586 362,<br>
         OR Mestského súdu Bratislava III, oddiel Sro, vložka č. 95571/B
       </div>
