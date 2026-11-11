@@ -743,7 +743,10 @@ def krok_posli(sb, a):
     # novi starostovia prvi (11. 11. 2026: tie isté zistenia potrebujú najviac),
     # v ramci nich najsilnejsi dovod ozvat sa
     poradie = {s: i for i, s in enumerate(SEGMENTY + ("followup",))}
-    spravy.sort(key=lambda s: (s.get("staronovy", False), poradie[s["segment"]]))
+    # najprv konkretne dovody (eurofondy, poradca, Vestnik, CRZ), az potom len dotacie;
+    # v ramci skupiny novi starostovia prvi
+    spravy.sort(key=lambda s: (s["segment"] in ("dotacie", "followup"), s.get("staronovy", False),
+                               poradie[s["segment"]]))
 
     pocty = {}
     for s in spravy:
