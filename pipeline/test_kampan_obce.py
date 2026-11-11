@@ -369,3 +369,14 @@ def test_posli_smtp_zle_heslo_nezhodi_beh():
 def test_kampan_neposiela_cez_resend():
     src = open(k.__file__, encoding="utf-8").read()
     assert "api.resend.com" not in src and "RESEND_API_KEY" not in src
+
+
+def test_staronovy_starosta_ma_opatovne_zvolenie():
+    from kampan_obce import zostav
+    k = {"obec": "Obec Hraň", "kraj": "Košický kraj", "ico": "1"}
+    d = {"uvo": {"predmet": "Odvoz odpadu", "dodavatel": "Firma s.r.o.", "hodnota": 50000, "koniec": "2027-05-31"}}
+    novy = zostav("vlna1", k, {"meno": "Ján", "priezvisko": "Novák"}, d)
+    stary = zostav("vlna1", k, {"meno": "Ján", "priezvisko": "Novák", "staronovy": True}, d)
+    t_novy, t_stary = " ".join(map(str, novy["odstavce"])), " ".join(map(str, stary["odstavce"]))
+    assert "blahoželám k zvoleniu." in t_novy and "Prvé týždne" in t_novy
+    assert "opätovnému zvoleniu" in t_stary and "Prvé týždne" not in t_stary

@@ -306,6 +306,14 @@ def oslovenie(obec_nazov, starosta):
     return f"Dobrý deň, {funkcia} {priezvisko},"
 
 
+def gratulacia(starosta):
+    """Novy starosta: 'blahoželám k zvoleniu.'; ta ista osoba ako v 2022:
+    'blahoželám k opätovnému zvoleniu.' (analyza 11. 11. 2026: 2 078 z 2 924
+    obci ma staronoveho starostu, 'prve tyzdne v urade' by im nesedeli)."""
+    return ("blahoželám k opätovnému zvoleniu." if (starosta or {}).get("staronovy")
+            else "blahoželám k zvoleniu.")
+
+
 def je_zena(priezvisko):
     """Slovenske zenske priezviska: -ová a pridavne mena na -á (Malá, Horská).
     Muzske priezviska na dlhe -á takmer neexistuju (Baťa, Straka maju kratke -a)."""
@@ -380,7 +388,7 @@ def zostav(vlna, kontakt, starosta, data):
                 "predmet": f"{obec}: žiadosť o dotáciu — čo príde potom",
                 "odstavce": [
                     uvod,
-                    "blahoželám k zvoleniu. V Centrálnom registri zmlúv vidíme, že obec má"
+                    gratulacia(starosta) + " V Centrálnom registri zmlúv vidíme, že obec má"
                     + (f" od {kedy}" if kedy else "")
                     + f" zmluvu s firmou {d['sprostredkovatel']} na prípravu žiadosti o dotáciu."
                     " Ak obec dotáciu získa, bude musieť vybrať dodávateľa — a na to je dobré"
@@ -406,8 +414,11 @@ def zostav(vlna, kontakt, starosta, data):
                 "predmet": f"{obec}: čo má obec podpísané a kedy to končí",
                 "odstavce": [
                     uvod,
-                    "blahoželám k zvoleniu. Prvé týždne v úrade sú hlavne o tom zistiť, čo obec má"
-                    " podpísané a kedy to končí. S tým vám vieme pomôcť hneď.",
+                    gratulacia(starosta) + (
+                        " Na začiatku nového obdobia sa oplatí mať prehľad, ktoré zmluvy obce sa blížia"
+                        " ku koncu a čo bude treba znova obstarať." if (starosta or {}).get("staronovy") else
+                        " Prvé týždne v úrade sú hlavne o tom zistiť, čo obec má"
+                        " podpísané a kedy to končí. S tým vám vieme pomôcť hneď."),
                     f"{zdroj} {fakt} Ak by ste chceli túto zákazku obstarať znova, príprava zvyčajne trvá"
                     " 3 až 6 mesiacov.",
                     [f"Prehľad zmlúv a dotácií priamo pre {obec} je zadarmo a bez registrácie: ", obce_link],
@@ -424,7 +435,7 @@ def zostav(vlna, kontakt, starosta, data):
             "predmet": f"{obec}: prehľad dotácií a zmlúv obce",
             "odstavce": [
                 uvod,
-                f"blahoželám k zvoleniu. Podľa Centrálneho registra zmlúv {obec} dostala"
+                gratulacia(starosta) + f" Podľa Centrálneho registra zmlúv {obec} dostala"
                 f" {pocet} {slovo}" + (f" v celkovej sume {suma}" if suma else "") + " (súčet zmlúv zverejnených v registri).",
                 [f"Prehľad dotácií a zmlúv pre {obec} uvidíte zadarmo a bez registrácie na ",
                  obce_link, "."],
@@ -632,6 +643,25 @@ def uloz_nahlad(cesta, spravy):
         f"<h1>Náhľad: {len(spravy)} e-mailov</h1>" + "".join(bloky), encoding="utf-8")
 
 
+def staronovi_kody(starostovia, rok_pred=None):
+    """Kody obci, kde starosta z DB (rok volieb) je ta ista osoba ako v predchadzajucich
+    volbach (CSV SU SR, nic sa neuklada). None pri chybe stiahnutia."""
+    from volby import TABULKY, _norm, rozober, stiahni
+    import requests
+    rok_pred = rok_pred or ROK_VOLIEB - 4
+    try:
+        pred = {}
+        for tab in TABULKY:
+            url, text = stiahni(requests.Session(), rok_pred, tab)
+            for r in rozober(text, rok_pred, url) if text else []:
+                pred.setdefault(r["kod_obce"], r)
+    except Exception as e:
+        log.warning("Volby %d: %s", rok_pred, type(e).__name__)
+        return None
+    osoba = lambda r: (_norm(r.get("meno")), _norm(r.get("priezvisko")))
+    return {k for k, r in starostovia.items() if k in pred and osoba(pred[k]) == osoba(r)}
+
+
 def krok_posli(sb, a):
     dnes = date.fromisoformat(a.dnes) if a.dnes else date.today()
     ostro = not a.nasucho and not a.komu
@@ -656,6 +686,12 @@ def krok_posli(sb, a):
     starostovia = {r["kod_obce"]: r for r in _vsetky(
         sb, "obce_starostovia", "kod_obce,meno,priezvisko",
         lambda q: q.eq("rok", ROK_VOLIEB))}
+    staronovi = staronovi_kody(starostovia)
+    if staronovi is None:
+        log.warning("Vysledky volieb %d sa nepodarilo stiahnut: vsetkym 'blahoželám k zvoleniu'.", ROK_VOLIEB - 4)
+    for kod in staronovi or ():
+        starostovia[kod] = {**starostovia[kod], "staronovy": True}
+    log.info("Staronovi starostovia: %s z %d.", len(staronovi or ()), len(starostovia))
     data = nacitaj_data(sb, [k["ico"] for k in prijemcovia], dnes)
 
     spravy = []
