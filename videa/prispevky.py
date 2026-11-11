@@ -148,9 +148,9 @@ Ak to nechcete robiť po jednej, PredTendrom ich zbiera za vás."""),
 
 Čo presne úrad žiada, vždy určí až súťažné podklady."""),
         ("Zakladajúca ponuka", {"typ": "tip", "kicker": "Pre prvých 30 firiem", "nadpis": "Plán Start za 240 € ročne namiesto 340 €",
-          "body": ["cena platí 2 roky,", "kód ZAKLADATEL zadáte pri ročnej platbe,", "najprv 14 dní zadarmo, bez karty,",
+          "body": ["cena platí prvý rok,", "kód ZAKLADATEL zadáte pri ročnej platbe,", "najprv 14 dní zadarmo, bez karty,",
                    "do 30 dní vrátime peniaze, ak nebudete spokojní."], "cislovane": False, "zdroj": "predtendrom.sk/cennik"},
-         """Pre prvých 30 firiem máme zakladajúcu cenu: ročný plán Start za 240 € namiesto 340 €, cena platí 2 roky.
+         """Pre prvých 30 firiem máme zakladajúcu cenu: ročný plán Start za 240 € namiesto 340 €. Zakladajúca cena platí prvý rok.
 
 Najprv si to vyskúšajte 14 dní zadarmo, bez karty. Pri ročnej platbe zadáte kód ZAKLADATEL. Ak do 30 dní nebudete spokojní, vrátime celú sumu.
 
@@ -234,7 +234,7 @@ Prehľad programov, ktoré teraz platia, nájdete zadarmo a bez registrácie na 
         ("Zmluvy, ktoré obec zdedila", {"typ": "tip", "kicker": "Pre starostov", "nadpis": "Zmluvy, ktoré sa oplatí v obci skontrolovať",
           "body": ["odvoz odpadu,", "stravovanie a upratovanie v škole a škôlke,", "údržba zelene a zimná údržba,", "verejné osvetlenie."],
           "pod": "Pozrite sa, kedy končia. Na novú súťaž treba mesiace.", "cislovane": False, "zdroj": "predtendrom.sk/starosta"},
-         """Nový rok je dobrý čas pozrieť sa, ktoré zmluvy obec má a kedy končia: odvoz odpadu, stravovanie a upratovanie v škole a škôlke, údržba zelene, verejné osvetlenie.
+         """Koniec roka je dobrý čas pozrieť sa, ktoré zmluvy obec má a kedy končia: odvoz odpadu, stravovanie a upratovanie v škole a škôlke, údržba zelene, verejné osvetlenie.
 
 Na prípravu novej súťaže treba mesiace. Zoznam zmlúv vašej obce podľa IČO nájdete zadarmo na predtendrom.sk/starosta"""),
         ("Viac ponúk na súťaž", {"typ": "tip", "kicker": "Pre obce a mestá", "nadpis": "Ako dostať na súťaž viac ponúk",
