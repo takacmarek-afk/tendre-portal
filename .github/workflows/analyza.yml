@@ -8,7 +8,7 @@ on:
       skript:
         description: "Prehlad"
         type: choice
-        options: [poradcovia_prehlad, vyzvy_prehlad, trh_overenie, imap_sonda, itms_sonda, oprava_audit, itms_parovanie, audit_db]
+        options: [poradcovia_prehlad, vyzvy_prehlad, trh_overenie, imap_sonda, itms_sonda, oprava_audit, itms_parovanie, audit_db, resend_dorucenie]
         default: poradcovia_prehlad
 
 permissions:
@@ -34,6 +34,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
           ZOHO_IMAP_PASSWORD: ${{ secrets.ZOHO_IMAP_PASSWORD }}
+          RESEND_ADMIN_KEY: ${{ secrets.RESEND_ADMIN_KEY }}
         run: python "${{ inputs.skript }}.py"
       - name: Audit databazy (len citanie, psql)
         if: inputs.skript == 'audit_db'
