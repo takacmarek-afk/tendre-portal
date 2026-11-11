@@ -129,9 +129,12 @@ def _stranka(sektor, kraj, a, dostupne):
   <div class="mt-3 rounded-lg border border-dashed border-line bg-[#F3F5F7] p-5 text-center">
     <p class="text-[14px] text-slate2">+ {_cislo(zvysok)} {_tvar(zvysok, 'ďalšie obstarávanie', 'ďalšie obstarávania', 'ďalších obstarávaní')} v tomto kraji a odbore.</p>
     <a href="/prihlasenie?{utm}" class="mt-3 inline-block rounded-md bg-accent text-white text-[13px] font-medium px-4 py-2 hover:bg-accentDark">
-      Zobraziť všetky a dostať správu pri vyhlásení (14 dní zadarmo)</a>
+      Sledovať v aplikácii a dostať správu pri vyhlásení (14 dní zadarmo)</a>
   </div>""" if zvysok > 0 else ""
     odber_q = urlencode({"sektor": sektor, "kraj": kraj}).replace("&", "&amp;")
+    # odpad nie je odbor bezplatneho prehladu na hlavnej stranke (ukazka_zmluv) -> odkaz by nikam neviedol
+    blok_odber = "" if sektor == "ODPAD" else f"""  <p class="mt-3 text-[13px] text-slate2">Bez registrácie:
+    <a href="/?{odber_q}#ukazka" class="text-accent font-semibold hover:underline">posielať mi zadarmo každý týždeň nové súťaže a končiace zmluvy</a></p>"""
     zmluvy = (f' · <a href="/konciace-zmluvy/{slug}/{kslug}" class="text-accent hover:underline">'
               f'Končiace zmluvy na {_e(info["nazov"])} v kraji</a>') \
         if os.path.exists(os.path.join(ZMLUVY_DIR, slug, f"{kslug}.html")) else ""
@@ -168,8 +171,7 @@ def _stranka(sektor, kraj, a, dostupne):
     <span class="text-[13px] leading-snug text-slate2">14 dní zadarmo, bez platobnej karty.<br class="hidden sm:inline">
       Keď úrad súťaž vyhlási, dáme Vám vedieť.</span>
   </div>
-  <p class="mt-3 text-[13px] text-slate2">Bez registrácie:
-    <a href="/?{odber_q}#ukazka" class="text-accent font-semibold hover:underline">posielať mi zadarmo každý týždeň nové súťaže a končiace zmluvy</a></p>
+{blok_odber}
   <h2 class="mt-10 text-[18px] font-semibold">Najväčšie pripravované obstarávania</h2>
   <div class="mt-4 grid gap-3">
 {priklady}

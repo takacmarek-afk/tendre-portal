@@ -320,6 +320,9 @@ function stav(html, trieda) {
 }
 
 function karta(hodnota, popis) {
+  // sumy nad milion skratit (189 813 373 € -> 189,8 mil. €), inak sa v karte lamu do dvoch riadkov
+  const m = /^[\d\s\u00a0\u202f]+ ?€$/.test(String(hodnota)) ? Number(String(hodnota).replace(/\D/g, '')) : 0;
+  if (m >= 1e6) hodnota = `${(m / 1e6).toLocaleString('sk-SK', { maximumFractionDigits: 1 })} mil. €`;
   return `<div class="kz-karta"><p class="kz-cislo">${bezpecne(hodnota)}</p><p class="kz-popis">${bezpecne(popis)}</p></div>`;
 }
 

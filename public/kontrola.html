@@ -173,7 +173,7 @@ body { background: var(--paper); color: var(--ink); }
   <form id="kz-form" class="kz-form" novalidate autocomplete="off">
     <label for="kz-ico" class="kz-label">Vaše IČO</label>
     <div class="kz-riadok">
-      <input id="kz-ico" name="ico" type="text" inputmode="numeric" maxlength="14"
+      <input id="kz-ico" class="kz-input" name="ico" type="text" inputmode="numeric" maxlength="14"
              autocomplete="off" autocapitalize="characters" spellcheck="false"
              placeholder="8 číslic" aria-describedby="kz-napoveda kz-chyba">
       <button id="kz-btn" type="submit" class="kz-btn-tmavy kz-btn-zistit">Zistiť</button>
@@ -316,6 +316,9 @@ function stav(html, trieda) {
 }
 
 function karta(hodnota, popis) {
+  // sumy nad milion skratit (189 813 373 € -> 189,8 mil. €), inak sa v karte lamu do dvoch riadkov
+  const m = /^[\d\s\u00a0\u202f]+ ?€$/.test(String(hodnota)) ? Number(String(hodnota).replace(/\D/g, '')) : 0;
+  if (m >= 1e6) hodnota = `${(m / 1e6).toLocaleString('sk-SK', { maximumFractionDigits: 1 })} mil. €`;
   return `<div class="kz-karta"><p class="kz-cislo">${bezpecne(hodnota)}</p><p class="kz-popis">${bezpecne(popis)}</p></div>`;
 }
 
