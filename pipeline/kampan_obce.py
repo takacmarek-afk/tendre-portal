@@ -702,8 +702,10 @@ def krok_posli(sb, a):
     if ostro:
         prekazka = smie_ostro(a.vlna, dnes, a.vynutit)
         if prekazka:
-            log.error("Ostro neposielam: %s. (Nasucho a --komu funguju vzdy.)", prekazka)
-            return 1
+            # planovany beh pred datumom vlny alebo v nespravny den nie je chyba
+            log.info("Ostro neposielam: %s. (Nasucho a --komu funguju vzdy.)", prekazka)
+            print(f"::notice title=Kampan pre obce::{prekazka}, dnes sa nic neposiela.")
+            return 0
         if not REPLY_TO:
             log.error("Chyba KAMPAN_REPLY_TO — odpovede obci by nedosli Marekovi. Neposielam.")
             return 1

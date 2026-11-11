@@ -29,6 +29,11 @@ name: Kampan pre obce
 # ══════════════════════════════════════════════════════════════════════════
 
 on:
+  # Od 11. 11. 2026 posiela vlnu 1 automaticky (rozhodnutie Mareka): utorok az
+  # stvrtok rano. kampan_obce.py sam pusti ostro len od datumu vlny (24. 11.)
+  # a len ut-st; mimo okna 8:00-16:00 planovany beh nic neposle.
+  schedule:
+    - cron: "23 7 * * 2-4"   # 8:23 SEC (zima)
   workflow_dispatch:
     inputs:
       krok:
@@ -89,14 +94,22 @@ jobs:
           ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
           KAMPAN_REPLY_TO: ${{ secrets.KAMPAN_REPLY_TO }}
           KAMPAN_TELEFON: ${{ secrets.KAMPAN_TELEFON }}
-          KROK: ${{ inputs.krok }}
-          NASUCHO: ${{ inputs.nasucho }}
-          VLNA: ${{ inputs.vlna }}
+          KROK: ${{ inputs.krok || 'posli' }}
+          NASUCHO: ${{ github.event_name == 'schedule' && 'false' || inputs.nasucho }}
+          VLNA: ${{ inputs.vlna || 'vlna1' }}
           KOMU: ${{ inputs.komu }}
-          MAX: ${{ inputs.max }}
+          MAX: ${{ inputs.max || vars.KAMPAN_OBCE_MAX || '50' }}
+          PLANOVANY: ${{ github.event_name == 'schedule' }}
           ROK: ${{ inputs.rok }}
         run: |
           set -euo pipefail
+          if [ "$PLANOVANY" = "true" ]; then
+            H=$(TZ=Europe/Bratislava date +%H)
+            if [ "$H" -lt 8 ] || [ "$H" -ge 16 ]; then
+              echo "::notice::Planovany beh prisiel o $H:00 (mimo 8-16), nic sa neposiela."
+              exit 0
+            fi
+          fi
           SUCHO=()
           if [ "$NASUCHO" = "true" ]; then SUCHO=(--nasucho); fi
           case "$KROK" in
