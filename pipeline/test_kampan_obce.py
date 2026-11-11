@@ -380,3 +380,15 @@ def test_staronovy_starosta_ma_opatovne_zvolenie():
     t_novy, t_stary = " ".join(map(str, novy["odstavce"])), " ".join(map(str, stary["odstavce"]))
     assert "blahoželám k zvoleniu." in t_novy and "Prvé týždne" in t_novy
     assert "opätovnému zvoleniu" in t_stary and "Prvé týždne" not in t_stary
+
+
+def test_eurofondy_segment():
+    from kampan_obce import zostav
+    k = {"obec": "Obec Hraň", "kraj": "Košický kraj", "ico": "1"}
+    d = {"eurofondy": {"pocet": 3, "najvacsie": {"nazov": "Stavebné práce - ČOV a kanalizácia", "hodnota": 5100000}},
+         "dotacie": {"pocet": 2, "suma": 1000}}
+    s = zostav("vlna1", k, {"meno": "Ján", "priezvisko": "Novák", "staronovy": True}, d)
+    t = " ".join(map(str, s["odstavce"]))
+    assert s["segment"] == "eurofondy"
+    assert "„Stavebné práce - ČOV a kanalizácia“" in t and "5 100 000 €" in t and "a 2 ďalšie" in t
+    assert "opätovnému zvoleniu" in t

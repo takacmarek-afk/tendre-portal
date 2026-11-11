@@ -71,7 +71,9 @@ VLNY = {
     "vlna2": date(2027, 1, 7),     # po sviatkoch
 }
 DNI_MEDZI_VLNAMI = 14
-SEGMENTY = ("poradca", "uvo", "crz", "dotacie")   # poradie = priorita
+SEGMENTY = ("eurofondy", "poradca", "uvo", "crz", "dotacie")   # poradie = priorita
+# eurofondy (11. 11. 2026): pripravovane obstaravanie obce v ITMS21+ — najkonkretnejsi
+# dovod ozvat sa: obec ho este len bude vyhlasovat a viac ponuk = lepsia cena.
 
 _JE_OBEC = re.compile(r"^\s*(obec|mesto|mestsk[aá]\s+[cč]as[tť])\s+", re.IGNORECASE)
 _EMAIL = re.compile(r"^[^@\s;,]+@[^@\s;,]+\.[a-z]{2,}$")
@@ -382,6 +384,27 @@ def zostav(vlna, kontakt, starosta, data):
     obce_link = ("odkaz", "predtendrom.sk/prvych-100-dni", obec_odkaz(obec, kontakt.get("kraj"), vlna, seg))
     trh_link = ("odkaz", "predtendrom.sk/trh", utm("trh.html", vlna, seg))
 
+    if seg == "eurofondy":
+        n, top = d["pocet"], d["najvacsie"]
+        nazov = " ".join(str(top["nazov"]).split()).rstrip(".")
+        if len(nazov) > 120:
+            nazov = nazov[:117].rsplit(" ", 1)[0] + "…"
+        suma = eur(top.get("hodnota"))
+        dalsie = n - 1
+        return {"segment": seg,
+                "predmet": f"{obec}: obstarávanie z eurofondov — ako získať viac ponúk",
+                "odstavce": [
+                    uvod,
+                    gratulacia(starosta) + f" V systéme ITMS21+ má {kontakt['obec'][:1].lower() + kontakt['obec'][1:]} v projekte z eurofondov pripravené"
+                    f" obstarávanie „{nazov}“" + (f" s predpokladanou hodnotou {suma}" if suma else "")
+                    + (f" a {dalsie} {'ďalšie' if dalsie < 5 else 'ďalších'}" if dalsie > 0 else "")
+                    + ". Súťaž zatiaľ nie je vyhlásená.",
+                    ["Čím viac firiem ponuku podá, tým lepšia cena a menšie riziko, že súťaž bude"
+                     " treba opakovať. Na ", trh_link, " môžete obstarávanie zadarmo zverejniť vopred a ozvú"
+                     " sa vám firmy a poradcovia z regiónu, ktorí takéto zákazky robia."],
+                    [f"Prehľad zmlúv a dotácií pre {obec} je zadarmo a bez registrácie: ", obce_link],
+                    podpis]}
+
     if seg == "poradca":
         kedy = datum_sk(d.get("najate"))
         return {"segment": seg,
@@ -547,6 +570,17 @@ def nacitaj_data(sb, ica, dnes):
                 c.setdefault("crz", {
                     "predmet": r["subject"], "dodavatel": r["supplier_name"],
                     "hodnota": r.get("price_total"), "koniec": r["effective_to"]})
+        for r in (sb.table("itms_vo").select("obstaravatel_ico,nazov,predpokladana_hodnota")
+                  .in_("obstaravatel_ico", v).eq("stav", "Pripravované")
+                  .is_("vyhlasene_zistene_at", "null").execute().data):
+            c = ciel(r["obstaravatel_ico"])
+            if c is None or not r.get("nazov"):
+                continue
+            e = c.setdefault("eurofondy", {"pocet": 0, "najvacsie": None})
+            e["pocet"] += 1
+            h = r.get("predpokladana_hodnota") or 0
+            if e["najvacsie"] is None or h > (e["najvacsie"].get("hodnota") or 0):
+                e["najvacsie"] = {"nazov": r["nazov"], "hodnota": h}
         for r in (sb.table("subsidies").select("prijimatel_ico,suma")
                   .in_("prijimatel_ico", v).eq("vyplatene", False)
                   .execute().data):
