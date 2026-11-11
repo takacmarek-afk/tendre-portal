@@ -151,3 +151,14 @@ if __name__ == "__main__":
     for f in t:
         f(); print(f.__name__, "OK")
     print(f"VSETKY TESTY PRESLI ({len(t)})")
+
+
+def test_sektor_dopytu_a_obsah_pre_firmu():
+    import posli_dopyt_email as m
+    d = {"obec_nazov": "Obec Hraň", "kraj": "Košický kraj", "nazov": "Upratovanie budovy obecného úradu",
+         "popis": "Hľadáme firmu na pravidelné upratovanie", "termin": "do_3_mesiacov"}
+    s = m.sektor_dopytu(d)
+    assert s is None or isinstance(s, str)
+    o = m._obsah_pre_firmu(d)
+    assert o["titulok"].startswith("Obec Hraň hľadá dodávateľa")
+    assert "do 3 mesiacov" in o["bloky"][0]["popis"]

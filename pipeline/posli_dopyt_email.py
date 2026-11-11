@@ -168,6 +168,83 @@ def posli_poradcom(sb, kluc, nasucho, obmedz_na=None) -> tuple:
     return poslane, zlyhane
 
 
+# ── SMER 1b: NOVY DOPYT -> FIRMY (migracia 103, 11. 11. 2026) ──────────────
+
+ODKAZ_APP_DOPYTY = "https://predtendrom.sk/app#dopyty"
+
+
+def sektor_dopytu(dopyt):
+    """Odbor z nazvu a popisu dopytu (ten isty klasifikator ako zmluvy a ITMS).
+    None, ked sa neda urcit alebo ide o dotaciu — vtedy idu firmy len podla kraja."""
+    try:
+        import classify
+        s, _ = classify.klasifikuj(dopyt.get("nazov"), dopyt.get("popis"))
+    except Exception:
+        return None
+    return None if s in (None, getattr(classify, "SEKTOR_DOTACIE", "DOTACIE_NFP")) else s
+
+
+def _obsah_pre_firmu(dopyt) -> dict:
+    kde = dopyt.get("kraj") or "kraj neuvedený"
+    popis = dopyt.get("popis") or ""
+    detaily = _detaily_dopytu(dopyt)
+    if detaily:
+        popis = f"{popis} ({detaily})" if popis else detaily
+    obec = dopyt.get("obec_nazov") or "Obec"
+    return {
+        "titulok": f"{obec} hľadá dodávateľa: {(dopyt.get('nazov') or '')[:80]}",
+        "uvod": (f"{obec} ({kde}) zverejnila na Trhu dopytov, s čím potrebuje pomôcť, ešte pred "
+                 "vyhlásením súťaže. Je to príležitosť predstaviť sa skôr ako konkurencia. "
+                 "Odpovedať môže najviac 5 firiem alebo poradcov."),
+        "bloky": [{"titul": dopyt.get("nazov") or "(bez názvu)", "popis": popis,
+                   "zvyraznene": "Odpoveď cez Trh dopytov (bezplatný profil, pár sekúnd)"}],
+        "cta_text": "Pozrieť dopyt a odpovedať",
+        "cta_url": ODKAZ_TRH,
+        "odhlasenie": ("Tento e-mail Vám prišiel, lebo dopyt sedí s krajom a odborom vo Vašom výbere "
+                       "v PredTendrom.sk. Výber zmeníte v aplikácii (Moje nastavenie). "
+                       "Otázky: info@predtendrom.sk."),
+    }
+
+
+def posli_firmam(sb, kluc, nasucho, obmedz_na=None) -> tuple:
+    try:
+        dopyty = (sb.table("dopyty")
+                    .select("id, obec_nazov, kraj, typ, nazov, popis, stav, termin, rozpocet")
+                    .eq("firmy_notifikovane", False).eq("overeny", True)
+                    .execute().data or [])
+    except Exception as e:
+        log.warning("Dopyty pre firmy sa necitali (migracia 103?): %s", e)
+        return 0, 0
+    poslane = zlyhane = 0
+    for d in dopyty:
+        pokusov = uspesnych = 0
+        if d.get("stav") == "otvoreny":
+            sektor = sektor_dopytu(d)
+            adresati = sb.rpc("dopyt_firmy_adresati",
+                              {"p_kraj": d.get("kraj"), "p_sektor": sektor}).execute().data or []
+            log.info("Dopyt %s: odbor %s, firiem %d.", d["id"], sektor or "neurceny", len(adresati))
+            ob = _obsah_pre_firmu(d)
+            html = _obal(ob["titulok"], ob["uvod"], ob["bloky"], ob["cta_text"], ob["cta_url"], ob["odhlasenie"])
+            for a in adresati:
+                komu = (a.get("email") or "").strip()
+                if not _platny_email(komu) or (obmedz_na and komu.lower() != obmedz_na.lower()):
+                    continue
+                pokusov += 1
+                if posli(kluc, komu, f"PredTendrom.sk — {ob['titulok']}", html, nasucho):
+                    poslane += 1
+                    uspesnych += 1
+                else:
+                    zlyhane += 1
+                time.sleep(PAUZA_S)
+        if obmedz_na or (pokusov and not uspesnych) or nasucho:
+            continue
+        try:
+            sb.table("dopyty").update({"firmy_notifikovane": True}).eq("id", d["id"]).execute()
+        except Exception as e:
+            log.warning("Dopyt %s: oznacenie firmy_notifikovane zlyhalo (%s)", d["id"], e)
+    return poslane, zlyhane
+
+
 # ── SMER 0: DOPYT NEOVERENEJ OBCE -> ADMIN (A6, vlna 82) ────────────────────
 
 ADMIN_EMAIL = os.getenv("NOTIFIKACIA_KOMU") or "info@predtendrom.sk"
@@ -352,15 +429,17 @@ def main():
     sb = create_client(url, servis)
 
     p_poslane, p_zlyhane = posli_poradcom(sb, kluc, args.nasucho, args.komu)
+    f_poslane, f_zlyhane = posli_firmam(sb, kluc, args.nasucho, args.komu)
     o_poslane, o_zlyhane = posli_obciam(sb, kluc, args.nasucho, args.komu)
     a_poslane, a_zlyhane = upozorni_admina(sb, kluc, args.nasucho, args.komu)
 
+    log.info("Firmam poslanych %s (zlyhanych %s)", f_poslane, f_zlyhane)
     log.info("Hotovo%s: poradcom poslanych %s (zlyhanych %s), "
              "obciam poslanych %s (zlyhanych %s), "
              "upozorneni adminovi %s (zlyhanych %s)",
              "  [NASUCHO]" if args.nasucho else "",
              p_poslane, p_zlyhane, o_poslane, o_zlyhane, a_poslane, a_zlyhane)
-    if (p_zlyhane or o_zlyhane or a_zlyhane) and not (p_poslane or o_poslane or a_poslane):
+    if (p_zlyhane or o_zlyhane or a_zlyhane or f_zlyhane) and not (p_poslane or o_poslane or a_poslane or f_poslane):
         return 1
     return 0
 
