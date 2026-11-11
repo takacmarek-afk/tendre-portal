@@ -2721,8 +2721,10 @@ function nastavZalozky(prednastavena) {
   function prepni(ktora) {
     for (const b of document.querySelectorAll('.zal')) {
       const je = b.dataset.zalozka === ktora;
+      // Skryta zalozka (napr. prazdna "Obce, ktore o dotaciu ziadaju") ostava skryta.
+      const skryta = b.classList.contains('hidden');
       b.className = 'zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px ' +
-                    'whitespace-nowrap ' + (je ? AKTIVNA : NEAKTIVNA);
+                    'whitespace-nowrap ' + (je ? AKTIVNA : NEAKTIVNA) + (skryta ? ' hidden' : '');
       el(b.dataset.zalozka).classList.toggle('hidden', !je);
     }
     // Pruh "Prehlad e-mailom" len na nastenke Dnes (audit 11. 11. 2026, bod 8),
@@ -6424,11 +6426,15 @@ async function dashboard(supabase, rola, spravaPozvanky) {
 
     function naplnFiltre() {
       const k = el('ef-kraj').value, sk = el('ef-sektor').value;
-      naplnSelect('ef-kraj', KRAJE.map(x => [x, x]),
+      // Start: len kraje a odbory z jeho vyberu (2 + 2), nie cele Slovensko.
+      const kraje = jeStart ? KRAJE.filter(x => vyberKraje().includes(x)) : KRAJE;
+      const odbory = jeStart ? efSektory.filter(([x]) => vyberSektory().includes(x)) : efSektory;
+      naplnSelect('ef-kraj', kraje.map(x => [x, x]),
         popisVyberu(vyberKraje(), x => x.replace(' kraj', '')) || (jeStart ? 'všetky z môjho výberu' : 'celé Slovensko'));
-      naplnSelect('ef-sektor', efSektory,
+      naplnSelect('ef-sektor', odbory,
         popisVyberu(vyberSektory(), x => POPIS_SEKTORA[x] || x) || (jeStart ? 'všetky z môjho výberu' : 'všetky odbory'));
-      el('ef-kraj').value = k; el('ef-sektor').value = sk;
+      if ([...el('ef-kraj').options].some(o => o.value === k)) el('ef-kraj').value = k;
+      if ([...el('ef-sektor').options].some(o => o.value === sk)) el('ef-sektor').value = sk;
     }
 
     async function nacitaj() {
