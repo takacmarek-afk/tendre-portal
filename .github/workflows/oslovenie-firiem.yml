@@ -27,6 +27,10 @@ on:
     - cron: "17 7 * * 1-4"   # 8:17 SEC (zima); skor ako 9:13, lebo GitHub planovane behy oneskoruje a okno je 8:00-16:00
   workflow_dispatch:
     inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
       krok:
         description: "Krok"
         type: choice
@@ -64,6 +68,10 @@ concurrency:
   group: oslovenie-firiem
   cancel-in-progress: false
 
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
+
 jobs:
   oslovenie:
     runs-on: ubuntu-latest
@@ -89,11 +97,11 @@ jobs:
           # 10. 11. 2026: odpovede do schranky, ktoru cita pipeline/odpovede.py (schvalil Marek)
           KAMPAN_REPLY_TO: marek@predtendrom.sk
           KROK: ${{ inputs.krok || 'posli' }}
-          NASUCHO: ${{ github.event_name == 'schedule' && 'false' || inputs.nasucho }}
-          SEGMENTY: ${{ github.event_name == 'schedule' && 'UPRATOVANIE,OSTRAHA,STRAVOVANIE,ZELEN_ZIMNA_UDRZBA,UPRATOVANIE_TOVAR,OSTRAHA_TECHNIKA,STAVEBNE_PRACE,IT_TECHNIKA,ODPAD,ELEKTROINSTALACIE,KURENIE_VODA_PLYN,STRECHY_IZOLACIE,OKNA_DVERE_POVRCHY,DOPRAVA_MECHANIZACIA,TLAC_KANCELARIA,PASPORTIZACIA_SPRAVA_BUDOV' || inputs.segmenty }}
-          NOVYCH: ${{ github.event_name == 'schedule' && '30' || inputs.novych }}
+          NASUCHO: ${{ env.UDALOST == 'schedule' && 'false' || inputs.nasucho }}
+          SEGMENTY: ${{ env.UDALOST == 'schedule' && 'UPRATOVANIE,OSTRAHA,STRAVOVANIE,ZELEN_ZIMNA_UDRZBA,UPRATOVANIE_TOVAR,OSTRAHA_TECHNIKA,STAVEBNE_PRACE,IT_TECHNIKA,ODPAD,ELEKTROINSTALACIE,KURENIE_VODA_PLYN,STRECHY_IZOLACIE,OKNA_DVERE_POVRCHY,DOPRAVA_MECHANIZACIA,TLAC_KANCELARIA,PASPORTIZACIA_SPRAVA_BUDOV' || inputs.segmenty }}
+          NOVYCH: ${{ env.UDALOST == 'schedule' && '30' || inputs.novych }}
           KOMU: ${{ inputs.komu }}
-          MAX: ${{ github.event_name == 'schedule' && '45' || inputs.max }}
+          MAX: ${{ env.UDALOST == 'schedule' && '45' || inputs.max }}
           ICO: ${{ inputs.ico }}
         run: |
           set -euo pipefail
@@ -101,7 +109,7 @@ jobs:
           # Mimo okna 8:00-16:00 sa nic neposiela; planovany beh vtedy skonci
           # bez chyby (posiela aj naplanovana uloha o 8:21, unikatnost ico+krok
           # zabrani dvojitemu poslaniu).
-          if [ "${{ github.event_name }}" = "schedule" ]; then
+          if [ "${{ env.UDALOST }}" = "schedule" ]; then
             H=$(TZ=Europe/Bratislava date +%H)
             if [ "$H" -lt 8 ] || [ "$H" -ge 16 ]; then
               echo "::notice::Planovany beh prisiel o $H:00 (mimo 8-16), nic sa neposiela."
@@ -122,14 +130,14 @@ jobs:
           esac
 
       - name: Zhrnutie (anotacia, bez e-mailovych adries)
-        if: (inputs.krok == 'posli' || github.event_name == 'schedule') && always()
+        if: (inputs.krok == 'posli' || env.UDALOST == 'schedule') && always()
         run: |
           [ -f beh.log ] || exit 0
           S=$(grep -E "Kontaktov|Novych firiem|Odbor nesedel|NASUCHO|OSTRO|HOTOVO|CHYBA|ERROR|krok [123] " beh.log | sed -E 's/<[^>]*>//; s/ -> [^ |]+@[^ |]+//; s/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+//g' | head -60 | sed ':a;N;$!ba;s/\n/%0A/g')
           echo "::notice title=Oslovenie firiem::$S"
 
       - name: Nahlad e-mailov
-        if: (inputs.krok == 'posli' || github.event_name == 'schedule') && always()
+        if: (inputs.krok == 'posli' || env.UDALOST == 'schedule') && always()
         uses: actions/upload-artifact@v4
         with:
           name: oslovenie-nahlad

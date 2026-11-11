@@ -39,6 +39,10 @@ name: RUZ financny kontext
 on:
   workflow_dispatch:
     inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
       limit:
         description: "Kolko ICO spracovat v tomto behu"
         type: string
@@ -69,6 +73,10 @@ concurrency:
   group: ruz-financie
   cancel-in-progress: false
 
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
+
 jobs:
   obohat:
     runs-on: ubuntu-latest
@@ -93,9 +101,9 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           # Rovnaky dovod ako v pozvanky.yml/email.yml: vstupy idu cez
           # premenne prostredia, nie priamo interpolovane do shell prikazu.
-          EVENT: ${{ github.event_name }}
-          LIMIT: ${{ inputs.limit }}
-          FORCE: ${{ inputs.force }}
+          EVENT: ${{ env.UDALOST }}
+          LIMIT: ${{ (env.UDALOST != 'schedule' && inputs.limit || '') }}
+          FORCE: ${{ (env.UDALOST != 'schedule' && inputs.force || '') }}
           NASUCHO: ${{ inputs.nasucho }}
         run: |
           set -euo pipefail
@@ -117,12 +125,12 @@ jobs:
         if: |
           steps.obohat.outputs.zostava == 'true' &&
           steps.obohat.outputs.spracovanych != '0' &&
-          github.event_name == 'workflow_dispatch' &&
+          env.UDALOST == 'workflow_dispatch' &&
           !inputs.nasucho
         env:
           GH_TOKEN: ${{ github.token }}
-          NEXT_LIMIT: ${{ inputs.limit }}
-          NEXT_FORCE: ${{ inputs.force }}
+          NEXT_LIMIT: ${{ (env.UDALOST != 'schedule' && inputs.limit || '') }}
+          NEXT_FORCE: ${{ (env.UDALOST != 'schedule' && inputs.force || '') }}
         run: |
           set -euo pipefail
           echo "Zostavaju dalsie ICO (spracovanych v tomto behu: ${{ steps.obohat.outputs.spracovanych }}), spustam dalsi beh."

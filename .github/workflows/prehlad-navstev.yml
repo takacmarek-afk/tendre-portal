@@ -2,12 +2,21 @@ name: Prehlad navstev
 
 # Suhrnne cisla navstevnosti a lievika ako anotacia behu (bez osobnych udajov).
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
   schedule:
     - cron: "41 6 * * 1"   # pondelok rano: tyzdenny lievik (cita ho tyzdenna kontrola)
 
 permissions:
   contents: read
+
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
 
 jobs:
   prehlad:

@@ -24,6 +24,10 @@ name: Dopyty email
 on:
   workflow_dispatch:
     inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
       nasucho:
         description: "Nasucho — nic neposielat, len vypisat (nechaj true, kym si neistý)"
         type: boolean
@@ -45,6 +49,10 @@ permissions:
 concurrency:
   group: dopyty-email
   cancel-in-progress: false
+
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
 
 jobs:
   posli:
@@ -70,7 +78,7 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           # Rovnaky dovod ako v email.yml: vstupy chodia cez premenne
           # prostredia, nie priamo vlepene do shell prikazu.
-          EVENT: ${{ github.event_name }}
+          EVENT: ${{ env.UDALOST }}
           NASUCHO: ${{ inputs.nasucho }}
           KOMU: ${{ inputs.komu }}
         run: |
@@ -94,7 +102,7 @@ jobs:
       # zlyhanie dopytov nezastavi potvrdenia. Skript posle len riadkom
       # s potvrdzovaci_email_at IS NULL, takze nic neposle dvakrat.
       - name: Poslat potvrdzovacie e-maily pre odber obci (len plan)
-        if: ${{ always() && github.event_name == 'schedule' }}
+        if: ${{ always() && env.UDALOST == 'schedule' }}
         working-directory: pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

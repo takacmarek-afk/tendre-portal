@@ -19,7 +19,12 @@ name: Zmluvy podstranky
 # ══════════════════════════════════════════════════════════════════════════
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
 
   schedule:
     - cron: "35 6 * * 1-5"
@@ -30,6 +35,10 @@ permissions:
 concurrency:
   group: commit-main
   cancel-in-progress: false
+
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
 
 jobs:
   generuj:

@@ -27,6 +27,10 @@ name: Vestnik UVO
 on:
   workflow_dispatch:
     inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
       nasucho:
         description: "Nasucho — nic nezapisat, len vypisat statistiku"
         type: boolean
@@ -57,6 +61,10 @@ concurrency:
   group: uvo
   cancel-in-progress: false
 
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
+
 jobs:
   vestnik:
     runs-on: ubuntu-latest
@@ -80,11 +88,11 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           UVO_TIME_BUDGET_MIN: "45"
-          EVENT: ${{ github.event_name }}
+          EVENT: ${{ env.UDALOST }}
           NASUCHO: ${{ inputs.nasucho }}
-          LIMIT: ${{ inputs.limit }}
-          OD_ROK: ${{ inputs.od_rok }}
-          VESTNIK: ${{ inputs.vestnik }}
+          LIMIT: ${{ (env.UDALOST != 'schedule' && inputs.limit || '') }}
+          OD_ROK: ${{ (env.UDALOST != 'schedule' && inputs.od_rok || '') }}
+          VESTNIK: ${{ (env.UDALOST != 'schedule' && inputs.vestnik || '') }}
         run: |
           set -euo pipefail
           ARGS=(--limit "${LIMIT:-400}" --od-rok "${OD_ROK:-2025}")
@@ -100,7 +108,7 @@ jobs:
       # Zmluvy bez dohladatelnej sutaze (migracia 88): po kazdom ostrom behu
       # znova porovna velke zmluvy z CRZ s Vestnikom. Do logu len pocty.
       - name: Zmluvy bez dohladatelnej sutaze
-        if: github.event_name == 'schedule' || inputs.nasucho != true
+        if: env.UDALOST == 'schedule' || inputs.nasucho != true
         continue-on-error: true
         working-directory: pipeline
         env:
@@ -112,12 +120,12 @@ jobs:
         if: |
           steps.uvo.outputs.zostava == 'true' &&
           steps.uvo.outputs.spracovanych != '0' &&
-          github.event_name == 'workflow_dispatch' &&
+          env.UDALOST == 'workflow_dispatch' &&
           inputs.nasucho != true
         env:
           GH_TOKEN: ${{ github.token }}
-          NEXT_LIMIT: ${{ inputs.limit }}
-          NEXT_OD_ROK: ${{ inputs.od_rok }}
+          NEXT_LIMIT: ${{ (env.UDALOST != 'schedule' && inputs.limit || '') }}
+          NEXT_OD_ROK: ${{ (env.UDALOST != 'schedule' && inputs.od_rok || '') }}
         run: |
           set -euo pipefail
           sleep 10

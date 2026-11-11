@@ -8,6 +8,10 @@ name: Tyzdenny prehlad pre firmy
 on:
   workflow_dispatch:
     inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
       nasucho:
         description: "Nasucho — nic neposielat, len vypisat"
         type: boolean
@@ -21,6 +25,10 @@ permissions:
 concurrency:
   group: odber-firmy
   cancel-in-progress: false
+
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
 
 jobs:
   posli:
@@ -44,7 +52,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          EVENT: ${{ github.event_name }}
+          EVENT: ${{ env.UDALOST }}
           NASUCHO: ${{ inputs.nasucho }}
         run: |
           set -euo pipefail

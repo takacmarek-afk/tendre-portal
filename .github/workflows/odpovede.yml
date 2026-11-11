@@ -9,6 +9,10 @@ on:
     - cron: "47 13 * * 1-5"   # ~14:47 SEC
   workflow_dispatch:
     inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
       ostro:
         description: "Ostro: zapisat stav a poslat zdvorile vety pri jasnom Nie"
         type: boolean
@@ -20,6 +24,10 @@ permissions:
 concurrency:
   group: odpovede
   cancel-in-progress: false
+
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
 
 jobs:
   odpovede:
@@ -40,4 +48,4 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
           ZOHO_IMAP_PASSWORD: ${{ secrets.ZOHO_IMAP_PASSWORD }}
-        run: python odpovede.py ${{ (github.event_name == 'schedule' || inputs.ostro) && '--ostro' || '' }}
+        run: python odpovede.py ${{ (env.UDALOST == 'schedule' || inputs.ostro) && '--ostro' || '' }}

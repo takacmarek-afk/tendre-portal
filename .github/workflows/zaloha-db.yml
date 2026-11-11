@@ -20,7 +20,12 @@ name: Zaloha databazy
 on:
   schedule:
     - cron: "17 2 * * *"      # 02:17 UTC kazdy den (zapnute 23. 10. 2026 po prvom uspesnom behu)
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -28,6 +33,10 @@ permissions:
 concurrency:
   group: zaloha-db
   cancel-in-progress: false
+
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
 
 jobs:
   zaloha:

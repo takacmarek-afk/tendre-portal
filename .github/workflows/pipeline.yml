@@ -6,6 +6,10 @@ on:
     - cron: "10 5 * * 1-5"
   workflow_dispatch:
     inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
       bootstrap:
         description: "Prvotne naplnenie databazy (spusta sa dokola, kym nedobehne)"
         type: boolean
@@ -42,6 +46,10 @@ concurrency:
   group: pipeline
   cancel-in-progress: false
 
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
+
 jobs:
   run:
     runs-on: ubuntu-latest
@@ -64,12 +72,12 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          TIME_BUDGET_MIN: ${{ inputs.budget || '45' }}
-          POVOLENY_POKLES: ${{ inputs.povoleny_pokles }}
+          TIME_BUDGET_MIN: ${{ (env.UDALOST != 'schedule' && inputs.budget || '') || '45' }}
+          POVOLENY_POKLES: ${{ (env.UDALOST != 'schedule' && inputs.povoleny_pokles || '') }}
           # Vstupy workflowu idu cez env, nie priamo do shellu (injection).
-          IN_IBA_PREPOCET: ${{ inputs.iba_prepocet }}
-          IN_BOOTSTRAP: ${{ inputs.bootstrap }}
-          IN_BUDGET: ${{ inputs.budget || '300' }}
+          IN_IBA_PREPOCET: ${{ (env.UDALOST != 'schedule' && inputs.iba_prepocet || '') }}
+          IN_BOOTSTRAP: ${{ (env.UDALOST != 'schedule' && inputs.bootstrap || '') }}
+          IN_BUDGET: ${{ (env.UDALOST != 'schedule' && inputs.budget || '') || '300' }}
         run: |
           if [ "$IN_IBA_PREPOCET" = "true" ]; then
             python main.py --iba-prepocet
@@ -87,12 +95,12 @@ jobs:
       - name: Pokracovat, ak bootstrap nedobehol
         if: >
           always() &&
-          inputs.bootstrap == true &&
+          (env.UDALOST != 'schedule' && inputs.bootstrap || '') == true &&
           steps.pipeline.outputs.hotovo == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
-          CHAIN: ${{ inputs.chain || '0' }}
-          BUDGET: ${{ inputs.budget || '300' }}
+          CHAIN: ${{ (env.UDALOST != 'schedule' && inputs.chain || '') || '0' }}
+          BUDGET: ${{ (env.UDALOST != 'schedule' && inputs.budget || '') || '300' }}
         run: |
           DALSI=$((CHAIN + 1))
           if [ "$DALSI" -ge 10 ]; then

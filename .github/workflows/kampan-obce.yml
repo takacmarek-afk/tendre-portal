@@ -36,6 +36,10 @@ on:
     - cron: "23 7 * * 2-4"   # 8:23 SEC (zima)
   workflow_dispatch:
     inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
       krok:
         description: "Krok"
         type: choice
@@ -70,6 +74,10 @@ concurrency:
   group: kampan-obce
   cancel-in-progress: false
 
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
+
 jobs:
   kampan:
     runs-on: ubuntu-latest
@@ -95,11 +103,11 @@ jobs:
           KAMPAN_REPLY_TO: ${{ secrets.KAMPAN_REPLY_TO }}
           KAMPAN_TELEFON: ${{ secrets.KAMPAN_TELEFON }}
           KROK: ${{ inputs.krok || 'posli' }}
-          NASUCHO: ${{ github.event_name == 'schedule' && 'false' || inputs.nasucho }}
+          NASUCHO: ${{ env.UDALOST == 'schedule' && 'false' || inputs.nasucho }}
           VLNA: ${{ inputs.vlna || 'vlna1' }}
           KOMU: ${{ inputs.komu }}
           MAX: ${{ inputs.max || vars.KAMPAN_OBCE_MAX || '50' }}
-          PLANOVANY: ${{ github.event_name == 'schedule' }}
+          PLANOVANY: ${{ env.UDALOST == 'schedule' }}
           ROK: ${{ inputs.rok }}
         run: |
           set -euo pipefail

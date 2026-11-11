@@ -1,0 +1,8 @@
+# Cloudflare Worker: planovac GitHub workflowov (viz worker.js)
+name = "predtendrom-planovac"
+main = "worker.js"
+compatibility_date = "2026-11-01"
+workers_dev = true
+
+[triggers]
+crons = ["* * * * *"]

@@ -7,6 +7,10 @@ on:
     - cron: "47 7 * * *"
   workflow_dispatch:
     inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
       nasucho:
         description: "Len vypisat"
         type: boolean
@@ -14,6 +18,10 @@ on:
 
 permissions:
   contents: read
+
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
 
 jobs:
   zdravie:
@@ -33,4 +41,4 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
-        run: python zdravie_dat.py ${{ (github.event_name == 'workflow_dispatch' && inputs.nasucho) && '--nasucho' || '' }}
+        run: python zdravie_dat.py ${{ (env.UDALOST == 'workflow_dispatch' && inputs.nasucho) && '--nasucho' || '' }}

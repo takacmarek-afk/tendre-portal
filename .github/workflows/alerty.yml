@@ -25,6 +25,10 @@ name: Sused uz stavia
 on:
   workflow_dispatch:
     inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
       nasucho:
         description: "Nasucho — nic neposielat, len vypisat (nechaj true, kym si neistý)"
         type: boolean
@@ -44,6 +48,10 @@ permissions:
 concurrency:
   group: alerty
   cancel-in-progress: false
+
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
 
 jobs:
   posli:
@@ -69,7 +77,7 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           # Rovnaky dovod ako v email.yml/pozvanky.yml: vstup ide cez
           # premennu prostredia, nie priamo interpolovany do shell prikazu.
-          EVENT: ${{ github.event_name }}
+          EVENT: ${{ env.UDALOST }}
           NASUCHO: ${{ inputs.nasucho }}
           KOMU: ${{ inputs.komu }}
         run: |

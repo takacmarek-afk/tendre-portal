@@ -17,7 +17,12 @@ name: Obce podstranky
 # ══════════════════════════════════════════════════════════════════════════
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
 
   # Raz do tyzdna staci — kraj_prehlad sa meni len tak rychlo, ako pribuda
   # novych dotacnych zmluv v CRZ (dennemu cronu pipeline.yml). Iny den
@@ -32,6 +37,10 @@ permissions:
 concurrency:
   group: commit-main
   cancel-in-progress: false
+
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
 
 jobs:
   generuj:

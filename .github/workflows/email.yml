@@ -22,6 +22,10 @@ name: Email
 on:
   workflow_dispatch:
     inputs:
+      planovane:
+        description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
+        type: boolean
+        default: false
       nasucho:
         description: "Nasucho — nic neposielat, len vypisat (nechaj true, kym si neistý)"
         type: boolean
@@ -44,6 +48,10 @@ permissions:
 concurrency:
   group: email
   cancel-in-progress: false
+
+env:
+  # Planovany beh = GitHub cron ALEBO externy planovac (workflow_dispatch s planovane=true)
+  UDALOST: ${{ (github.event_name == 'schedule' || inputs.planovane) && 'schedule' || github.event_name }}
 
 jobs:
   posli:
@@ -73,7 +81,7 @@ jobs:
           # napisat prikaz a ten by sa vykonal. Spustit ho vies len ty,
           # takze to nebola dira do sveta, ale je to vzor, ktory sa
           # v CI nepise. Takto sa hodnota k shellu dostane ako DATA.
-          EVENT: ${{ github.event_name }}
+          EVENT: ${{ env.UDALOST }}
           NASUCHO: ${{ inputs.nasucho }}
           KOMU: ${{ inputs.komu }}
         run: |
