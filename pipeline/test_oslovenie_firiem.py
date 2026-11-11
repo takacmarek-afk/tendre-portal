@@ -200,8 +200,9 @@ def test_smie_ostro():
     assert of.smie_ostro(datetime(2026, 10, 31, 22, 0), True) is None
 
 
-def test_variant_ab_je_stabilny():
-    assert of.variant_pre("36034762") == "A" and of.variant_pre("36034761") == "B"
+def test_vsetci_dostavaju_variant_a():
+    # A/B test rozhodnuty 11. 11. 2026 (A 42 % navstev, B 18 %)
+    assert of.variant_pre("36034762") == "A" and of.variant_pre("36034761") == "A"
 
 
 def test_neposiela_cez_resend():
@@ -300,8 +301,9 @@ def test_odkaz_vedie_na_zoznam_odboru_a_kraja_a_uvadza_sumu():
     h = {**_hook(), "suma12": 1_480_000}
     s = of.zostav(1, KONTAKT, h, "A")
     text, telo = of.vyrenderuj(s, TOKEN)
-    assert "/konciace-zmluvy/ostraha/bratislavsky?utm_source=email" in telo
-    assert "zadajte odbor a kraj" not in text and _slova_tela(text) <= 100
+    # 11. 11. 2026: krok 1 vedie na osobny prehlad firmy podla ICO
+    assert "/kontrola?ico=" in telo and "&amp;utm_source=email" in telo
+    assert "zadajte odbor a kraj" not in text and _slova_tela(text) <= 105
     # krok 2: bezplatny tyzdenny prehlad cez titulku s predvyplnenym vyberom
     text, telo = of.vyrenderuj(of.zostav(2, KONTAKT, h, "A"), TOKEN)
     assert "/?sektor=OSTRAHA&amp;kraj=Bratislavsk%C3%BD+kraj&amp;utm_source=email" in telo

@@ -581,7 +581,12 @@ def zostav(krok, kontakt, hook, variant):
             f"V odbore {odbor} v {kraj_l} {konci} do 12 mesiacov {n} {zml} úradov{za_spolu}. "
             "PredTendrom ich zbiera na jedno miesto a raz týždenne Vám pošle nové, aby ste mali čas "
             "pripraviť sa skôr, než úrad vyhlási súťaž." + veta_eurofondy(hook, odbor_kr, kraj_l),
-            (["Prehľad pre Váš odbor a kraj nájdete bez registrácie tu: ",
+            # 11. 11. 2026: odkaz na osobny prehlad firmy podla ICO (jej zmluvy, trh v odbore
+            # a kraji, eurofondy); po registracii appka predvyplni nazov a ICO
+            (["Prehľad pre " + firma + " (Vaše zmluvy, trh v odbore a kraji) nájdete bez registrácie tu: ",
+              ("a", "predtendrom.sk/kontrola", utm(f"/kontrola?ico={ico8(kontakt['ico'])}", 1, variant))]
+             if kontakt.get("ico") else
+             ["Prehľad pre Váš odbor a kraj nájdete bez registrácie tu: ",
               ("a", "predtendrom.sk" + seo, utm(seo, 1, variant))] if seo else
              ["Ako to vyzerá, ukazuje krátke video: ",
               ("a", "predtendrom.sk" + VIDEO_URL, utm(VIDEO_URL, 1, variant))] if VIDEO_URL else
@@ -698,7 +703,10 @@ def vyrenderuj(sprava, token):
 # ── 4. kto je na rade ──────────────────────────────────────────────────────
 
 def variant_pre(ico):
-    return "A" if int(ico8(ico) or "0") % 2 == 0 else "B"
+    # 11. 11. 2026: A/B test rozhodnuty — krok 1 variant A 8 navstev z 19 (42 %),
+    # variant B 2 z 11 (18 %). Vsetci dostavaju A. Na novy test vratit striedanie:
+    # return "A" if int(ico8(ico) or "0") % 2 == 0 else "B"
+    return "A"
 
 
 def na_rade(kontakty, odoslane, segmenty, vylucene_ica, vylucene_emaily, dnes, novych):

@@ -367,6 +367,9 @@ function vykresli(d) {
   const dalsich = Math.max(0, cislo(d.pocet_dalsich));
   const zoznam = Array.isArray(d.zoznam) ? d.zoznam.slice(0, 3) : [];
   const nazov = typeof d.nazov === 'string' && d.nazov.trim() ? d.nazov.trim() : '';
+  // 11. 11. 2026: po registracii appka predvyplni nazov a ICO (app.html, form-org),
+  // nech clovek zo studeneho e-mailu nemusi nic vypisovat.
+  try { localStorage.setItem('pt_firma_navrh', JSON.stringify({ ico, nazov, t: Date.now() })); } catch (e) {}
 
   if (do24 === 0) {
     const navyse = aktivne > 0

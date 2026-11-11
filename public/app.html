@@ -3164,6 +3164,16 @@ function onboarding(supabase, sprava) {
     ukaz('onb-sprava');
   }
 
+  // 11. 11. 2026: firma, ktoru si clovek pozrel na /kontrola (napr. zo studeneho
+  // e-mailu), sa predvyplni — staci kliknut na Vytvorit pristup. Navrh plati 14 dni.
+  try {
+    const n = JSON.parse(localStorage.getItem('pt_firma_navrh') || 'null');
+    if (n && /^\d{6,8}$/.test(String(n.ico || '')) && Date.now() - (n.t || 0) < 14 * 864e5) {
+      if (!el('ico').value) el('ico').value = String(n.ico).padStart(8, '0');
+      if (!el('nazov').value && n.nazov) el('nazov').value = String(n.nazov).slice(0, 200);
+    }
+  } catch (e) { /* bez navrhu sa formular vyplni rucne */ }
+
   el('form-org').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = el('btn-org'), chyba = el('chyba-org');
