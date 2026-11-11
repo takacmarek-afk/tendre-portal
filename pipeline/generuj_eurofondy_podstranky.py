@@ -26,6 +26,7 @@ log = logging.getLogger("generuj_eurofondy_podstranky")
 
 KOREN = os.path.join(os.path.dirname(__file__), "..", "public")
 VYSTUP_DIR = os.path.join(KOREN, "eurofondy")
+ZMLUVY_DIR = os.path.join(KOREN, "konciace-zmluvy")   # krizovy odkaz len na existujucu stranku
 SITEMAP_CESTA = os.path.join(KOREN, "sitemap-eurofondy.xml")
 ROBOTS_CESTA = os.path.join(KOREN, "robots.txt")
 PRIKLADOV = 5
@@ -132,7 +133,8 @@ def _stranka(sektor, kraj, a, dostupne):
   </div>""" if zvysok > 0 else ""
     odber_q = urlencode({"sektor": sektor, "kraj": kraj}).replace("&", "&amp;")
     zmluvy = (f' · <a href="/konciace-zmluvy/{slug}/{kslug}" class="text-accent hover:underline">'
-              f'Končiace zmluvy na {_e(info["nazov"])} v kraji</a>')
+              f'Končiace zmluvy na {_e(info["nazov"])} v kraji</a>') \
+        if os.path.exists(os.path.join(ZMLUVY_DIR, slug, f"{kslug}.html")) else ""
     kraje = " ".join(f'<a href="/eurofondy/{slug}/{_slug(k)}" class="text-accent hover:underline">{_e(k.replace(" kraj", ""))}</a>'
                      for k in VSETKY_KRAJE if k != kraj and (sektor, k) in dostupne)
     odbory = " ".join(f'<a href="/eurofondy/{i["slug"]}/{kslug}" class="text-accent hover:underline">{_e(_velke_prve(i["nazov_nom"]))}</a>'

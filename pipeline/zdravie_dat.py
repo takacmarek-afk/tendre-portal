@@ -59,7 +59,10 @@ def skontroluj(sb, dnes):
     out = []
     for zdroj, (tab, stl, limit, popis) in ZDROJE.items():
         try:
-            r = sb.table(tab).select(stl).not_.is_(stl, "null").order(stl, desc=True).limit(1).execute().data
+            # zaznamy s datumom v buducnosti (preklep v zdroji, napr. podpisane 16. 11.)
+            # by zakryli vypadok, preto len do zajtrajska
+            r = (sb.table(tab).select(stl).not_.is_(stl, "null").lte(stl, (dnes + timedelta(days=1)).isoformat())
+                 .order(stl, desc=True).limit(1).execute().data)
             vek = vek_dni(r[0][stl], dnes) if r else None
         except Exception as e:
             out.append((zdroj, None, limit, popis, f"chyba dotazu: {type(e).__name__}"))

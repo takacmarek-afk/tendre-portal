@@ -155,6 +155,7 @@ HLAVICKA = """<!doctype html>
 <meta property="og:image:height" content="630">
 <meta name="twitter:image" content="https://predtendrom.sk/og-image.png">
 <script src="../../config.js"></script>
+<script src="/navsteva.js" defer></script>
 <link rel="preload" href="/fonts/IBMPlexSans-Variable.woff" as="font" type="font/woff" crossorigin>
 <link rel="stylesheet" href="/fonts/fonts.css">
 <link rel="stylesheet" href="/style.css">
