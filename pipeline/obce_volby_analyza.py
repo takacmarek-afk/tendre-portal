@@ -99,7 +99,15 @@ def main():
                   and ico_kluc(k["ico"]) not in ucty]
     data = nacitaj_data(sb, [k["ico"] for k in pouzitelne], date.today())
 
+    # eurofondy: pripravovane obstaravania obce v ITMS21+ (este nevyhlasene)
+    from kampan_obce import _po_davkach, _varianty
+    eu = Counter()
+    for davka in _po_davkach([k["ico"] for k in pouzitelne], 60):
+        for r in (sb.table("itms_vo").select("obstaravatel_ico").in_("obstaravatel_ico", _varianty(davka))
+                  .eq("stav", "Pripravované").is_("vyhlasene_zistene_at", "null").execute().data):
+            eu[ico_kluc(r["obstaravatel_ico"])] += 1
     seg_typ, stav_typ, kraj_ok, druhy = Counter(), Counter(), Counter(), Counter()
+    kombinacie = Counter()
     for k in pouzitelne:
         kod = k.get("kod_obce")
         t = typ_starostu(kod, s22, s26) if kod else "nezname_meno"
@@ -113,11 +121,18 @@ def main():
             for s in SEGMENTY:
                 if d.get(s):
                     druhy[(s, t)] += 1
+            if eu.get(ico_kluc(k["ico"])):
+                druhy[("eurofondy", t)] += 1
+            kombinacie[(seg != "nic_konkretne", bool(eu.get(ico_kluc(k["ico"]))))] += 1
     stlpce = ["novy", "staronovy", "bez_vysledku_2026", "nezname_meno"]
     tab("Kontakty (bez odhlasenych a uctov): stav adresy x starosta", stav_typ, ["ok", "na_kontrolu"], stlpce)
     tab("Adresa ok: hlavny dovod e-mailu (segment) x starosta", seg_typ,
         list(SEGMENTY) + ["nic_konkretne"], stlpce)
-    tab("Adresa ok: obce, ktore maju dany udaj (aj viac naraz)", druhy, list(SEGMENTY), stlpce)
+    tab("Adresa ok: obce, ktore maju dany udaj (aj viac naraz)", druhy, list(SEGMENTY) + ["eurofondy"], stlpce)
+    print("\n== Adresa ok: (mame konkretny udaj, mame pripravovane eurofondy) -> pocet obci")
+    for kl, v in sorted(kombinacie.items()):
+        print(f"  udaj={kl[0]!s:5} eurofondy={kl[1]!s:5} {v:6d}")
+    print(f"  pripravovanych obstaravani z eurofondov pri tychto obciach spolu: {sum(eu.values())}")
     tab("Vlna 1 (adresa ok + konkretny obsah): kraj x starosta", kraj_ok,
         sorted({k for k, _ in kraj_ok}), stlpce)
 
