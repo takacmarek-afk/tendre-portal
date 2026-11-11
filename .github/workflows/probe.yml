@@ -39,7 +39,7 @@ jobs:
 
       - name: Ulozit vysledky
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: probe-results
           path: pipeline/probe_results.csv
