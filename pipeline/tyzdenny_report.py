@@ -74,7 +74,8 @@ def zostav(sb, dni):
     r.append(f"   Pilot prijatý:                 {pocet(sb, 'events', lambda q: q.eq('typ', 'pilot_prijaty').gte('created_at', od))}")
     r.append(f"   Platba začatá / zaplatená:     {udal.get('begin_checkout', 0)} / "
              f"{pocet(sb, 'events', lambda q: q.eq('typ', 'platba_prijata').gte('created_at', od))}")
-    r.append(f"   Odpovede na oslovenie:         {pocet(sb, 'oslovenie_odpovede', lambda q: q.gte('spracovane_at', od), 'message_id')}"
+    r.append(f"   Odpovede (aj automatické a nedoručené): {pocet(sb, 'oslovenie_odpovede', lambda q: q.gte('spracovane_at', od), 'message_id')}, "
+             f"z toho od človeka: {pocet(sb, 'oslovenie_odpovede', lambda q: q.gte('spracovane_at', od).in_('typ', ['nie', 'rucne', 'ine']), 'message_id')}"
              f" (odhlásené firmy spolu: {pocet(sb, 'oslovenie_firiem_kontakty', lambda q: q.not_.is_('odhlasene_at', 'null'), 'ico')})")
 
     # kliky podla kampane (krok/variant) — ktory e-mail funguje
