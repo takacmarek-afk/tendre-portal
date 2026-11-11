@@ -97,7 +97,7 @@
          videohovore — teda presne vtedy, ked to niekto vidi prvy raz. -->
     <nav class="hidden lg:flex items-center gap-8 text-[14px] text-slate2">
       <a href="#vrstvy" class="hover:text-ink transition">Čo sledujeme</a>
-      <a href="#konkurencia" class="hover:text-ink transition">Konkurencia</a>
+      <a href="#konkurencia" class="hover:text-ink transition">Vaša konkurencia</a>
       <a href="./cennik.html" class="hover:text-ink transition">Cenník</a>
       <a href="#hranice" class="hover:text-ink transition">Čo nerobíme</a>
       <!-- Druhe publikum (obce), zamerne odlisene farbou a oddelene
@@ -134,7 +134,7 @@
     <nav class="wrap py-3 flex flex-col text-[15px] text-slate2">
       <a href="./prihlasenie.html" class="mmenu-prihlasit py-2.5 border-b border-line text-ink font-medium hover:text-accent">Prihlásiť sa</a>
       <a href="#vrstvy" class="py-2.5 border-b border-line hover:text-ink">Čo sledujeme</a>
-      <a href="#konkurencia" class="py-2.5 border-b border-line hover:text-ink">Konkurencia</a>
+      <a href="#konkurencia" class="py-2.5 border-b border-line hover:text-ink">Vaša konkurencia</a>
       <a href="./cennik.html" class="py-2.5 border-b border-line hover:text-ink">Cenník</a>
       <a href="#hranice" class="py-2.5 hover:text-ink">Čo nerobíme</a>
       <a href="./obce.html" class="py-2.5 mt-1 text-accent font-medium hover:text-accentDark">Pre obce a mestá &rarr;</a>
@@ -399,76 +399,6 @@
     v minulosti vyhralo. Filtrujete podľa kraja, mesta a sektora, takže
     nemusíte prechádzať zákazky z celého Slovenska.
   </p>
-</section>
-
-<!-- ══════════════ POROVNANIE S TRHOM ══════════════
-     Presunute sem z cennik.html (audit 18.9.2026) — najsilnejsi predajny
-     argument na celom webe bol schovany az na tretom kliku, na podstranke
-     cennika. Ostava aj tam (kto ide priamo na cennik, nech to vidi znova). -->
-<section class="border-y border-line bg-[#F3F5F7]">
-  <div class="wrap py-20 md:py-28">
-    <h2 class="font-serif text-[28px] md:text-[38px] font-bold tracking-tight max-w-2xl leading-tight">
-      Prečo tieto čísla
-    </h2>
-    <p class="mt-5 text-[17px] leading-relaxed text-slate2 max-w-2xl">
-      Väčšina nástrojov na trhu monitoruje tendre, ktoré sú už vyhlásené
-      alebo tesne pred vyhlásením, za ceny od pár eur mesačne po stovky
-      eur ročne. Niektoré už sledujú aj končiace zmluvy. PredTendrom spája
-      štyri zdroje na jednom mieste, pripravované obstarávania z eurofondov, končiace zmluvy,
-      podpísané dotácie a obce, ktoré si práve najali dotačného poradcu, a ukazuje ich s dátumom, ktorý
-      je vo verejných záznamoch. Nepredpovedáme, že tender vznikne, ukazujeme,
-      kde sa o ňom dá začať rozprávať skôr. Náš najlacnejší plán je drahší
-      než jednoduché monitory vyhlásených tendrov, lebo platíte za iný druh
-      údajov, nie za rýchlosť oznámenia.
-    </p>
-    <div id="porovnanie-scroll" class="mt-8 overflow-x-auto">
-      <table class="w-full text-[14px] border-collapse min-w-[560px]">
-        <thead>
-          <tr class="text-left text-slate2 border-b border-line">
-            <th class="py-2 pr-4 font-medium">Nástroj</th>
-            <th class="py-2 pr-4 font-medium">Cena</th>
-            <th class="py-2 font-medium">Čo sleduje</th>
-          </tr>
-        </thead>
-        <tbody class="text-ink">
-          <tr class="border-b border-line/60">
-            <td class="py-2.5 pr-4">TenderMonitor</td>
-            <td class="py-2.5 pr-4">4,99&nbsp;€/mes.</td>
-            <td class="py-2.5">Vyhlásené tendre z viacerých zdrojov, e-mailové upozornenia</td>
-          </tr>
-          <tr class="border-b border-line/60">
-            <td class="py-2.5 pr-4">UVOstat</td>
-            <td class="py-2.5 pr-4">20 / 40 / 80&nbsp;€/rok</td>
-            <td class="py-2.5">Štatistiky a zoznamy obstarávaní od roku 2014</td>
-          </tr>
-          <tr class="border-b border-line/60">
-            <td class="py-2.5 pr-4">TenderRadar</td>
-            <td class="py-2.5 pr-4">19,90&nbsp;€/mes. alebo 199&nbsp;€/rok</td>
-            <td class="py-2.5">Vyhlásené tendre, okamžité upozornenia</td>
-          </tr>
-          <tr class="border-b border-line/60">
-            <td class="py-2.5 pr-4">Tender.sk</td>
-            <td class="py-2.5 pr-4">cena nie je zverejnená</td>
-            <td class="py-2.5">Vyhlásené tendre, plány obstarávania, končiace zmluvy, AI zhrnutie</td>
-          </tr>
-          <tr class="border-b border-line/60">
-            <td class="py-2.5 pr-4">Transpera</td>
-            <td class="py-2.5 pr-4">640 až 1&nbsp;992&nbsp;€/rok</td>
-            <td class="py-2.5">Viac ako 10 zdrojov, AI prioritizácia</td>
-          </tr>
-          <tr>
-            <td class="py-2.5 pr-4 font-semibold">PredTendrom.sk</td>
-            <td class="py-2.5 pr-4 font-semibold">34 až 89&nbsp;€/mes., konečná cena</td>
-            <td class="py-2.5 font-semibold">Pripravované obstarávania z eurofondov, končiace zmluvy, podpísané dotácie, obce, ktoré si najali dotačného poradcu</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="mt-4 text-[12px] text-slate2">Overené 13. októbra 2026 z verejných cenníkov a webov uvedených nástrojov; ceny konkurentov sú bez DPH, naše sú konečné (nie sme platcami DPH). Funkcie sa menia, ak niečo nesedí, napíšte nám a opravíme to.</p>
-    <a href="./cennik.html" class="mt-6 inline-flex items-center gap-1.5 text-[14px] font-semibold text-accent hover:text-accentDark transition">
-      Pozrieť celý cenník &rarr;
-    </a>
-  </div>
 </section>
 
 <!-- ══════════════ CENY NA JEDNOM MIESTE (audit 13.10.2026) ══════════════ -->
