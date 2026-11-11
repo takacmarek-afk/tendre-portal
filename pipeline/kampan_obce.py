@@ -702,12 +702,14 @@ def krok_posli(sb, a):
             continue
         text, telo = vyrenderuj(s, k["token"])
         spravy.append({**s, "ico": k["ico"], "email": k["email"], "token": k["token"],
+                       "staronovy": bool((starosta or {}).get("staronovy")),
                        "starosta": (f"{starosta.get('meno') or ''} {starosta['priezvisko']}".strip()
                                     if starosta else None),
                        "text": text, "html": telo})
-    # najsilnejsi dovod ozvat sa ide prvy
+    # novi starostovia prvi (11. 11. 2026: tie isté zistenia potrebujú najviac),
+    # v ramci nich najsilnejsi dovod ozvat sa
     poradie = {s: i for i, s in enumerate(SEGMENTY + ("followup",))}
-    spravy.sort(key=lambda s: poradie[s["segment"]])
+    spravy.sort(key=lambda s: (s.get("staronovy", False), poradie[s["segment"]]))
 
     pocty = {}
     for s in spravy:
