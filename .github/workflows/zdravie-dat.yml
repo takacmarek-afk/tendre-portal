@@ -3,8 +3,9 @@ name: Zdravie dat
 # Denna straz cerstvosti dat (audit 10. 11. 2026). Pri vypadku zdroja posle
 # e-mail na info@predtendrom.sk a beh skonci chybou.
 on:
-  schedule:
-    - cron: "47 7 * * *"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "47 7 * * *"
   workflow_dispatch:
     inputs:
       planovane:

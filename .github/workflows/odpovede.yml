@@ -4,9 +4,10 @@ name: Odpovede na oslovenie
 # (nie / auto / nedorucene / rucne). Do logu idu len pocty.
 # Ostro 2x denne v pracovne dni (schvalil Marek 10. 11. 2026).
 on:
-  schedule:
-    - cron: "47 7 * * 1-5"    # ~8:47 SEC (zima)
-    - cron: "47 13 * * 1-5"   # ~14:47 SEC
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "47 7 * * 1-5"    # ~8:47 SEC (zima)
+  #   - cron: "47 13 * * 1-5"   # ~14:47 SEC
   workflow_dispatch:
     inputs:
       planovane:

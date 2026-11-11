@@ -8,8 +8,9 @@ on:
         description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
         type: boolean
         default: false
-  schedule:
-    - cron: "41 6 * * 1"   # pondelok rano: tyzdenny lievik (cita ho tyzdenna kontrola)
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "41 6 * * 1"   # pondelok rano: tyzdenny lievik (cita ho tyzdenna kontrola)
 
 permissions:
   contents: read

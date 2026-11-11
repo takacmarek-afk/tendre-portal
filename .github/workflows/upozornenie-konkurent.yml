@@ -15,8 +15,9 @@ on:
         description: "Nasucho — nic neposielat, len vypisat"
         type: boolean
         default: true
-  schedule:
-    - cron: "11 7 * * *"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "11 7 * * *"
 
 permissions:
   contents: read

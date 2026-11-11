@@ -26,8 +26,9 @@ on:
         type: boolean
         default: false
 
-  schedule:
-    - cron: "35 6 * * 1-5"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "35 6 * * 1-5"
 
 permissions:
   contents: write

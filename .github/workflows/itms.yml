@@ -3,8 +3,9 @@ name: ITMS obstaravania
 # Dopocita sektor a kraj obstaravaniam z eurofondov (itms_vo, migracia 97).
 # Samotne data stahuje prehliadac na pocitaci v SR (API pusta len SK adresy).
 on:
-  schedule:
-    - cron: "31 5 * * *"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "31 5 * * *"
   workflow_dispatch:
     inputs:
       planovane:

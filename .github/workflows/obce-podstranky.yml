@@ -28,8 +28,9 @@ on:
   # novych dotacnych zmluv v CRZ (dennemu cronu pipeline.yml). Iny den
   # v tyzdni nez pozvanky/statistiky, aby vsetky tri nebezali v tu istu
   # chvilu.
-  schedule:
-    - cron: "20 6 * * 3"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "20 6 * * 3"
 
 permissions:
   contents: write

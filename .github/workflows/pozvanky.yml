@@ -36,8 +36,9 @@ on:
   # Zapnute vo vlne 81 (6. 10. 2026): UI sluzby "Pozvat kolegu" inak sluby
   # e-mail, ktory by nikdy neodisiel. Spusta sa tiez po kazdom pozvani
   # owner-om rucne cez workflow_dispatch, ak treba urychlit.
-  schedule:
-    - cron: "*/15 * * * *"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "*/15 * * * *"
 
 permissions:
   contents: read

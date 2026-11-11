@@ -40,8 +40,9 @@ on:
   # Kazdych 15 minut, cely tyzden (dopyty a reakcie nie su viazane na
   # pracovny den ako tyzdenny digest v email.yml). Nie je to okamzite, ale
   # je to nepomerne lepsie nez sucasny stav (nic).
-  schedule:
-    - cron: "*/15 * * * *"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "*/15 * * * *"
 
 permissions:
   contents: read

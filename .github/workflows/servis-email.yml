@@ -35,8 +35,9 @@ on:
         type: string
         default: ""
 
-  schedule:
-    - cron: "*/30 * * * *"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "*/30 * * * *"
 
 permissions:
   contents: read

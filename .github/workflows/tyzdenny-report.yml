@@ -3,8 +3,9 @@ name: Tyzdenny prehlad pre Mareka
 # Kazdy pondelok rano e-mail s cislami za tyzden na info@predtendrom.sk
 # (pipeline/tyzdenny_report.py). Do logu len suhrnne cisla.
 on:
-  schedule:
-    - cron: "37 6 * * 1"   # pondelok ~7:37 SEC
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "37 6 * * 1"   # pondelok ~7:37 SEC
   workflow_dispatch:
     inputs:
       planovane:

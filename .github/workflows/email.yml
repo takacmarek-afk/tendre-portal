@@ -39,8 +39,9 @@ on:
   # (05:10 UTC) — nove prilezitosti z toho rana su uz v databaze. Ktori
   # odberatelia naozaj dostanu mail v ktory den, riadi pripraveny_na_dalsi()
   # v posli_email.py, nie tento cron.
-  schedule:
-    - cron: "20 6 * * 1-5"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "20 6 * * 1-5"
 
 permissions:
   contents: read

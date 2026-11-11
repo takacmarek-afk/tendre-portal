@@ -50,8 +50,9 @@ on:
 
   # Denne 06:30 UTC, po hlavnej pipeline (05:10). UVO nahrava cisla do
   # katalogu po davkach s oneskorenim par dni — denny beh ich dozbiera.
-  schedule:
-    - cron: "30 6 * * *"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "30 6 * * *"
 
 permissions:
   contents: read

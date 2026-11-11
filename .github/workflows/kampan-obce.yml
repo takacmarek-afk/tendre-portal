@@ -32,8 +32,9 @@ on:
   # Od 11. 11. 2026 posiela vlnu 1 automaticky (rozhodnutie Mareka): utorok az
   # stvrtok rano. kampan_obce.py sam pusti ostro len od datumu vlny (24. 11.)
   # a len ut-st; mimo okna 8:00-16:00 planovany beh nic neposle.
-  schedule:
-    - cron: "23 7 * * 2-4"   # 8:23 SEC (zima)
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "23 7 * * 2-4"   # 8:23 SEC (zima)
   workflow_dispatch:
     inputs:
       planovane:

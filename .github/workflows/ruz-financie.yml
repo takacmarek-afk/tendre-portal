@@ -59,8 +59,9 @@ on:
   # Raz denne, mimo hlavneho pipeline behu (05:10 UTC, viz pipeline.yml).
   # RUZ zavierky sa menia rocne, ale denna davka postupne pokryje/obnovi
   # celu zakladnu bez toho, aby jeden beh musel spracovat vsetko naraz.
-  schedule:
-    - cron: "40 4 * * *"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "40 4 * * *"
 
 permissions:
   contents: read

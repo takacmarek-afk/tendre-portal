@@ -3,8 +3,9 @@ name: Limit e-mailov
 # Denne skontroluje, kolko e-mailov odislo cez Resend (Free: 100/den, 3000/mesiac).
 # Pri 70 % posle Marekovi upozornenie na info@predtendrom.sk (cez Zoho).
 on:
-  schedule:
-    - cron: "47 15 * * *"
+  # Planovanie: Cloudflare Worker predtendrom-planovac (cloudflare/planovac/worker.js),
+  # GitHub cron meskal 7-9 hodin. Povodne casy (UTC):
+  #   - cron: "47 15 * * *"
   workflow_dispatch:
     inputs:
       planovane:
