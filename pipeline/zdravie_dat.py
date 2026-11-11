@@ -81,11 +81,38 @@ def nove_anon_funkcie(sb):
     return sorted({m["proname"] if isinstance(m, dict) else m for m in mena} - POVOLENE_ANON)
 
 
-def sprava(vysledky, nove):
+def planovac(repo=None, token=None, _get=None, teraz=None):
+    """Cloudflare planovac (cloudflare/planovac) spusta dopyty-email kazdych 15 minut.
+    -> text problemu alebo ''. Bez tokenu (lokalny beh) sa nekontroluje."""
+    repo, token = repo or os.getenv("GITHUB_REPOSITORY"), token or os.getenv("GITHUB_TOKEN")
+    if not (repo and token):
+        return ""
+    if _get is None:
+        import requests
+        _get = requests.get
+    try:
+        r = _get(f"https://api.github.com/repos/{repo}/actions/workflows/dopyty-email.yml/runs",
+                 params={"per_page": 1, "event": "workflow_dispatch"}, timeout=30,
+                 headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json"})
+        behy = r.json().get("workflow_runs") or []
+    except Exception as e:
+        return f"stav plánovača sa nepodarilo zistiť ({type(e).__name__})"
+    if not behy:
+        return "plánovač zatiaľ nespustil žiadnu úlohu"
+    posledny = datetime.fromisoformat(behy[0]["created_at"].replace("Z", "+00:00"))
+    hodin = ((teraz or datetime.now(timezone.utc)) - posledny).total_seconds() / 3600
+    return f"posledné spustenie pred {hodin:.0f} h (má bežať každých 15 minút)" if hodin > 3 else ""
+
+
+def sprava(vysledky, nove, planovac_problem=""):
     zle = [v for v in vysledky if v[4]]
-    if not zle and not nove:
+    if not zle and not nove and not planovac_problem:
         return None
     riadky = [f"- {z}: {p} (limit {l} dní). {o}." for z, _, l, o, p in zle]
+    if planovac_problem:
+        riadky.append(f"- Plánovač úloh (Cloudflare Worker predtendrom-planovac): {planovac_problem}. "
+                      "Skontrolovať v Cloudflare (Workers → predtendrom-planovac → Logs) a či GitHub token "
+                      "GH_TOKEN nevypršal.")
     if nove:
         riadky.append("- Nové funkcie, ktoré smie spustiť anonymný návštevník: " + ", ".join(nove)
                       + ". Skontrolovať, či nevracajú platené dáta.")
@@ -120,7 +147,9 @@ def main(argv=None):
         print(f"{z}: vek {vek} dní (limit {l}) {'PROBLÉM: ' + p if p else 'OK'}")
     if nove:
         print("Nové anonymné funkcie:", ", ".join(nove))
-    s = sprava(v, nove)
+    pl = planovac()
+    print(f"Plánovač: {pl or 'OK'}")
+    s = sprava(v, nove, pl)
     if s:
         print(f"::warning title=Zdravie dát::{s[1].splitlines()[2] if len(s[1].splitlines()) > 2 else s[0]}")
         if not a.nasucho:
