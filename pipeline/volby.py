@@ -73,7 +73,10 @@ def rozober(text: str, rok: int, zdroj_url: str = None):
     nou (nazov tabulky) sa preskocia. Riadok bez kodu obce alebo bez
     priezviska (napr. obec, kde sa volby nekonali) sa vynecha.
     """
-    riadky = list(csv.reader(io.StringIO(text), delimiter=";"))
+    # 2022: oddelovac ';' bez uvodzoviek, 2026: ',' s uvodzovkami (overene 11. 11. 2026)
+    hlava = next((l for l in text.splitlines() if "riezvisko" in l), "")
+    oddel = "," if hlava.count(",") > hlava.count(";") else ";"
+    riadky = list(csv.reader(io.StringIO(text), delimiter=oddel))
     hlav_i = next((i for i, r in enumerate(riadky)
                    if any(_norm(x) == "priezvisko" for x in r)), None)
     if hlav_i is None:
