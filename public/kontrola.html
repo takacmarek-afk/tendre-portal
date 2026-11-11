@@ -412,6 +412,25 @@ function vykresli(d) {
     ? `<p class="kz-dalsie">a ešte ${dalsich} ${tvar(dalsich, 'ďalšia zmluva', 'ďalšie zmluvy', 'ďalších zmlúv')}, ktoré končia do 24 mesiacov</p>`
     : '';
 
+  // Casovy pas (11. 11. 2026): kedy zmluvy koncia, bez citania troch cisel.
+  // pocty v RPC su kumulativne (do 12 obsahuje aj do 6), preto rozdiely.
+  const useky = [
+    { n: do6, txt: 'do 6 mesiacov', farba: '#B25313', pismo: '#fff' },
+    { n: Math.max(0, do12 - do6), txt: '6 až 12 mesiacov', farba: '#E2A574', pismo: '#3B1D06' },
+    { n: Math.max(0, do24 - do12), txt: '12 až 24 mesiacov', farba: '#F3DCC8', pismo: '#3B1D06' },
+  ];
+  const spolu = useky.reduce((a, u) => a + u.n, 0);
+  const pas = spolu > 0 ? `
+    <div role="img" aria-label="${useky.map((u) => `${u.n} ${u.txt}`).join(', ')}" style="margin-top:1.25rem">
+      <p style="font-size:13px;color:var(--slate2,#5B6573);margin:0 0 6px">Kedy vaše zmluvy končia (od dnes):</p>
+      <div style="display:flex;height:34px;border-radius:6px;overflow:hidden;border:1px solid #E3E7EC">
+        ${useky.map((u) => u.n > 0 ? `<div title="${u.n} ${u.txt}" style="flex:${u.n} 1 0;min-width:44px;background:${u.farba};color:${u.pismo};display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px">${u.n}</div>` : '').join('')}
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:6px;font-size:12px;color:var(--slate2,#5B6573)">
+        ${useky.map((u) => `<span style="display:inline-flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:${u.farba};border:1px solid #E3E7EC"></span>${u.txt}</span>`).join('')}
+      </div>
+    </div>` : '';
+
   const najblizsi = d.najblizsi_koniec
     ? `<p class="kz-dalsie">Najbližšia z vašich zmlúv končí ${bezpecne(datumSk(d.najblizsi_koniec))}.</p>` : '';
 
@@ -419,6 +438,7 @@ function vykresli(d) {
     <h2 class="kz-nazov">${bezpecne(nazov || 'IČO ' + ico)}</h2>
     ${nazov ? `<p class="kz-ico-riadok">IČO ${bezpecne(ico)}</p>` : ''}
     <div class="kz-karty">${karty}</div>
+    ${pas}
     ${najblizsi}
     <h3 class="kz-h2">Najbližšie končiace zmluvy</h3>
     <ul class="kz-zoznam">${riadky}</ul>

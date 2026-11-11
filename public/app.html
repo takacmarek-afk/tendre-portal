@@ -474,7 +474,7 @@
            sutazi a vyhlasene sutaze. Data plni pipeline/uvo.py. -->
       <button data-zalozka="sutaze"
               class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap">
-        Súťaže ÚVO <span id="pocet-u" class="font-normal text-slate2"></span>
+        Vyhlásené súťaže <span id="pocet-u" class="font-normal text-slate2"></span>
       </button>
       <button data-zalozka="dodavatelia"
               class="zal px-4 py-2.5 text-[14px] font-semibold border-b-2 -mb-px whitespace-nowrap">
@@ -1131,7 +1131,7 @@
               <thead class="bg-[#F3F5F7] border-b border-line">
                 <tr class="text-[12px] font-semibold text-slate2">
                   <th class="px-4 py-2">Sektor</th>
-                  <th class="px-4 py-2 text-right whitespace-nowrap">Medián</th>
+                  <th class="px-4 py-2 text-right whitespace-nowrap" title="Prostredná hodnota: polovica zmlúv je lacnejšia, polovica drahšia">Medián (prostredná cena)</th>
                   <th class="px-4 py-2 text-right whitespace-nowrap">Posledná cena</th>
                   <th class="px-4 py-2 text-right whitespace-nowrap">Vzoriek</th>
                 </tr>
@@ -1788,9 +1788,9 @@ function porovnanieCeny(b) {
     // Viac nez trojnasobok medianu je takmer vzdy iny rozsah zmluvy (vacsia
     // budova, viac objektov), nie draha zmluva — audit 22. 10. 2026.
     riadky.push(Math.abs(o) < 10
-      ? 'na úrovni mediánu sektora'
-      : o > 200 ? 'viac ako 3× medián sektora, pravdepodobne iný rozsah'
-      : `${o > 0 ? '+' : ''}${o} % oproti mediánu`);
+      ? 'na úrovni prostrednej ceny v odbore'
+      : o > 200 ? 'viac ako 3× prostredná cena v odbore, pravdepodobne iný rozsah'
+      : `${o > 0 ? '+' : ''}${o} % oproti prostrednej cene v odbore`);
   }
 
   const doplnok = maKotvu
@@ -1800,9 +1800,27 @@ function porovnanieCeny(b) {
         : `<span class="opacity-60">(v tomto sektore neporovnávame,
              ceny sú príliš rozptýlené)</span>`);
 
+  // Graficky „je cena bezna?“ (11. 11. 2026): sivy pas = stredna polovica zmluv
+  // v odbore (q1–q3), ciarka = prostredna cena, bodka = tato zmluva. Len ked
+  // porovnanie ma zmysel (maKotvu), inak by obrazok klamal rovnako ako percento.
+  let pas = '';
+  if (maKotvu && q3 > q1) {
+    const lo = Math.min(q1 * 0.5, cena), hi = Math.max(q3 * 1.5, cena);
+    const x = (v) => Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100)).toFixed(1);
+    pas = `<div role="img" aria-label="Cena tejto zmluvy oproti bežným cenám v odbore: ${bezpecne(riadky[1] || '')}"
+                title="Sivé = bežné ceny v odbore (stredná polovica z ${vz} zmlúv), čiarka = prostredná cena, bodka = táto zmluva"
+                style="position:relative;height:14px;width:160px;max-width:100%;margin-top:4px">
+              <div style="position:absolute;left:0;right:0;top:6px;height:2px;background:#E3E7EC;border-radius:1px"></div>
+              <div style="position:absolute;left:${x(q1)}%;width:${(x(q3) - x(q1)).toFixed(1)}%;top:3px;height:8px;background:#CBD2DA;border-radius:4px"></div>
+              <div style="position:absolute;left:${x(med)}%;top:1px;height:12px;width:2px;margin-left:-1px;background:#5B6573"></div>
+              <div style="position:absolute;left:${x(cena)}%;top:2px;height:10px;width:10px;margin-left:-5px;border-radius:50%;background:#B25313;border:1.5px solid #fff"></div>
+            </div>`;
+  }
+
   return `<div class="text-[12px] text-slate2 mt-1.5"
                title="${bezpecne(pasmo)} z ${vz} zmlúv.">
             ${bezpecne(riadky.join(' · '))} ${doplnok}
+            ${pas}
           </div>`;
 }
 
@@ -4119,8 +4137,27 @@ function nastavDnes(supabase, ctx) {
       const n = pocetAleboNull(a);
       if (n === null) throw a.error || new Error('Zasoba sa nenacitala');
       const riadky = c.error ? null : (c.data ?? []);
+      // Po mesiacoch (11. 11. 2026, graf na nastenke): 12 kalendarnych mesiacov
+      // od dnes, pocty cez count/head — presne aj pri viac ako 1 000 zmluvach.
+      let mesiace = null;
+      if (n > 0) {
+        try {
+          const dnes = new Date();
+          const hranice = Array.from({ length: 12 }, (_, i) => {
+            const od = i === 0 ? new Date(dnes) : new Date(dnes.getFullYear(), dnes.getMonth() + i, 1);
+            const po = new Date(dnes.getFullYear(), dnes.getMonth() + i + 1, 0);
+            return { od: dnesLokalne(od), po: dnesLokalne(po), m: od.getMonth(), r: od.getFullYear() };
+          });
+          const pocty = await Promise.all(hranice.map((h) =>
+            ctx.obmedz(hlava().gte('effective_to', h.od).lte('effective_to', h.po))));
+          if (pocty.every((x) => pocetAleboNull(x) !== null)) {
+            mesiace = hranice.map((h, i) => ({ ...h, n: pocetAleboNull(pocty[i]) }));
+          }
+        } catch (e) { mesiace = null; }   // graf je doplnok, text ostava
+      }
       return {
         n,
+        mesiace,
         n6: pocetAleboNull(b),
         suma: riadky && riadky.length < 1000 ? riadky.reduce((x, r) => x + (num(r.price_total) || 0), 0) : null,
       };
@@ -4275,6 +4312,31 @@ function nastavDnes(supabase, ctx) {
   const prazdnyStav = (text, tlacidla = '') => `
     <p class="text-[13px] leading-relaxed text-slate2">${bezpecne(text)}</p>${tlacidla}`;
 
+  // Stlpce „kolko zmluv konci v ktorom mesiaci“ (11. 11. 2026). Pri malom
+  // pocte (pod 5) graf nekreslime, vetu nad nim to povie lepsie.
+  const MES_SK = ['jan', 'feb', 'mar', 'apr', 'máj', 'jún', 'júl', 'aug', 'sep', 'okt', 'nov', 'dec'];
+  const grafMesiacov = (mes) => {
+    if (!Array.isArray(mes) || mes.length !== 12) return '';
+    const spolu = mes.reduce((a, m) => a + m.n, 0);
+    const max = Math.max(...mes.map((m) => m.n));
+    if (spolu < 5 || max === 0) return '';
+    const stlpce = mes.map((m, i) => {
+      const h = m.n ? Math.max(4, Math.round((m.n / max) * 72)) : 0;
+      const farba = i < 6 ? '#B25313' : '#E2A574';
+      const rok = (i === 0 || m.m === 0) ? `<span style="display:block;font-size:10px;opacity:.7">${m.r}</span>` : '';
+      return `<div title="${MES_SK[m.m]} ${m.r}: ${cislo(m.n)} ${tvar(m.n, 'zmluva končí', 'zmluvy končia', 'zmlúv končí')}"
+                   style="flex:1 1 0;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end">
+                <span style="font-size:11px;color:#3B4350;margin-bottom:2px">${m.n ? cislo(m.n) : ''}</span>
+                <span style="display:block;width:70%;max-width:26px;height:${h}px;background:${farba};border-radius:3px 3px 0 0"></span>
+                <span style="font-size:11px;color:#5B6573;margin-top:4px;line-height:1.1;text-align:center">${MES_SK[m.m]}${rok}</span>
+              </div>`;
+    }).join('');
+    return `<div role="img" aria-label="Počet končiacich zmlúv po mesiacoch: ${mes.map((m) => `${MES_SK[m.m]} ${m.n}`).join(', ')}" style="margin-top:14px">
+        <p style="font-size:12px;color:#5B6573;margin:0 0 6px">Koľko zmlúv končí v ktorom mesiaci (tmavé = do pol roka):</p>
+        <div style="display:flex;gap:3px;align-items:flex-end;height:118px">${stlpce}</div>
+      </div>`;
+  };
+
   const KROKY_SKRYTE = 'pt-kroky-skryte';
   const CASTI = {
     zasoba: {
@@ -4287,6 +4349,7 @@ function nastavDnes(supabase, ctx) {
         const n6 = z.n6 ? ` <strong>${bezpecne(cislo(z.n6))}</strong> z nich končí o 6 až 12 mesiacov. Na tie máte najviac času pripraviť sa.` : '';
         return `<p class="text-[15px] leading-relaxed text-ink">${bezpecne(kde_)} je <strong>${bezpecne(cislo(z.n))}</strong>
           ${tvar(z.n, 'zmluva, ktorá končí', 'zmluvy, ktoré končia', 'zmlúv, ktoré končia')} do 12 mesiacov${sumaT}.${n6}</p>
+          ${grafMesiacov(z.mesiace)}
           <div class="dnes-akcie"><button type="button" class="dnes-btn" data-dnes-tab="obsah">Zobraziť zmluvy</button></div>`;
       },
     },
