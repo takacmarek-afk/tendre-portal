@@ -32,6 +32,8 @@ log = logging.getLogger("obnova")
 ODKAZ_APP = "https://predtendrom.sk/app"
 PLANY = {"start": "Start", "growth": "Growth", "team": "Team",
          "poradca": "Poradca", "pro": "Pro"}
+# Bezna rocna cena (public/plany.js). VOP sľubujú v pripomienke aj sumu.
+ROCNE_EUR = {"start": 340, "growth": 890, "team": 890, "poradca": 590}
 
 
 def _datum_sk(iso) -> str:
@@ -52,7 +54,11 @@ def obsah(plan: str, obdobie_konci, auto_obnova: bool = False) -> dict:
         return {
             "titulok": "Vaše ročné predplatné sa čoskoro obnoví",
             "uvod": (f"Plán {nazov} sa {datum} automaticky obnoví na ďalší rok "
-                     f"a z karty, ktorú máte uloženú v Stripe, sa strhne ročná platba."),
+                     f"a z karty, ktorú máte uloženú v Stripe, sa strhne ročná platba"
+                     + (f" {ROCNE_EUR[plan]} €" + (" (plus 290 € za každého ďalšieho používateľa nad dvoch)"
+                                                   if plan == "team" else "")
+                        + ". Ak ste mali zakladajúcu cenu, tá platila len na prvý rok, obnova je za bežnú cenu."
+                        if plan in ROCNE_EUR else ".")),
             "bloky": [{
                 "titul": f"Plán {nazov}, obnova {datum}",
                 "popis": ("Ak chcete predplatné zrušiť alebo zmeniť kartu, v aplikácii "
