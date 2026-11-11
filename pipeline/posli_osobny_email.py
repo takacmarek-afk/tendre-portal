@@ -103,6 +103,11 @@ def main(argv=None):
     if not komu:
         print("::error::Firma nema ziadneho clena s e-mailom.")
         return 1
+    if "{PILOT_URL}" in text:
+        # pozvanka na pilot (migracia 104); token sa nikde nevypisuje
+        token = sb.rpc("vytvor_pilot", {"p_ico": ico}).execute().data
+        text = text.replace("{PILOT_URL}", f"https://predtendrom.sk/pilot?t={token}")
+        print("::notice::Pozvanka na pilot pripravena (platna 30 dni).")
     return odosli(a, komu, kopia, predmet, text)
 
 

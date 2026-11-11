@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>Pilot PredTendrom.sk | PredTendrom.sk</title>
+<meta name="robots" content="noindex">
+<link rel="preload" href="/fonts/IBMPlexSans-Variable.woff" as="font" type="font/woff" crossorigin>
+<link rel="stylesheet" href="/fonts/fonts.css">
+<script src="./config.js"></script>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body class="font-sans text-ink bg-[#F3F5F7] min-h-screen flex items-center justify-center p-5">
+
+<!--
+  Pilot (migracia 104): odkaz z osobneho e-mailu nesie token (?t=...).
+  Plan sa zapne az po kliknuti na tlacidlo — skenery e-mailov odkazy
+  otvaraju samy. Stranka nenacitava analytiku.
+-->
+
+<div class="w-full max-w-[460px] text-center">
+
+  <a href="./index.html" class="flex items-center justify-center gap-2">
+    <svg width="24" height="24" viewBox="0 0 40 40" fill="none" class="text-accent shrink-0">
+      <path d="M4 30 L14 22 L24 14 L34 8" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+      <circle cx="4" cy="30" r="2.5" fill="currentColor" opacity="0.35"/>
+      <circle cx="14" cy="22" r="2.5" fill="currentColor" opacity="0.5"/>
+      <circle cx="24" cy="14" r="3" fill="currentColor" opacity="0.75"/>
+      <circle cx="34" cy="8" r="4.5" fill="currentColor"/>
+    </svg>
+    <span class="font-serif text-[19px] text-ink">predtendrom</span>
+  </a>
+
+  <div class="mt-10 bg-white border border-line rounded-lg p-9">
+    <h1 class="mt-2 text-[20px] font-semibold" id="titul">Pilot: plán Growth na 3 mesiace zadarmo</h1>
+    <p class="mt-3 text-[15px] leading-relaxed text-slate2" id="text">
+      Bez platobnej karty a bez automatického predĺženia. Pre Vás aj kolegu z firmy.
+      Raz za mesiac Vás poprosím o pár viet, čo pomohlo a čo chýbalo.
+    </p>
+
+    <div class="mt-7 flex flex-col sm:flex-row gap-3 justify-center" id="akcie">
+      <button type="button" id="zapnut"
+         class="inline-flex justify-center items-center bg-accent text-white font-semibold text-[14px] px-5 py-3 rounded-md hover:bg-accentDark transition whitespace-nowrap">
+        Zapnúť pilot
+      </button>
+    </div>
+    <div class="mt-7 hidden" id="dalej">
+      <a href="/prihlasenie" class="inline-flex justify-center items-center bg-ink text-white font-semibold text-[14px] px-5 py-3 rounded-md hover:bg-accent transition whitespace-nowrap">
+        Prihlásiť sa do aplikácie
+      </a>
+    </div>
+
+    <p class="mt-7 text-[13px] text-slate2">
+      Otázky: <a href="mailto:info@predtendrom.sk" class="text-accent hover:underline">info@predtendrom.sk</a>
+      · <a href="/obchodne-podmienky" class="text-accent hover:underline">obchodné podmienky</a>
+    </p>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var titul = document.getElementById('titul');
+  var text = document.getElementById('text');
+  var akcie = document.getElementById('akcie');
+  var dalej = document.getElementById('dalej');
+  var tlacidlo = document.getElementById('zapnut');
+  var token = new URLSearchParams(location.search).get('t') || '';
+  var cfg = window.CONFIG || {};
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+
+  function datum(iso) {
+    var d = new Date(iso);
+    return isNaN(d) ? '' : d.getDate() + '. ' + (d.getMonth() + 1) + '. ' + d.getFullYear();
+  }
+  function koniec(t, p, prihlasit) {
+    titul.textContent = t;
+    text.textContent = p;
+    akcie.style.display = 'none';
+    if (prihlasit) dalej.classList.remove('hidden');
+  }
+
+  if (!/^[0-9a-fA-F-]{36}$/.test(token)) {
+    koniec('Neplatný odkaz', 'V odkaze chýba kód pilotu. Skúste ho otvoriť priamo z e-mailu, alebo nám napíšte.');
+    return;
+  }
+
+  tlacidlo.addEventListener('click', function () {
+    tlacidlo.disabled = true;
+    tlacidlo.style.opacity = '0.5';
+    fetch(cfg.SUPABASE_URL + '/rest/v1/rpc/prijmi_pilot', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': cfg.SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + cfg.SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ p_token: token })
+    }).then(function (r) { return r.ok ? r.json() : { ok: false }; })
+      .then(function (d) {
+        var plan = (d && d.plan === 'start') ? 'Start' : 'Growth';
+        if (d && d.ok) {
+          koniec(d.uz_prijata ? 'Pilot už beží' : 'Pilot je zapnutý',
+                 (d.firma ? d.firma + ': ' : '') + 'plán ' + plan + ' platí do ' + datum(d.koniec) +
+                 '. Prihláste sa e-mailom, ktorým ste sa registrovali. Týždeň pred koncom Vám pošleme pripomienku, nič sa samo nestrhne.', true);
+        } else if (d && d.chyba === 'expirovana') {
+          koniec('Platnosť odkazu skončila', 'Napíšte nám prosím na info@predtendrom.sk a pošleme nový.');
+        } else {
+          koniec('Odkaz nepoznáme', 'Tento odkaz sme nenašli. Napíšte nám prosím na info@predtendrom.sk.');
+        }
+      })
+      .catch(function () {
+        tlacidlo.disabled = false;
+        tlacidlo.style.opacity = '';
+        text.textContent = 'Nepodarilo sa spojiť so serverom. Skúste to prosím o chvíľu znova.';
+      });
+  });
+})();
+</script>
+</body>
+</html>

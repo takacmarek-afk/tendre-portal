@@ -43,6 +43,7 @@ POVOLENE_ANON = {
     "oznac_servis_prevzaty", "potvrd_odber_firmy", "potvrd_odber_obce", "pozvi_clena", "prijmi_obec_pozvanku",
     "prijmi_pozvanku", "uloz_semafor", "uprav_kontakt_obce", "uprav_kontakt_poradcu", "vytvor_pozvanku",
     "zaloz_organizaciu", "zaloz_poradcu_profil",
+    "prijmi_pilot",   # 11. 11. 2026: chraneny tajnym tokenom pozvanky (migracia 104)
 }
 
 

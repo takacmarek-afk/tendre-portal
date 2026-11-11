@@ -72,7 +72,7 @@ def obsah(plan: str, obdobie_konci, auto_obnova: bool = False) -> dict:
         }
     return {
         "titulok": "Vaše predplatné čoskoro končí",
-        "uvod": (f"Plán {nazov} máte zaplatený do {datum}. Predplatné sa "
+        "uvod": (f"Plán {nazov} Vám platí do {datum}. Predplatné sa "
                  f"neobnovuje automaticky, po tomto dni sa prístup do "
                  f"aplikácie zatvorí, kým ho nepredĺžite."),
         "bloky": [{

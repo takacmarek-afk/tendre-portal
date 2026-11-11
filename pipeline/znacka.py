@@ -11,6 +11,7 @@ Zasady (dorucitelnost):
 - Odkazy mimo predtendrom.sk su LEN tieto dva profily v podpise.
 """
 import html
+import re
 
 WEB = "https://predtendrom.sk"
 LOGO_URL = f"{WEB}/email/logo.png"          # 480x80 px, zobrazuje sa 168x28
@@ -96,8 +97,12 @@ def osobny_email(text):
             t = t[: -len(p)].rstrip()
             break
     odseky = [o for o in t.split("\n\n") if o.strip()]
-    h = "".join(f'<p style="margin:0 0 14px;">{html.escape(o.strip()).replace(chr(10), "<br>")}</p>'
-                for o in odseky)
+    def odstavec(o):
+        t = html.escape(o.strip()).replace(chr(10), "<br>")
+        # odkazy na nasu domenu klikatelne (pilot, prihlasenie); ine ostavaju textom
+        return re.sub(r"(https://predtendrom\.sk/[^\s<]*)",
+                      lambda m: f'<a href="{m.group(1)}" style="color:{AKCENT};font-weight:600;">{m.group(1)}</a>', t)
+    h = "".join(f'<p style="margin:0 0 14px;">{odstavec(o)}</p>' for o in odseky)
     telo = (f'<!doctype html><html lang="sk"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:16px;'
             f'font:15px/1.6 {PISMO};color:{INK};background:#ffffff;">'
             f'<div style="max-width:580px;">{h}{podpis_html()}</div></body></html>')
