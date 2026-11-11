@@ -452,7 +452,7 @@ function dlazdicaHtml(kraj, h, max) {
   var cls = zakl + (farba ? 'border-line ' : 'border-dashed border-slate2 bg-white ') + (text === 'biela' ? 'text-white' : 'text-ink');
   var styl = farba ? ' style="background-color:' + farba + '"' : '';
   var ciastocne = '';
-  if (sektor === 'ALL' && h.zdroje.length < sektoryVData().length) {
+  if (zdroj === 'zmluvy' && sektor === 'ALL' && h.zdroje.length < sektoryVData().length) {
     ciastocne = '<p class="mt-1 text-[12px] leading-snug">údaje len z ' + h.zdroje.length + ' z ' + sektoryVData().length + ' sektorov</p>';
   }
   return '<li data-kraj="' + bezpecne(kraj.slug) + '" class="' + cls + '"' + styl + '>' +
