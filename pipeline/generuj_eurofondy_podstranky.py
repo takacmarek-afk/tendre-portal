@@ -201,7 +201,7 @@ def _hub(agr):
         bloky.append((n, f"""    <div class="rounded-lg border border-line bg-white p-4">
       <a href="/eurofondy/{info['slug']}/" class="text-[15px] font-semibold hover:text-accent">{_e(_velke_prve(info['nazov_nom']))} →</a>
       <div class="text-[13px] text-slate2 mt-1">{_cislo(n)} {_obstaravani(n)}</div>
-      <p class="mt-2 text-[13px] leading-loose flex flex-wrap gap-x-3">{odkazy}</p>
+      <p class="mt-2 text-[13px] leading-loose flex flex-wrap gap-x-4">{odkazy}</p>
     </div>"""))
     polozky = "\n".join(t for _, t in sorted(bloky, key=lambda x: -x[0]))
     telo = f"""
