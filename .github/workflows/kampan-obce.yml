@@ -12,6 +12,8 @@ name: Kampan pre obce
 #               zverejneni vysledkov volieb (24. 10. 2026).
 #   kontakty  — z Vestnika UVO vyberie zverejnene uradne e-maily obci
 #               a zapise ich do kampan_obce_kontakty (pipeline/kampan_obce.py).
+#   web       — e-maily obci z ich webov (tabulka obce_web_kontakty, migracia
+#               102) -> kontakty kampane (pipeline/obce_web_kontakty.py).
 #   posli     — personalizovane e-maily. Nasucho vyrobi NAHLAD vsetkych
 #               e-mailov (Artifacts -> kampan-nahlad, subor nahlad.html).
 #               S "komu" posle 3 testovacie e-maily len na tu adresu.
@@ -32,7 +34,7 @@ on:
       krok:
         description: "Krok"
         type: choice
-        options: [posli, kontakty, volby]
+        options: [posli, kontakty, volby, web]
         default: posli
       nasucho:
         description: "Nasucho — nic nezapisat ani neposlat (nechaj true, kym si neisty)"
@@ -102,6 +104,8 @@ jobs:
               python volby.py --rok "${ROK:-2026}" "${SUCHO[@]}" ;;
             kontakty)
               python kampan_obce.py kontakty "${SUCHO[@]}" ;;
+            web)
+              python obce_web_kontakty.py "${SUCHO[@]}" ;;
             posli)
               ARGS=(posli --vlna "$VLNA" --max "${MAX:-50}" --nahlad nahlad.html)
               if [ -n "${KOMU:-}" ]; then ARGS+=(--komu "$KOMU"); fi
