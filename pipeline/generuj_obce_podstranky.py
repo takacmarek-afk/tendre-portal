@@ -162,7 +162,11 @@ HLAVICKA = """<!doctype html>
       <span class="font-serif text-[18px] text-ink">Obecný prehľad</span>
       <span class="text-[12px] text-slate2 hidden sm:inline">od PredTendrom.sk</span>
     </a>
-    <a href="/obce" class="text-[13px] text-slate2 hover:text-ink">Pre obce a mestá</a>
+    <div class="flex items-center gap-4">
+      <a href="/obce" class="text-[13px] text-slate2 hover:text-ink hidden sm:inline">Pre obce a mestá</a>
+      <a href="/prihlasenie?dalej=trh.html" class="text-[13px] text-slate2 hover:text-ink">Prihlásiť sa</a>
+      <a href="/" class="text-[13px] font-semibold bg-ink text-white px-3 py-1.5 rounded-md hover:bg-accent whitespace-nowrap">Pre firmy</a>
+    </div>
   </div>
 </header>
 """

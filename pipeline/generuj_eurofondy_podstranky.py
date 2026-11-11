@@ -12,6 +12,7 @@ Riadky nad 5 sa do HTML nezapisuju vobec.
 
 Spusta sa v .github/workflows/itms.yml po klasifikacii.
 """
+import json
 import logging
 import os
 from collections import defaultdict
@@ -129,7 +130,7 @@ def _stranka(sektor, kraj, a, dostupne):
   <div class="mt-3 rounded-lg border border-dashed border-line bg-[#F3F5F7] p-5 text-center">
     <p class="text-[14px] text-slate2">+ {_cislo(zvysok)} {_tvar(zvysok, 'ďalšie obstarávanie', 'ďalšie obstarávania', 'ďalších obstarávaní')} v tomto kraji a odbore.</p>
     <a href="/prihlasenie?{utm}" class="mt-3 inline-block rounded-md bg-accent text-white text-[13px] font-medium px-4 py-2 hover:bg-accentDark">
-      Sledovať v aplikácii a dostať správu pri vyhlásení (14 dní zadarmo)</a>
+      Zobraziť všetky v aplikácii a dostať správu pri vyhlásení (14 dní zadarmo)</a>
   </div>""" if zvysok > 0 else ""
     odber_q = urlencode({"sektor": sektor, "kraj": kraj}).replace("&", "&amp;")
     # odpad nie je odbor bezplatneho prehladu na hlavnej stranke (ukazka_zmluv) -> odkaz by nikam neviedol
@@ -278,6 +279,29 @@ def _odbor(sektor, agr):
             + telo + PATICKA.format(aktualizovane=_datum(date.today().isoformat())))
 
 
+def suhrn(agr):
+    """-> dict pre public/eurofondy/suhrn.json. Cista funkcia."""
+    sektory = {}
+    for (s, k), a in agr.items():
+        info = SEKTORY_SEO[s]
+        x = sektory.setdefault(s, {"slug": info["slug"], "nazov": info["nazov_nom"], "pocet": 0, "objem": 0.0, "kraje": {}})
+        x["pocet"] += a["pocet"]
+        x["objem"] += a["objem"]
+        x["kraje"][k] = {"slug": _slug(k), "pocet": a["pocet"], "objem": round(a["objem"]),
+                         "priklady": a["priklady"][:3]}
+    for x in sektory.values():
+        x["objem"] = round(x["objem"])
+    vsetky = [dict(p, sektor=s, kraj=k) for (s, k), a in agr.items() for p in a["priklady"][:1]]
+    naj = max(vsetky, key=lambda p: p.get("hodnota") or 0) if vsetky else None
+    return {
+        "aktualizovane": date.today().isoformat(),
+        "pocet": sum(a["pocet"] for a in agr.values()),
+        "objem": round(sum(a["objem"] for a in agr.values())),
+        "najvacsie": naj,
+        "sektory": sektory,
+    }
+
+
 def vygeneruj(agr, vystup_dir=VYSTUP_DIR, sitemap=SITEMAP_CESTA, robots=ROBOTS_CESTA):
     napisane, urls = [], ["/eurofondy/"]
     dostupne = set(agr)
@@ -307,6 +331,10 @@ def vygeneruj(agr, vystup_dir=VYSTUP_DIR, sitemap=SITEMAP_CESTA, robots=ROBOTS_C
             f.write(_odbor(s, agr))
         if sum(a["pocet"] for (ss, _), a in agr.items() if ss == s) >= MIN_INDEX:
             urls.append(f"/eurofondy/{SEKTORY_SEO[s]['slug']}/")
+    # Verejny suhrn pre hlavnu stranku, mapu a ukazku (11. 11. 2026): tie iste
+    # cisla a najviac 3 priklady, ktore su aj tak verejne na podstrankach.
+    with open(os.path.join(vystup_dir, "suhrn.json"), "w", encoding="utf-8") as f:
+        json.dump(suhrn(agr), f, ensure_ascii=False, separators=(",", ":"))
     dnes = date.today().isoformat()
     with open(sitemap, "w", encoding="utf-8") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'

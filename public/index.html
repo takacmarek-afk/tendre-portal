@@ -8,17 +8,17 @@
 <link rel="icon" href="/favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta name="google-site-verification" content="JiYXwFxwzzNJjR7gFvfzr-L7-KpIeCqXCXbNz6jz2fI" />
-<title>PredTendrom.sk: končiace zmluvy úradov a dotácie obcí</title>
-<meta name="description" content="Vidíte, ktorým úradom končia zmluvy vo vašom odbore, aké dotácie obce podpísali a ktoré si najali dotačného poradcu. Dáta z Centrálneho registra zmlúv. 14 dní zadarmo.">
+<title>PredTendrom.sk: končiace zmluvy úradov, eurofondy a dotácie obcí</title>
+<meta name="description" content="Vidíte, ktorým úradom končia zmluvy vo vašom odbore, aké obstarávania z eurofondov úrady pripravujú ešte pred vyhlásením a aké dotácie obce podpísali. 14 dní zadarmo.">
 <link rel="canonical" href="https://predtendrom.sk/">
-<meta property="og:title" content="Končiace zmluvy úradov a dotácie obcí">
-<meta property="og:description" content="Zistite, ktorým úradom končia zmluvy vo vašom odbore. Dáta z Centrálneho registra zmlúv.">
+<meta property="og:title" content="Končiace zmluvy úradov, eurofondy a dotácie obcí">
+<meta property="og:description" content="Zistite, ktorým úradom končia zmluvy vo vašom odbore a čo pripravujú z eurofondov, ešte pred vyhlásením súťaže.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://predtendrom.sk/">
 <meta property="og:locale" content="sk_SK">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Končiace zmluvy úradov a dotácie obcí">
-<meta name="twitter:description" content="Zistite, ktorým úradom končia zmluvy vo vašom odbore. Dáta z Centrálneho registra zmlúv.">
+<meta name="twitter:title" content="Končiace zmluvy úradov, eurofondy a dotácie obcí">
+<meta name="twitter:description" content="Zistite, ktorým úradom končia zmluvy vo vašom odbore a čo pripravujú z eurofondov, ešte pred vyhlásením súťaže.">
 <!-- og-image.png (audit 19.9.2026, doplnené 21.9.2026): 1200×630, vyrobene
      priamo z realnych brand fontov (Instrument Serif Regular+Italic,
      stiahnute z github.com/google/fonts — Google Fonts CDN samotny z tejto
@@ -202,7 +202,7 @@
     <figure class="m-0">
       <div class="rounded-lg overflow-hidden border border-line shadow-[0_1px_2px_rgba(11,18,32,.06),0_12px_32px_-12px_rgba(11,18,32,.18)] bg-ink">
         <video class="block w-full h-auto" controls playsinline preload="none"
-               poster="/navody/video-1.jpg" width="1280" height="720"
+               poster="/navody/video-1-nahlad.jpg" width="1280" height="720"
                aria-label="Video: PredTendrom za 70 sekúnd">
           <source src="/navody/video-1.mp4" type="video/mp4">
         </video>
@@ -262,9 +262,11 @@
       <div id="p-prilezitosti" class="tabular-nums text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
       <div class="text-[13px] text-slate2 mt-1 leading-snug">sledovaných príležitostí práve teraz</div>
     </div>
+    <!-- Eurofondy (11. 11. 2026): z public/eurofondy/suhrn.json, ktory pise
+         pipeline/generuj_eurofondy_podstranky.py po kazdom behu. -->
     <div>
-      <div class="tabular-nums text-[28px] font-bold tracking-tight">8 krajov</div>
-      <div class="text-[13px] text-slate2 mt-1 leading-snug">zmluvy z celého Slovenska, filtrujete región a sektor</div>
+      <div id="p-eurofondy" class="tabular-nums text-[28px] font-bold tracking-tight text-slate2">&mdash;</div>
+      <div id="p-eurofondy-pod" class="text-[13px] text-slate2 mt-1 leading-snug">obstarávaní z eurofondov úrady pripravujú pred vyhlásením</div>
     </div>
     <div>
       <div class="tabular-nums text-[28px] font-bold tracking-tight">14 dní</div>
@@ -291,6 +293,7 @@
       ešte pred vyhlásením súťaže. Ukážeme vám tie vo vašom odbore a kraji a keď úrad súťaž oficiálne
       vyhlási (vo Vestníku verejného obstarávania), pošleme vám e-mail s odkazom a termínom na ponuky.
     </p>
+    <p id="ef-priklad" class="hidden mt-4 text-[14px] leading-relaxed text-ink bg-[#F3F5F7] rounded-md px-4 py-3 max-w-3xl"></p>
     <div class="mt-4 text-[14px] font-medium text-accent">Pozrieť pripravované obstarávania podľa odboru a kraja →</div>
   </a>
 
@@ -465,9 +468,9 @@
       <div class="bg-white border border-line rounded-lg p-6">
         <h3 class="text-[17px] font-semibold leading-snug">Aká je bežná cena</h3>
         <p class="mt-3 text-[14px] leading-relaxed text-slate2">
-          Pri opakovaných službách mediánna mesačná sadzba, pri stavbách
-          medián celkovej ceny zmluvy. Vždy s počtom vzoriek a rozpätím,
-          v ktorom leží stredná polovica zmlúv.
+          Pri opakovaných službách prostredná mesačná cena, pri stavbách
+          prostredná cena celej zmluvy. Vždy s počtom zmlúv, z ktorých je
+          vypočítaná, a s rozpätím, v ktorom leží väčšina zmlúv.
         </p>
       </div>
     </div>
@@ -477,17 +480,9 @@
 <!-- ══════════════ KOĽKO TO STOJÍ ══════════════ -->
 <section id="cena" class="wrap py-20 md:py-28">
   <div class="max-w-3xl">
-    <span class="inline-block text-[12px] font-semibold text-accent bg-accent/10 border border-accent/20 rounded-full px-3 py-1">
-      Cenník
-    </span>
-    <h2 class="font-serif mt-6 text-[28px] md:text-[38px] font-bold tracking-tight leading-tight">
-      Tri plány podľa veľkosti vášho obchodu.
+    <h2 class="font-serif text-[28px] md:text-[38px] font-bold tracking-tight leading-tight">
+      Čo dostanete po registrácii
     </h2>
-    <p class="mt-5 text-[17px] leading-relaxed text-slate2">
-      Start, Growth aj Team, presný rozsah každého plánu je na stránke
-      <a href="./cennik.html" class="text-accent hover:underline font-medium">cenníka</a>.
-      Každý nový účet má prvých 14 dní zadarmo, bez platobnej karty.
-    </p>
   </div>
 
   <div class="mt-12 grid md:grid-cols-2 gap-6 max-w-4xl">
@@ -497,21 +492,19 @@
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
           Končiace zmluvy s odhadom termínu obstarávania</li>
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
+          Obstarávania z eurofondov, ktoré úrady pripravujú</li>
+        <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
           Dotácie, z ktorých obstarávanie ešte len bude</li>
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
-          Filtre na kraj, mesto, sektor a prioritu</li>
+          Filtre na kraj, mesto, odbor a prioritu</li>
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
           Kto zákazku má teraz a odkedy</li>
         <li class="flex gap-2.5"><span class="text-accent font-bold">&#10003;</span>
           Export do Excelu</li>
       </ul>
       <p class="mt-6 text-[13px] leading-relaxed text-slate2">
-        Bez platobnej karty počas prvých 14 dní. Zadáte e-mail a prihlásite sa
-        odkazom, ktorý vám príde (bez hesla); potom v aplikácii doplníte
-        názov firmy a IČO (IČO je povinné). Zoznam podľa vašej
-        vlastnej histórie zákaziek zoradíte voliteľným poľom „Vaše IČO"
-        v nastaveniach, patrí do plánu Growth a vyššie a funguje aj
-        počas skúšobnej doby.
+        Zadáte e-mail, príde vám odkaz na prihlásenie (bez hesla). Potom doplníte
+        názov firmy a IČO. Hotovo za 2 minúty, 14 dní zadarmo a bez platobnej karty.
       </p>
     </div>
 
@@ -528,8 +521,8 @@
         nikoho úlohou. Kým sa treba prihlásiť, nestane sa to.
       </p>
       <p class="mt-5 text-[15px] leading-relaxed text-ink font-medium">
-        Profily dodávateľov a cenový benchmark sektora máte od plánu Start.
-        Denný prehľad, Slack/Teams a sledovanie firiem patria v
+        Prehľad dodávateľov a bežné ceny vo vašom odbore máte od plánu Start.
+        Denný e-mail, upozornenia do Slacku alebo Teams a sledovanie firiem patria v
         <a href="./cennik.html" class="text-accent hover:underline">cenníku</a>
         k plánom Growth a Team.
       </p>
@@ -640,12 +633,15 @@
       </div>
     </div>
 
-    <p class="mt-8 text-[14px] text-white/50 max-w-3xl leading-relaxed">
-      Pri stavebných prácach je predstih z končiacich zmlúv slabší, pretože
-      stavba sa nezopakuje. Preto je pre stavebné firmy zaujímavejšia vrstva
-      dotácií, obec, ktorá dostala peniaze na rekonštrukciu, bude stavbu
-      obstarávať.
-    </p>
+    <div class="mt-8 max-w-3xl bg-white/10 border border-white/15 rounded-lg p-5">
+      <p class="text-[16px] font-semibold">Robíte stavby? Pre vás sú eurofondy.</p>
+      <p class="mt-2 text-[14px] text-white/75 leading-relaxed">
+        Stavba sa nezopakuje, preto pri nej koniec zmluvy nový tender neprinesie. Úrady a obce však
+        stavby z eurofondov zapisujú do projektov mesiace pred vyhlásením súťaže<span id="ef-stavby"></span>.
+      </p>
+      <a href="/eurofondy/stavebne-prace/" class="mt-3 inline-block text-[14px] font-semibold text-white underline underline-offset-4 hover:text-white/80">
+        Pozrieť stavebné práce z eurofondov podľa kraja →</a>
+    </div>
   </div>
 </section>
 
@@ -703,6 +699,18 @@
         Úrad môže zmluvu predĺžiť, nakúpiť bez súťaže alebo nákup odložiť.
       </p>
     </div>
+  </div>
+</section>
+
+<!-- ══════════════ REFERENCIA ZÁKAZNÍKA (pripravené, zatiaľ skryté) ══════════════
+     Doplniť AŽ skutočnú vetu zákazníka s jeho súhlasom (meno, funkcia, firma),
+     napr. po pilote. Nikdy nevymýšľať. Potom odstrániť class "hidden". -->
+<section id="referencia" class="hidden border-t border-line bg-[#F3F5F7]">
+  <div class="wrap py-14">
+    <figure class="max-w-2xl mx-auto text-center">
+      <blockquote class="text-[20px] md:text-[22px] font-semibold leading-snug" id="referencia-text"></blockquote>
+      <figcaption class="mt-4 text-[14px] text-slate2" id="referencia-kto"></figcaption>
+    </figure>
   </div>
 </section>
 
@@ -897,6 +905,34 @@
 </footer>
 
 <script src="./config.js"></script>
+<script>
+// ── Eurofondy z /eurofondy/suhrn.json (11. 11. 2026) ─────────────────────
+// Subor pise pipeline po kazdom behu (generuj_eurofondy_podstranky.py).
+// Pri chybe ostava pomlcka / nic, rovnaky princip ako verejne_pocty vyssie.
+window.ptEurofondy = fetch('/eurofondy/suhrn.json', { cache: 'no-cache' })
+  .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+(async function () {
+  var d = await window.ptEurofondy;
+  if (!d || !d.pocet) return;
+  var cislo = function (n) { return Number(n).toLocaleString('sk-SK').replace(/ /g, '\u00a0'); };
+  var mil = function (n) { return (n / 1e6).toLocaleString('sk-SK', { maximumFractionDigits: 1 }) + '\u00a0mil.\u00a0€'; };
+  var esc = function (t) { return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+  var p = document.getElementById('p-eurofondy');
+  if (p) {
+    p.textContent = cislo(d.pocet); p.classList.remove('text-slate2');
+    var pod = document.getElementById('p-eurofondy-pod');
+    if (pod && d.objem) pod.textContent = 'obstarávaní z eurofondov za ' + mil(d.objem) + ' úrady pripravujú pred vyhlásením';
+  }
+  var n = d.najvacsie, ex = document.getElementById('ef-priklad');
+  if (n && ex && n.hodnota) {
+    ex.innerHTML = '<strong>Príklad z dát:</strong> ' + esc(n.urad) + ' (' + esc(n.kraj) + ') má v projekte z eurofondov „' +
+      esc(n.nazov) + '“ s predpokladanou hodnotou ' + esc(mil(n.hodnota)) + '. Súťaž ešte nie je vyhlásená.';
+    ex.classList.remove('hidden');
+  }
+  var st = d.sektory && d.sektory.STAVEBNE_PRACE, es = document.getElementById('ef-stavby');
+  if (st && es) es.textContent = ': teraz ' + cislo(st.pocet) + ' stavebných obstarávaní za ' + mil(st.objem);
+})();
+</script>
 <script src="./formular.js"></script>
 <script>
 // ── Ukážka 3 končiacich zmlúv bez registrácie ─────────────────
@@ -928,6 +964,30 @@
       'Dátum konca je podľa zmluvy; ak ho úrad predĺži dodatkom, nemusí platiť.</p>' +
       '<a href="./prihlasenie.html" class="mt-4 inline-flex items-center bg-amber text-ink font-semibold px-5 py-2.5 rounded-md hover:bg-[#F3B65C] transition text-[14px]">Vyskúšať 14 dní zadarmo</a>';
     out.innerHTML = html;
+  }
+  // Eurofondy v tom istom odbore a kraji (11. 11. 2026): pri stavebnych
+  // odboroch je to silnejsi signal nez konciace zmluvy.
+  async function ukazEurofondy(sektor, kraj) {
+    var d = window.ptEurofondy ? await window.ptEurofondy : null;
+    var s = d && d.sektory && d.sektory[sektor];
+    if (!s) return;
+    var k = kraj ? s.kraje[kraj] : null;
+    var pocet = kraj ? (k ? k.pocet : 0) : s.pocet;
+    if (!pocet) return;
+    var priklady = kraj ? k.priklady : [].concat.apply([], Object.keys(s.kraje).map(function (x) { return s.kraje[x].priklady.map(function (p) { return Object.assign({ kraj: x }, p); }); }))
+      .sort(function (a, b) { return (b.hodnota || 0) - (a.hodnota || 0); }).slice(0, 3);
+    var odkaz = '/eurofondy/' + s.slug + '/' + (kraj && k ? k.slug : '');
+    var box = document.createElement('div');
+    box.className = 'mt-6 border-2 border-accent rounded-lg p-4';
+    box.innerHTML = '<p class="text-[15px] font-semibold">Z eurofondov sa v tomto odbore ' + (kraj ? 'v kraji ' : 'na Slovensku ') +
+      'pripravuje ' + pocet + ' ' + (pocet === 1 ? 'obstarávanie' : (pocet <= 4 ? 'obstarávania' : 'obstarávaní')) + '</p>' +
+      '<p class="mt-1 text-[13px] text-slate2">Úrady ich majú zapísané v projektoch, súťaž ešte nevyhlásili. Napríklad:</p>' +
+      '<ul class="mt-2 space-y-2">' + priklady.map(function (p) {
+        return '<li class="text-[14px]"><span class="font-medium">' + esc(p.urad) + '</span> · ' + esc(p.nazov) +
+          (p.hodnota ? ' · ' + esc(eur(p.hodnota)) : '') + '</li>'; }).join('') + '</ul>' +
+      '<a href="' + esc(odkaz) + '" class="mt-3 inline-block text-[14px] font-semibold text-accent hover:underline">Pozrieť pripravované obstarávania →</a>';
+    var odber = document.getElementById('uk-odber');
+    if (odber) out.insertBefore(box, odber); else out.appendChild(box);
   }
   var posl = { sektor: '', kraj: '' };
   function ponukniOdber(sektor, kraj) {
@@ -982,7 +1042,7 @@
     try {
       await pf.pockaj(12000);
       var v = await pf.posli('ukazka_zmluv', { sektor: sektor, kraj: document.getElementById('uk-kraj').value || null });
-      if (v.ok) { vykresli(v.data); ponukniOdber(sektor, document.getElementById('uk-kraj').value || null); } else hlaska(pf.hlaska(v.kod));
+      if (v.ok) { vykresli(v.data); ponukniOdber(sektor, document.getElementById('uk-kraj').value || null); ukazEurofondy(sektor, document.getElementById('uk-kraj').value || null); } else hlaska(pf.hlaska(v.kod));
     } catch (err) { hlaska('Ukážku sa nepodarilo načítať. Skúste to prosím neskôr.'); }
     btn.disabled = false; btn.textContent = 'Ukázať 3 zmluvy';
   });

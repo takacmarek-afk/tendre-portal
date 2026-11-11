@@ -174,7 +174,11 @@ HLAVICKA = """<!doctype html>
       </svg>
       <span class="font-serif text-[18px] text-ink">predtendrom</span>
     </a>
-    <a href="/cennik" class="text-[13px] text-slate2 hover:text-ink">Cenník</a>
+    <div class="flex items-center gap-4">
+      <a href="/cennik" class="text-[13px] text-slate2 hover:text-ink hidden sm:inline">Cenník</a>
+      <a href="/prihlasenie" class="text-[13px] text-slate2 hover:text-ink">Prihlásiť sa</a>
+      <a href="/prihlasenie" class="text-[13px] font-semibold bg-ink text-white px-3 py-1.5 rounded-md hover:bg-accent whitespace-nowrap">Vyskúšať zadarmo</a>
+    </div>
   </div>
 </header>
 """

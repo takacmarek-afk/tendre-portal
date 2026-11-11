@@ -58,3 +58,17 @@ def test_prehlad_odboru_bez_404(tmp_path):
     assert "https://predtendrom.sk/eurofondy/stavebne-prace/" in html
     assert "/eurofondy/stavebne-prace/</loc>" in (tmp_path / "s.xml").read_text()
     assert 'href="/eurofondy/stavebne-prace/"' in (tmp_path / "e" / "index.html").read_text()
+
+
+def test_suhrn_json(tmp_path):
+    import json
+    riadky = [_r(i) for i in range(1, 9)] + [_r(i, kraj="Prešovský kraj", h=10) for i in range(20, 23)]
+    agr = g.agreguj(riadky)
+    rob = tmp_path / "robots.txt"; rob.write_text("")
+    g.vygeneruj(agr, str(tmp_path / "e"), str(tmp_path / "s.xml"), str(rob))
+    d = json.loads((tmp_path / "e" / "suhrn.json").read_text())
+    assert d["pocet"] == 11
+    sp = d["sektory"]["STAVEBNE_PRACE"]
+    assert sp["slug"] == "stavebne-prace" and sp["pocet"] == 11
+    assert sp["kraje"]["Košický kraj"]["slug"] == "kosicky" and len(sp["kraje"]["Košický kraj"]["priklady"]) == 3
+    assert d["najvacsie"]["hodnota"] == 800000 and d["najvacsie"]["kraj"] == "Košický kraj"

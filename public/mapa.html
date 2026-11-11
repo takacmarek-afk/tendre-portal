@@ -85,16 +85,20 @@
       </svg>
       <span class="font-serif text-[18px] text-ink">predtendrom</span>
     </a>
-    <a href="/cennik" class="text-[13px] text-slate2 hover:text-ink">Cenník</a>
+    <div class="flex items-center gap-4">
+      <a href="/cennik" class="text-[13px] text-slate2 hover:text-ink hidden sm:inline">Cenník</a>
+      <a href="/prihlasenie" class="text-[13px] text-slate2 hover:text-ink">Prihlásiť sa</a>
+      <a href="/prihlasenie" class="text-[13px] font-semibold bg-ink text-white px-3 py-1.5 rounded-md hover:bg-accent whitespace-nowrap">Vyskúšať zadarmo</a>
+    </div>
   </div>
 </header>
 
 <main>
 <section class="max-w-[960px] mx-auto px-5 pt-10 pb-4">
   <p class="inline-block text-[12px] font-semibold text-accent bg-accent/10 rounded-full px-3 py-1">Ukážka z portálu</p>
-  <h1 class="mt-4 font-serif text-[34px] sm:text-[44px] leading-tight text-ink">Mapa končiacich zmlúv</h1>
+  <h1 class="mt-4 font-serif text-[34px] sm:text-[44px] leading-tight text-ink">Mapa končiacich zmlúv a eurofondov</h1>
   <p class="mt-3 text-[16px] leading-relaxed text-slate2 max-w-[680px]">
-    Koľko zmlúv z Centrálneho registra zmlúv sa v ktorom kraji blíži ku koncu. Vyberte sektor a metriku, farba dlaždice ukazuje, kde je zmlúv alebo peňazí najviac.
+    Koľko zmlúv úradov sa v ktorom kraji blíži ku koncu, alebo koľko obstarávaní z eurofondov úrady pripravujú. Čím tmavší kraj, tým viac.
   </p>
   <p class="mt-2 text-[14px] leading-relaxed text-slate2 max-w-[680px]">
     Údaje pokrývajú päť sektorov: upratovanie, stravovanie, ostrahu, stavebné práce a IT služby s technikou.
@@ -116,6 +120,15 @@
 <section class="max-w-[960px] mx-auto px-5 pb-6" aria-labelledby="ovladanie-nadpis">
   <h2 id="ovladanie-nadpis" class="sr-only">Nastavenie zobrazenia</h2>
   <div class="flex flex-col sm:flex-row sm:items-end gap-4 rounded-lg border border-line bg-white p-4">
+    <div>
+      <span id="zdroj-popis" class="block text-[12px] font-semibold text-slate2">Čo zobraziť</span>
+      <div role="group" aria-labelledby="zdroj-popis" class="mt-1.5 inline-flex rounded-md border border-line overflow-hidden">
+        <button type="button" data-zdroj="zmluvy" aria-pressed="true"
+                class="px-4 py-2 text-[15px] bg-white text-ink aria-pressed:bg-ink aria-pressed:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent">Končiace zmluvy</button>
+        <button type="button" data-zdroj="eurofondy" aria-pressed="false"
+                class="px-4 py-2 text-[15px] bg-white text-ink aria-pressed:bg-ink aria-pressed:text-white border-l border-line focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent">Eurofondy</button>
+      </div>
+    </div>
     <div class="sm:w-[260px]">
       <label for="sektor" class="block text-[12px] font-semibold text-slate2">Sektor</label>
       <select id="sektor" disabled
@@ -124,10 +137,10 @@
       </select>
     </div>
     <div>
-      <span id="metrika-popis" class="block text-[12px] font-semibold text-slate2">Metrika</span>
+      <span id="metrika-popis" class="block text-[12px] font-semibold text-slate2">Farba podľa</span>
       <div role="group" aria-labelledby="metrika-popis" class="mt-1.5 inline-flex rounded-md border border-line overflow-hidden">
         <button type="button" id="m-pocet" data-metrika="pocet" aria-pressed="true" disabled
-                class="px-4 py-2 text-[15px] bg-white text-ink aria-pressed:bg-ink aria-pressed:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent disabled:opacity-60">Počet zmlúv</button>
+                class="px-4 py-2 text-[15px] bg-white text-ink aria-pressed:bg-ink aria-pressed:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent disabled:opacity-60">Počet</button>
         <button type="button" id="m-objem" data-metrika="objem" aria-pressed="false" disabled
                 class="px-4 py-2 text-[15px] bg-white text-ink aria-pressed:bg-ink aria-pressed:text-white border-l border-line focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent disabled:opacity-60">Objem v €</button>
       </div>
@@ -167,9 +180,9 @@
         <thead>
           <tr class="border-b border-line text-left text-slate2">
             <th scope="col" class="py-2.5 pl-2.5 sm:pl-4 pr-1 sm:pr-2 font-semibold">Kraj</th>
-            <th scope="col" class="py-2.5 px-1 sm:px-2 font-semibold text-right">Počet zmlúv</th>
+            <th scope="col" id="th-pocet" class="py-2.5 px-1 sm:px-2 font-semibold text-right">Počet zmlúv</th>
             <th scope="col" class="py-2.5 px-1 sm:px-2 font-semibold text-right">Objem</th>
-            <th scope="col" class="py-2.5 pl-1 sm:pl-2 pr-2.5 sm:pr-4 font-semibold text-right">Najbližší koniec</th>
+            <th scope="col" id="th-koniec" class="py-2.5 pl-1 sm:pl-2 pr-2.5 sm:pr-4 font-semibold text-right">Najbližší koniec</th>
           </tr>
         </thead>
         <tbody id="tabulka"></tbody>
@@ -243,13 +256,22 @@ var KRAJE = [
   { nazov: 'Banskobystrický kraj', slug: 'banskobystricky' },
   { nazov: 'Košický kraj', slug: 'kosicky' }
 ];
-var SEKTORY = [
+var SEKTORY_ZMLUVY = [
   { kluc: 'UPRATOVANIE', slug: 'upratovanie', nazov: 'Upratovanie' },
   { kluc: 'STRAVOVANIE', slug: 'stravovanie', nazov: 'Stravovanie' },
   { kluc: 'OSTRAHA', slug: 'ostraha', nazov: 'Ostraha' },
   { kluc: 'STAVEBNE_PRACE', slug: 'stavebne-prace', nazov: 'Stavebné práce' },
   { kluc: 'IT_TECHNIKA', slug: 'it-technika', nazov: 'IT služby a technika' }
 ];
+// Prepinac Konciace zmluvy / Eurofondy (11. 11. 2026). Eurofondy z
+// /eurofondy/suhrn.json (pise pipeline/generuj_eurofondy_podstranky.py).
+var zdroj = 'zmluvy';
+var SEKTORY = SEKTORY_ZMLUVY;
+var ulozene = { zmluvy: null, eurofondy: null };   // { data, sektory, aktualizacia }
+function slovo(n) {
+  return zdroj === 'eurofondy'
+    ? tvar(n, 'obstarávanie', 'obstarávania', 'obstarávaní') : tvar(n, 'zmluva', 'zmluvy', 'zmlúv');
+}
 // Existujuce SEO podstranky (public/konciace-zmluvy/<sektor>/<kraj>.html). Odkaz sa dava len na ne.
 var PODSTRANKY = {
   upratovanie: ['bratislavsky', 'trnavsky', 'trenciansky', 'nitriansky', 'zilinsky', 'banskobystricky', 'presovsky', 'kosicky'],
@@ -259,6 +281,7 @@ var PODSTRANKY = {
   'it-technika': ['bratislavsky', 'trnavsky', 'trenciansky', 'nitriansky', 'zilinsky', 'banskobystricky', 'presovsky', 'kosicky']
 };
 function adresaPodstranky(sektor, kraj) {
+  if (zdroj === 'eurofondy') return '/eurofondy/' + sektor.slug + '/' + kraj.slug;
   if (!PODSTRANKY[sektor.slug] || PODSTRANKY[sektor.slug].indexOf(kraj.slug) === -1) return null;
   return '/konciace-zmluvy/' + sektor.slug + '/' + kraj.slug;
 }
@@ -328,7 +351,7 @@ function cisloAleboNull(v) {
 // Z odpovede vyberie len znamy sektor a znamy kraj (ostatne hodnoty sa ignoruju).
 function spracujRiadky(riadky) {
   var vystup = {}, kraje = {}, najnovsi = null, pocetPouzitych = 0;
-  SEKTORY.forEach(function (s) { vystup[s.kluc] = {}; });
+  SEKTORY_ZMLUVY.forEach(function (s) { vystup[s.kluc] = {}; });
   KRAJE.forEach(function (k) { kraje[k.nazov] = k; });
   riadky.forEach(function (r) {
     if (!r || typeof r !== 'object') return;
@@ -390,8 +413,9 @@ function vypocitaj() {
   return { vsetky: vsetky, max: max };
 }
 
-function textPoctu(n) { return cislo(n) + NBSP + tvar(n, 'zmluva', 'zmluvy', 'zmlúv'); }
+function textPoctu(n) { return cislo(n) + NBSP + slovo(n); }
 function popisKonca(h) {
+  if (zdroj === 'eurofondy') return 'súťaž ešte nevyhlásená';
   var d = h.koniec ? datumSk(h.koniec) : null;
   return d ? 'najbližšia končí ' + d : 'najbližší koniec neuvedený';
 }
@@ -433,9 +457,9 @@ function dlazdicaHtml(kraj, h, max) {
   }
   return '<li data-kraj="' + bezpecne(kraj.slug) + '" class="' + cls + '"' + styl + '>' +
     '<h3 class="text-[14px] sm:text-[15px] font-semibold leading-snug break-words">' + bezpecne(kraj.nazov) + '</h3>' +
-    '<p class="mt-1.5 leading-tight"><span class="font-serif text-[30px] sm:text-[34px]">' + bezpecne(cislo(h.pocet)) + '</span> <span class="text-[14px]">' + bezpecne(tvar(h.pocet, 'zmluva', 'zmluvy', 'zmlúv')) + '</span></p>' +
+    '<p class="mt-1.5 leading-tight"><span class="font-serif text-[30px] sm:text-[34px]">' + bezpecne(cislo(h.pocet)) + '</span> <span class="text-[14px]">' + bezpecne(slovo(h.pocet)) + '</span></p>' +
     '<p class="mt-1 text-[14px] leading-snug">Objem: <span class="font-semibold">' + bezpecne(h.objem == null ? 'neuvedený' : eur(h.objem)) + '</span></p>' +
-    (h.pocet > 0 ? '<p class="mt-1 text-[13px] leading-snug">' + bezpecne(popisKonca(h)) + '</p>' : '<p class="mt-1 text-[13px] leading-snug">žiadna zmluva v sledovanom okne</p>') +
+    (h.pocet > 0 ? '<p class="mt-1 text-[13px] leading-snug">' + bezpecne(popisKonca(h)) + '</p>' : '<p class="mt-1 text-[13px] leading-snug">' + (zdroj === 'eurofondy' ? 'nič pripravované' : 'žiadna zmluva v sledovanom okne') + '</p>') +
     ciastocne + odkazyHtml(h) + '</li>';
 }
 
@@ -460,7 +484,9 @@ function nazovSektora() {
 
 function vykresli() {
   var v = vypocitaj();
-  var nazovMetriky = metrika === 'pocet' ? 'počet zmlúv' : 'objem v eurách';
+  var nazovMetriky = metrika === 'pocet' ? (zdroj === 'eurofondy' ? 'počet obstarávaní z eurofondov' : 'počet zmlúv') : 'objem v eurách';
+  el('th-pocet').textContent = zdroj === 'eurofondy' ? 'Počet obstarávaní' : 'Počet zmlúv';
+  el('th-koniec').textContent = zdroj === 'eurofondy' ? 'Stav' : 'Najbližší koniec';
 
   el('dlazdice').innerHTML = KRAJE.map(function (k, i) { return dlazdicaHtml(k, v.vsetky[i], v.max); }).join('');
 
@@ -470,7 +496,7 @@ function vykresli() {
     if (!h) {
       return '<tr data-kraj="' + bezpecne(x.kraj.slug) + '" class="border-b border-line last:border-0"><th scope="row" class="py-2.5 pl-2.5 sm:pl-4 pr-1 sm:pr-2 text-left font-medium">' + bezpecne(x.kraj.nazov) + '</th><td colspan="3" class="py-2.5 px-1 sm:px-2 pr-2.5 sm:pr-4 text-right text-slate2">bez údajov</td></tr>';
     }
-    var koniec = h.pocet > 0 && h.koniec ? datumSk(h.koniec) : null;
+    var koniec = zdroj === 'eurofondy' ? (h.pocet > 0 ? 'pripravované' : null) : (h.pocet > 0 && h.koniec ? datumSk(h.koniec) : null);
     return '<tr data-kraj="' + bezpecne(x.kraj.slug) + '" class="border-b border-line last:border-0">' +
       '<th scope="row" class="py-2.5 pl-2.5 sm:pl-4 pr-1 sm:pr-2 text-left font-medium">' + bezpecne(x.kraj.nazov) + '</th>' +
       '<td class="py-2.5 px-1 sm:px-2 text-right tabular-nums whitespace-nowrap">' + bezpecne(textPoctu(h.pocet)) + '</td>' +
@@ -517,6 +543,43 @@ function ukazStav(typ, html) {
   el('obsah').classList.toggle('hidden', typ !== null);
 }
 
+function zobrazUlozene(u) {
+  data = u.data; SEKTORY = u.sektory; aktualizacia = u.aktualizacia;
+  var d = aktualizacia ? datumAktualizacie(aktualizacia) : null;
+  el('aktualizacia').textContent = d ? 'Posledná aktualizácia údajov: ' + d + '.' : '';
+  pripravSektory();
+  nastavOvladanie(true);
+  ukazStav(null, '');
+  vykresli();
+}
+
+async function nacitajEurofondy() {
+  nastavOvladanie(false);
+  ukazStav('nacitavanie', 'Načítavam obstarávania z eurofondov&hellip;');
+  try {
+    var r = await fetch('/eurofondy/suhrn.json', { cache: 'no-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var j = await r.json();
+    var sektory = [], d = {};
+    Object.keys(j.sektory || {}).forEach(function (k) {
+      var x = j.sektory[k];
+      var nazov = String(x.nazov || k); nazov = nazov.charAt(0).toUpperCase() + nazov.slice(1);
+      sektory.push({ kluc: k, slug: x.slug, nazov: nazov });
+      d[k] = {};
+      Object.keys(x.kraje || {}).forEach(function (kr) {
+        var y = x.kraje[kr];
+        d[k][y.slug] = { pocet: Number(y.pocet) || 0, objem: Number(y.objem) || null, koniec: null };
+      });
+    });
+    sektory.sort(function (a, b) { return a.nazov.localeCompare(b.nazov, 'sk'); });
+    if (!sektory.length) throw new Error('prázdne');
+    ulozene.eurofondy = { data: d, sektory: sektory, aktualizacia: j.aktualizovane || null };
+    if (zdroj === 'eurofondy') zobrazUlozene(ulozene.eurofondy);
+  } catch (e) {
+    ukazStav('chyba', '<p class="font-semibold text-ink">Údaje o eurofondoch sa nepodarilo načítať.</p><p class="mt-1">Skúste to prosím neskôr.</p>');
+  }
+}
+
 async function nacitaj() {
   nastavOvladanie(false);
   ukazStav('nacitavanie', 'Načítavam údaje o končiacich zmluvách&hellip;');
@@ -537,14 +600,8 @@ async function nacitaj() {
       ukazStav('prazdne', '<p class="font-semibold text-ink">Prehľad zatiaľ nemá údaje.</p><p class="mt-1">Agregát končiacich zmlúv je momentálne prázdny. Skúste to prosím neskôr.</p>');
       return;
     }
-    data = s.data;
-    aktualizacia = s.najnovsi;
-    var d = aktualizacia ? datumAktualizacie(aktualizacia) : null;
-    el('aktualizacia').textContent = d ? 'Posledná aktualizácia údajov: ' + d + '.' : '';
-    pripravSektory();
-    nastavOvladanie(true);
-    ukazStav(null, '');
-    vykresli();
+    ulozene.zmluvy = { data: s.data, sektory: SEKTORY_ZMLUVY, aktualizacia: s.najnovsi };
+    if (zdroj === 'zmluvy') zobrazUlozene(ulozene.zmluvy);
   } catch (e) {
     ukazStav('chyba', '<p class="font-semibold text-ink">Údaje sa nepodarilo načítať.</p><p class="mt-1">Skontrolujte pripojenie a skúste to znova.</p><button type="button" id="skusit-znova" class="mt-3 rounded-md bg-ink text-white text-[14px] font-medium px-4 py-2 hover:bg-accentDark focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-accent">Skúsiť znova</button>');
     var b = el('skusit-znova');
@@ -555,6 +612,17 @@ async function nacitaj() {
 }
 
 // ── Udalosti ─────────────────────────────────────────────────────────────
+Array.prototype.forEach.call(document.querySelectorAll('[data-zdroj]'), function (b) {
+  b.addEventListener('click', function () {
+    zdroj = b.getAttribute('data-zdroj');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-zdroj]'), function (x) {
+      x.setAttribute('aria-pressed', x === b ? 'true' : 'false');
+    });
+    if (ulozene[zdroj]) zobrazUlozene(ulozene[zdroj]);
+    else if (zdroj === 'eurofondy') nacitajEurofondy();
+    else nacitaj();
+  });
+});
 el('sektor').addEventListener('change', function (e) {
   sektor = e.target.value;
   vykresli();
@@ -588,7 +656,12 @@ function slugZ(cil) {
   el('obsah').addEventListener(typ, function (e) { zvyrazni(slugZ(e.target), false); });
 });
 
-nacitaj();
+if (new URLSearchParams(location.search).get('zdroj') === 'eurofondy') {
+  var bEf = document.querySelector('[data-zdroj="eurofondy"]');
+  if (bEf) bEf.click(); else nacitaj();
+} else {
+  nacitaj();
+}
 })();
 </script>
 </body>

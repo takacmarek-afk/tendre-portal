@@ -574,7 +574,7 @@
         </div>
         <div class="mt-3">
           <label for="o-webhook" class="block text-[12px] text-white/60 mb-1">
-            Slack/Teams webhook (voliteľné) — rovnaký prehľad pošleme aj tam
+            Upozornenia do Slacku alebo Teams (voliteľné): adresa webhooku, rovnaký prehľad pošleme aj tam
           </label>
           <input id="o-webhook" type="url" placeholder="https://hooks.slack.com/services/…"
                  class="w-full sm:max-w-md border border-white/20 bg-white/10 text-white rounded-md px-3 py-2 text-[14px] placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-white">
@@ -2789,7 +2789,7 @@ const PREDPLATNE_PLANY = ['start', 'growth'].flatMap(plan => {
 // zoznamov, jeden riadok na plan.
 const PREDPLATNE_POPIS = {
   start:  '2 kraje a 2 sektory, týždenný e-mail, cenový benchmark, export do Excelu, 2 používatelia.',
-  growth: 'Celé Slovensko, všetky sektory, denný e-mail, eurofondy so zoznamom a upozornením pri vyhlásení, Slack/Teams, neobmedzené sledovanie firiem podľa IČO.',
+  growth: 'Celé Slovensko, všetky sektory, denný e-mail, eurofondy so zoznamom a upozornením pri vyhlásení, upozornenia do Slacku alebo Teams, neobmedzené sledovanie firiem podľa IČO.',
 };
 
 const PREDPLATNE_CHYBY = {
