@@ -45,3 +45,16 @@ def test_stara_stranka_sa_zmaze(tmp_path):
     g.vygeneruj(g.agreguj([_r(1)]), str(tmp_path / "e"), str(tmp_path / "s.xml"), str(rob))
     assert not (stara / "kosicky.html").exists()
     assert (tmp_path / "e" / "stavebne-prace" / "kosicky.html").exists()
+
+
+def test_prehlad_odboru_bez_404(tmp_path):
+    riadky = [_r(i) for i in range(1, 9)] + [_r(i, kraj="Prešovský kraj") for i in range(20, 23)]
+    agr = g.agreguj(riadky)
+    rob = tmp_path / "robots.txt"; rob.write_text("")
+    g.vygeneruj(agr, str(tmp_path / "e"), str(tmp_path / "s.xml"), str(rob))
+    html = (tmp_path / "e" / "stavebne-prace" / "index.html").read_text()
+    assert 'href="/eurofondy/stavebne-prace/kosicky"' in html and 'href="/eurofondy/stavebne-prace/presovsky"' in html
+    assert "Rekonštrukcia školy 22" in html                    # najvacsie priklady naprieč krajmi
+    assert "https://predtendrom.sk/eurofondy/stavebne-prace/" in html
+    assert "/eurofondy/stavebne-prace/</loc>" in (tmp_path / "s.xml").read_text()
+    assert 'href="/eurofondy/stavebne-prace/"' in (tmp_path / "e" / "index.html").read_text()

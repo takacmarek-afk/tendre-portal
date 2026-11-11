@@ -197,7 +197,7 @@ def _hub(agr):
         odkazy = " ".join(f'<a href="/eurofondy/{info["slug"]}/{_slug(k)}" class="text-accent hover:underline">'
                           f'{_e(k.replace(" kraj", ""))} ({_cislo(a["pocet"])})</a>' for k, a in kraje)
         bloky.append((n, f"""    <div class="rounded-lg border border-line bg-white p-4">
-      <div class="text-[15px] font-semibold">{_e(_velke_prve(info['nazov_nom']))}</div>
+      <a href="/eurofondy/{info['slug']}/" class="text-[15px] font-semibold hover:text-accent">{_e(_velke_prve(info['nazov_nom']))} →</a>
       <div class="text-[13px] text-slate2 mt-1">{_cislo(n)} {_obstaravani(n)}</div>
       <p class="mt-2 text-[13px] leading-loose flex flex-wrap gap-x-3">{odkazy}</p>
     </div>"""))
@@ -216,6 +216,63 @@ def _hub(agr):
     return (HLAVICKA.format(titul="Pripravované obstarávania z eurofondov podľa odboru a kraja | PredTendrom.sk",
                             popis="Obstarávania z eurofondov, ktoré úrady a obce pripravujú a ešte nevyhlásili. Stavby, IT, energetika a ďalšie odbory v každom kraji Slovenska.",
                             cesta="", robots="index,follow")
+            + telo + PATICKA.format(aktualizovane=_datum(date.today().isoformat())))
+
+
+def _odbor(sektor, agr):
+    """Prehlad jedneho odboru /eurofondy/<odbor>/ — kraje s poctami a 5 najvacsich prikladov."""
+    info = SEKTORY_SEO[sektor]
+    kraje = sorted(((k, a) for (s, k), a in agr.items() if s == sektor), key=lambda x: -x[1]["pocet"])
+    n = sum(a["pocet"] for _, a in kraje)
+    objem = sum(a["objem"] for _, a in kraje)
+    uradov = sum(a["uradov"] for _, a in kraje)
+    riadky = "\n".join(f"""    <a href="/eurofondy/{info['slug']}/{_slug(k)}" class="rounded-lg border border-line bg-white p-4 flex items-center justify-between gap-3 hover:bg-[#F3F5F7]">
+      <span class="text-[14px] font-medium">{_e(k)}</span>
+      <span class="text-[13px] text-slate2 tabular-nums">{_cislo(a['pocet'])} · {_suma(a['objem'])}</span>
+    </a>""" for k, a in kraje)
+    vsetky_p = sorted((p for _, a in kraje for p in a["priklady"]), key=lambda p: -(p["hodnota"] or 0))[:PRIKLADOV]
+    priklady = "\n".join(f"""      <div class="rounded-lg border border-line bg-white p-4">
+        <div class="text-[14px] font-medium">{_e(p['nazov'])}</div>
+        <div class="mt-1 flex items-center justify-between gap-3 text-[13px] text-slate2">
+          <span>{_e(p['urad'])}</span><span class="shrink-0 tabular-nums">{_suma(p['hodnota'])}</span>
+        </div>
+      </div>""" for p in vsetky_p)
+    utm = f"utm_source=seo_eurofondy_{info['slug']}&utm_medium=organic&utm_campaign=programmatic_seo"
+    nazov = _velke_prve(info["nazov_nom"])
+    telo = f"""
+<section class="max-w-[900px] mx-auto px-5 pt-10 pb-8">
+  <p class="inline-block text-[12px] font-semibold text-accent bg-accent/10 rounded-full px-3 py-1">{_e(nazov)}, eurofondy, celé Slovensko</p>
+  <h1 class="mt-5 text-[28px] sm:text-[34px] font-bold leading-tight tracking-tight">
+    Pripravované obstarávania na {info['nazov_2']} z eurofondov</h1>
+  <p class="mt-4 text-[16px] leading-relaxed text-slate2 max-w-[640px]">
+    Úrady, obce a školy ich majú zapísané v projektoch z eurofondov, súťaž ešte nevyhlásili. Vyberte kraj.</p>
+  <div class="mt-8 grid grid-cols-3 gap-3">
+    <div class="rounded-lg border border-line bg-white p-4"><div class="text-[22px] font-semibold tabular-nums">{_cislo(n)}</div>
+      <div class="text-[12px] text-slate2 mt-1">{_obstaravani(n)}</div></div>
+    <div class="rounded-lg border border-line bg-white p-4"><div class="text-[22px] font-semibold tabular-nums">{_suma(objem)}</div>
+      <div class="text-[12px] text-slate2 mt-1">predpokladaná hodnota spolu</div></div>
+    <div class="rounded-lg border border-line bg-white p-4"><div class="text-[22px] font-semibold tabular-nums">{_cislo(uradov)}</div>
+      <div class="text-[12px] text-slate2 mt-1">{_tvar(uradov, 'obstarávateľ', 'obstarávatelia', 'obstarávateľov')}</div></div>
+  </div>
+  <h2 class="mt-10 text-[18px] font-semibold">Podľa kraja</h2>
+  <div class="mt-4 grid sm:grid-cols-2 gap-3">
+{riadky}
+  </div>
+  <h2 class="mt-10 text-[18px] font-semibold">Najväčšie pripravované obstarávania</h2>
+  <div class="mt-4 grid gap-3">
+{priklady}
+  </div>
+  <div class="mt-6 flex flex-col sm:flex-row sm:items-center gap-3">
+    <a href="/prihlasenie?{utm}" class="inline-flex justify-center items-center rounded-md bg-accent text-white text-[15px] font-semibold px-5 py-3 hover:bg-accentDark">
+      Sledovať tieto obstarávania</a>
+    <span class="text-[13px] leading-snug text-slate2">14 dní zadarmo, bez platobnej karty. Keď úrad súťaž vyhlási, dáme Vám vedieť.</span>
+  </div>
+  <p class="mt-6 text-[14px]"><a href="/eurofondy/" class="text-accent hover:underline">Všetky odbory</a></p>
+</section>
+"""
+    return (HLAVICKA.format(titul=f"{nazov} z eurofondov: pripravované obstarávania podľa kraja | PredTendrom.sk",
+                            popis=f"{_cislo(n)} {_obstaravani(n)} na {info['nazov']} z eurofondov na Slovensku. Úrady ich pripravujú, súťaž ešte nevyhlásili.",
+                            cesta=f"{info['slug']}/", robots="index,follow" if n >= MIN_INDEX else "noindex,follow")
             + telo + PATICKA.format(aktualizovane=_datum(date.today().isoformat())))
 
 
@@ -242,6 +299,12 @@ def vygeneruj(agr, vystup_dir=VYSTUP_DIR, sitemap=SITEMAP_CESTA, robots=ROBOTS_C
                 os.remove(cesta)
     with open(os.path.join(vystup_dir, "index.html"), "w", encoding="utf-8") as f:
         f.write(_hub(agr))
+    # prehlad odboru /eurofondy/<odbor>/ (bez neho bola adresa odboru 404)
+    for s in sorted({s for s, _ in agr}):
+        with open(os.path.join(vystup_dir, SEKTORY_SEO[s]["slug"], "index.html"), "w", encoding="utf-8") as f:
+            f.write(_odbor(s, agr))
+        if sum(a["pocet"] for (ss, _), a in agr.items() if ss == s) >= MIN_INDEX:
+            urls.append(f"/eurofondy/{SEKTORY_SEO[s]['slug']}/")
     dnes = date.today().isoformat()
     with open(sitemap, "w", encoding="utf-8") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'

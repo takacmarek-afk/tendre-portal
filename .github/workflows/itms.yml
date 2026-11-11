@@ -12,6 +12,10 @@ on:
         description: "Planovany beh (spusta externy planovac namiesto GitHub cronu)"
         type: boolean
         default: false
+      len_stranky:
+        description: "Len pregenerovat SEO stranky (bez klasifikacie a e-mailov)"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -37,18 +41,21 @@ jobs:
           cache-dependency-path: pipeline/requirements.txt
       - run: pip install -r pipeline/requirements.txt
       - name: Klasifikacia
+        if: ${{ !inputs.len_stranky }}
         working-directory: pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python itms_klasifikuj.py
       - name: Ktore pripravovane uz urad vyhlasil (parovanie s Vestnikom)
+        if: ${{ !inputs.len_stranky }}
         working-directory: pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: python itms_parovanie.py --zapis
       - name: Upozornenie pouzivatelom (vyhlasene z eurofondov)
+        if: ${{ !inputs.len_stranky }}
         working-directory: pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
