@@ -71,4 +71,18 @@ def test_suhrn_json(tmp_path):
     sp = d["sektory"]["STAVEBNE_PRACE"]
     assert sp["slug"] == "stavebne-prace" and sp["pocet"] == 11
     assert sp["kraje"]["Košický kraj"]["slug"] == "kosicky" and len(sp["kraje"]["Košický kraj"]["priklady"]) == 3
+    # ziadna "Obec "/"Mesto " v testovacich datach -> najvacsie zo vsetkych
     assert d["najvacsie"]["hodnota"] == 800000 and d["najvacsie"]["kraj"] == "Košický kraj"
+
+
+def test_priklad_preferuje_stavbu_obce():
+    riadky = [
+        {"id": 1, "sektor": "STAVEBNE_PRACE", "kraj": "Bratislavský kraj", "nazov": "Sanácia skládky",
+         "obstaravatel_nazov": "Ministerstvo životného prostredia", "predpokladana_hodnota": 89_000_000},
+        {"id": 2, "sektor": "STAVEBNE_PRACE", "kraj": "Košický kraj", "nazov": "ČOV a kanalizácia",
+         "obstaravatel_nazov": "Obec Hraň", "predpokladana_hodnota": 5_137_127},
+        {"id": 3, "sektor": "STAVEBNE_PRACE", "kraj": "Košický kraj", "nazov": "Obchvat",
+         "obstaravatel_nazov": "Mesto Košice", "predpokladana_hodnota": 25_000_000},
+    ]
+    d = g.suhrn(g.agreguj(riadky))
+    assert d["najvacsie"]["urad"] == "Obec Hraň"

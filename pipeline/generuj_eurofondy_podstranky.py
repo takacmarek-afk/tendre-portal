@@ -291,8 +291,13 @@ def suhrn(agr):
                          "priklady": a["priklady"][:3]}
     for x in sektory.values():
         x["objem"] = round(x["objem"])
-    vsetky = [dict(p, sektor=s, kraj=k) for (s, k), a in agr.items() for p in a["priklady"][:1]]
-    naj = max(vsetky, key=lambda p: p.get("hodnota") or 0) if vsetky else None
+    vsetky = [dict(p, sektor=s, kraj=k) for (s, k), a in agr.items() for p in a["priklady"]]
+    # Priklad pre hlavnu stranku (12. 11. 2026): stavba obce alebo mesta do 10 mil. €,
+    # nie ministerska sanacia za 89 mil. € — malá firma sa v nej musi vidiet.
+    blizke = [p for p in vsetky if p.get("sektor") == "STAVEBNE_PRACE" and (p.get("hodnota") or 0) <= 10_000_000
+              and str(p.get("urad") or "").lower().startswith(("obec ", "mesto "))]
+    kandidati = blizke or vsetky
+    naj = max(kandidati, key=lambda p: p.get("hodnota") or 0) if kandidati else None
     return {
         "aktualizovane": date.today().isoformat(),
         "pocet": sum(a["pocet"] for a in agr.values()),
