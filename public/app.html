@@ -4297,8 +4297,10 @@ function nastavDnes(supabase, ctx) {
     }),
     eurofondy: () => sp('eurofondy', async () => {
       const v = ctx.vyberZoznamy ? ctx.vyberZoznamy() : { sektory: [], kraje: [] };
+      // Bez vyberu: nasich 14 odborov a 8 krajov, rovnako ako web (12. 11. 2026).
+      const nase = Object.keys(POPIS_SEKTORA).filter(k => !k.endsWith('_TOVAR') && k !== 'OSTRAHA_TECHNIKA');
       const { data: d, error } = await supabase.rpc('itms_pripravovane', {
-        p_sektory: v.sektory.length ? v.sektory : null, p_kraje: v.kraje.length ? v.kraje : null });
+        p_sektory: v.sektory.length ? v.sektory : nase, p_kraje: v.kraje.length ? v.kraje : KRAJE });
       if (error) throw error;
       return d || { pocet: 0, polozky: [], zamknute: true };
     }),
@@ -6448,8 +6450,12 @@ async function dashboard(supabase, rola, spravaPozvanky) {
       const k = el('ef-kraj').value, sk = el('ef-sektor').value;
       const kraje = k === VSETKO ? [] : (k ? [k] : vyberKraje());
       const sekt = sk === VSETKO ? [] : (sk ? [sk] : vyberSektory());
+      // "Vsetko" = nasich 14 odborov a 8 krajov, rovnako ako na webe (suhrn.json),
+      // inak by appka hlasila 3 080 a web 891 (12. 11. 2026). Bez odboru a kraja
+      // su v ITMS najma nezaradene obstaravania mimo nasich odborov.
       const { data: d, error } = await supabase.rpc('itms_pripravovane', {
-        p_sektory: sekt.length ? sekt : null, p_kraje: kraje.length ? kraje : null });
+        p_sektory: sekt.length ? sekt : efSektory.map(([x]) => x),
+        p_kraje: kraje.length ? kraje : KRAJE });
       if (moje !== poziadavka) return;
       if (error) {
         console.error(error);
