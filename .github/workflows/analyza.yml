@@ -8,7 +8,7 @@ on:
       skript:
         description: "Prehlad"
         type: choice
-        options: [poradcovia_prehlad, vyzvy_prehlad, trh_overenie, imap_sonda, itms_sonda, oprava_audit, itms_parovanie, audit_db, resend_dorucenie, obce_volby_analyza, obce_kontakty_xlsx]
+        options: [poradcovia_prehlad, vyzvy_prehlad, trh_overenie, imap_sonda, itms_sonda, oprava_audit, itms_parovanie, audit_db, dnes_db, resend_dorucenie, obce_volby_analyza, obce_kontakty_xlsx]
         default: poradcovia_prehlad
 
 permissions:
@@ -27,7 +27,7 @@ jobs:
           cache-dependency-path: pipeline/requirements.txt
       - run: pip install -r pipeline/requirements.txt
       - name: Prehlad
-        if: inputs.skript != 'audit_db'
+        if: inputs.skript != 'audit_db' && inputs.skript != 'dnes_db'
         working-directory: pipeline
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -37,9 +37,9 @@ jobs:
           RESEND_ADMIN_KEY: ${{ secrets.RESEND_ADMIN_KEY }}
         run: python "${{ inputs.skript }}.py"
       - name: Audit databazy (len citanie, psql)
-        if: inputs.skript == 'audit_db'
+        if: inputs.skript == 'audit_db' || inputs.skript == 'dnes_db'
         env:
           DB: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           docker run --rm -e DB -v "$PWD/supabase/audit:/a:ro" postgres:17-alpine \
-            sh -c "psql \"\$DB\" -q -X -f /a/audit_db.sql" 2>&1 | grep -v -iE "@|password" 
+            sh -c "psql \"\$DB\" -q -X -f /a/${{ inputs.skript == 'dnes_db' && 'dnes' || 'audit_db' }}.sql" 2>&1 | grep -v -iE "@|password" 
