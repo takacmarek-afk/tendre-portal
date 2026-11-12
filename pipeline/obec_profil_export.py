@@ -47,6 +47,20 @@ def main(cesta):
     o = zhoda[0]
     ico, kod, nazov = str(o.get("ico") or ""), str(o.get("kod") or ""), o.get("nazov")
     T = sb.table
+    # Register nema vzdy ICO: dohladat z CRZ (objednavatel "Obec <nazov>") a dotacii.
+    if not ico:
+        kand = {}
+        for r in (T("contracts").select("authority_cin,authority_name").ilike("authority_name", f"%{nazov}%").limit(500).execute().data or []):
+            if r.get("authority_cin") and norm(nazov) in norm(r.get("authority_name")) and "obec" in norm(r.get("authority_name")):
+                kand[r["authority_cin"]] = kand.get(r["authority_cin"], 0) + 1
+        for r in (T("subsidies").select("prijimatel_ico,prijimatel").ilike("prijimatel", f"%{nazov}%").limit(500).execute().data or []):
+            if r.get("prijimatel_ico") and "obec" in norm(r.get("prijimatel")):
+                kand[r["prijimatel_ico"]] = kand.get(r["prijimatel_ico"], 0) + 1
+        out["ico_kandidati"] = kand
+        if kand:
+            ico = max(kand, key=kand.get)
+    out["ico"] = ico
+    kod6 = kod[-6:] if kod else ""
     D = {
         "contracts_ako_objednavatel": lambda: vsetko(T("contracts").select(
             "id,supplier_name,supplier_cin,subject,price_total,signed_on,effective_from,effective_to,sector,published_at")
@@ -64,9 +78,9 @@ def main(cesta):
         "obec_poradcovia_agregat": lambda: vsetko(T("obec_poradcovia_agregat").select("*").ilike("obec_core", f"%{nazov}%")),
         "zmluvy_bez_sutaze": lambda: vsetko(T("zmluvy_bez_sutaze").select("*").eq("authority_ico", ico)),
         "dopyty": lambda: vsetko(T("dopyty").select("id,typ,nazov,stav,created_at").ilike("obec_nazov", f"%{nazov}%")),
-        "vyzvy_semafor": lambda: vsetko(T("vyzvy_semafor").select("*").eq("kod_obce", kod)),
+        "vyzvy_semafor": lambda: vsetko(T("vyzvy_semafor").select("*").in_("kod_obce", [kod, kod6])),
         "ruz_financie": lambda: vsetko(T("ruz_financie").select("*").eq("supplier_cin", ico)),
-        "starostovia": lambda: vsetko(T("obce_starostovia").select("rok,meno,priezvisko,titul_pred,subjekt").eq("kod_obce", kod)),
+        "starostovia": lambda: vsetko(T("obce_starostovia").select("rok,meno,priezvisko,titul_pred,subjekt,kod_obce").ilike("obec", nazov)),
         "kampan_obce_kontakt": lambda: vsetko(T("kampan_obce_kontakty").select("stav,dovod,zdroj").eq("ico", ico)),
         "kampan_obce_odoslane": lambda: vsetko(T("kampan_obce_odoslane").select("vlna,segment,stav,odoslane_at").eq("ico", ico)),
         "odber_obce_pocet": lambda: len(vsetko(T("odber_obce").select("id").eq("ico", ico))),
