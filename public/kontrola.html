@@ -398,7 +398,9 @@ async function ukazZakazku(t, vlastne) {
   // Najprv končiaca zmluva (pre služby najsilnejší signál), potom eurofondy; v rámci typu najväčšia.
   const zmluva = polozky.filter(p => p.typ === 'zmluva').sort((a, b) => b.suma - a.suma)[0];
   const ef = polozky.filter(p => p.typ === 'eurofondy').sort((a, b) => b.suma - a.suma)[0];
-  const vyber = [zmluva, ef].filter(Boolean);
+  // Stavba sa neopakuje: stavebným firmám dáme eurofondy na prvé miesto.
+  const stavby = ['STAVEBNE_PRACE', 'STRECHY_IZOLACIE', 'OKNA_DVERE_POVRCHY', 'ELEKTROINSTALACIE', 'KURENIE_VODA_PLYN'].includes(t.sektor);
+  const vyber = (stavby ? [ef, zmluva] : [zmluva, ef]).filter(Boolean);
   const href = `${CTA_HREF}&utm_source=kontrola&utm_medium=zakazka`;
   box.innerHTML = `<h3 class="kz-h2">Zákazka, ktorú by ste mali sledovať</h3>
     ${vyber.map(p => `<div style="border:2px solid #B25313;border-radius:8px;padding:14px 16px;margin-top:10px;background:#fff">
