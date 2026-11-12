@@ -136,7 +136,7 @@ jobs:
 
       - name: Nahlad e-mailov
         if: inputs.krok == 'posli' && always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: kampan-nahlad
           path: pipeline/nahlad.html
