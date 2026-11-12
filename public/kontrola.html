@@ -352,7 +352,66 @@ function trhFirmy(t) {
   const kartyHtml = karty.join('');
   return `<h3 class="kz-h2">Váš trh: ${bezpecne(odbor)} · ${bezpecne(kraje)}</h3>
     <p class="kz-dalsie">Odbor a kraje podľa vašich zmlúv v Centrálnom registri zmlúv.</p>
-    <div class="kz-karty">${kartyHtml}</div>`;
+    <div class="kz-karty">${kartyHtml}</div>
+    <div id="kz-zakazka"></div>`;
+}
+
+// ── Konkrétna zákazka pre túto firmu (12. 11. 2026) ─────────────────────
+// Ľudia z e-mailov videli len čísla a ďalej nešli. Ukážeme jednu konkrétnu
+// zákazku z ich odboru a kraja s tlačidlom „Sledovať“. Len údaje, ktoré sú
+// aj tak verejné na SEO podstránkach: teaser zo zmluvy_seo_agregat (úrad,
+// suma, mesiac konca; dodávateľ nie) a príklady z /eurofondy/suhrn.json.
+async function ukazZakazku(t, vlastne) {
+  const box = el('kz-zakazka');
+  if (!box || !t || !t.sektor) return;
+  const kraje = Array.isArray(t.kraje) ? t.kraje.filter(Boolean) : [];
+  const polozky = [];
+  try {
+    if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+      const q = new URLSearchParams({ select: 'kraj,teaser', sector: `eq.${t.sektor}` });
+      if (kraje.length) q.set('kraj', `in.(${kraje.map(k => `"${k}"`).join(',')})`);
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/zmluvy_seo_agregat?${q}`,
+        { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } });
+      const riadky = r.ok ? await r.json() : [];
+      const moje = new Set((vlastne || []).map(z => String(z && z.obstaravatel || '').toLowerCase().trim()));
+      for (const riadok of Array.isArray(riadky) ? riadky : []) {
+        for (const z of Array.isArray(riadok.teaser) ? riadok.teaser : []) {
+          const urad = String(z.authority_name || '').trim();
+          if (!urad || urad === '—' || moje.has(urad.toLowerCase())) continue;   // vlastnú zmluvu neponúkame
+          polozky.push({ typ: 'zmluva', urad, kraj: riadok.kraj, suma: Number(z.price_total) || 0, kedy: z.mesiac_konca });
+        }
+      }
+    }
+  } catch (e) { /* bez príkladu zo zmlúv */ }
+  try {
+    const r = await fetch('/eurofondy/suhrn.json', { cache: 'no-cache' });
+    const d = r.ok ? await r.json() : null;
+    const s = d && d.sektory && d.sektory[t.sektor];
+    if (s) {
+      for (const [kraj, x] of Object.entries(s.kraje || {})) {
+        if (kraje.length && !kraje.includes(kraj)) continue;
+        for (const p of x.priklady || []) polozky.push({ typ: 'eurofondy', urad: p.urad, kraj, suma: Number(p.hodnota) || 0, nazov: p.nazov });
+      }
+    }
+  } catch (e) { /* bez eurofondov */ }
+  if (!polozky.length) return;
+  // Najprv končiaca zmluva (pre služby najsilnejší signál), potom eurofondy; v rámci typu najväčšia.
+  const zmluva = polozky.filter(p => p.typ === 'zmluva').sort((a, b) => b.suma - a.suma)[0];
+  const ef = polozky.filter(p => p.typ === 'eurofondy').sort((a, b) => b.suma - a.suma)[0];
+  const vyber = [zmluva, ef].filter(Boolean);
+  const href = `${CTA_HREF}&utm_source=kontrola&utm_medium=zakazka`;
+  box.innerHTML = `<h3 class="kz-h2">Zákazka, ktorú by ste mali sledovať</h3>
+    ${vyber.map(p => `<div style="border:2px solid #B25313;border-radius:8px;padding:14px 16px;margin-top:10px;background:#fff">
+      <p style="margin:0;font-size:13px;color:#B25313;font-weight:600">${p.typ === 'zmluva' ? 'Končiaca zmluva vo vašom odbore' : 'Pripravované z eurofondov, súťaž ešte nie je vyhlásená'}</p>
+      <p style="margin:6px 0 0;font-size:16px;font-weight:600">${bezpecne(p.urad)}</p>
+      <p style="margin:4px 0 0;font-size:14px;color:#3B4350">${p.typ === 'zmluva'
+        ? `${p.suma ? bezpecne(eur(p.suma)) + ' · ' : ''}zmluva končí v ${bezpecne(p.kedy || '')} · ${bezpecne(String(p.kraj || '').replace(' kraj', ''))}`
+        : `${bezpecne(p.nazov || '')}${p.suma ? ' · ' + bezpecne(eur(p.suma)) : ''} · ${bezpecne(String(p.kraj || '').replace(' kraj', ''))}`}</p>
+      <a class="kz-cta" style="margin-top:10px;display:inline-block" href="${href}">Sledovať túto zákazku</a>
+      <p style="margin:6px 0 0;font-size:12px;color:#5B6573">${p.typ === 'zmluva'
+        ? 'Po registrácii uvidíte, kto ju dnes robí, za koľko a dokedy sa pripraviť. Keď úrad vyhlási súťaž, napíšeme vám.'
+        : 'Po registrácii vám pošleme e-mail, keď úrad súťaž vyhlási, s odkazom a termínom na ponuky.'} 14 dní zadarmo, bez karty.</p>
+    </div>`).join('')}`;
 }
 
 function skoncene(n) {
@@ -361,6 +420,8 @@ function skoncene(n) {
 }
 
 function vykresli(d) {
+  // Po vykreslení (innerHTML nižšie) doplní konkrétnu zákazku z trhu firmy.
+  setTimeout(() => ukazZakazku(d.trh, Array.isArray(d.zoznam) ? d.zoznam : []).catch(() => {}), 0);
   const ico = String(d.ico ?? '');
   const aktivne = cislo(d.pocet_aktivnych);
   const do6 = cislo(d.pocet_do_6_mesiacov);
