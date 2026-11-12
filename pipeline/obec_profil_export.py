@@ -61,30 +61,32 @@ def main(cesta):
             ico = max(kand, key=kand.get)
     out["ico"] = ico
     kod6 = kod[-6:] if kod else ""
+    # ICO je v tabulkach raz s nulami na zaciatku, raz bez (00305413 / 305413)
+    ica = sorted({ico, ico.lstrip("0"), ico.lstrip("0").zfill(8)} - {""})
     D = {
         "contracts_ako_objednavatel": lambda: vsetko(T("contracts").select(
             "id,supplier_name,supplier_cin,subject,price_total,signed_on,effective_from,effective_to,sector,published_at")
-            .eq("authority_cin", ico).order("signed_on", desc=True)),
+            .in_("authority_cin", ica).order("signed_on", desc=True)),
         "contracts_ako_dodavatel": lambda: vsetko(T("contracts").select(
-            "id,authority_name,authority_cin,subject,price_total,signed_on,effective_to").eq("supplier_cin", ico)),
-        "opportunities": lambda: vsetko(T("opportunities").select("*").eq("authority_cin", ico)),
-        "subsidies": lambda: vsetko(T("subsidies").select("*").eq("prijimatel_ico", ico).order("podpisane", desc=True)),
-        "itms_vo": lambda: vsetko(T("itms_vo").select("*").eq("obstaravatel_ico", ico)),
+            "id,authority_name,authority_cin,subject,price_total,signed_on,effective_to").in_("supplier_cin", ica)),
+        "opportunities": lambda: vsetko(T("opportunities").select("*").in_("authority_cin", ica)),
+        "subsidies": lambda: vsetko(T("subsidies").select("*").in_("prijimatel_ico", ica).order("podpisane", desc=True)),
+        "itms_vo": lambda: vsetko(T("itms_vo").select("*").in_("obstaravatel_ico", ica)),
         "itms_vo_podla_obce": lambda: vsetko(T("itms_vo").select("id,kod,nazov,stav,predpokladana_hodnota,obstaravatel_nazov,obstaravatel_ico,sektor")
             .ilike("obstaravatel_obec", f"%{nazov}%")),
-        "uvo_vysledky": lambda: vsetko(T("uvo_vysledky").select("*").eq("obstaravatel_ico", ico)),
-        "uvo_vyzvy": lambda: vsetko(T("uvo_vyzvy").select("*").eq("obstaravatel_ico", ico)),
-        "obce_ziadatelia": lambda: vsetko(T("obce_ziadatelia").select("*").eq("obec_ico", ico)),
+        "uvo_vysledky": lambda: vsetko(T("uvo_vysledky").select("*").in_("obstaravatel_ico", ica)),
+        "uvo_vyzvy": lambda: vsetko(T("uvo_vyzvy").select("*").in_("obstaravatel_ico", ica)),
+        "obce_ziadatelia": lambda: vsetko(T("obce_ziadatelia").select("*").in_("obec_ico", ica)),
         "obec_poradcovia_agregat": lambda: vsetko(T("obec_poradcovia_agregat").select("*").ilike("obec_core", f"%{nazov}%")),
-        "zmluvy_bez_sutaze": lambda: vsetko(T("zmluvy_bez_sutaze").select("*").eq("authority_ico", ico)),
+        "zmluvy_bez_sutaze": lambda: vsetko(T("zmluvy_bez_sutaze").select("*").in_("authority_ico", ica)),
         "dopyty": lambda: vsetko(T("dopyty").select("id,typ,nazov,stav,created_at").ilike("obec_nazov", f"%{nazov}%")),
         "vyzvy_semafor": lambda: vsetko(T("vyzvy_semafor").select("*").in_("kod_obce", [kod, kod6])),
-        "ruz_financie": lambda: vsetko(T("ruz_financie").select("*").eq("supplier_cin", ico)),
-        "starostovia": lambda: vsetko(T("obce_starostovia").select("rok,meno,priezvisko,titul_pred,subjekt,kod_obce").ilike("obec", nazov)),
-        "kampan_obce_kontakt": lambda: vsetko(T("kampan_obce_kontakty").select("stav,dovod,zdroj").eq("ico", ico)),
-        "kampan_obce_odoslane": lambda: vsetko(T("kampan_obce_odoslane").select("vlna,segment,stav,odoslane_at").eq("ico", ico)),
-        "odber_obce_pocet": lambda: len(vsetko(T("odber_obce").select("id").eq("ico", ico))),
-        "obce_ucty_pocet": lambda: len(vsetko(T("obce_ucty").select("id").eq("ico", ico))),
+        "ruz_financie": lambda: vsetko(T("ruz_financie").select("*").in_("supplier_cin", ica)),
+        "starostovia": lambda: vsetko(T("obce_starostovia").select("rok,meno,priezvisko,titul_pred,subjekt,kod_obce").in_("kod_obce", [kod, kod6])),
+        "kampan_obce_kontakt": lambda: vsetko(T("kampan_obce_kontakty").select("stav,dovod,zdroj").in_("ico", ica)),
+        "kampan_obce_odoslane": lambda: vsetko(T("kampan_obce_odoslane").select("vlna,segment,stav,odoslane_at").in_("ico", ica)),
+        "odber_obce_pocet": lambda: len(vsetko(T("odber_obce").select("id").in_("ico", ica))),
+        "obce_ucty_pocet": lambda: len(vsetko(T("obce_ucty").select("id").in_("ico", ica))),
     }
     for k, fn in D.items():
         out[k] = skus(k, fn)
