@@ -52,8 +52,8 @@ _POZITIVNE = re.compile(r"\?|(?<!ne)zauj[ií]ma\s+n[aá]s|(?<!ne)m[aá]me\s+z[a�
                         r"pozriem|pozrieme|vysk[uú][sš]a", re.I)
 # 16. 11. 2026: suhlas s bezplatnym tyzdennym prehladom odpovedou "ano" (kratka
 # sprava bez otazky). Pri pochybnosti ostava 'rucne'.
-_ANO = re.compile(r"^\W*(([aá]no|ok|okej|s[uú]hlas[ií]m|m[aá]me?\s+z[aá]ujem|posielajte|pros[ií]m\s+posielajte|"
-                  r"m[oô][zž]ete\s+posiela[tť])\b[\s,.!]*)+(pros[ií]m|[dď]akujem|v[dď]aka)?\W*$", re.I)
+_ANO = re.compile(r"^\W*(([aá]no|ok|okej|s[uú]hlas[ií]m|s[uú]hlas[ií]me|m[aá]me?\s+z[aá]ujem|posielajte|pros[ií]m\s+posielajte|"
+                  r"po[sš]lite(\s+to)?|m[oô][zž]ete\s+posiela[tť]|m[oô][zž]ete)\b[\s,.!]*)+(pros[ií]m|[dď]akujem|v[dď]aka)?\W*$", re.I)
 VETA_ANO = ("Dobrý deň,\n\nďakujem, zapísal som Vás. Raz týždenne Vám pošlem nové zákazky vo Vašom odbore "
             "a kraji, zadarmo. Odhlásiť sa dá jedným kliknutím v každom e-maile.\n\n"
             "Ak chcete vidieť všetko naraz (kto zákazku dnes robí, za koľko a kedy sa pripraviť), "
@@ -182,6 +182,7 @@ def main(argv=None) -> int:
     from supabase import create_client
     from strankuj import vsetky
     from oslovenie_firiem import _FREEMAIL, ico8
+    import dopyt_obce as do
     sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
     heslo = os.environ.get("ZOHO_IMAP_PASSWORD") or os.environ["ZOHO_SMTP_PASSWORD"]
 
@@ -205,6 +206,13 @@ def main(argv=None) -> int:
             raise   # bez tabulky (migracia 96) by sa odpovedalo opakovane
         hotove = set()
 
+    # 16. 11. 2026: odpovede obci na Kampan pre obce (suhlas "ano" -> e-mail firmam)
+    o_kontakty = vsetky(lambda o, d: sb.table("kampan_obce_kontakty").select("ico,email")
+                        .order("ico").range(o, d).execute())
+    o_odoslane = vsetky(lambda o, d: sb.table("kampan_obce_odoslane").select("ico,vlna,stav,segment,resend_id")
+                        .order("id").range(o, d).execute())
+    o_mid, o_email, o_dom, o_seg = do.mapy_obci(o_kontakty, o_odoslane, _FREEMAIL)
+
     imap = imaplib.IMAP4_SSL(IMAP_HOST, 993)
     imap.login(SCHRANKA, heslo)
     od = (date.today() - timedelta(days=DNI)).strftime("%d-%b-%Y")
@@ -225,13 +233,50 @@ def main(argv=None) -> int:
         text = "" if je_nedorucena(m) else text_spravy(m)
         typ = roztried(m, text)
         ico = None
+        obec = None
         if typ == "nedorucene":
             for adr in nedorucene_adresy(m):
                 if adr in k_email:
                     ico = k_email[adr]
                     break
+                if adr in o_email:
+                    obec = o_email[adr]
+                    break
         else:
             ico = priradit_ico(m, k_email, k_dom, nase)
+            if not ico:
+                obec = do.priradit_obec(m, o_mid, o_email, o_dom)
+        if obec:
+            # suhlas plati len po e-maile o eurofondoch (inak nevieme, co poslat firmam)
+            if typ == "ano" and o_seg.get(obec) != "eurofondy":
+                typ = "rucne"
+            kat = f"obec_{typ}"
+            pocty[kat] = pocty.get(kat, 0) + 1
+            if not a.ostro:
+                continue
+            poslana = False
+            try:
+                if typ == "ano":
+                    odosielatel = parseaddr(m.get("Reply-To") or m.get("From", ""))[1]
+                    do.zapis_suhlas(sb, obec, odosielatel)
+                    odpovedi.append(zdvorila_odpoved(m, do.VETA_OBEC_ANO))
+                    poslana = True
+                elif typ == "nie":
+                    do.odhlas_obec(sb, obec)
+                    odpovedi.append(zdvorila_odpoved(m, do.VETA_OBEC_NIE))
+                    poslana = True
+                elif typ == "nedorucene":
+                    do.vyrad_obec(sb, obec)
+            except Exception as e:      # pri chybe nech odpovie Marek rucne
+                log.warning("odpoved obce: %s", type(e).__name__)
+            try:
+                prijate = parsedate_to_datetime(m.get("Date")).isoformat()
+            except Exception:
+                prijate = None
+            sb.table("oslovenie_odpovede").upsert({"message_id": mid, "ico": f"obec-{obec}",
+                                                   "typ": "rucne" if typ == "ano" else typ,
+                                                   "odpoved_odoslana": poslana, "prijate_at": prijate}).execute()
+            continue
         if not ico:
             typ = "ine"
         pocty[typ] = pocty.get(typ, 0) + 1
@@ -265,6 +310,13 @@ def main(argv=None) -> int:
                                                "odpoved_odoslana": poslana, "prijate_at": prijate}).execute()
     imap.logout()
 
+    # obce, ktore suhlasili: e-mail firmam z odboru a kraja (nasucho len pocty)
+    try:
+        pf = do.posli_firmam(sb, heslo, a.ostro)
+    except Exception as e:
+        log.warning("e-mail firmam po suhlase obce zlyhal: %s", type(e).__name__)
+        pf = {"chyby": -1}
+
     poslane = 0
     if odpovedi:
         with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=30, context=ssl.create_default_context()) as s:
@@ -275,8 +327,13 @@ def main(argv=None) -> int:
     suhrn = (f"{'OSTRO' if a.ostro else 'NASUCHO'}: ANO {pocty.get('ano', 0)}, nie {pocty.get('nie', 0)} (odpovede {poslane}), "
              f"rucne {pocty.get('rucne', 0)}, auto {pocty.get('auto', 0)}, "
              f"nedorucene {pocty.get('nedorucene', 0)}, ine {pocty.get('ine', 0)}")
+    suhrn += (f" | OBCE: ano {pocty.get('obec_ano', 0)}, nie {pocty.get('obec_nie', 0)}, "
+              f"rucne {pocty.get('obec_rucne', 0)}, nedorucene {pocty.get('obec_nedorucene', 0)}"
+              f" | firmam po suhlase obce: {pf}")
     log.info(suhrn)
     print(f"::notice title=Odpovede::{suhrn}")
+    if pocty.get("obec_rucne"):
+        print(f"::warning title=Odpovede obci::Na rucnu odpoved caka {pocty['obec_rucne']} sprav od obci.")
     if pocty.get("rucne"):
         print(f"::warning title=Odpovede::Na rucnu odpoved caka {pocty['rucne']} sprav (schranka marek@predtendrom.sk).")
     return 0

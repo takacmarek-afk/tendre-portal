@@ -399,9 +399,10 @@ def zostav(vlna, kontakt, starosta, data):
                     f" obstarávanie „{nazov}“" + (f" s predpokladanou hodnotou {suma}" if suma else "")
                     + (f" a {dalsie} {'ďalšie' if dalsie < 5 else 'ďalších'}" if dalsie > 0 else "")
                     + ". Súťaž zatiaľ nie je vyhlásená.",
-                    ["Čím viac firiem ponuku podá, tým lepšia cena a menšie riziko, že súťaž bude"
-                     " treba opakovať. Na ", trh_link, " môžete obstarávanie zadarmo zverejniť vopred a ozvú"
-                     " sa vám firmy a poradcovia z regiónu, ktorí takéto zákazky robia."],
+                    "Čím viac firiem ponuku podá, tým lepšia cena a menšie riziko, že súťaž bude"
+                    " treba opakovať. Ak chcete, odpíšte na tento e-mail „áno“ a o obstarávaní dáme vopred"
+                    " vedieť firmám z vášho kraja, ktoré takéto zákazky robia. Ozvú sa vám priamo."
+                    " Pre obec je to zadarmo a k ničomu ju to nezaväzuje.",
                     [f"Prehľad zmlúv a dotácií pre {obec} je zadarmo a bez registrácie: ", obce_link],
                     podpis]}
 

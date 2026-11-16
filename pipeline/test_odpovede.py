@@ -76,3 +76,10 @@ def test_ano_len_kratka_jasna_odpoved():
     for t in ("Áno, a koľko to stojí?", "Ano ale len pre Košický kraj a zavolajte mi", "Nie", "Nemáme záujem",
               "Dobrý deň, áno, robíme aj strechy, ale momentálne máme plno a neviem, či to pre nás je"):
         assert o.roztried(m, t) != "ano", t
+
+
+def test_ano_od_obce():
+    import email as _e
+    m = _e.message_from_string("From: obec@hran.sk\nSubject: Re: x\n\nx")
+    for t in ("Áno, pošlite to", "Súhlasíme.", "Áno, môžete", "Pošlite prosím"):
+        assert o.roztried(m, t) == "ano", t

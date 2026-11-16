@@ -392,3 +392,4 @@ def test_eurofondy_segment():
     assert s["segment"] == "eurofondy"
     assert "„Stavebné práce - ČOV a kanalizácia“" in t and "5 100 000 €" in t and "a 2 ďalšie" in t
     assert "opätovnému zvoleniu" in t
+    assert "odpíšte na tento e-mail „áno“" in t and "nezaväzuje" in t
