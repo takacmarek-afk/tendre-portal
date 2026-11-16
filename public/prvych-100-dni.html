@@ -116,10 +116,10 @@
       <span class="font-serif text-[19px] text-ink">Obecný prehľad</span>
       <span class="text-[13px] text-slate2 hidden sm:inline">od PredTendrom.sk</span>
     </a>
-    <a href="tel:+421905438454"
+    <a href="tel:+421949042236"
        class="inline-flex items-center gap-2 text-[15px] tabular-nums font-semibold text-ink border border-line rounded-md px-3.5 py-2 hover:border-accent transition">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.362 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.338 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-      0905 438 454
+      0949 042 236
     </a>
   </div>
 </header>
@@ -260,13 +260,13 @@ async function zobrazSuhrn(nazov, kraj) {
   try {
     riadky = await volajRpc('prvych_100_dni_suhrn', { p_nazov: nazov, p_kraj: kraj || null });
   } catch (e) {
-    el('vysledok').innerHTML = `<p class="text-slate2">Súhrn sa nepodarilo načítať. Skúste to prosím znova, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a>.</p>`;
+    el('vysledok').innerHTML = `<p class="text-slate2">Súhrn sa nepodarilo načítať. Skúste to prosím znova, alebo nám <a href="tel:+421949042236" class="text-accent hover:underline">zavolajte</a>.</p>`;
     ukazHladanie(nazov);
     return;
   }
   const s = (riadky && riadky[0]) || null;
   if (!s || !s.najdena) {
-    el('vysledok').innerHTML = `<p class="text-slate2">Obec „${bezpecne(nazov)}“ sme v zozname obcí Slovenska nenašli. Skúste presnejší názov (bez „Obec“ či „Mesto“), alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a> a pozrieme sa spolu.</p>`;
+    el('vysledok').innerHTML = `<p class="text-slate2">Obec „${bezpecne(nazov)}“ sme v zozname obcí Slovenska nenašli. Skúste presnejší názov (bez „Obec“ či „Mesto“), alebo nám <a href="tel:+421949042236" class="text-accent hover:underline">zavolajte</a> a pozrieme sa spolu.</p>`;
     ukazHladanie(nazov);
     return;
   }
@@ -297,7 +297,7 @@ async function zobrazSuhrn(nazov, kraj) {
     <p class="mt-2 text-[13px] text-slate2 max-w-[600px]">
       Poctivé upozornenie: údaje pochádzajú z Centrálneho registra zmlúv.
       Menšie obce niekedy zverejňujú zmluvy len na vlastnom webe — ak vám
-      tento súhrn nesedí s tým, čo poznáte, <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte nám</a> a radi doplníme, čo chýba.
+      tento súhrn nesedí s tým, čo poznáte, <a href="tel:+421949042236" class="text-accent hover:underline">zavolajte nám</a> a radi doplníme, čo chýba.
     </p>
     <div class="mt-5 flex flex-col sm:flex-row gap-3">
       <a href="./obce.html"
@@ -381,7 +381,7 @@ el('hladanie-form').addEventListener('submit', async (e) => {
     return;
   }
   if (!kandidati || kandidati.length === 0) {
-    el('vysledok').innerHTML = `<p class="text-slate2">Pre „${bezpecne(text)}“ sme medzi obcami Slovenska nič nenašli. Skúste presnejší názov, alebo nám <a href="tel:+421905438454" class="text-accent hover:underline">zavolajte</a> a pozrieme sa spolu.</p>`;
+    el('vysledok').innerHTML = `<p class="text-slate2">Pre „${bezpecne(text)}“ sme medzi obcami Slovenska nič nenašli. Skúste presnejší názov, alebo nám <a href="tel:+421949042236" class="text-accent hover:underline">zavolajte</a> a pozrieme sa spolu.</p>`;
     return;
   }
   if (kandidati.length === 1) {

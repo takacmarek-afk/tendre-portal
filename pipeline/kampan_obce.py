@@ -61,7 +61,8 @@ SMTP_PORT = int(os.getenv("KAMPAN_SMTP_PORT", "465"))
 SMTP_USER = os.getenv("KAMPAN_SMTP_USER", "marek@predtendrom.sk")
 ODOSIELATEL = os.getenv("KAMPAN_OD", "Marek Takáč z PredTendrom.sk <marek@predtendrom.sk>")
 REPLY_TO = os.getenv("KAMPAN_REPLY_TO", "").strip()
-TELEFON = os.getenv("KAMPAN_TELEFON", "").strip()
+# 16. 11. 2026: nove cislo Mareka (secret KAMPAN_TELEFON mohol drzat stare firemne cislo)
+TELEFON = "0949 042 236"
 ROK_VOLIEB = int(os.getenv("KAMPAN_ROK_VOLIEB", "2026"))
 WEB = "https://predtendrom.sk"
 PAUZA_S = float(os.getenv("KAMPAN_PAUZA_S", "20"))   # rozostup: posiela clovek, nie hromadna posta
