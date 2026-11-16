@@ -159,3 +159,15 @@ def test_prvy_email_pridava_sutaze_na_koniec():
     import posli_odber_firmy as m
     o = m.obsah(1, {"sektor": "OSTRAHA", "kraj": None}, {"celkom": 0, "zoznam": []}, VYZVY[:1])
     assert o["bloky"][0]["titul"].startswith("Nové vyhlásené súťaže (1)")
+
+
+def test_ano_odberatel_ma_vlastny_text_a_ponuku():
+    ra = dict(R, zdroj="oslovenie-ano")
+    o1 = pf.obsah(1, ra, D)
+    assert o1["uvod"].startswith("Ďakujeme za odpoveď.") and "„áno“" in o1["odhlasenie"]
+    assert pf.obsah(1, R, D)["uvod"].startswith("Ďakujeme za potvrdenie.")
+    o4 = pf.obsah(4, ra, D)
+    assert any("ZAKLADATEL" in b.get("popis", "") for b in o4["bloky"])
+    assert "utm_campaign=zakladatel" in o4["cta_url"]
+    assert not any("ZAKLADATEL" in b.get("popis", "") for b in pf.obsah(5, ra, D)["bloky"])
+    assert any("ZAKLADATEL" in b.get("popis", "") for b in pf.obsah(6, ra, D)["bloky"])

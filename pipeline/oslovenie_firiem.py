@@ -715,6 +715,11 @@ def variant_pre(ico):
     return "A"
 
 
+def priorita_odboru(segment) -> int:
+    """0 = stavebne odbory s eurofondmi (najprv), 1 = ostatne."""
+    return 0 if (EU_HLAVNE_ZAPNUTE and segment in EU_HLAVNE) else 1
+
+
 def na_rade(kontakty, odoslane, segmenty, vylucene_ica, vylucene_emaily, dnes, novych):
     """-> [(kontakt, krok)] — najprv nadvazujuce kroky, potom novi (najviac `novych`)."""
     podla = {}
@@ -799,7 +804,9 @@ def krok_posli(sb, a):
     novi = [x for x in rad if x[1] == 1]
     vlastne = nacitaj_vlastne(sb, [k["ico"] for k, _ in novi], dnes) if novi else {}
     novi = [x for x in novi if x[0].get("segment") in segmenty or ico8(x[0]["ico"]) in vlastne]
-    novi.sort(key=lambda x: ico8(x[0]["ico"]) not in vlastne)   # stabilne: poradie inak ostava
+    # 16. 11. 2026 (rastovy plan): po obrane idu stavebne odbory, kde je hacikom
+    # eurofondovy projekt; stabilne triedenie, poradie inak ostava.
+    novi.sort(key=lambda x: (ico8(x[0]["ico"]) not in vlastne, priorita_odboru(x[0].get("segment"))))
     log.info("Novych firiem na rade %d, z toho s vlastnou konciacou zmluvou (obrana) %d.",
              len(novi), sum(1 for k, _ in novi if ico8(k["ico"]) in vlastne))
     vybrani, odmietnuti = [], 0

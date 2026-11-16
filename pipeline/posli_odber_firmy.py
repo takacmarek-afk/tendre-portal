@@ -131,6 +131,18 @@ KROKY_POSTUP = [
 ]
 
 
+PONUKA_URL = ODKAZ_SKUSKA + "?utm_source=odber&utm_medium=email&utm_campaign=zakladatel"
+BLOK_PONUKA = {"titul": "Zakladajúca cena: 240 € namiesto 340 € na prvý rok",
+               "popis": "Platí pre prvých 30 firiem. Najprv 14 dní zadarmo, bez platobnej karty. "
+                        "Ak budete chcieť pokračovať, pri platbe zadajte kód ZAKLADATEL.",
+               "zvyraznene": "Kód: ZAKLADATEL"}
+
+
+def je_ponuka_tyzden(n: int) -> bool:
+    """V tyzdennom prehlade (n >= 5) pripomenieme ponuku raz za 4 tyzdne."""
+    return n >= 5 and n % 4 == 2
+
+
 def obsah(n: int, r: dict, d, vyzvy=None) -> "dict | None":
     """E-mail c. n (1 = prvy) pre riadok r. `d` = vysledok odber_firmy_zmluvy.
     None = tento e-mail sa neposle (tyzdenny prehlad bez zmluv)."""
@@ -141,16 +153,20 @@ def obsah(n: int, r: dict, d, vyzvy=None) -> "dict | None":
     bloky = bloky_zmluv(d)
     bv = bloky_vyzviev(vyzvy)
     pocet = f"{celkom} {_sklon(celkom, 'zmluva', 'zmluvy', 'zmlúv')}"
-    odhl = ("Tento e-mail vám prišiel, lebo ste na predtendrom.sk požiadali o týždenný prehľad "
-            f"končiacich zmlúv (odbor: {odbor}, {kde}) a súhlas ste potvrdili. "
+    ano = r.get("zdroj") == "oslovenie-ano"
+    odhl = (("Tento e-mail vám prišiel, lebo ste na náš e-mail odpovedali „áno“ a požiadali tak o týždenný "
+             f"prehľad končiacich zmlúv (odbor: {odbor}, {kde}). ") if ano else
+            ("Tento e-mail vám prišiel, lebo ste na predtendrom.sk požiadali o týždenný prehľad "
+             f"končiacich zmlúv (odbor: {odbor}, {kde}) a súhlas ste potvrdili. ")) + (
             "Prehľad môžete kedykoľvek zrušiť odkazom nižšie alebo odpoveďou slovom Odhlásiť. "
             "Otázky: info@predtendrom.sk.")
+    vdaka = "Ďakujeme za odpoveď." if ano else "Ďakujeme za potvrdenie."
     zakl = {"cta_text": "Pozrieť všetky zmluvy z výberu", "cta_url": ODKAZ_SKUSKA, "odhlasenie": odhl}
 
     if n == 1:
-        uvod = (f"Ďakujeme za potvrdenie. V tomto výbere ({vyber}) končí v nasledujúcich 12 mesiacoch {pocet}. Tri z nich:"
+        uvod = (f"{vdaka} V tomto výbere ({vyber}) končí v nasledujúcich 12 mesiacoch {pocet}. Tri z nich:"
                 if celkom > 0 else
-                f"Ďakujeme za potvrdenie. Pre výber ({vyber}) teraz nemáme žiadnu zmluvu, ktorá končí "
+                f"{vdaka} Pre výber ({vyber}) teraz nemáme žiadnu zmluvu, ktorá končí "
                 "v najbližších 12 mesiacoch. Keď sa nejaká objaví, pošleme vám ju.")
         return dict(zakl, predmet=f"Váš prehľad končiacich zmlúv: {vyber}",
                     titulok=f"Končiace zmluvy: {vyber}", uvod=uvod, bloky=bloky + bv)
@@ -176,7 +192,8 @@ def obsah(n: int, r: dict, d, vyzvy=None) -> "dict | None":
                 "V 14-dňovej skúške bez platobnej karty uvidíte všetky končiace zmluvy zo svojho výberu "
                 "so sumami a dodávateľmi a môžete si nastaviť e-mailový prehľad.")
         return dict(zakl, predmet=f"Všetky končiace zmluvy: {vyber}", titulok="Chcete vidieť všetky?",
-                    uvod=uvod, bloky=bloky, cta_text="Vyskúšať 14 dní zadarmo")
+                    uvod=uvod, bloky=bloky + [BLOK_PONUKA], cta_text="Vyskúšať 14 dní zadarmo",
+                    cta_url=PONUKA_URL)
     # n >= 5: tyzdenny prehlad; bez zmluv aj bez novych sutazi sa neposiela
     if not bloky and not bv:
         return None
@@ -185,6 +202,9 @@ def obsah(n: int, r: dict, d, vyzvy=None) -> "dict | None":
                if nv else f"Týždenný prehľad: {vyber}")
     uvod = (f"V tomto výbere ({vyber}) končí v najbližších 12 mesiacoch {pocet}. Tri z nich:"
             if bloky else f"Nové vyhlásené súťaže vo vašom výbere ({vyber}):")
+    if je_ponuka_tyzden(n):
+        return dict(zakl, predmet=predmet, titulok="Týždenný prehľad", uvod=uvod,
+                    bloky=bv + bloky + [BLOK_PONUKA], cta_text="Vyskúšať 14 dní zadarmo", cta_url=PONUKA_URL)
     return dict(zakl, predmet=predmet, titulok="Týždenný prehľad", uvod=uvod, bloky=bv + bloky)
 
 
@@ -221,6 +241,17 @@ def main(argv=None) -> int:
     except Exception as e:
         log.error("odber_firmy_na_odoslanie() zlyhalo: %s", e)
         return 1
+
+    # zdroj (napr. 'oslovenie-ano') RPC nevracia; docitame ho priamo z tabulky.
+    try:
+        ids = [r["id"] for r in riadky]
+        zdroje = {z["id"]: z.get("zdroj") for z in (sb.table("odber_firmy").select("id,zdroj")
+                                                   .in_("id", ids).execute().data or [])} if ids else {}
+    except Exception as e:
+        log.warning("Nacitanie zdroja zlyhalo (%s), pouzijem bezny text.", e)
+        zdroje = {}
+    for r in riadky:
+        r["zdroj"] = zdroje.get(r["id"])
 
     poslane = zlyhane = preskocene = 0
     for r in riadky:

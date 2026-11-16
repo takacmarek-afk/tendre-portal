@@ -497,3 +497,10 @@ def test_krok1_ma_tri_zakazky_a_vyzvu_ano():
     s = of.zostav(1, KONTAKT, {**_hook(), "suma12": 1_480_000}, "A")
     text, _ = of.vyrenderuj(s, TOKEN)
     assert text.count("• ") == len(_hook()["zmluvy"][:3]) and "odpovedať „áno“" in text
+
+
+def test_stavebne_odbory_maju_prednost():
+    import oslovenie_firiem as of
+    assert of.priorita_odboru("STAVEBNE_PRACE") == 0
+    assert of.priorita_odboru("UPRATOVANIE") == 1
+    assert of.priorita_odboru(None) == 1
