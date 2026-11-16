@@ -466,14 +466,20 @@ def zostav_obranu(kontakt, z, variant):
         f"{' za ' + suma if suma else ''}. Zmluva končí {ko.datum_sk(z['effective_to'])}.",
         "Ak ju úrad bude obstarávať znova, súťaž zvyčajne vyhlási niekoľko mesiacov pred koncom. "
         "Kto ju zachytí neskoro, má na ponuku málo času a môže prísť o zákazníka.",
-        "PredTendrom sleduje Vestník a dá Vám vedieť, keď úrad súťaž vyhlási."
-        + (" Zároveň ukáže ďalšie končiace zmluvy vo Vašom odbore." if kontakt.get("segment") in ODBOR else ""),
-        ["Kedy končia všetky Vaše zmluvy so štátom, uvidíte bez registrácie: ",
+        "PredTendrom sleduje Vestník. Ak chcete, dá Vám vedieť hneď, ako úrad súťaž vyhlási"
+        + (", a každý týždeň pošle nové zákazky vo Vašom odbore" if kontakt.get("segment") in ODBOR else "")
+        + ". Je to zadarmo, stačí na tento e-mail odpovedať „áno“.",
+        ["Kedy končia všetky Vaše zmluvy so štátom, uvidíte aj tu: ",
          ("a", "predtendrom.sk/kontrola", utm(kontrola, 1, variant, "obrana"))],
         "S pozdravom\nMarek Takáč\nPredTendrom.sk"]}
 
 
 EUROFONDY_MIN = 3
+
+# 16. 11. 2026 (schvalil Marek): hodnota priamo v e-maile a jediny krok
+# "odpovedzte ano". Z 251 e-mailov prislo 25 navstev a ziadna registracia;
+# na odpoved "ano" odpovede.py zapise firmu do bezplatneho tyzdenneho prehladu.
+ANO = "Ak chcete, každý týždeň Vám takto pošlem nové, zadarmo. Stačí na tento e-mail odpovedať „áno“."
 
 
 def veta_eurofondy(hook, odbor_kr, kraj_l):
@@ -536,15 +542,14 @@ def zostav_eurofondy(kontakt, hook, variant):
     uvod = (f"vo Vestníku verejného obstarávania som videl, že {firma} robí zákazky pre {urad_firmy}."
             if urad_firmy else f"vo Vestníku verejného obstarávania som videl, že {firma} robí zákazky pre verejný sektor.")
     priklady = "\n".join(f"• {_skrat(u, 60)} – {_skrat(nz, 70)}" + (f", {ko.eur(h)}" if h >= 1000 else "")
-                         for h, u, nz in top[:2])
+                         for h, u, nz in top[:3])
     return {"predmet": _skrat(predmet, 120), "odstavce": [
         "Dobrý deň,",
         uvod + f" Úrady a obce v {kraj_l} majú v projektoch z eurofondov pripravených {n} obstarávaní "
         f"na {odbor_kr}{za}. Súťaže ešte nevyhlásili" + (", napríklad:" if priklady else "."),
         *([priklady] if priklady else []),
-        "PredTendrom ich sleduje a dá Vám vedieť, keď úrad súťaž vyhlási. "
-        "Kto o nej vie vopred, má čas pripraviť si ponuku.",
-        ["Celý prehľad pre Váš kraj nájdete bez registrácie tu: ",
+        "Kto o súťaži vie vopred, má čas pripraviť si ponuku. " + ANO,
+        ["Celý prehľad pre Váš kraj nájdete aj tu: ",
          ("a", "predtendrom.sk" + cesta, utm(cesta, 1, variant, "eurofondy"))],
         "S pozdravom\nMarek Takáč\nPredTendrom.sk"]}
 
@@ -576,14 +581,16 @@ def zostav(krok, kontakt, hook, variant):
                 if urad_firmy else f"vo Vestníku verejného obstarávania som videl, že {firma} dodáva verejnému sektoru. ")
         return {"predmet": _skrat(predmet, 120), "odstavce": [
             "Dobrý deň,",
-            uvod + "Našiel som zmluvu, ktorá by Vás mohla zaujímať:",
-            f"{z1['urad']} – {z1['predmet']}{suma}, končí {ko.datum_sk(z1['koniec'])}.",
-            f"V odbore {odbor} v {kraj_l} {konci} do 12 mesiacov {n} {zml} úradov{za_spolu}. "
-            "PredTendrom ich zbiera na jedno miesto a raz týždenne Vám pošle nové, aby ste mali čas "
-            "pripraviť sa skôr, než úrad vyhlási súťaž." + veta_eurofondy(hook, odbor_kr, kraj_l),
+            uvod + ("Našiel som zmluvy, ktoré by Vás mohli zaujímať:" if len(hook["zmluvy"]) > 1
+                    else "Našiel som zmluvu, ktorá by Vás mohla zaujímať:"),
+            "\n".join(f"• {z['urad']} – {z['predmet']}" + (f", {z['suma']}" if z.get("suma") else "")
+                      + f", končí {ko.datum_sk(z['koniec'])}" for z in hook["zmluvy"][:3]),
+            f"V odbore {odbor} v {kraj_l} {konci} do 12 mesiacov {n} {zml} úradov{za_spolu}."
+            + veta_eurofondy(hook, odbor_kr, kraj_l),
+            ANO,
             # 11. 11. 2026: odkaz na osobny prehlad firmy podla ICO (jej zmluvy, trh v odbore
             # a kraji, eurofondy); po registracii appka predvyplni nazov a ICO
-            (["Prehľad pre " + firma + " (Vaše zmluvy, trh v odbore a kraji) nájdete bez registrácie tu: ",
+            (["Prehľad pre " + firma + " (Vaše zmluvy, trh v odbore a kraji) nájdete aj tu: ",
               ("a", "predtendrom.sk/kontrola", utm(f"/kontrola?ico={ico8(kontakt['ico'])}", 1, variant))]
              if kontakt.get("ico") else
              ["Prehľad pre Váš odbor a kraj nájdete bez registrácie tu: ",
@@ -606,9 +613,9 @@ def zostav(krok, kontakt, hook, variant):
             "Dobrý deň,",
             "nadväzujem na môj e-mail. Z obstarávaní, ktoré úrady v kraji pripravujú z eurofondov, posielam ďalšie:",
             riadky,
-            [f"Ak chcete, pošleme Vám zadarmo raz týždenne nové vyhlásené súťaže na {odbor_kr} v {kraj_l}, "
-             f"bez registrácie: ", ("a", "predtendrom.sk", utm(odber_cesta(seg, kraj), 2, variant, "eurofondy"))],
-            "Ak to pre Vás nie je, odpíšte „Nie“ a už nenapíšem.",
+            f"Ak chcete, pošlem Vám zadarmo raz týždenne nové obstarávania a vyhlásené súťaže na {odbor_kr} "
+            f"v {kraj_l}. Stačí odpovedať „áno“. Ak to pre Vás nie je, odpíšte „nie“ a už nenapíšem.",
+            ["Prehľad pre Váš kraj: ", ("a", "predtendrom.sk", utm(odber_cesta(seg, kraj), 2, variant, "eurofondy"))],
             "Marek Takáč"]}
     if krok == 3 and eu:
         predmet = (f"Posledný e-mail o obstarávaniach na {odbor_kr}" if variant == "A"
@@ -634,10 +641,9 @@ def zostav(krok, kontakt, hook, variant):
             riadky,
             # 10. 11. 2026: bezplatny tyzdenny prehlad (nove sutaze + konciace
             # zmluvy) ako najnizsi prah — staci e-mail, bez registracie.
-            [f"Ak chcete, pošleme Vám zadarmo raz týždenne nové vyhlásené súťaže a končiace zmluvy "
-             f"na {odbor_kr} v {kraj_l}, bez registrácie: ",
-             ("a", "predtendrom.sk", utm(odber_cesta(seg, kraj), 2, variant))],
-            "Ak to pre Vás nie je, odpíšte „Nie“ a už nenapíšem.",
+            f"Ak chcete, pošlem Vám zadarmo raz týždenne nové vyhlásené súťaže a končiace zmluvy "
+            f"na {odbor_kr} v {kraj_l}. Stačí odpovedať „áno“. Ak to pre Vás nie je, odpíšte „nie“ a už nenapíšem.",
+            ["Prehľad pre Váš odbor a kraj: ", ("a", "predtendrom.sk", utm(odber_cesta(seg, kraj), 2, variant))],
             "Marek Takáč"]}
     if krok == 3:
         predmet = f"Posledný e-mail o zmluvách na {odbor_kr}" if variant == "A" \

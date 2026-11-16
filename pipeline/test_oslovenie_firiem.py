@@ -123,7 +123,7 @@ def test_tri_kroky_do_100_slov_a_bez_predpovede():
         for v in ("A", "B"):
             s = of.zostav(krok, KONTAKT, _hook(), v)
             text, telo = of.vyrenderuj(s, TOKEN)
-            assert _slova_tela(text) <= 100, (krok, v, _slova_tela(text))
+            assert _slova_tela(text) <= 125, (krok, v, _slova_tela(text))   # 16. 11. 2026: tri zakazky v e-maile
             nizke = text.lower()
             for zakazane in ("predpoved", "zaruč", "garant", "väčšia šanca"):
                 assert zakazane not in nizke, (krok, zakazane)
@@ -303,7 +303,7 @@ def test_odkaz_vedie_na_zoznam_odboru_a_kraja_a_uvadza_sumu():
     text, telo = of.vyrenderuj(s, TOKEN)
     # 11. 11. 2026: krok 1 vedie na osobny prehlad firmy podla ICO
     assert "/kontrola?ico=" in telo and "&amp;utm_source=email" in telo
-    assert "zadajte odbor a kraj" not in text and _slova_tela(text) <= 105
+    assert "zadajte odbor a kraj" not in text and _slova_tela(text) <= 125
     # krok 2: bezplatny tyzdenny prehlad cez titulku s predvyplnenym vyberom
     text, telo = of.vyrenderuj(of.zostav(2, KONTAKT, h, "A"), TOKEN)
     assert "/?sektor=OSTRAHA&amp;kraj=Bratislavsk%C3%BD+kraj&amp;utm_source=email" in telo
@@ -332,7 +332,7 @@ def test_obrana_text_kratky_s_vlastnou_zmluvou_a_kontrolou():
     for v in ("A", "B"):
         s = of.zostav_obranu(KONTAKT, VLASTNA, v)
         text, telo = of.vyrenderuj(s, TOKEN)
-        assert _slova_tela(text) <= 100, _slova_tela(text)
+        assert _slova_tela(text) <= 115, _slova_tela(text)
         assert "DUG pracuje pre Mesto Senec" in text
         assert "180 000 €" in text and "31. 3. 2027" in text
         assert "/kontrola?ico=36034762&utm_source=email&utm_medium=oslovenie&utm_campaign=obrana-k1" in text
@@ -371,7 +371,7 @@ def test_vsetky_odbory_maju_text_a_kratky_email():
         for krok in (1, 2, 3):
             s = of.zostav(krok, {**KONTAKT, "segment": seg}, _hook(), "B")
             text, _ = of.vyrenderuj(s, TOKEN)
-            assert "_" not in s["predmet"] and _slova_tela(text) <= 100, (seg, krok, _slova_tela(text))
+            assert "_" not in s["predmet"] and _slova_tela(text) <= 125, (seg, krok, _slova_tela(text))
 
 
 def test_obrana_bez_odboru_nesluby_odbor():
@@ -440,7 +440,7 @@ def test_veta_o_eurofondoch():
     s = of.zostav(1, KONTAKT, h, "A")   # ostraha: eurofondy len ako veta
     text, _ = of.vyrenderuj(s, TOKEN)
     assert "Z eurofondov navyše úrady v kraji pripravujú ďalších 34 obstarávaní za 12" in text
-    assert _slova_tela(text) <= 120, _slova_tela(text)
+    assert _slova_tela(text) <= 145, _slova_tela(text)
     s = of.zostav(1, KONTAKT, {**_hook(), "eurofondy": (2, 50000)}, "A")
     assert "eurofond" not in of.vyrenderuj(s, TOKEN)[0]
 
@@ -462,7 +462,7 @@ def test_stavby_prvy_email_vedie_eurofondmi(tmp_path, monkeypatch):
         text, telo = of.vyrenderuj(s, TOKEN)
         assert "34" in s["predmet"] and "Rekonštrukcia ZŠ Tajovského" in text
         assert "/eurofondy/stavebne-prace/bratislavsky?utm_source=email" in telo and "eurofondy-k1" in telo
-        assert _slova_tela(text) <= 100, _slova_tela(text)
+        assert _slova_tela(text) <= 115, _slova_tela(text)
     # krok 2 pokracuje ako doteraz
     assert "eurofondy" not in of.zostav(2, k, h, "A")["predmet"].lower()
 
@@ -488,6 +488,12 @@ def test_stavby_kroky_2_a_3_tiez_eurofondy(tmp_path, monkeypatch):
             s = of.zostav(krok, k, h, v)
             text, telo = of.vyrenderuj(s, TOKEN)
             assert "končí" not in text.split("--")[0] and "eurofondy-k" in telo, (krok, v)
-            assert _slova_tela(text) <= 100, (krok, v, _slova_tela(text))
+            assert _slova_tela(text) <= 125, (krok, v, _slova_tela(text))   # 16. 11. 2026: tri zakazky v e-maile
     assert "materskej školy B" in of.vyrenderuj(of.zostav(2, k, h, "A"), TOKEN)[0]
     assert "ČOV" not in of.vyrenderuj(of.zostav(2, k, h, "A"), TOKEN)[0]   # krok 1 uz ukazal
+
+
+def test_krok1_ma_tri_zakazky_a_vyzvu_ano():
+    s = of.zostav(1, KONTAKT, {**_hook(), "suma12": 1_480_000}, "A")
+    text, _ = of.vyrenderuj(s, TOKEN)
+    assert text.count("• ") == len(_hook()["zmluvy"][:3]) and "odpovedať „áno“" in text

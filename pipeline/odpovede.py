@@ -50,6 +50,15 @@ _NIE = re.compile(r"nem[aá]me\s+(o\s+\S+\s+)?z[aá]ujem|nem[aá]me\s+z[aá]ujem
 _POZITIVNE = re.compile(r"\?|(?<!ne)zauj[ií]ma\s+n[aá]s|(?<!ne)m[aá]me\s+z[aá]ujem|\bcen[auy]\b|cenov|"
                         r"demo|sk[uú][sš]k|stretn|zavolaj|telefon|kontaktujte\s+ma|viac\s+inform|"
                         r"pozriem|pozrieme|vysk[uú][sš]a", re.I)
+# 16. 11. 2026: suhlas s bezplatnym tyzdennym prehladom odpovedou "ano" (kratka
+# sprava bez otazky). Pri pochybnosti ostava 'rucne'.
+_ANO = re.compile(r"^\W*(([aá]no|ok|okej|s[uú]hlas[ií]m|m[aá]me?\s+z[aá]ujem|posielajte|pros[ií]m\s+posielajte|"
+                  r"m[oô][zž]ete\s+posiela[tť])\b[\s,.!]*)+(pros[ií]m|[dď]akujem|v[dď]aka)?\W*$", re.I)
+VETA_ANO = ("Dobrý deň,\n\nďakujem, zapísal som Vás. Raz týždenne Vám pošlem nové zákazky vo Vašom odbore "
+            "a kraji, zadarmo. Odhlásiť sa dá jedným kliknutím v každom e-maile.\n\n"
+            "Ak chcete vidieť všetko naraz (kto zákazku dnes robí, za koľko a kedy sa pripraviť), "
+            "14 dní zadarmo a bez karty: https://predtendrom.sk/prihlasenie\n\n"
+            "Pekný deň,\nMarek Takáč\nzakladateľ PredTendrom.sk | predtendrom.sk\n")
 _CITACIA = re.compile(r"^(>|-{2,}\s*Original|Od:|From:|Dňa .* nap[ií]sal|On .* wrote|S\s+pozdravom|"
                       r"Sent from|________________)", re.I | re.M)
 
@@ -116,6 +125,8 @@ def roztried(m, text: str) -> str:
         return "auto"
     if _NIE.search(text) and not _POZITIVNE.search(text):
         return "nie"
+    if len(text) <= 120 and "?" not in text and _ANO.match(text.strip()):
+        return "ano"
     return "rucne"
 
 
@@ -131,7 +142,7 @@ def priradit_ico(m, kontakty_email: dict, kontakty_dom: dict, nase_mid: dict):
     return kontakty_dom.get(od.rsplit("@", 1)[-1]) if "@" in od else None
 
 
-def zdvorila_odpoved(m) -> EmailMessage:
+def zdvorila_odpoved(m, text=None) -> EmailMessage:
     r = EmailMessage()
     r["From"] = ODOSIELATEL
     r["To"] = m.get("Reply-To") or m.get("From")
@@ -143,8 +154,24 @@ def zdvorila_odpoved(m) -> EmailMessage:
     r["Date"] = formatdate(localtime=True)
     r["Message-ID"] = make_msgid(domain="predtendrom.sk")
     r["Auto-Submitted"] = "auto-replied"
-    r.set_content(VETA)
+    r.set_content(text or VETA)
     return r
+
+
+def zapis_odber(sb, kontakt, email_adr):
+    """Odpoved "ano" = suhlas s bezplatnym tyzdennym prehladom (odber_firmy, uz potvrdeny).
+    -> True, ak sa zapisalo. Existujuci odber (aj odhlaseny) sa neprepisuje."""
+    from datetime import datetime, timezone
+    e = (email_adr or "").strip().lower()
+    if not e or "@" not in e:
+        return False
+    if sb.table("odber_firmy").select("id").ilike("email", e).limit(1).execute().data:
+        return False
+    teraz = datetime.now(timezone.utc).isoformat()
+    sb.table("odber_firmy").insert({"email": e, "sektor": kontakt.get("segment"), "kraj": kontakt.get("kraj"),
+                                    "potvrdeny": True, "potvrdeny_at": teraz, "zdroj": "oslovenie-ano",
+                                    "dalsi_email_at": teraz}).execute()
+    return True
 
 
 def main(argv=None) -> int:
@@ -158,9 +185,10 @@ def main(argv=None) -> int:
     sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
     heslo = os.environ.get("ZOHO_IMAP_PASSWORD") or os.environ["ZOHO_SMTP_PASSWORD"]
 
-    kontakty = vsetky(lambda o, d: sb.table("oslovenie_firiem_kontakty").select("ico,email")
+    kontakty = vsetky(lambda o, d: sb.table("oslovenie_firiem_kontakty").select("ico,email,segment,kraj")
                       .order("ico").range(o, d).execute())
     k_email = {(k["email"] or "").lower(): k["ico"] for k in kontakty if k.get("email")}
+    k_ico = {ico8(k["ico"]): k for k in kontakty}
     k_dom = {}
     for e, ico in k_email.items():
         dom = e.rsplit("@", 1)[-1]
@@ -210,7 +238,18 @@ def main(argv=None) -> int:
         if not a.ostro:
             continue
         poslana = False
-        if typ in ("nie", "rucne", "nedorucene"):
+        if typ == "ano":
+            # suhlas: firma ide do bezplatneho tyzdenneho prehladu, seria sa zastavi
+            odosielatel = parseaddr(m.get("Reply-To") or m.get("From", ""))[1]
+            try:
+                zapis_odber(sb, k_ico.get(ico8(ico), {}), odosielatel)
+                odpovedi.append(zdvorila_odpoved(m, VETA_ANO))
+                poslana = True
+            except Exception as e:      # pri chybe nech odpovie Marek rucne
+                log.warning("odber po 'ano': %s", type(e).__name__)
+                pocty["ano"] -= 1
+                pocty["rucne"] = pocty.get("rucne", 0) + 1
+        if typ in ("nie", "rucne", "nedorucene", "ano"):
             stav = "vylucene" if typ == "nedorucene" else "odpovedal"
             sb.table("oslovenie_firiem_kontakty").update({"stav": stav, "upravene_at": "now()"}).eq("ico", ico8(ico)).execute()
         if typ == "nie":
@@ -220,7 +259,9 @@ def main(argv=None) -> int:
             prijate = parsedate_to_datetime(m.get("Date")).isoformat()
         except Exception:
             prijate = None
-        sb.table("oslovenie_odpovede").upsert({"message_id": mid, "ico": ico8(ico) if ico else None, "typ": typ,
+        # tabulka (migracia 96) pozna len 'rucne'; 'ano' sa zapise ako 'rucne' s odoslanou odpovedou
+        sb.table("oslovenie_odpovede").upsert({"message_id": mid, "ico": ico8(ico) if ico else None,
+                                               "typ": "rucne" if typ == "ano" else typ,
                                                "odpoved_odoslana": poslana, "prijate_at": prijate}).execute()
     imap.logout()
 
@@ -231,7 +272,7 @@ def main(argv=None) -> int:
             for r in odpovedi:
                 if not s.send_message(r):
                     poslane += 1
-    suhrn = (f"{'OSTRO' if a.ostro else 'NASUCHO'}: nie {pocty.get('nie', 0)} (zdvorila veta {poslane}), "
+    suhrn = (f"{'OSTRO' if a.ostro else 'NASUCHO'}: ANO {pocty.get('ano', 0)}, nie {pocty.get('nie', 0)} (odpovede {poslane}), "
              f"rucne {pocty.get('rucne', 0)}, auto {pocty.get('auto', 0)}, "
              f"nedorucene {pocty.get('nedorucene', 0)}, ine {pocty.get('ine', 0)}")
     log.info(suhrn)

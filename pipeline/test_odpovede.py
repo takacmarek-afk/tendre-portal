@@ -66,3 +66,13 @@ def test_zdvorila_odpoved_hlavicky():
     assert r["To"] == "Jana <jana@firma.sk>" and r["Auto-Submitted"] == "auto-replied"
     assert "ďalej Vás už nebudem kontaktovať" in r.get_content()
     assert o.zdvorila_odpoved(sprava("x", predmet="Zmluvy"))["Subject"] == "Re: Zmluvy"
+
+
+def test_ano_len_kratka_jasna_odpoved():
+    import email as _e
+    m = _e.message_from_string("From: a@firma.sk\nSubject: Re: x\n\nx")
+    for t in ("Áno", "ano, prosím", "Ano dakujem", "OK", "Súhlasím.", "Máme záujem, posielajte"):
+        assert o.roztried(m, t) == "ano", t
+    for t in ("Áno, a koľko to stojí?", "Ano ale len pre Košický kraj a zavolajte mi", "Nie", "Nemáme záujem",
+              "Dobrý deň, áno, robíme aj strechy, ale momentálne máme plno a neviem, či to pre nás je"):
+        assert o.roztried(m, t) != "ano", t
