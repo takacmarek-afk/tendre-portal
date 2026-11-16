@@ -43,6 +43,18 @@
       }
     } catch (e) { sid = null; }
     function posliNavstevu() {
+      // 16. 11. 2026: roboty kontrolujuce odkazy v e-mailoch sa nepocitaju — navsteva
+      // sa zapise az po interakcii alebo 4 s na viditelnej stranke, nie pri automatizacii.
+      if (navigator.webdriver) return;
+      if (!posliNavstevu.ok) {
+        var udal = ['scroll','pointerdown','keydown','touchstart','mousemove'], t = 0;
+        var go = function(){ if (posliNavstevu.ok) return; posliNavstevu.ok = 1; clearTimeout(t);
+          udal.forEach(function(e){ removeEventListener(e, go, true); }); posliNavstevu(); };
+        udal.forEach(function(e){ addEventListener(e, go, {capture: true, passive: true}); });
+        t = setTimeout(function(){ if (document.visibilityState === 'visible') go(); }, 4000);
+        return;
+      }
+
       fetch(cfg.SUPABASE_URL + '/rest/v1/navstevy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'apikey': cfg.SUPABASE_ANON_KEY, 'Prefer': 'return=minimal' },
