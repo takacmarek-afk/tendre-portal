@@ -59,8 +59,11 @@ VETA_ANO = ("Dobrý deň,\n\nďakujem, zapísal som Vás. Raz týždenne Vám po
             "Ak chcete vidieť všetko naraz (kto zákazku dnes robí, za koľko a kedy sa pripraviť), "
             "14 dní zadarmo a bez karty: https://predtendrom.sk/prihlasenie\n\n"
             "Pekný deň,\nMarek Takáč\nzakladateľ PredTendrom.sk | predtendrom.sk\n")
+# 17. 11. 2026: aj hlavicky citacie bez "Dňa" (Gmail SK/CZ "ut 17. 11. 2026 o 8:27 ... napísal(a):",
+# Seznam/Thunderbird CZ "... odesílatel ... napsal:") a podpis "-- " na samostatnom riadku.
 _CITACIA = re.compile(r"^(>|-{2,}\s*Original|Od:|From:|Dňa .* nap[ií]sal|On .* wrote|S\s+pozdravom|"
-                      r"Sent from|________________)", re.I | re.M)
+                      r"Sent from|________________|-{2}\s*$|.*\d{4}.*\bodes[ií]latel\b|"
+                      r".*\b(nap[ií]sal|napsal)(\s*\(a\))?\s*:\s*$|.*\bwrote:\s*$)", re.I | re.M)
 
 
 def _dekoduj(h) -> str:

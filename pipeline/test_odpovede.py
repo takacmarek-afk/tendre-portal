@@ -83,3 +83,14 @@ def test_ano_od_obce():
     m = _e.message_from_string("From: obec@hran.sk\nSubject: Re: x\n\nx")
     for t in ("Áno, pošlite to", "Súhlasíme.", "Áno, môžete", "Pošlite prosím"):
         assert o.roztried(m, t) == "ano", t
+
+
+def test_ano_s_ceskou_alebo_gmail_citaciou_a_podpisom():
+    for hlavicka in ("út 17. 11. 2026 v 8:27 odesílatel Marek Takáč z PredTendrom.sk <marek@predtendrom.sk>\nnapsal:",
+                     "ut 17. 11. 2026 o 8:27 Marek Takáč <marek@predtendrom.sk> napísal(a):",
+                     "On Tue, Nov 17, 2026 at 8:27 AM Marek Takáč <marek@predtendrom.sk> wrote:"):
+        t = ("áno\n\n" + hlavicka + "\n\nDobrý deň,\nnadväzujem na môj e-mail. Ak to pre Vás nie je, "
+             "odpíšte „nie“ a už nenapíšem.\n\n--\nJán Konateľ\nKonateľ spoločnosti\n+421 900 000 000")
+        assert o.text_spravy(sprava(t)) == "áno", hlavicka
+        assert triedenie(t) == "ano", hlavicka
+    assert triedenie("áno\n\n--\nJán Konateľ\nKonateľ spoločnosti\nwww.firma.sk") == "ano"
