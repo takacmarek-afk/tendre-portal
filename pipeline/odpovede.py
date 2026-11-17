@@ -63,7 +63,10 @@ VETA_ANO = ("Dobrý deň,\n\nďakujem, zapísal som Vás. Raz týždenne Vám po
 # Seznam/Thunderbird CZ "... odesílatel ... napsal:") a podpis "-- " na samostatnom riadku.
 _CITACIA = re.compile(r"^(>|-{2,}\s*Original|Od:|From:|Dňa .* nap[ií]sal|On .* wrote|S\s+pozdravom|"
                       r"Sent from|________________|-{2}\s*$|.*\d{4}.*\bodes[ií]latel\b|"
-                      r".*\b(nap[ií]sal|napsal)(\s*\(a\))?\s*:\s*$|.*\bwrote:\s*$)", re.I | re.M)
+                      r".*\b(nap[ií]sal|napsal)(\s*\(a\))?\s*:\s*$|.*\bwrote:\s*$|"
+                      # 17. 11.: Gmail zalomi citaciu "ut 17. 11. 2026 o 8:21 X <adresa>\nnapisal(a):"
+                      r"\s*(po|ut|st|št|pi|pá|so|ne|čt|mon|tue|wed|thu|fri|sat|sun)[\w.]*,?\s+\d{1,2}\.\s*\d{1,2}\.\s*\d{4}\b|"
+                      r".{0,40}\d{1,2}\.\s?\d{1,2}\.\s?\d{4}.*(<\s*$|<[^>\s]+@))", re.I | re.M)
 
 
 def _dekoduj(h) -> str:

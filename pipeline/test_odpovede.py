@@ -94,3 +94,19 @@ def test_ano_s_ceskou_alebo_gmail_citaciou_a_podpisom():
         assert o.text_spravy(sprava(t)) == "áno", hlavicka
         assert triedenie(t) == "ano", hlavicka
     assert triedenie("áno\n\n--\nJán Konateľ\nKonateľ spoločnosti\nwww.firma.sk") == "ano"
+
+
+def test_gmail_slovenska_citacia_zalomena():
+    for t in ("ano\r\n\r\nut 17. 11. 2026 o 8:21 PredTendrom.sk <marek@predtendrom.sk>\r\nnapísal(a):\r\n\r\n> Dobrý deň,",
+              "ano\n\nut 17. 11. 2026 o 8:21 PredTendrom.sk <\nmarek@predtendrom.sk> napísal(a):\n\n> Dobrý deň,",
+              "Áno\n\nOn Tue, 17. 11. 2026 PredTendrom.sk <marek@predtendrom.sk>\nwrote:"):
+        m = sprava(t)
+        assert o.roztried(m, o.text_spravy(m)) == "ano", t
+
+
+def test_gmail_slovenska_citacia():
+    t = ("ano\n\nut 17. 11. 2026 o 8:20 PredTendrom.sk <marek@predtendrom.sk> napísal(a):\n\n"
+         "Dobrý deň, v Centrálnom registri zmlúv som videl...")
+    m = sprava(t)
+    assert o.text_spravy(m) == "ano"
+    assert o.roztried(m, o.text_spravy(m)) == "ano"
