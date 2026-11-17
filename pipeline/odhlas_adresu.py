@@ -24,9 +24,9 @@ def h(e):
 TAB = {
     "kampan_obce_kontakty": ("email", "ico", "ico,stav,odhlasene_at", {"odhlasene_at": "now()", "dovod": "odhlasenie mailto"}),
     "kampan_obce_odoslane": ("email", "id", "id,vlna,segment,stav,odoslane_at", None),
-    "oslovenie_firiem_kontakty": ("email", "ico", "ico,stav,odhlasene_at", {"odhlasene_at": "now()", "stav": "odpovedal"}),
+    "oslovenie_firiem_kontakty": ("email", "ico", "ico,stav,segment,kraj,odhlasene_at", {"odhlasene_at": "now()", "stav": "odpovedal"}),
     "oslovenie_firiem_odoslane": ("email", "id", "id,krok,stav,odoslane_at", None),
-    "odber_firmy": ("email", "id", "id,potvrdeny,odhlaseny_at,krok", {"odhlaseny_at": "now()"}),
+    "odber_firmy": ("email", "id", "id,sektor,kraj,zdroj,potvrdeny,odhlaseny_at,krok", {"odhlaseny_at": "now()"}),
     "odber": ("email", "id", "*", None),
     "odber_obce": ("email", "id", "*", None),
     "kampan_pilot": ("email_obce", "ico", "mesiac,ico,variant,vytvorene_at", None),
