@@ -181,6 +181,9 @@ def main(argv=None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     ap = argparse.ArgumentParser()
     ap.add_argument("--ostro", action="store_true")
+    # 17. 11. 2026: znovu pozriet neodpovedane 'rucne' (napr. po oprave triedenia); spracuje len tie,
+    # ktore su teraz jasne "ano" - ostatne necha Marekovi
+    ap.add_argument("--prehodnot-rucne", action="store_true")
     a = ap.parse_args(argv)
     from supabase import create_client
     from strankuj import vsetky
@@ -202,12 +205,13 @@ def main(argv=None) -> int:
         lambda o, d: sb.table("oslovenie_firiem_odoslane").select("message_id,ico")
         .order("id").range(o, d).execute()) if r.get("message_id")}
     try:
-        hotove = {r["message_id"] for r in vsetky(
-            lambda o, d: sb.table("oslovenie_odpovede").select("message_id").order("message_id").range(o, d).execute())}
+        hotove = {r["message_id"]: r for r in vsetky(
+            lambda o, d: sb.table("oslovenie_odpovede").select("message_id,typ,odpoved_odoslana")
+            .order("message_id").range(o, d).execute())}
     except Exception:
         if a.ostro:
             raise   # bez tabulky (migracia 96) by sa odpovedalo opakovane
-        hotove = set()
+        hotove = {}
 
     # 16. 11. 2026: odpovede obci na Kampan pre obce (suhlas "ano" -> e-mail firmam)
     o_kontakty = vsetky(lambda o, d: sb.table("kampan_obce_kontakty").select("ico,email")
@@ -231,10 +235,25 @@ def main(argv=None) -> int:
     for d in spravy:
         m = email.message_from_bytes(d[0][1])
         mid = (m.get("Message-ID") or "").strip()
-        if not mid or mid in hotove:
+        prehodnot = False
+        if not mid:
             continue
+        if mid in hotove:
+            h = hotove[mid]
+            if not (a.prehodnot_rucne and h.get("typ") == "rucne" and not h.get("odpoved_odoslana")):
+                continue
+            # len cerstve (24 h): starsie mohol Marek medzitym vybavit rucne
+            try:
+                from datetime import datetime, timezone
+                if datetime.now(timezone.utc) - parsedate_to_datetime(m.get("Date")) > timedelta(days=1):
+                    continue
+            except Exception:
+                continue
+            prehodnot = True
         text = "" if je_nedorucena(m) else text_spravy(m)
         typ = roztried(m, text)
+        if prehodnot and typ != "ano":
+            continue
         ico = None
         obec = None
         if typ == "nedorucene":

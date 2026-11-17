@@ -18,6 +18,10 @@ on:
         description: "Ostro: zapisat stav a poslat zdvorile vety pri jasnom Nie"
         type: boolean
         default: false
+      prehodnot:
+        description: "Znovu pozriet neodpovedane rucne spravy a spracovat tie, co su teraz jasne Ano"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -49,4 +53,4 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           ZOHO_SMTP_PASSWORD: ${{ secrets.ZOHO_SMTP_PASSWORD }}
           ZOHO_IMAP_PASSWORD: ${{ secrets.ZOHO_IMAP_PASSWORD }}
-        run: python odpovede.py ${{ (env.UDALOST == 'schedule' || inputs.ostro) && '--ostro' || '' }}
+        run: python odpovede.py ${{ (env.UDALOST == 'schedule' || inputs.ostro) && '--ostro' || '' }} ${{ inputs.prehodnot && '--prehodnot-rucne' || '' }}
