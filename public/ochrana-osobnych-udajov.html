@@ -214,14 +214,14 @@ table.udaje th{font-weight:600}
 
     function posliNavstevu() {
       // 16. 11. 2026: roboty kontrolujuce odkazy v e-mailoch sa nepocitaju — navsteva
-      // sa zapise az po interakcii alebo 4 s na viditelnej stranke, nie pri automatizacii.
+      // sa zapise az po interakcii alebo 15 s na viditelnej stranke s fokusom, nie pri automatizacii.
       if (navigator.webdriver) return;
       if (!posliNavstevu.ok) {
         var udal = ['scroll','pointerdown','keydown','touchstart','mousemove'], t = 0;
         var go = function(){ if (posliNavstevu.ok) return; posliNavstevu.ok = 1; clearTimeout(t);
           udal.forEach(function(e){ removeEventListener(e, go, true); }); posliNavstevu(); };
         udal.forEach(function(e){ addEventListener(e, go, {capture: true, passive: true}); });
-        t = setTimeout(function(){ if (document.visibilityState === 'visible') go(); }, 4000);
+        t = setTimeout(function(){ if (document.visibilityState === 'visible' && document.hasFocus()) go(); }, 15000);
         return;
       }
 
