@@ -715,6 +715,15 @@ def variant_pre(ico):
     return "A"
 
 
+# 18. 11. 2026: poistovne, banky a leasing maju v CRZ zmluvy s obcami (poistenie,
+# uvery), klasifikacia ich vsak moze zaradit do odboru (Komunalna poistovna -> stavby).
+_NIE_DODAVATEL = re.compile(r"poi[sš][tť]ov|poistenie|\bbank|banka\b|sporite[lľ]|leasing|stavebn[aá]\s+sporite", re.I)
+
+
+def nie_je_dodavatel(nazov) -> bool:
+    return bool(_NIE_DODAVATEL.search(nazov or ""))
+
+
 def priorita_odboru(segment) -> int:
     """0 = stavebne odbory s eurofondmi (najprv), 1 = ostatne."""
     return 0 if (EU_HLAVNE_ZAPNUTE and segment in EU_HLAVNE) else 1
@@ -730,7 +739,7 @@ def na_rade(kontakty, odoslane, segmenty, vylucene_ica, vylucene_emaily, dnes, n
     for k in kontakty:
         ico = k["ico"]
         if (k["stav"] != "ok" or k.get("odhlasene_at") or ico8(ico) in vylucene_ica
-                or (k["email"] or "").lower() in vylucene_emaily):
+                or (k["email"] or "").lower() in vylucene_emaily or nie_je_dodavatel(k.get("nazov"))):
             continue
         kroky = podla.get(ico, {})
         if not kroky:

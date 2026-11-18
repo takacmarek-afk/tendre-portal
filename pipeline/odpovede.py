@@ -123,12 +123,19 @@ def nedorucene_adresy(m) -> set:
     return out
 
 
+# 18. 11. 2026: automaticka odpoved "uz tu nepracujem" = adresa je mrtva, vyradit ako nedorucene
+_ODISIEL = re.compile(r"p[oô]sobenie\s+.{0,80}skon[cč]il|u[zž]\s+(nie\s+som|nepracuj|nep[oô]sob)|"
+                      r"nie\s+je\s+u[zž]\s+zamestnan|ukon[cč]il[a]?\s+pracovn|no\s+longer\s+(with|work|employ)|"
+                      r"left\s+the\s+company|t[aá]to\s+(e-?mailov[aá]\s+)?(adresa|schr[aá]nka)\s+(sa\s+)?(u[zž]\s+)?nepou[zž][ií]va",
+                      re.I)
+
+
 def roztried(m, text: str) -> str:
     if je_nedorucena(m):
         return "nedorucene"
     if (m.get("Auto-Submitted", "no").lower() not in ("", "no") or m.get("X-Autoreply")
             or m.get("X-Autorespond") or _AUTO_PREDMET.search(_dekoduj(m.get("Subject")))):
-        return "auto"
+        return "nedorucene" if _ODISIEL.search(text or "") else "auto"
     if _NIE.search(text) and not _POZITIVNE.search(text):
         return "nie"
     if len(text) <= 120 and "?" not in text and _ANO.match(text.strip()):
@@ -267,6 +274,11 @@ def main(argv=None) -> int:
                 if adr in o_email:
                     obec = o_email[adr]
                     break
+            if not ico and not obec and not je_nedorucena(m):
+                # automaticka odpoved "uz tu nepracujem": vyradit adresu odosielatela
+                ico = priradit_ico(m, k_email, k_dom, nase)
+                if not ico:
+                    obec = do.priradit_obec(m, o_mid, o_email, o_dom)
         else:
             ico = priradit_ico(m, k_email, k_dom, nase)
             if not ico:

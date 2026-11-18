@@ -110,3 +110,11 @@ def test_gmail_slovenska_citacia():
     m = sprava(t)
     assert o.text_spravy(m) == "ano"
     assert o.roztried(m, o.text_spravy(m)) == "ano"
+
+
+def test_auto_odpoved_odisiel_je_nedorucene():
+    m = sprava("Dobrý deň, ďakujem za správu, ale nakoľko moje pôsobenie v spoločnosti X nateraz skončilo, "
+               "nemôžem na ňu odpovedať.", predmet="Automatická odpoveď: 37 obstarávaní")
+    assert o.roztried(m, o.text_spravy(m)) == "nedorucene"
+    m = sprava("Som na dovolenke do 20. 11.", predmet="Automatická odpoveď: x")
+    assert o.roztried(m, o.text_spravy(m)) == "auto"

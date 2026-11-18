@@ -504,3 +504,11 @@ def test_stavebne_odbory_maju_prednost():
     assert of.priorita_odboru("STAVEBNE_PRACE") == 0
     assert of.priorita_odboru("UPRATOVANIE") == 1
     assert of.priorita_odboru(None) == 1
+
+
+def test_poistovne_a_banky_neoslovujeme():
+    import oslovenie_firiem as of
+    assert of.nie_je_dodavatel("KOMUNÁLNA poisťovňa, a.s. Vienna Insurance Group")
+    assert of.nie_je_dodavatel("Prima banka Slovensko, a.s.")
+    assert not of.nie_je_dodavatel("STRABAG s.r.o.")
+    assert not of.nie_je_dodavatel("Fatra TIP s.r.o.")
