@@ -44,3 +44,7 @@ select (to_jsonb(o)->>'typ') typ, count(*) from public.oslovenie_odpovede o
 select to_char(date_trunc('hour', created_at), 'HH24:MI') hodina, count(*) zaznamov, count(distinct session_id) unikatnych
 from public.navstevy where created_at >= current_date group by 1 order by 1;
 select max(created_at) posledny_zaznam, count(*) filter (where created_at > now() - interval '2 hours') za_2_hodiny from public.navstevy;
+
+\echo '== I. Odbery z odpovede ano (bez adries)'
+select id, sektor, kraj, krok, potvrdeny_at::date, odhlaseny_at is not null odhlaseny
+from public.odber_firmy where zdroj = 'oslovenie-ano' order by id;
