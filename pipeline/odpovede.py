@@ -130,9 +130,25 @@ _ODISIEL = re.compile(r"p[oô]sobenie\s+.{0,80}skon[cč]il|u[zž]\s+(nie\s+som|n
                       re.I)
 
 
+_ODHLAS_PREDMET = re.compile(r"^\s*(odhl[aá]si[tť]|unsubscribe)\b", re.I)
+_TOKEN = re.compile(r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.I)
+
+
+def token_odhlasenia(m):
+    """Token z predmetu automatickej ziadosti o odhlasenie (List-Unsubscribe mailto), inak None."""
+    p = _dekoduj(m.get("Subject"))
+    if not _ODHLAS_PREDMET.match(p or ""):
+        return None
+    t = _TOKEN.search(p)
+    return t.group(0).lower() if t else None
+
+
 def roztried(m, text: str) -> str:
     if je_nedorucena(m):
         return "nedorucene"
+    # 18. 11. 2026: Gmail/Apple "Zrusit odber" (predmet odhlasit) = nie, aj ked je automaticka
+    if _ODHLAS_PREDMET.match(_dekoduj(m.get("Subject")) or ""):
+        return "nie"
     if (m.get("Auto-Submitted", "no").lower() not in ("", "no") or m.get("X-Autoreply")
             or m.get("X-Autorespond") or _AUTO_PREDMET.search(_dekoduj(m.get("Subject")))):
         return "nedorucene" if _ODISIEL.search(text or "") else "auto"
@@ -202,7 +218,7 @@ def main(argv=None) -> int:
     sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
     heslo = os.environ.get("ZOHO_IMAP_PASSWORD") or os.environ["ZOHO_SMTP_PASSWORD"]
 
-    kontakty = vsetky(lambda o, d: sb.table("oslovenie_firiem_kontakty").select("ico,email,segment,kraj")
+    kontakty = vsetky(lambda o, d: sb.table("oslovenie_firiem_kontakty").select("ico,email,segment,kraj,token")
                       .order("ico").range(o, d).execute())
     k_email = {(k["email"] or "").lower(): k["ico"] for k in kontakty if k.get("email")}
     k_ico = {ico8(k["ico"]): k for k in kontakty}
@@ -224,11 +240,13 @@ def main(argv=None) -> int:
         hotove = {}
 
     # 16. 11. 2026: odpovede obci na Kampan pre obce (suhlas "ano" -> e-mail firmam)
-    o_kontakty = vsetky(lambda o, d: sb.table("kampan_obce_kontakty").select("ico,email")
+    o_kontakty = vsetky(lambda o, d: sb.table("kampan_obce_kontakty").select("ico,email,token")
                         .order("ico").range(o, d).execute())
     o_odoslane = vsetky(lambda o, d: sb.table("kampan_obce_odoslane").select("ico,vlna,stav,segment,resend_id")
                         .order("id").range(o, d).execute())
     o_mid, o_email, o_dom, o_seg = do.mapy_obci(o_kontakty, o_odoslane, _FREEMAIL)
+    k_token = {str(k.get("token") or "").lower(): k["ico"] for k in kontakty if k.get("token")}
+    o_token = {str(k.get("token") or "").lower(): k["ico"] for k in o_kontakty if k.get("token")}
 
     imap = imaplib.IMAP4_SSL(IMAP_HOST, 993)
     imap.login(SCHRANKA, heslo)
@@ -281,6 +299,11 @@ def main(argv=None) -> int:
                     obec = do.priradit_obec(m, o_mid, o_email, o_dom)
         else:
             ico = priradit_ico(m, k_email, k_dom, nase)
+            tok = token_odhlasenia(m) if not ico else None
+            if tok:
+                ico = k_token.get(tok)
+                if not ico and tok in o_token:
+                    obec = o_token[tok]
             if not ico:
                 obec = do.priradit_obec(m, o_mid, o_email, o_dom)
         if obec:

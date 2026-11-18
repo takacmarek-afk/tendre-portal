@@ -639,7 +639,9 @@ def zostav_spravu(komu, predmet, text, telo, token, odhlasenie=None):
     if REPLY_TO:
         m["Reply-To"] = REPLY_TO
     m["List-Unsubscribe"] = (f"<{odhlasenie}>"
-                             + (f", <mailto:{REPLY_TO}?subject=odhlasit>" if REPLY_TO else ""))
+                             + (f", <mailto:{REPLY_TO}?subject=odhlasit%20{token}>" if REPLY_TO else ""))
+    # 18. 11. 2026: token v predmete -> odpovede.py odhlasi aj ked Gmail/Apple posle
+    # ziadost z inej adresy, nez na ktoru sme pisali
     m.set_content(text)
     m.add_alternative(telo, subtype="html")
     return m
