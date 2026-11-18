@@ -8,7 +8,12 @@ on:
       hash:
         description: "SHA-256 adresy (male pismena)"
         type: string
-        required: true
+        required: false
+        default: ""
+      ica:
+        description: "Alebo ICO firiem (ciarkou), verejny udaj"
+        type: string
+        default: ""
       zapis:
         description: "Odhlasit (inak len vyhladat)"
         type: boolean
@@ -34,5 +39,6 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           HASH: ${{ inputs.hash }}
+          ICA: ${{ inputs.ica }}
           ZAPIS: ${{ inputs.zapis && '1' || '0' }}
         run: python odhlas_adresu.py

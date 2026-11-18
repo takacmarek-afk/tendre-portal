@@ -11,7 +11,8 @@ import os
 from supabase import create_client
 from strankuj import vsetky
 
-H = os.environ["HASH"].strip().lower()
+H = os.environ.get("HASH", "").strip().lower()
+ICA = {i.strip().zfill(8) for i in os.getenv("ICA", "").split(",") if i.strip()}
 ZAPIS = os.getenv("ZAPIS") == "1"
 sb = create_client(os.environ["SUPABASE_URL"], os.environ["SUPABASE_SERVICE_ROLE_KEY"])
 
@@ -24,7 +25,7 @@ def h(e):
 TAB = {
     "kampan_obce_kontakty": ("email", "ico", "ico,stav,odhlasene_at", {"odhlasene_at": "now()", "dovod": "odhlasenie mailto"}),
     "kampan_obce_odoslane": ("email", "id", "id,vlna,segment,stav,odoslane_at", None),
-    "oslovenie_firiem_kontakty": ("email", "ico", "ico,stav,segment,kraj,odhlasene_at", {"odhlasene_at": "now()", "stav": "odpovedal"}),
+    "oslovenie_firiem_kontakty": ("email", "ico", "ico,nazov,stav,segment,kraj,odhlasene_at", {"odhlasene_at": "now()", "stav": "odpovedal"}),
     "oslovenie_firiem_odoslane": ("email", "id", "id,krok,stav,odoslane_at", None),
     "odber_firmy": ("email", "id", "id,sektor,kraj,zdroj,potvrdeny,odhlaseny_at,krok", {"odhlaseny_at": "now()"}),
     "odber": ("email", "id", "*", None),
@@ -40,7 +41,8 @@ for t, (col, kluc, stlpce, odhl) in TAB.items():
     except Exception as e:
         riadky.append(f"{t}: nedostupne ({type(e).__name__})")
         continue
-    zhody = [r for r in rows if h(r.get(col)) == H]
+    zhody = [r for r in rows if (H and h(r.get(col)) == H)
+             or (ICA and str(r.get("ico") or "").zfill(8) in ICA and t.startswith("oslovenie_firiem_kontakty"))]
     if not zhody:
         riadky.append(f"{t}: 0")
         continue
