@@ -22,6 +22,9 @@
           sitekey: KLUC,
           language: 'sk',
           size: 'flexible',  // na mobile sa prisposobi sirke formulara
+          // Audit 20. 11. 2026: tmavy pas „Prebieha overovanie…“ bol stale na ociach;
+          // ukaze sa len vtedy, ked Cloudflare naozaj potrebuje klik cloveka.
+          appearance: 'interaction-only',
           callback: function (t) { token = t; },
           'expired-callback': function () { token = ''; },
           'error-callback': function () { token = ''; },
