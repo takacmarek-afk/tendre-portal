@@ -1,0 +1,49 @@
+name: Obstaravatelia podstranky
+
+# SEO stranky /obstaravatelia/<kraj>/<nazov>-<ico> (pipeline/generuj_obstaravatelia_podstranky.py,
+# RPC seo_obstaravatelia z migracie 107). Verejne len pocty, objemy a 3 ukazky, bez dodavatela.
+# Tyzdenne v pondelok rano; oneskorenie GitHub cronu tu nevadi.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 6 * * 1"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: commit-main
+  cancel-in-progress: false
+
+jobs:
+  generuj:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pipeline/requirements.txt
+      - run: pip install -r pipeline/requirements.txt
+      - name: Vygenerovat stranky obstaravatelov
+        working-directory: pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python generuj_obstaravatelia_podstranky.py
+      - name: Commitnut zmeny, ak nejake su
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public/obstaravatelia/ public/sitemap-obstaravatelia.xml public/robots.txt
+          if git diff --cached --quiet; then
+            echo "Ziadna zmena."
+          else
+            git commit -m "Automaticky vygenerovane: SEO stranky obstaravatelov"
+            git pull --rebase origin main
+            git push
+          fi
