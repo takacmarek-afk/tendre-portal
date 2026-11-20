@@ -6,3 +6,4 @@ Sitemap: https://predtendrom.sk/sitemap.xml
 Sitemap: https://predtendrom.sk/sitemap-zmluvy.xml
 
 Sitemap: https://predtendrom.sk/sitemap-eurofondy.xml
+Sitemap: https://predtendrom.sk/sitemap-obstaravatelia.xml
