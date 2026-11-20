@@ -69,7 +69,7 @@ def stranka(o: dict, dnes: str) -> str:
     k12, ep = int(o.get("konci12") or 0), int(o.get("eurofondy_pocet") or 0)
     casti = []
     if k12:
-        casti.append(f"{_cislo(k12)} {_tvar(k12, 'zmluva', 'zmluvy', 'zmlúv')} z CRZ skončí do 12 mesiacov"
+        casti.append(f"{_cislo(k12)} {_tvar(k12, 'zmluva', 'zmluvy', 'zmlúv')} z CRZ {_tvar(k12, 'skončí', 'skončia', 'skončí')} do 12 mesiacov"
                      + (f" ({_suma(o.get('objem12'))})" if o.get("objem12") else ""))
     if ep:
         casti.append(f"{_cislo(ep)} {_tvar(ep, 'pripravované obstarávanie', 'pripravované obstarávania', 'pripravovaných obstarávaní')}"

@@ -26,7 +26,7 @@ def test_vygeneruj_bez_dodavatela():
         assert len(psane) == 1
         t = open(psane[0], encoding="utf-8").read()
         assert "Mesto Košice: končiace zmluvy a pripravované obstarávania" in t
-        assert "+ 2 ďalšie zmluvy v aplikácii" in t and "Rekonštrukcia školy" in t
+        assert "+ 2 ďalšie zmluvy v aplikácii" in t and "5 zmlúv z CRZ skončí" in t and "Rekonštrukcia školy" in t
         assert 'href="https://predtendrom.sk/obstaravatelia/kosicky/mesto-kosice-00691135"' in t
         assert "{" not in t.split("<script>")[0]
         idx = open(os.path.join(d, "o", "kosicky", "index.html"), encoding="utf-8").read()
