@@ -289,17 +289,14 @@ async function zobrazSuhrn(nazov, kraj) {
       <p class="font-semibold text-ink">Obec je v našom zozname, ale zatiaľ k nej nemáme čo ukázať.</p>
       <p class="mt-1">V Centrálnom registri zmlúv sme nenašli zmluvu tejto obce, ktorá sa končí do 12 mesiacov, ani dotáciu nad 5 000 €. Sledujeme len zmluvy z vybraných oblastí služieb a väčšie dotácie, preto menšie obce často nemajú žiadny záznam. Nula teda neznamená, že obec nič nemá &mdash; len že to naše dáta nezachytili. Ak chcete, aby sme sa pozreli podrobnejšie, <a href="./servis.html" class="text-accent hover:underline">napíšte nám</a> alebo <a href="./trh.html" class="text-accent hover:underline">vypíšte dopyt</a>.</p>
     </div>` : ''}
+    <div id="eurofondy-box" class="hidden mt-4 border-2 border-accent rounded-md p-6 bg-white"></div>
     <div class="mt-4 grid sm:grid-cols-2 gap-4">
-      ${karta(s.pocet_konciacich, `${tvar(s.pocet_konciacich, 'zmluva sa končí', 'zmluvy sa končia', 'zmlúv sa končí')} do 12 mesiacov, spolu cca ${eur(s.objem_konciacich)}`)}
-      ${karta(s.pocet_dotacii_bezi, `${tvar(s.pocet_dotacii_bezi, 'dotácia ešte beží', 'dotácie ešte bežia', 'dotácií ešte beží')} alebo je otvorené jej okno, spolu cca ${eur(s.objem_dotacii_bezi)}`)}
+      ${karta(s.pocet_konciacich, `${tvar(s.pocet_konciacich, 'zmluva sa končí', 'zmluvy sa končia', 'zmlúv sa končí')} do 12 mesiacov${s.pocet_konciacich > 0 ? `, spolu cca ${eur(s.objem_konciacich)}` : ' (podľa Centrálneho registra zmlúv)'}`)}
+      ${karta(s.pocet_dotacii_bezi, `${tvar(s.pocet_dotacii_bezi, 'dotácia ešte beží', 'dotácie ešte bežia', 'dotácií ešte beží')} alebo je otvorené jej okno${s.pocet_dotacii_bezi > 0 ? `, spolu cca ${eur(s.objem_dotacii_bezi)}` : ''}`)}
     </div>
     <div class="mt-4 border border-line rounded-md p-6 bg-white">
       <p class="font-semibold text-ink">Doterajší poradcovia</p>
       <div id="poradcovia-box" class="mt-1 text-[14px] text-slate2">Načítavam&hellip;</div>
-    </div>
-    <div class="mt-3 border border-line rounded-md p-6 bg-white">
-      <p class="font-semibold text-ink">Porovnanie s podobnými obcami</p>
-      <p class="mt-1 text-[14px] text-slate2">Porovnanie s obcami podobnej veľkosti pripravujeme — spoľahlivý zdroj počtu obyvateľov obcí zatiaľ nemáme (bez neho by porovnanie mohlo byť zavádzajúce).</p>
     </div>
     <p class="mt-4 text-[13px] text-slate2 max-w-[600px]">
       Toto sú len súčty. Jednotlivé zmluvy (predmet, presná suma, presný
@@ -333,6 +330,47 @@ async function zobrazSuhrn(nazov, kraj) {
   // Samostatne, nezavisle od hlavneho suhrnu — ked toto zlyha alebo je
   // prazdne, zvysok stranky (koncerciace zmluvy, dotacie) ostava funkcny.
   nacitajPoradcov(nazov, kraj);
+  nacitajEurofondy(nazov, s.kraj || kraj);
+}
+
+// Audit 20. 11. 2026: starosta z kampane (segment eurofondy) musi na stranke
+// svojej obce vidiet, co ma v projektoch z eurofondov, a mat ako odpovedat „áno“.
+// Data: public/eurofondy/obce.json (generuj_eurofondy_podstranky.py) — pocet,
+// objem a jeden priklad na obec, nic viac.
+function klucObce(t) {
+  t = String(t || '').trim().replace(/\s+/g, ' ').toLowerCase();
+  for (const pr of ['obec ', 'mesto ', 'mestská časť ']) if (t.startsWith(pr)) return t.slice(pr.length).trim();
+  return t;
+}
+
+async function nacitajEurofondy(nazov, kraj) {
+  const box = el('eurofondy-box');
+  if (!box) return;
+  let data;
+  try {
+    const r = await fetch('/eurofondy/obce.json', { cache: 'no-cache' });
+    if (!r.ok) return;
+    data = await r.json();
+  } catch (e) { return; }
+  const zaznamy = (data.obce || {})[klucObce(nazov)] || [];
+  const z = (kraj ? zaznamy.filter(x => x.kraj === kraj) : zaznamy)[0] || (zaznamy.length === 1 ? zaznamy[0] : null);
+  if (!z || !z.pocet) return;
+  const obstaravani = tvar(z.pocet, 'obstarávanie', 'obstarávania', 'obstarávaní');
+  const predmet = encodeURIComponent(`áno – ${nazov}`);
+  const telo = encodeURIComponent(`Dobrý deň,\n\náno, dajte o obstarávaní obce ${nazov} vopred vedieť firmám z nášho kraja.\n\n`);
+  box.innerHTML = `
+    <p class="text-[13px] font-semibold text-accent">Z vašich projektov z eurofondov</p>
+    <p class="mt-1 font-serif text-[22px] font-bold text-ink">${bezpecne(z.pocet)} ${obstaravani}${z.objem > 0 ? ` za cca ${eur(z.objem)}` : ''}</p>
+    <p class="mt-1 text-[14px] text-slate2">Obec ich má zapísané v projektoch v systéme ITMS21+, súťaž ešte nie je vyhlásená.</p>
+    ${z.priklad && z.priklad.nazov ? `<p class="mt-3 text-[14px] text-ink">Napríklad: ${bezpecne(z.priklad.nazov)}${z.priklad.hodnota ? ` · ${eur(z.priklad.hodnota)}` : ''}</p>` : ''}
+    <p class="mt-4 text-[14px] leading-relaxed text-ink">Ak chcete, o obstarávaní dáme vopred vedieť firmám z vášho kraja, ktoré takéto zákazky robia. Ozvú sa vám priamo. Pre obec je to zadarmo a k ničomu ju to nezaväzuje.</p>
+    <div class="mt-4 flex flex-col sm:flex-row gap-3">
+      <a href="mailto:info@predtendrom.sk?subject=${predmet}&body=${telo}"
+         class="inline-flex justify-center items-center bg-accent text-white font-semibold px-6 py-3 rounded-md hover:bg-ink transition text-[15px]">Áno, dajte vedieť firmám</a>
+      <a href="tel:+421949042236" class="inline-flex justify-center items-center border border-line text-ink font-semibold px-6 py-3 rounded-md hover:border-ink transition text-[15px]">Radšej zavolám: 0949 042 236</a>
+    </div>
+    <p class="mt-3 text-[12px] text-slate2">Ak ste dostali náš e-mail, stačí na neho odpísať „áno“.</p>`;
+  box.classList.remove('hidden');
 }
 
 // Punch list (audit 29.9.2026): doterajsi poradcovia PRE KONKRETNU obec,

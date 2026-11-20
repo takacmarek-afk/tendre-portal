@@ -5457,7 +5457,7 @@ async function dashboard(supabase, rola, spravaPozvanky) {
     el('prazdny-zi').classList.toggle('hidden', posledne.ziadatelia.length > 0);
 
     const c = count ?? posledne.ziadatelia.length;
-    if (c > 0) el('pocet-zi').textContent = `(${cislo(c)})`;
+    el('pocet-zi').textContent = `(${cislo(c)})`;
     el('pocet-zia').textContent = c > posledne.ziadatelia.length
       ? `${cislo(c)} obcí, zobrazujeme prvých ${cislo(posledne.ziadatelia.length)} od najnovšie najatej`
       : `${cislo(c)} ${tvar(c, 'obec', 'obce', 'obcí')}`;
@@ -5823,12 +5823,18 @@ async function dashboard(supabase, rola, spravaPozvanky) {
   // Pocet v zalozke tretej vrstvy. Ked tabulka este neexistuje alebo
   // je prazdna, zalozka zostane bez cisla a nic sa nerozbije.
   try {
-    const pzi = await supabase.from('obce_ziadatelia')
-      .select('contract_id', { count: 'exact', head: true });
+    // Audit 20. 11. 2026: pocet v zalozke musi sediet so zoznamom (moj vyber),
+    // inak zalozka ukazovala (11) a zoznam „0 obcí“.
+    const pzi = await filtreZiadatelov(supabase.from('obce_ziadatelia')
+      .select('contract_id', { count: 'exact', head: true }));
     const nzi = pocetAleboNull(pzi);
     if (nzi !== null) el('pocet-zi').textContent = `(${cislo(nzi)})`;
     // Prazdna zalozka nikomu nepomoze (audit 2. 11. 2026) — schovame ju.
-    if (nzi === 0) document.querySelector('[data-zalozka="ziadatelia"]')?.classList.add('hidden');
+    if (nzi === 0) {
+      const vsetky = pocetAleboNull(await supabase.from('obce_ziadatelia')
+        .select('contract_id', { count: 'exact', head: true }));
+      if (vsetky === 0) document.querySelector('[data-zalozka="ziadatelia"]')?.classList.add('hidden');
+    }
   } catch (e) { /* ticho */ }
 
   // ── Strankovanie ──────────────────────────────────────────────────────

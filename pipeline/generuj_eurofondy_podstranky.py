@@ -307,7 +307,45 @@ def suhrn(agr):
     }
 
 
-def vygeneruj(agr, vystup_dir=VYSTUP_DIR, sitemap=SITEMAP_CESTA, robots=ROBOTS_CESTA):
+_PREDPONY_OBCE = ("obec ", "mesto ", "mestská časť ", "mestska cast ")
+
+
+def kluc_obce(nazov):
+    """'Obec Hraň' -> 'hraň', 'Mesto Martin' -> 'martin'; iny obstaravatel -> None. Cista funkcia."""
+    t = " ".join(str(nazov or "").split()).lower()
+    for pr in _PREDPONY_OBCE:
+        if t.startswith(pr):
+            return t[len(pr):].strip() or None
+    return None
+
+
+def obce_suhrn(riadky):
+    """Pripravovane obstaravania podla obce pre stranku obce (prvych-100-dni), 20. 11. 2026.
+
+    Starosta z kampane (segment eurofondy) uvidi, co ma jeho obec v projektoch.
+    Verejne len pocet, objem a JEDEN priklad na obec (cely zoznam ostava v appke).
+    Kluc je nazov obce bez predpony; obce s rovnakym nazvom rozlisi kraj.
+    -> {kluc: [{kraj, pocet, objem, priklad: {nazov, hodnota}}]}. Cista funkcia."""
+    skup = defaultdict(list)
+    for r in riadky:
+        k = kluc_obce(r.get("obstaravatel_nazov"))
+        if k:
+            skup[(k, r.get("kraj") or "")].append(r)
+    out = defaultdict(list)
+    for (k, kraj), rr in sorted(skup.items()):
+        rr.sort(key=lambda r: -float(r.get("predpokladana_hodnota") or 0))
+        naj = rr[0]
+        out[k].append({
+            "kraj": kraj or None,
+            "pocet": len(rr),
+            "objem": round(sum(float(r.get("predpokladana_hodnota") or 0) for r in rr)),
+            "priklad": {"nazov": _kratko(naj.get("nazov"), 120),
+                        "hodnota": round(float(naj["predpokladana_hodnota"])) if naj.get("predpokladana_hodnota") else None},
+        })
+    return dict(out)
+
+
+def vygeneruj(agr, vystup_dir=VYSTUP_DIR, sitemap=SITEMAP_CESTA, robots=ROBOTS_CESTA, obce=None):
     napisane, urls = [], ["/eurofondy/"]
     dostupne = set(agr)
     for (s, k), a in agr.items():
@@ -340,6 +378,10 @@ def vygeneruj(agr, vystup_dir=VYSTUP_DIR, sitemap=SITEMAP_CESTA, robots=ROBOTS_C
     # cisla a najviac 3 priklady, ktore su aj tak verejne na podstrankach.
     with open(os.path.join(vystup_dir, "suhrn.json"), "w", encoding="utf-8") as f:
         json.dump(suhrn(agr), f, ensure_ascii=False, separators=(",", ":"))
+    if obce is not None:
+        with open(os.path.join(vystup_dir, "obce.json"), "w", encoding="utf-8") as f:
+            json.dump({"aktualizovane": date.today().isoformat(), "obce": obce},
+                      f, ensure_ascii=False, separators=(",", ":"))
     dnes = date.today().isoformat()
     with open(sitemap, "w", encoding="utf-8") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
@@ -367,7 +409,7 @@ def hlavne():
     if not agr:
         log.warning("Ziadne pripravovane obstaravania, nic sa negeneruje.")
         return
-    n = vygeneruj(agr)
+    n = vygeneruj(agr, obce=obce_suhrn(riadky))
     log.info("Eurofondy: %d stranok, %d kombinacii odbor x kraj", len(n), len(agr))
 
 

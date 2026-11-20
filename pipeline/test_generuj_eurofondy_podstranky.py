@@ -86,3 +86,19 @@ def test_priklad_preferuje_stavbu_obce():
     ]
     d = g.suhrn(g.agreguj(riadky))
     assert d["najvacsie"]["urad"] == "Obec Hraň"
+
+
+def test_obce_suhrn_jeden_priklad_a_kraj(tmp_path):
+    riadky = [dict(_r(1), obstaravatel_nazov="Obec Hraň", predpokladana_hodnota=100),
+              dict(_r(2), obstaravatel_nazov="Obec  Hraň", predpokladana_hodnota=300, nazov="Strecha MŠ"),
+              dict(_r(3), obstaravatel_nazov="Mesto Martin", kraj="Žilinský kraj"),
+              dict(_r(4), obstaravatel_nazov="Obec Hraň", kraj="Prešovský kraj"),
+              dict(_r(5), obstaravatel_nazov="Ministerstvo vnútra SR")]
+    o = g.obce_suhrn(riadky)
+    assert set(o) == {"hraň", "martin"}
+    kos = [x for x in o["hraň"] if x["kraj"] == "Košický kraj"][0]
+    assert kos["pocet"] == 2 and kos["objem"] == 400 and kos["priklad"] == {"nazov": "Strecha MŠ", "hodnota": 300}
+    assert len(o["hraň"]) == 2
+    rob = tmp_path / "r.txt"; rob.write_text("")
+    g.vygeneruj(g.agreguj(riadky), str(tmp_path / "e"), str(tmp_path / "s.xml"), str(rob), obce=o)
+    assert '"hraň"' in (tmp_path / "e" / "obce.json").read_text(encoding="utf-8")

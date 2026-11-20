@@ -550,6 +550,12 @@ const POPIS_UCELU = {
 // spred vyse roka bez ineho upozornenia (napr. Cyklotrasy). Nemazeme ju —
 // stale je to fakt, ze niekedy tam peniaze boli — len jasne oznacime, ze
 // ide o starsie udaje, nech to nikoho nezavadza.
+// Audit 20. 11. 2026: datumy z DB (2026-10-21) zobrazujeme po slovensky (21. 10. 2026).
+function dSk(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+  return m ? `${+m[3]}. ${+m[2]}. ${m[1]}` : String(iso || '');
+}
+
 function jeStarsieRokom(datum) {
   if (!datum) return false;
   const d = new Date(datum);
@@ -593,7 +599,7 @@ async function nacitajUcely() {
           </div>` : ''}
 
         ${u.posledna ? `<div class="mt-2 text-[11px] ${jeStarsieRokom(u.posledna) ? 'text-amber-700 font-medium' : 'text-slate2'}">
-            naposledy ${bezpecne(u.posledna)}${jeStarsieRokom(u.posledna) ? ' — staršie údaje, viac ako rok' : ''}</div>` : ''}
+            naposledy ${bezpecne(dSk(u.posledna))}${jeStarsieRokom(u.posledna) ? ' — staršie údaje, viac ako rok' : ''}</div>` : ''}
       </div>`).join('');
     el('ucely').classList.remove('hidden');
   } catch (e) {
@@ -643,7 +649,7 @@ async function nacitajProgramy() {
         <td data-popis="Rozdelil" class="px-4 py-4 align-top text-[14px] font-medium text-right whitespace-nowrap">${eur(p.objem_90d)}</td>
         <td data-popis="Typicky na obec" class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${eur(p.median_dotacie)}</td>
         <td data-popis="Naposledy" class="px-4 py-4 align-top text-[14px] text-slate2">
-          <span class="whitespace-nowrap">${bezpecne(p.posledna_zmluva)}</span>
+          <span class="whitespace-nowrap">${bezpecne(dSk(p.posledna_zmluva))}</span>
         </td>
       </tr>`;
     }).join('');
@@ -704,7 +710,7 @@ async function nacitajSprostredkovatelov() {
         <td data-popis="Kde pracuje" class="px-4 py-4 align-top text-[13px] text-slate2">${bezpecne(s.kraje) || '—'}</td>
         <td data-popis="Typická cena" class="px-4 py-4 align-top text-[14px] text-right whitespace-nowrap">${eur(s.median_ceny)}</td>
         <td data-popis="Naposledy" class="px-4 py-4 align-top text-[14px] text-slate2">
-          <span class="whitespace-nowrap">${bezpecne(s.posledna_zmluva)}</span>
+          <span class="whitespace-nowrap">${bezpecne(dSk(s.posledna_zmluva))}</span>
         </td>
       </tr>`).join('');
     el('sprostred-obal').classList.remove('hidden');
