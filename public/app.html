@@ -728,6 +728,10 @@
             <button id="export-z" class="text-[13px] font-semibold text-accent hover:text-accentDark">
               Export do Excelu
             </button>
+            <button id="export-crm" class="text-[13px] font-semibold text-accent hover:text-accentDark"
+                    title="CSV na import obchodov do Pipedrive, HubSpot alebo Raynet. Očakávané uzavretie = 75 dní pred koncom zmluvy.">
+              Do CRM (.csv)
+            </button>
             <button id="export-ics" class="text-[13px] font-semibold text-accent hover:text-accentDark"
                     title="Konce zmlúv z aktuálneho filtra ako udalosti do kalendára, s pripomienkou 30 dní vopred">
               Do kalendára (.ics)
@@ -4156,6 +4160,37 @@ function vetaSuhrnu(nove, koncia, kde) {
 }
 
 /** Stiahne text ako subor (Blob + docasny odkaz s `download`). */
+// ── EXPORT DO CRM (20. 11. 2026, oba portaly) ───────────────────────────────
+// CSV s nazvami stlpcov podla importu Pipedrive (namapuju sa samy), HubSpot
+// a Raynet ich ponuknu na namapovanie. UTF-8 s BOM, ciarka, uvodzovky.
+// Text zacinajuci =,+,-,@ dostane apostrof (ochrana pred vzorcami v Exceli).
+function csvText(hlavicka, riadky) {
+  const bunka = (v) => {
+    if (v === null || v === undefined) return '';
+    let t = String(v);
+    if (typeof v === 'string' && /^[=+\-@\t\r]/.test(t)) t = "'" + t;
+    return /[",\n\r;]/.test(t) ? '"' + t.replace(/"/g, '""') + '"' : t;
+  };
+  return '\ufeff' + [hlavicka, ...riadky].map(r => r.map(bunka).join(',')).join('\r\n');
+}
+function crmRiadok(r) {
+  let pripravit = '';
+  if (r.effective_to) {
+    const d = new Date(r.effective_to + 'T00:00:00');
+    d.setDate(d.getDate() - 75);
+    pripravit = d.toISOString().slice(0, 10);
+  }
+  const hodnota = r.price_total ? Math.round(Number(r.price_total)) : null;
+  const pozn = [`Končí zmluva: ${r.subject || ''}`,
+                r.supplier_name ? `Dnešný dodávateľ: ${r.supplier_name}` : '',
+                POPIS_SEKTORA[r.sector] ? `Odbor: ${POPIS_SEKTORA[r.sector]}` : '',
+                'Zdroj: PredTendrom.sk (Centrálny register zmlúv)'].filter(Boolean).join(' | ');
+  return [`${r.authority_name || 'Obstarávateľ'}: ${r.subject || 'končiaca zmluva'}`, hodnota, hodnota === null ? null : 'EUR',
+          pripravit, r.authority_name, r.authority_cin, pozn, r.effective_to, r.odkaz || null];
+}
+const CRM_HLAVICKA = ['Deal - Title', 'Deal - Value', 'Deal - Currency', 'Deal - Expected close date',
+                      'Organization - Name', 'Organization - IČO', 'Note - Content', 'Koniec zmluvy', 'Odkaz'];
+
 function stiahniSubor(nazov, obsah, mime) {
   const blob = new Blob([obsah], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -6041,6 +6076,21 @@ async function dashboard(supabase, rola, spravaPozvanky) {
               .order('skore', { ascending: false, nullsFirst: false });
     }, 'contract_id');
     return exportExcel('konciace-zmluvy', dopelnOdkaz(riadky));
+  }));
+
+  el('export-crm').addEventListener('click', () => sExportom('export-crm', async () => {
+    await osviezSledovaneIdy();
+    const riadky = await stahniVsetko(() => {
+      let q = filtreZmluv(supabase.from('opportunities')
+        .select('contract_id, authority_name, authority_cin, subject, sector, effective_to, price_total, supplier_name, odkaz'))
+        .gte('effective_to', oDni(0));
+      if (el('f-jeCas').checked) q = q.gte('dni_do_konca', DNI_TENDER_UZ_BEZI);
+      return q.order('effective_to', { ascending: true });
+    }, 'contract_id');
+    if (!riadky.length) return false;
+    stiahniSubor(`crm-konciace-zmluvy-${dnesLokalne()}.csv`, csvText(CRM_HLAVICKA, dopelnOdkaz(riadky).map(crmRiadok)),
+                 'text/csv;charset=utf-8');
+    return true;
   }));
 
   el('export-ics').addEventListener('click', () => sExportom('export-ics', async () => {
